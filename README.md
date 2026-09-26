@@ -4,7 +4,7 @@ paysec is a team toolkit of Claude Code skills plus a fast headless browser, use
 
 - **No telemetry.** Nothing is uploaded; first run never asks to share usage data.
 - **Your repository only.** Install, update check and `/paysec-upgrade` use your own repository via `PAYSEC_REMOTE_REPO` / `PAYSEC_REMOTE_URL`.
-- **License.** MIT, see [LICENSE](LICENSE).
+  
 
 ## Install
 
