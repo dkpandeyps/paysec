@@ -4,7 +4,8 @@
 
 ```bash
 bun install          # install dependencies
-bun run test         # run free tests via the strict parallel runner (~90-100s full suite)
+bun run test         # run free tests via the strict parallel runner (~90-100s full suite, macOS/Linux)
+bun run test:windows # curated Windows-safe subset: the supported free suite on Windows (~2.5 min)
 bun run test:evals   # run paid evals: LLM judge + E2E (diff-based, ~$4/run max)
 bun run test:evals:all  # run ALL paid evals regardless of diff
 bun run test:gate    # run gate-tier tests only (CI default, blocks merge)
@@ -100,7 +101,8 @@ bun run test:evals   # run before shipping — paid, diff-based (~$4/run max)
 shard processes, serial within each, plus a trailing serial tree-mutating
 shard — with strict-output classification per shard: a shard without bun's
 terminal summary line FAILS — silent truncation
-cannot report green). Never type bare `bun test` for the suite: it walks the
+cannot report green). On Windows, `bun run test:windows` is the supported suite (the full run
+includes POSIX-only tests that fail there by design). Never type bare `bun test` for the suite: it walks the
 whole repo, loading paid eval files and missing the strict classifier.
 It covers skill validation, gen-skill-docs quality checks, and browse
 integration tests. `bun run test:evals` runs LLM-judge quality evals and E2E
@@ -110,7 +112,7 @@ tests via `claude -p`. Both must pass before creating a PR.
 
 ```
 paysec/
-├── browse/          # Headless browser CLI (Playwright)
+├── browser/         # Headless browser CLI (Playwright)
 │   ├── src/         # CLI + server + commands
 │   │   ├── commands.ts  # Command registry (single source of truth)
 │   │   └── snapshot.ts  # SNAPSHOT_FLAGS metadata array
@@ -140,19 +142,19 @@ paysec/
 ├── qa-report/         # /qa-report skill (report-only QA, no fixes)
 ├── plan-ux-review/  # /plan-ux-review skill (report-only design audit)
 ├── design-qa/    # /design-qa skill (design audit + fix loop)
-├── ship/            # Ship workflow skill
-├── review/          # PR review skill
+├── ship-pr/         # /ship-pr skill (ship workflow)
+├── pr-review/       # /pr-review skill (pre-landing PR review)
 ├── plan-business-review/ # /plan-business-review skill
 ├── plan-tech-review/ # /plan-tech-review skill
 ├── auto-plan-review/        # /auto-plan-review skill (auto-review pipeline: CEO → design → eng)
-├── benchmark/       # /perf-check skill (performance regression detection)
-├── canary/          # /post-deploy-monitor skill (post-deploy monitoring loop)
-├── codex/           # /codex-second-opinion skill (multi-AI second opinion via OpenAI Codex CLI)
+├── perf-check/      # /perf-check skill (performance regression detection)
+├── post-deploy-monitor/ # /post-deploy-monitor skill (post-deploy monitoring loop)
+├── codex-second-opinion/ # /codex-second-opinion skill (multi-AI second opinion via OpenAI Codex CLI)
 ├── merge-and-deploy/ # /merge-and-deploy skill (merge → deploy → canary verify)
 ├── idea-review/    # /idea-review skill (YC Office Hours — startup diagnostic + builder brainstorm)
-├── investigate/     # /debug-root-cause skill (systematic root-cause debugging)
-├── spec/            # /write-spec skill (five-phase spec → GitHub issue, optional agent spawn, /ship-pr auto-closes)
-├── retro/           # Retrospective skill (includes /weekly-retro global cross-project mode)
+├── debug-root-cause/ # /debug-root-cause skill (systematic root-cause debugging)
+├── write-spec/      # /write-spec skill (five-phase spec → GitHub issue, optional agent spawn, /ship-pr auto-closes)
+├── weekly-retro/    # /weekly-retro skill (includes /weekly-retro global cross-project mode)
 ├── bin/             # CLI utilities (paysec-repo-mode, paysec-slug, paysec-config, paysec-wtree, paysec-evidence, paysec-issue-guard, etc.)
 ├── docs-release-update/ # /docs-release-update skill (post-ship doc updates + Diataxis coverage map)
 ├── docs-generate/ # /docs-generate skill (Diataxis doc generator: tutorial/how-to/reference/explanation)
