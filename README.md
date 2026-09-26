@@ -15,7 +15,7 @@ The original upstream README is kept at [docs/UPSTREAM-README.md](docs/UPSTREAM-
 Requirements: git, [bun](https://bun.sh) 1.3+, Node.js 18+.
 
 ```bash
-git clone <your-paysec-repo-url> ~/.claude/skills/paysec
+git clone https://github.com/dkpandeyps/paysec.git ~/.claude/skills/paysec
 cd ~/.claude/skills/paysec && ./setup
 ```
 
@@ -24,8 +24,8 @@ cd ~/.claude/skills/paysec && ./setup
 To enable update checks and `/paysec-upgrade`, set in your shell profile:
 
 ```bash
-export PAYSEC_REMOTE_REPO="<your-paysec-repo-url>"                              # git URL
-export PAYSEC_REMOTE_URL="<raw URL of VERSION on your repo's main branch>"
+export PAYSEC_REMOTE_REPO="https://github.com/dkpandeyps/paysec.git"                  # git URL
+export PAYSEC_REMOTE_URL="https://raw.githubusercontent.com/dkpandeyps/paysec/main/VERSION"
 ```
 
 ## Skills

@@ -106,7 +106,7 @@ setx MSYS "winsymlinks:nativestrict"        # Git Bash `ln -s` creates real syml
 ## 3.2 Install for yourself (global, all projects)
 
 ```bash
-git clone <your-paysec-repo-url> ~/.claude/skills/paysec
+git clone https://github.com/dkpandeyps/paysec.git ~/.claude/skills/paysec
 cd ~/.claude/skills/paysec
 ./setup --host claude --no-prefix
 ```

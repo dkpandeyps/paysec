@@ -4,7 +4,7 @@ You'll run `/docs-generate` against a project you already have, watch it write t
 
 ## What you'll need
 
-- paysec installed (`git clone --single-branch --depth 1 <your-paysec-repo-url> ~/.claude/skills/paysec && cd ~/.claude/skills/paysec && ./setup`)
+- paysec installed (`git clone --single-branch --depth 1 https://github.com/dkpandeyps/paysec.git ~/.claude/skills/paysec && cd ~/.claude/skills/paysec && ./setup`)
 - Claude Code running in any project that has at least one piece of public surface (a CLI command, an exported function, a config option, a skill, an API endpoint)
 - About 90 seconds
 

@@ -9,7 +9,7 @@ paysec skills are Markdown files that Claude Code discovers from a `skills/` dir
 That's what dev mode does. It symlinks your repo into the local `.claude/skills/` directory so Claude Code reads skills straight from your checkout.
 
 ```bash
-git clone <your-paysec-repo-url> && cd paysec
+git clone https://github.com/dkpandeyps/paysec.git && cd paysec
 bun install                    # install dependencies
 bin/dev-setup                  # activate dev mode
 ```
