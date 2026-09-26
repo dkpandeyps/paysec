@@ -5,7 +5,7 @@
 **paysec is its own toolkit now, and every skill starts lighter.**
 **Less boilerplate, safer question memory, same behavior.**
 
-Every gstack name is now a paysec name: skills, helper commands, config paths, and environment variables. Skills also start faster. Each skill used to carry about 11 KB of setup shell commands that the agent retyped on every run. That work now lives in two helper scripts, `paysec-preamble` and `paysec-artifacts-sync-start`, and each skill calls them with one short line. Output and side effects are unchanged: the old and new versions were run side by side across 13 scenarios and matched line for line. Telemetry stays off and never uploads.
+Every gstack name is now a paysec name: skills, helper commands, config paths, and environment variables. Skills also start faster. Each skill used to carry about 11 KB of setup shell commands that the agent retyped on every run. That work now lives in two helper scripts, `paysec-preamble` and `paysec-artifacts-sync-start`, and each skill calls them with one short line. One-time onboarding prompts (first-run tips, the routing-rules offer, and four more) load only when they are due, instead of riding along in every skill. Output and side effects are unchanged: the old and new versions were run side by side across 13 scenarios and matched line for line. Telemetry stays off and never uploads.
 
 ### The numbers that matter
 
@@ -14,8 +14,8 @@ Measured on this repo with `wc -c` over the generated `SKILL.md` files and `CLAU
 | Metric | Before | After | Δ |
 |---|---|---|---|
 | Setup shell the agent retypes per skill start | 11,670 bytes | 454 bytes | -96% |
-| All generated skills (55 SKILL.md) | 3,350,079 bytes | 2,836,959 bytes | -15% |
-| `/pr-review` skill file | 112,933 bytes | 102,072 bytes | -10% |
+| All generated skills (55 SKILL.md) | 3,350,079 bytes | 2,589,759 bytes | -23% |
+| `/pr-review` skill file | 112,933 bytes | 97,128 bytes | -14% |
 | `CLAUDE.md` (loaded every session) | 65,694 bytes | 36,557 bytes | -44% |
 | Question ids matching their skill | 7 of 53 | 53 of 53 | +46 |
 
@@ -32,6 +32,7 @@ Skills get to the real work sooner and cost less per run. Your saved question pr
 - The skill-start probe and the artifacts-sync block now run from `bin/paysec-preamble` and `bin/paysec-artifacts-sync-start`. Rendered skills carry a one-line call.
 - The daily artifacts-repo fetch now writes an egress receipt before it runs, like every other off-machine call.
 - 46 question-registry ids now use their current skill name (for example `idea-review-mode-goal`, `ship-pr-version-bump-tier`).
+- One-time onboarding sections load on demand on Claude: each skill carries a one-line check and reads `preamble/sections/<id>.md` only when it applies. Other hosts keep them inline.
 - Long reference sections of `CLAUDE.md` moved to `docs/contributing/` word for word. `CLAUDE.md` keeps the must-follow rules and a pointer to each.
 
 #### Added
