@@ -37,7 +37,9 @@ import path from 'path';
 
 const ROOT = path.resolve(__dirname, '..');
 const SYNC = path.join(ROOT, 'bin', 'paysec-telemetry-sync');
-const PREAMBLE = path.join(ROOT, 'scripts', 'resolvers', 'preamble', 'generate-preamble-bash.ts');
+// Skill-start producer: the probe body rendered by generate-preamble-bash.ts
+// now lives in bin/paysec-preamble (SKILL.md carries a one-line call to it).
+const PREAMBLE = path.join(ROOT, 'bin', 'paysec-preamble');
 const TEL_LOG = path.join(ROOT, 'bin', 'paysec-telemetry-log');
 
 // Fields that identify the user's repo/branch. The promise is that NONE of

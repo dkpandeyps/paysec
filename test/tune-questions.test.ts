@@ -475,7 +475,11 @@ describe('preamble — QUESTION_TUNING injection', () => {
       preambleTier: 2,
     };
     const out = generatePreamble(ctx);
-    expect(out).toContain('QUESTION_TUNING: $_QUESTION_TUNING');
+    // The QUESTION_TUNING echo runs inside bin/paysec-preamble, which the
+    // rendered preamble calls.
+    expect(out).toContain('"$_PAYSEC_PREAMBLE" --skill ');
+    expect(fs.readFileSync(path.join(ROOT, 'bin', 'paysec-preamble'), 'utf-8'))
+      .toContain('QUESTION_TUNING: $_QUESTION_TUNING');
     expect(out).toContain('## Question Tuning');
     expect(out).toContain('paysec-question-preference --check');
     expect(out).toContain('paysec-question-log');

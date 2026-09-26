@@ -38,7 +38,11 @@ function makeCtx(host: 'claude' | 'codex'): TemplateContext {
   };
 }
 
-/** Extract the routing-probe block from the rendered preamble bash. */
+// The probe bash lives in bin/paysec-preamble; every host's rendered preamble
+// calls it, so the probe is extracted from the script.
+const PREAMBLE_SCRIPT = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-preamble'), 'utf-8');
+
+/** Extract the routing-probe block from the preamble probe script. */
 function extractRoutingProbe(rendered: string): string {
   const start = rendered.indexOf('_HAS_ROUTING="no"');
   expect(start).toBeGreaterThan(-1);
@@ -50,16 +54,15 @@ function extractRoutingProbe(rendered: string): string {
 describe('routing probe checks AGENTS.md too (#2500)', () => {
   for (const host of ['claude', 'codex'] as const) {
     test(`rendered preamble probes CLAUDE.md AND AGENTS.md (${host})`, () => {
-      const rendered = generatePreambleBash(makeCtx(host));
-      const probe = extractRoutingProbe(rendered);
+      expect(generatePreambleBash(makeCtx(host))).toContain('"$_PAYSEC_PREAMBLE" --skill ');
+      const probe = extractRoutingProbe(PREAMBLE_SCRIPT);
       expect(probe).toContain('CLAUDE.md');
       expect(probe).toContain('AGENTS.md');
     });
   }
 
   test('live probe block: AGENTS.md-only repo reports HAS_ROUTING=yes', () => {
-    const rendered = generatePreambleBash(makeCtx('claude'));
-    const probe = extractRoutingProbe(rendered);
+    const probe = extractRoutingProbe(PREAMBLE_SCRIPT);
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'routing-probe-'));
     try {
       fs.writeFileSync(
@@ -77,8 +80,7 @@ describe('routing probe checks AGENTS.md too (#2500)', () => {
   });
 
   test('live probe block: repo with neither file reports HAS_ROUTING=no', () => {
-    const rendered = generatePreambleBash(makeCtx('claude'));
-    const probe = extractRoutingProbe(rendered);
+    const probe = extractRoutingProbe(PREAMBLE_SCRIPT);
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'routing-probe-'));
     try {
       const out = execSync(

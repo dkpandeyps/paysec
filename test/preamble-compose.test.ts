@@ -16,6 +16,8 @@ import { describe, test, expect } from 'bun:test';
 import type { TemplateContext } from '../scripts/resolvers/types';
 import { HOST_PATHS } from '../scripts/resolvers/types';
 import { generatePreamble } from '../scripts/resolvers/preamble';
+import * as fs from 'fs';
+import * as path from 'path';
 
 function makeCtx(
   host: 'claude' | 'codex',
@@ -73,7 +75,9 @@ describe('Preamble composition order', () => {
 
 describe('Conductor signal (preamble bash)', () => {
   test('claude preamble emits CONDUCTOR_SESSION, gated on != headless (Issue 8)', () => {
-    const out = generatePreamble(makeCtx('claude', 2, 'claude'));
+    // The probe bash lives in bin/paysec-preamble; the rendered preamble calls it.
+    expect(generatePreamble(makeCtx('claude', 2, 'claude'))).toContain('"$_PAYSEC_PREAMBLE" --skill ');
+    const out = fs.readFileSync(path.join(import.meta.dir, '..', 'bin', 'paysec-preamble'), 'utf-8');
     expect(out).toContain('echo "CONDUCTOR_SESSION: true"');
     // The emission must be suppressed when the session is headless (eval/CI
     // inside Conductor must BLOCK, not render prose to nobody).

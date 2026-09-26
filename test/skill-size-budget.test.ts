@@ -38,6 +38,9 @@ import { CARVED_SKILLS } from './helpers/carve-guards';
 
 const REPO_ROOT = path.resolve(import.meta.dir, '..');
 const BASELINE_PATH = path.join(REPO_ROOT, 'test', 'fixtures', 'parity-baseline-v1.47.0.0.json');
+// Bytes per SKILL.md moved into bin/paysec-preamble + bin/paysec-artifacts-sync-start
+// (measured 11,160-11,175 across skills; skill-name length varies it slightly).
+const PREAMBLE_BYTES_MOVED_TO_BIN = 11_200;
 
 // Default per-skill ratio is 1.50 (50% growth tolerance). Adjusted v1.52.0.0
 // (cathedral cap audit) from 1.05 → 1.50: a 5% ratio tripped on legitimate
@@ -191,7 +194,14 @@ describe('SKILL.md size budget regression (gate, free)', () => {
       if (INTENTIONAL_SHRINKS.has(skill)) continue;
       const after = current.skills[skill];
       if (!after) continue; // skill removed since baseline — separate concern
-      const ratio = after.skillMdBytes / before.skillMdBytes;
+      // Preamble probe + artifacts-sync bash moved out of every SKILL.md into
+      // bin/paysec-preamble and bin/paysec-artifacts-sync-start (~11.16 KB per
+      // skill, measured). Credit those bytes back for skills that call the
+      // script, so the floor still measures body loss, not the extraction.
+      const skillMd = path.join(REPO_ROOT, skill, 'SKILL.md');
+      const movedToBin = fs.existsSync(skillMd) && fs.readFileSync(skillMd, 'utf-8').includes('/paysec-preamble"')
+        ? PREAMBLE_BYTES_MOVED_TO_BIN : 0;
+      const ratio = (after.skillMdBytes + movedToBin) / before.skillMdBytes;
       if (ratio < MIN_RATIO) {
         undershoots.push({
           skill, beforeBytes: before.skillMdBytes, afterBytes: after.skillMdBytes, ratio,

@@ -18,6 +18,12 @@ import { describe, test, expect } from 'bun:test';
 import type { TemplateContext } from '../scripts/resolvers/types';
 import { HOST_PATHS } from '../scripts/resolvers/types';
 import { generatePreamble } from '../scripts/resolvers/preamble';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// The skill-start probe bash lives in bin/paysec-preamble; the rendered
+// preamble carries a one-line call to it.
+const PREAMBLE_SCRIPT = fs.readFileSync(path.join(import.meta.dir, '..', 'bin', 'paysec-preamble'), 'utf-8');
 
 function makeCtx(host: 'claude' | 'codex', tier: 1 | 2 | 3 | 4): TemplateContext {
   return {
@@ -37,8 +43,9 @@ describe('Writing Style preamble section', () => {
 
   test('tier 2+ preamble includes EXPLAIN_LEVEL echo in bash', () => {
     const out = generatePreamble(makeCtx('claude', 2));
-    expect(out).toContain('_EXPLAIN_LEVEL');
-    expect(out).toContain('EXPLAIN_LEVEL:');
+    expect(out).toContain('"$_PAYSEC_PREAMBLE" --skill ');
+    expect(PREAMBLE_SCRIPT).toContain('_EXPLAIN_LEVEL');
+    expect(PREAMBLE_SCRIPT).toContain('EXPLAIN_LEVEL:');
   });
 
   test('tier 2+ preamble includes the compact writing-style contract', () => {
@@ -70,13 +77,17 @@ describe('Writing Style preamble section', () => {
 
   test('Codex tier-2 preamble uses host-aware path (no .claude/)', () => {
     const out = generatePreamble(makeCtx('codex', 2));
-    // The Writing Style section shouldn't reference a Claude-specific bin path.
-    // Specifically check the EXPLAIN_LEVEL bash line.
-    const explainLine = out.split('\n').find(l => l.includes('_EXPLAIN_LEVEL='));
+    // The Codex preamble must reach the probe through $PAYSEC_BIN, never a
+    // Claude-specific bin path.
+    const callLine = out.split('\n').find(l => l.startsWith('_PAYSEC_PREAMBLE='));
+    expect(callLine).toBeDefined();
+    expect(callLine).not.toMatch(/\.claude\//);
+    expect(callLine).toContain('$PAYSEC_BIN');
+    // The probe resolves its helpers from its own directory (host-agnostic).
+    const explainLine = PREAMBLE_SCRIPT.split('\n').find(l => l.includes('_EXPLAIN_LEVEL='));
     expect(explainLine).toBeDefined();
-    expect(explainLine).not.toMatch(/~\/\.claude\//);
-    // Codex uses $PAYSEC_BIN
-    expect(explainLine).toContain('$PAYSEC_BIN');
+    expect(explainLine).not.toMatch(/\.claude\//);
+    expect(explainLine).toContain('$SCRIPT_DIR');
   });
 
   test('tier 1 preamble does NOT include Writing Style section', () => {

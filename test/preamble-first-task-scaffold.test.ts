@@ -151,10 +151,13 @@ describe('paysec-first-task-detect — contract', () => {
 
 describe('first-run-guidance preamble wiring (generated)', () => {
   const md = fs.readFileSync(path.join(ROOT, 'ship-pr', 'SKILL.md'), 'utf-8');
+  // The detection bash runs inside bin/paysec-preamble, which ship-pr calls.
+  const probe = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-preamble'), 'utf-8');
 
   test('detection is gated to the first-ever run only (ACTIVATED=no, not headless)', () => {
-    expect(md).toContain('if [ "$_ACTIVATED" = "no" ] && [ "$_SESSION_KIND" != "headless" ]');
-    expect(md).toContain('paysec-first-task-detect');
+    expect(md).toContain('"$_PAYSEC_PREAMBLE" --skill ship-pr ');
+    expect(probe).toContain('if [ "$_ACTIVATED" = "no" ] && [ "$_SESSION_KIND" != "headless" ]');
+    expect(probe).toContain('paysec-first-task-detect');
   });
 
   test('emits the unified first-run guidance section branching on ACTIVATED', () => {

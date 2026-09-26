@@ -8,6 +8,15 @@ import * as os from 'os';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
+
+// The skill-start probe body lives in bin/paysec-preamble; each SKILL.md
+// carries a one-line call to it. Checks for "what a skill runs at start"
+// read the SKILL.md plus that script.
+const PREAMBLE_SCRIPT = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-preamble'), 'utf-8');
+function readSkillWithPreamble(file: string): string {
+  const md = fs.readFileSync(file, 'utf-8');
+  return md.includes('/paysec-preamble"') ? `${md}\n${PREAMBLE_SCRIPT}` : md;
+}
 const MAX_SKILL_DESCRIPTION_LENGTH = 1024;
 
 // Carved-skill aware (v2 plan T9): ship is now a skeleton SKILL.md + sections/*.md.
@@ -309,7 +318,7 @@ describe('gen-skill-docs', () => {
   });
 
   test('generated SKILL.md contains operational self-improvement (replaced contributor mode)', () => {
-    const content = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
+    const content = readSkillWithPreamble(path.join(ROOT, 'SKILL.md'));
     expect(content).not.toContain('Contributor Mode');
     expect(content).not.toContain('paysec_contributor');
     expect(content).not.toContain('contributor-logs');
@@ -325,13 +334,13 @@ describe('gen-skill-docs', () => {
   });
 
   test('generated SKILL.md contains session awareness', () => {
-    const content = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
+    const content = readSkillWithPreamble(path.join(ROOT, 'SKILL.md'));
     expect(content).toContain('_SESSIONS');
     expect(content).toContain('RECOMMENDATION');
   });
 
   test('generated SKILL.md contains branch detection', () => {
-    const content = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
+    const content = readSkillWithPreamble(path.join(ROOT, 'SKILL.md'));
     expect(content).toContain('_BRANCH');
     expect(content).toContain('git branch --show-current');
   });
@@ -345,7 +354,7 @@ describe('gen-skill-docs', () => {
   test('update_check opt-out gates preamble echo and upgrade-handling prose (issue #2001)', () => {
     let checked = 0;
     for (const skill of CLAUDE_GENERATED_SKILLS) {
-      const content = fs.readFileSync(path.join(ROOT, skill.dir, 'SKILL.md'), 'utf-8');
+      const content = readSkillWithPreamble(path.join(ROOT, skill.dir, 'SKILL.md'));
       // Scope: only skills that render the runtime config-echo cluster.
       if (!content.includes('echo "QUESTION_TUNING: $_QUESTION_TUNING"')) continue;
       checked++;
@@ -443,7 +452,7 @@ describe('gen-skill-docs', () => {
 
   test('preamble .pending-* glob is zsh-safe (uses find, not shell glob)', () => {
     for (const skill of CLAUDE_GENERATED_SKILLS) {
-      const content = fs.readFileSync(path.join(ROOT, skill.dir, 'SKILL.md'), 'utf-8');
+      const content = readSkillWithPreamble(path.join(ROOT, skill.dir, 'SKILL.md'));
       if (!content.includes('.pending-')) continue;
       // Must NOT have a bare shell glob ".pending-*" outside of find's -name argument
       expect(content).not.toMatch(/for _PF in [^\n]*\/\.pending-\*/);
@@ -499,8 +508,12 @@ describe('gen-skill-docs', () => {
     ];
     for (const skill of PREAMBLE_SKILLS) {
       const content = fs.readFileSync(path.join(ROOT, skill.dir, 'SKILL.md'), 'utf-8');
-      expect(content).toContain(`"skill":"${skill.name}"`);
+      // The name travels to bin/paysec-preamble, which writes it into the
+      // analytics + timeline JSON.
+      expect(content).toContain(`"$_PAYSEC_PREAMBLE" --skill ${skill.name} `);
     }
+    expect(PREAMBLE_SCRIPT).toContain(`'{"skill":"'"$_SKILL"'","ts":"`);
+    expect(PREAMBLE_SCRIPT).toContain(`'{"skill":"'"$_SKILL"'","event":"started"`);
   });
 
   test('qa and qa-report templates use QA_METHODOLOGY placeholder', () => {
@@ -1561,7 +1574,7 @@ describe('parameterized resolver support', () => {
 // --- Preamble routing injection tests ---
 
 describe('preamble routing injection', () => {
-  const shipContent = readShipUnion();
+  const shipContent = readShipUnion() + '\n' + PREAMBLE_SCRIPT;
 
   test('preamble bash checks for routing section in CLAUDE.md and AGENTS.md', () => {
     // #2500: the probe iterates CLAUDE.md AND AGENTS.md — non-Claude hosts
@@ -2777,7 +2790,7 @@ describe('discover-skills hidden directory filtering', () => {
 
 describe('telemetry', () => {
   test('generated SKILL.md contains telemetry start block', () => {
-    const content = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
+    const content = readSkillWithPreamble(path.join(ROOT, 'SKILL.md'));
     expect(content).toContain('_TEL_START');
     expect(content).toContain('_SESSION_ID');
     expect(content).toContain('TELEMETRY:');
@@ -2807,7 +2820,7 @@ describe('telemetry', () => {
   });
 
   test('generated SKILL.md contains pending marker handling', () => {
-    const content = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
+    const content = readSkillWithPreamble(path.join(ROOT, 'SKILL.md'));
     expect(content).toContain('.pending');
     expect(content).toContain('_pending_finalize');
   });

@@ -7,6 +7,15 @@ import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
 
+// The skill-start probe body lives in bin/paysec-preamble; each SKILL.md
+// carries a one-line call to it. Checks for "what a skill runs at start"
+// read the SKILL.md plus that script.
+const PREAMBLE_SCRIPT = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-preamble'), 'utf-8');
+function readSkillWithPreamble(file: string): string {
+  const md = fs.readFileSync(file, 'utf-8');
+  return md.includes('/paysec-preamble"') ? `${md}\n${PREAMBLE_SCRIPT}` : md;
+}
+
 // Carved-skill aware (v2 plan T9 / Phase B): a carved skill is a skeleton SKILL.md
 // plus sections/*.md. Read the union so validations of content that moved into a
 // section still hold. For an uncarved skill (no sections dir) this is just the
@@ -277,7 +286,7 @@ describe('Update check preamble', () => {
 
   for (const skill of skillsWithUpdateCheck) {
     test(`${skill} update check line ends with || true`, () => {
-      const content = fs.readFileSync(path.join(ROOT, skill), 'utf-8');
+      const content = readSkillWithPreamble(path.join(ROOT, skill));
       // The second line of the bash block must end with || true
       // to avoid exit code 1 when _UPD is empty (up to date)
       const match = content.match(/\[ -n "\$_UPD" \].*$/m);
@@ -617,7 +626,7 @@ describe('v0.4.1 preamble features', () => {
 
   for (const skill of skillsWithPreamble) {
     test(`${skill} contains session awareness`, () => {
-      const content = fs.readFileSync(path.join(ROOT, skill), 'utf-8');
+      const content = readSkillWithPreamble(path.join(ROOT, skill));
       expect(content).toContain('_SESSIONS');
     });
   }
@@ -1459,7 +1468,10 @@ describe('Codex skill', () => {
   });
 
   test('codex integration in /plan-tech-review offers plan critique', () => {
-    const content = fs.readFileSync(path.join(ROOT, 'plan-tech-review', 'SKILL.md'), 'utf-8');
+    // The Codex outside-voice prose renders into the carved review section
+    // (the SKILL.md skeleton points at it), so read the skill + that section.
+    const content = fs.readFileSync(path.join(ROOT, 'plan-tech-review', 'SKILL.md'), 'utf-8')
+      + fs.readFileSync(path.join(ROOT, 'plan-tech-review', 'sections', 'review-sections.md'), 'utf-8');
     expect(content).toContain('Codex');
     expect(content).toContain('codex exec');
   });
@@ -1795,7 +1807,7 @@ describe('Codex skill validation', () => {
 
 describe('Repo mode preamble validation', () => {
   test('generated SKILL.md preamble contains REPO_MODE output', () => {
-    const content = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
+    const content = readSkillWithPreamble(path.join(ROOT, 'SKILL.md'));
     expect(content).toContain('REPO_MODE:');
     expect(content).toContain('paysec-repo-mode');
   });
