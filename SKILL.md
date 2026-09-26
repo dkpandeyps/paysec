@@ -55,33 +55,9 @@ Feature discovery, max one prompt per session:
 
 After upgrade prompts, continue workflow.
 
-If `WRITING_STYLE_PENDING` is `yes`: ask once about writing style:
+If `WRITING_STYLE_PENDING` is `yes`: Read `~/.claude/skills/paysec/preamble/sections/writing-style-migration.md` and follow it. Otherwise skip it.
 
-> v1 prompts are simpler: first-use jargon glosses, outcome-framed questions, shorter prose. Keep default or restore terse?
-
-Options:
-- A) Keep the new default (recommended — good writing helps everyone)
-- B) Restore V0 prose — set `explain_level: terse`
-
-If A: leave `explain_level` unset (defaults to `default`).
-If B: run `~/.claude/skills/paysec/bin/paysec-config set explain_level terse`.
-
-Always run (regardless of choice):
-```bash
-rm -f ~/.paysec/.writing-style-prompt-pending
-touch ~/.paysec/.writing-style-prompted
-```
-
-Skip if `WRITING_STYLE_PENDING` is `no`.
-
-If `LAKE_INTRO` is `no`: say "paysec follows the **Boil the Ocean** principle — do the complete thing when AI makes marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean" Offer to open:
-
-```bash
-open https://garryslist.org/posts/boil-the-ocean
-touch ~/.paysec/.completeness-intro-seen
-```
-
-Only run `open` if yes. Always run `touch`.
+If `LAKE_INTRO` is `no`: Read `~/.claude/skills/paysec/preamble/sections/lake-intro.md` and follow it. Otherwise skip it.
 
 If `TEL_PROMPTED` is `no`: do NOT ask about telemetry. paysec never uploads usage data. Silently run:
 ```bash
@@ -89,108 +65,15 @@ If `TEL_PROMPTED` is `no`: do NOT ask about telemetry. paysec never uploads usag
 touch ~/.paysec/.telemetry-prompted
 ```
 
-If `PROACTIVE_PROMPTED` is `no` AND `TEL_PROMPTED` is `yes`: ask once:
-
-> Let paysec proactively suggest skills, like /qa-fix for "does this work?" or /debug-root-cause for bugs?
-
-Options:
-- A) Keep it on (recommended)
-- B) Turn it off — I'll type /commands myself
-
-If A: run `~/.claude/skills/paysec/bin/paysec-config set proactive true`
-If B: run `~/.claude/skills/paysec/bin/paysec-config set proactive false`
-
-Always run:
-```bash
-touch ~/.paysec/.proactive-prompted
-```
-
-Skip if `PROACTIVE_PROMPTED` is `yes`.
+If `PROACTIVE_PROMPTED` is `no` AND `TEL_PROMPTED` is `yes`: Read `~/.claude/skills/paysec/preamble/sections/proactive-prompt.md` and follow it. Otherwise skip it.
 
 ## First-run guidance (one-time)
 
-If `ACTIVATED` is `no` (first skill run on this machine) AND the preamble printed a non-empty `FIRST_TASK:` value that is NOT `nongit`: show ONE short, project-specific line mapped from the token, as a heads-up, then CONTINUE with whatever the user actually asked — do NOT halt their task. Map the token: `greenfield` → "Fresh repo — shape it first with `/write-spec` or `/idea-review`." `code_node`/`code_python`/`code_rust`/`code_go`/`code_ruby`/`code_ios` → "There's code here — `/qa-fix` to see it work, or `/debug-root-cause` if something's off." `branch_ahead` → "Unshipped work on this branch — `/pr-review` then `/ship-pr`." `dirty_default` → "Uncommitted changes — `/pr-review` before committing." `clean_default` → "Pick one: `/write-spec`, `/debug-root-cause`, or `/qa-fix`." Then substitute the token you saw for TASK_TOKEN and run (best-effort), and mark activated:
-```bash
-~/.claude/skills/paysec/bin/paysec-telemetry-log --event-type first_task_scaffold_shown --skill "TASK_TOKEN" --outcome shown 2>/dev/null || true
-touch ~/.paysec/.activated 2>/dev/null || true
-```
+If `ACTIVATED` is `no` OR `FIRST_LOOP_SHOWN` is `no`: Read `~/.claude/skills/paysec/preamble/sections/first-run-guidance.md` and follow it. Otherwise skip it.
 
-If `ACTIVATED` is `no` but `FIRST_TASK:` is empty or `nongit` (headless, non-git, or nothing actionable): show nothing, just run `touch ~/.paysec/.activated 2>/dev/null || true`.
+If `HAS_ROUTING` is `no` AND `ROUTING_DECLINED` is `false` AND `PROACTIVE_PROMPTED` is `yes`: Read `~/.claude/skills/paysec/preamble/sections/routing-injection.md` and follow it. Otherwise skip it.
 
-Else if `ACTIVATED` is `yes` AND `FIRST_LOOP_SHOWN` is `no`: say once as a heads-up (then continue):
-
-> Tip: paysec pays off when you complete one loop — **plan → review → ship**. A common first loop: `/idea-review` or `/write-spec` to shape it, `/plan-tech-review` to lock it, then `/ship-pr`.
-
-Then run `touch ~/.paysec/.first-loop-tip-shown 2>/dev/null || true`.
-
-Skip this section if `ACTIVATED` and `FIRST_LOOP_SHOWN` are both `yes`.
-
-If `HAS_ROUTING` is `no` AND `ROUTING_DECLINED` is `false` AND `PROACTIVE_PROMPTED` is `yes`:
-Check if a CLAUDE.md file exists in the project root. If it does not exist, create it.
-
-Use AskUserQuestion:
-
-> paysec works best when your project's CLAUDE.md includes skill routing rules.
-
-Options:
-- A) Add routing rules to CLAUDE.md (recommended)
-- B) No thanks, I'll invoke skills manually
-
-If A: Append this section to the end of CLAUDE.md:
-
-```markdown
-
-## Skill routing
-
-When the user's request matches an available skill, invoke it via the Skill tool. When in doubt, invoke the skill.
-
-Key routing rules:
-- Product ideas/brainstorming → invoke /idea-review
-- Strategy/scope → invoke /plan-business-review
-- Architecture → invoke /plan-tech-review
-- Design system/plan review → invoke /design-system or /plan-ux-review
-- Full review pipeline → invoke /auto-plan-review
-- Bugs/errors → invoke /debug-root-cause
-- QA/testing site behavior → invoke /qa-fix or /qa-report
-- Code review/diff check → invoke /pr-review
-- Visual polish → invoke /design-qa
-- Ship/deploy/PR → invoke /ship-pr or /merge-and-deploy
-- Save progress → invoke /save-context
-- Resume context → invoke /restore-context
-- Author a backlog-ready spec/issue → invoke /write-spec
-```
-
-Then commit the change: `git add CLAUDE.md && git commit -m "chore: add paysec skill routing rules to CLAUDE.md"`
-
-If B: run `~/.claude/skills/paysec/bin/paysec-config set routing_declined true` and say they can re-enable with `paysec-config set routing_declined false`.
-
-This only happens once per project. Skip if `HAS_ROUTING` is `yes` or `ROUTING_DECLINED` is `true`.
-
-If `VENDORED_PAYSEC` is `yes`, warn once via AskUserQuestion unless `~/.paysec/.vendoring-warned-$SLUG` exists:
-
-> This project has paysec vendored in `.claude/skills/paysec/`. Vendoring is deprecated.
-> Migrate to team mode?
-
-Options:
-- A) Yes, migrate to team mode now
-- B) No, I'll handle it myself
-
-If A:
-1. Run `git rm -r .claude/skills/paysec/`
-2. Run `echo '.claude/skills/paysec/' >> .gitignore`
-3. Run `~/.claude/skills/paysec/bin/paysec-team-init required` (or `optional`)
-4. Run `git add .claude/ .gitignore CLAUDE.md && git commit -m "chore: migrate paysec from vendored to team mode"`
-5. Tell the user: "Done. Each developer now runs: `cd ~/.claude/skills/paysec && ./setup --team`"
-
-If B: say "OK, you're on your own to keep the vendored copy up to date."
-
-Always run (regardless of choice):
-```bash
-eval "$(~/.claude/skills/paysec/bin/paysec-slug 2>/dev/null)" 2>/dev/null || true
-touch ~/.paysec/.vendoring-warned-${SLUG:-unknown}
-```
-
-If marker exists, skip.
+If `VENDORED_PAYSEC` is `yes`: Read `~/.claude/skills/paysec/preamble/sections/vendoring-deprecation.md` and follow it. Otherwise skip it.
 
 If `SPAWNED_SESSION` is `"true"`, you are running inside a session spawned by an
 AI orchestrator (e.g., OpenClaw). In spawned sessions:
