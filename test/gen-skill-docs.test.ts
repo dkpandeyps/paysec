@@ -13,9 +13,19 @@ const ROOT = path.resolve(import.meta.dir, '..');
 // carries a one-line call to it. Checks for "what a skill runs at start"
 // read the SKILL.md plus that script.
 const PREAMBLE_SCRIPT = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-preamble'), 'utf-8');
+// One-time onboarding sections are generated to preamble/sections/<id>.md and
+// referenced from each Claude SKILL.md by a gate pointer (preamble/on-demand.ts).
+const ON_DEMAND_DIR = path.join(ROOT, 'preamble', 'sections');
+function withOnDemand(text: string): string {
+  let out = text;
+  for (const f of fs.readdirSync(ON_DEMAND_DIR).sort()) {
+    if (text.includes(`preamble/sections/${f}`)) out += '\n' + fs.readFileSync(path.join(ON_DEMAND_DIR, f), 'utf-8');
+  }
+  return out;
+}
 function readSkillWithPreamble(file: string): string {
   const md = fs.readFileSync(file, 'utf-8');
-  return md.includes('/paysec-preamble"') ? `${md}\n${PREAMBLE_SCRIPT}` : md;
+  return withOnDemand(md.includes('/paysec-preamble"') ? `${md}\n${PREAMBLE_SCRIPT}` : md);
 }
 const MAX_SKILL_DESCRIPTION_LENGTH = 1024;
 
@@ -786,7 +796,7 @@ describe('REVIEW_DASHBOARD resolver', () => {
   }
 
   test('plan-business-review chaining mentions eng and design reviews', () => {
-    const content = fs.readFileSync(path.join(ROOT, 'plan-business-review', 'SKILL.md'), 'utf-8');
+    const content = readSkillUnion('plan-business-review'); // carved: review body moved to section
     expect(content).toContain('/plan-tech-review');
     expect(content).toContain('/plan-ux-review');
   });
@@ -1574,7 +1584,7 @@ describe('parameterized resolver support', () => {
 // --- Preamble routing injection tests ---
 
 describe('preamble routing injection', () => {
-  const shipContent = readShipUnion() + '\n' + PREAMBLE_SCRIPT;
+  const shipContent = withOnDemand(readShipUnion()) + '\n' + PREAMBLE_SCRIPT;
 
   test('preamble bash checks for routing section in CLAUDE.md and AGENTS.md', () => {
     // #2500: the probe iterates CLAUDE.md AND AGENTS.md — non-Claude hosts

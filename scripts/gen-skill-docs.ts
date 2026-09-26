@@ -16,6 +16,7 @@ import * as path from 'path';
 import type { Host, TemplateContext } from './resolvers/types';
 import { HOST_PATHS } from './resolvers/types';
 import { RESOLVERS } from './resolvers/index';
+import { ON_DEMAND_SECTIONS, onDemandSectionRelPath, renderOnDemandFile } from './resolvers/preamble/on-demand';
 import { ALL_HOST_CONFIGS, ALL_HOST_NAMES, resolveHostArg, getHostConfig } from '../hosts/index';
 import type { HostConfig } from './host-config';
 
@@ -1053,6 +1054,35 @@ for (const currentHost of hostsToRun) {
         lines: content.split('\n').length,
         tokens: Math.round(content.length / 4),
       });
+    }
+
+    // ─── On-demand preamble sections (preamble/on-demand.ts) ───
+    // Claude skills carry a gate pointer to preamble/sections/<id>.md; other
+    // hosts inline the body, so the files are generated for Claude only. Same
+    // DRY_RUN freshness handling as the skill sections above.
+    if (currentHost === 'claude') {
+      const odCtx = {
+        skillName: 'paysec', tmplPath: 'scripts/resolvers/preamble/on-demand.ts',
+        host: 'claude', paths: HOST_PATHS['claude'],
+      } as TemplateContext;
+      for (const { id } of ON_DEMAND_SECTIONS) {
+        const outputPath = path.join(OUT_DIR || ROOT, onDemandSectionRelPath(id));
+        const content = rewriteSectionBase(renderOnDemandFile(odCtx, id));
+        const relOutput = path.relative(OUT_DIR || ROOT, outputPath);
+        if (DRY_RUN) {
+          const existing = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, 'utf-8') : '';
+          if (existing !== content) {
+            console.log(`STALE: ${relOutput}`);
+            hasChanges = true;
+          } else {
+            console.log(`FRESH: ${relOutput}`);
+          }
+        } else {
+          fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+          fs.writeFileSync(outputPath, content);
+          console.log(`GENERATED: ${relOutput}`);
+        }
+      }
     }
 
     // Generate the OpenClaw orchestrator-injection docs (paysec-lite / paysec-full /

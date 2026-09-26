@@ -103,7 +103,10 @@ describe('Writing Style preamble section', () => {
 
   test('tier 2+ preamble migration-prompt block appears', () => {
     const out = generatePreamble(makeCtx('claude', 2));
-    expect(out).toContain('WRITING_STYLE_PENDING');
-    expect(out).toMatch(/writing-style-prompt-pending/);
+    // On Claude the one-time prompt is a gate pointer to its on-demand file.
+    expect(out).toContain('If `WRITING_STYLE_PENDING` is `yes`: Read `~/.claude/skills/paysec/preamble/sections/writing-style-migration.md`');
+    const file = fs.readFileSync(path.join(import.meta.dir, '..', 'preamble', 'sections', 'writing-style-migration.md'), 'utf-8');
+    expect(file).toContain('WRITING_STYLE_PENDING');
+    expect(file).toMatch(/writing-style-prompt-pending/);
   });
 });

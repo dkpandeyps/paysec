@@ -29,14 +29,9 @@ import {
 } from './preamble/generate-completion-status';
 
 // One-time onboarding prompts
-import { generateLakeIntro } from './preamble/generate-lake-intro';
 import { generateTelemetryPrompt } from './preamble/generate-telemetry-prompt';
-import { generateProactivePrompt } from './preamble/generate-proactive-prompt';
-import { generateFirstRunGuidance } from './preamble/generate-first-run-guidance';
-import { generateRoutingInjection } from './preamble/generate-routing-injection';
-import { generateVendoringDeprecation } from './preamble/generate-vendoring-deprecation';
+import { renderOnDemand } from './preamble/on-demand';
 import { generateSpawnedSessionCheck } from './preamble/generate-spawned-session-check';
-import { generateWritingStyleMigration } from './preamble/generate-writing-style-migration';
 
 // Host-specific instructions
 import { generateBrainHealthInstruction } from './preamble/generate-brain-health-instruction';
@@ -96,13 +91,15 @@ export function generatePreamble(ctx: TemplateContext): string {
     // (not interactive-gated); the text applies universally.
     generatePlanModeInfo(ctx),
     generateUpgradeCheck(ctx),
-    generateWritingStyleMigration(ctx),
-    generateLakeIntro(),
+    // One-time onboarding flows: gate pointer on Claude, inline elsewhere
+    // (see preamble/on-demand.ts). Order unchanged.
+    renderOnDemand(ctx, 'writing-style-migration'),
+    renderOnDemand(ctx, 'lake-intro'),
     generateTelemetryPrompt(ctx),
-    generateProactivePrompt(ctx),
-    generateFirstRunGuidance(ctx),
-    generateRoutingInjection(ctx),
-    generateVendoringDeprecation(ctx),
+    renderOnDemand(ctx, 'proactive-prompt'),
+    renderOnDemand(ctx, 'first-run-guidance'),
+    renderOnDemand(ctx, 'routing-injection'),
+    renderOnDemand(ctx, 'vendoring-deprecation'),
     generateSpawnedSessionCheck(),
     generateBrainHealthInstruction(ctx),
     // AskUserQuestion Format renders BEFORE the model overlay so the pacing rule

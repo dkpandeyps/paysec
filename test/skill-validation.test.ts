@@ -11,9 +11,19 @@ const ROOT = path.resolve(import.meta.dir, '..');
 // carries a one-line call to it. Checks for "what a skill runs at start"
 // read the SKILL.md plus that script.
 const PREAMBLE_SCRIPT = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-preamble'), 'utf-8');
+// One-time onboarding sections are generated to preamble/sections/<id>.md and
+// referenced from each Claude SKILL.md by a gate pointer (preamble/on-demand.ts).
+const ON_DEMAND_DIR = path.join(ROOT, 'preamble', 'sections');
+function withOnDemand(text: string): string {
+  let out = text;
+  for (const f of fs.readdirSync(ON_DEMAND_DIR).sort()) {
+    if (text.includes(`preamble/sections/${f}`)) out += '\n' + fs.readFileSync(path.join(ON_DEMAND_DIR, f), 'utf-8');
+  }
+  return out;
+}
 function readSkillWithPreamble(file: string): string {
   const md = fs.readFileSync(file, 'utf-8');
-  return md.includes('/paysec-preamble"') ? `${md}\n${PREAMBLE_SCRIPT}` : md;
+  return withOnDemand(md.includes('/paysec-preamble"') ? `${md}\n${PREAMBLE_SCRIPT}` : md);
 }
 
 // Carved-skill aware (v2 plan T9 / Phase B): a carved skill is a skeleton SKILL.md

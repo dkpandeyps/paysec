@@ -153,6 +153,8 @@ describe('first-run-guidance preamble wiring (generated)', () => {
   const md = fs.readFileSync(path.join(ROOT, 'ship-pr', 'SKILL.md'), 'utf-8');
   // The detection bash runs inside bin/paysec-preamble, which ship-pr calls.
   const probe = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-preamble'), 'utf-8');
+  // The guidance body is an on-demand file behind a gate pointer (preamble/on-demand.ts).
+  const guidance = fs.readFileSync(path.join(ROOT, 'preamble', 'sections', 'first-run-guidance.md'), 'utf-8');
 
   test('detection is gated to the first-ever run only (ACTIVATED=no, not headless)', () => {
     expect(md).toContain('"$_PAYSEC_PREAMBLE" --skill ship-pr ');
@@ -162,13 +164,14 @@ describe('first-run-guidance preamble wiring (generated)', () => {
 
   test('emits the unified first-run guidance section branching on ACTIVATED', () => {
     expect(md).toContain('## First-run guidance (one-time)');
-    expect(md).toContain('`ACTIVATED` is `no`'); // P4 scaffold branch
-    expect(md).toContain('`ACTIVATED` is `yes` AND `FIRST_LOOP_SHOWN` is `no`'); // P3 tip branch
+    expect(md).toContain('If `ACTIVATED` is `no` OR `FIRST_LOOP_SHOWN` is `no`: Read `~/.claude/skills/paysec/preamble/sections/first-run-guidance.md`');
+    expect(guidance).toContain('`ACTIVATED` is `no`'); // P4 scaffold branch
+    expect(guidance).toContain('`ACTIVATED` is `yes` AND `FIRST_LOOP_SHOWN` is `no`'); // P3 tip branch
   });
 
   test('marks activated + logs the scaffold telemetry only on the shown path', () => {
-    expect(md).toContain('first_task_scaffold_shown');
-    expect(md).toContain('touch ~/.paysec/.activated');
-    expect(md).toContain('touch ~/.paysec/.first-loop-tip-shown');
+    expect(guidance).toContain('first_task_scaffold_shown');
+    expect(guidance).toContain('touch ~/.paysec/.activated');
+    expect(guidance).toContain('touch ~/.paysec/.first-loop-tip-shown');
   });
 });
