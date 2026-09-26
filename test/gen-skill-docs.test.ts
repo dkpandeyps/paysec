@@ -3640,9 +3640,24 @@ describe('PREAMBLE resolution requires declared preamble-tier', () => {
 // scope (.projects["/abs/path"].mcpServers — what `claude mcp add` without
 // --scope user writes). The rendered brain-sync block previously read only
 // user scope, so a correctly configured project-scoped brain was invisible.
+// The detection bash lives in bin/paysec-artifacts-sync-start (the rendered
+// block is a one-line call to it), so these tests read and execute that file.
 // ---------------------------------------------------------------------------
 describe('brain-sync block reads project-scoped MCP registrations (#2499)', () => {
-  const rendered = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
+  const rendered = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-artifacts-sync-start'), 'utf-8');
+
+  test('rendered SKILL.md calls the sync script instead of inlining its bash', () => {
+    const skill = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
+    const block = skill.slice(skill.indexOf('## Artifacts Sync (skill start)'));
+    // Missing script (install without $HOME/.claude/skills/paysec) keeps the
+    // pre-extraction behavior: config unreadable => sync reported off.
+    expect(block).toContain('bin/paysec-artifacts-sync-start" 2>/dev/null || echo "ARTIFACTS_SYNC: off"');
+    expect(skill).not.toContain('_GBRAIN_MCP_ENTRY=$(');
+    expect(skill).not.toContain('_BRAIN_LAST_PULL_FILE');
+    // The stop-gate answer block runs in a fresh shell, so it must not rely on
+    // variables set by the sync call.
+    expect(block.slice(0, block.indexOf('At skill END'))).not.toContain('$_BRAIN_CONFIG_BIN');
+  });
 
   test('rendered _GBRAIN_MCP_ENTRY jq resolves project scope with nearest-ancestor cwd match', () => {
     const line = rendered.split('\n').find((l) => l.includes('_GBRAIN_MCP_ENTRY=$('));

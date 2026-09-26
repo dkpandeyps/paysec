@@ -13,11 +13,10 @@
  * tree for outbound network ops and requires every hit to be either wired
  * or in the REASONED exemption list — there is no KNOWN_UNWIRED bucket.
  *
- * Out of scope, documented here on purpose: the preamble-generated brain
- * sync block (scripts/resolvers/preamble/generate-brain-sync-block.ts)
- * renders a `git fetch` into skill PROSE that the agent executes — it is
- * agent-executed instructions, not a paysec binary, so it is covered by the
- * skill-prose exemption below rather than a receipt.
+ * The preamble brain-sync block (scripts/resolvers/preamble/
+ * generate-brain-sync-block.ts) renders a one-line call to
+ * bin/paysec-artifacts-sync-start; that script's daily `git fetch` is a
+ * wired shell sink (receipted fail-closed, like paysec-brain-sync).
  *
  * Pattern mirrors test/hermetic-wiring.test.ts: read source files as text,
  * assert invariants on their contents. Brittle by design — renaming a
@@ -88,6 +87,7 @@ const SHELL_SINKS = [
   'bin/paysec-telemetry-sync',
   'bin/paysec-update-check',
   'bin/paysec-brain-sync',
+  'bin/paysec-artifacts-sync-start',
   'bin/paysec-gbrain-mcp-verify',
   'bin/paysec-security-dashboard',
   'bin/paysec-community-dashboard',
