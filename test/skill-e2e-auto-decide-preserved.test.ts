@@ -20,7 +20,7 @@
  *   - tmpDir as PAYSEC_HOME (isolated state, doesn't touch the user's
  *     real ~/.paysec)
  *   - question_tuning=true in the tmp config
- *   - preference for plan-ceo-review-mode → never-ask (source: tune-questions)
+ *   - preference for plan-business-review-mode → never-ask (source: tune-questions)
  *
  * Spawn:
  *   claude --permission-mode plan --disallowedTools AskUserQuestion
@@ -74,13 +74,13 @@ describeE2E('AUTO_DECIDE opt-in preserved under Conductor flags (periodic)', () 
       // paysec-slug emits `eval`-able shell exports like `SLUG=garrytan-paysec`.
       const slug = (slugRes.stdout.match(/SLUG=([^\s;]+)/)?.[1] ?? 'unknown').replace(/['"]/g, '');
 
-      // 3. Write the preference: plan-ceo-review-mode → never-ask. The
+      // 3. Write the preference: plan-business-review-mode → never-ask. The
       //    'tune-questions' source bypasses the inline-user origin gate.
       const prefBin = path.join(ROOT, 'bin', 'paysec-question-preference');
       const writeRes = spawnSync(
         prefBin,
         ['--write', JSON.stringify({
-          question_id: 'plan-ceo-review-mode',
+          question_id: 'plan-business-review-mode',
           preference: 'never-ask',
           source: 'tune-questions',
         })],

@@ -99,79 +99,79 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /ship-pr — pre-landing review, deploy, PR creation
   // -----------------------------------------------------------------------
-  'ship-release-pipeline-missing': {
-    id: 'ship-release-pipeline-missing',
-    skill: 'ship',
+  'ship-pr-release-pipeline-missing': {
+    id: 'ship-pr-release-pipeline-missing',
+    skill: 'ship-pr',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'defer', 'skip'],
     signal_key: 'distribution-care',
     description: "New artifact added without CI/CD release pipeline — add now, defer to TODOs, or skip?",
   },
-  'ship-test-failure-triage': {
-    id: 'ship-test-failure-triage',
-    skill: 'ship',
+  'ship-pr-test-failure-triage': {
+    id: 'ship-pr-test-failure-triage',
+    skill: 'ship-pr',
     category: 'approval',
     door_type: 'one-way',
     options: ['fix-now', 'investigate', 'ack-and-ship'],
     signal_key: 'test-discipline',
     description: "Failing tests detected — fix before shipping or investigate root cause?",
   },
-  'ship-pre-landing-review-fix': {
-    id: 'ship-pre-landing-review-fix',
-    skill: 'ship',
+  'ship-pr-pre-landing-review-fix': {
+    id: 'ship-pr-pre-landing-review-fix',
+    skill: 'ship-pr',
     category: 'approval',
     door_type: 'two-way',
     options: ['fix-now', 'skip'],
     signal_key: 'code-quality-care',
     description: "Pre-landing review flagged an issue — fix now or ship as-is?",
   },
-  'ship-greptile-comment-valid': {
-    id: 'ship-greptile-comment-valid',
-    skill: 'ship',
+  'ship-pr-greptile-comment-valid': {
+    id: 'ship-pr-greptile-comment-valid',
+    skill: 'ship-pr',
     category: 'approval',
     door_type: 'two-way',
     options: ['fix-now', 'ack-and-ship', 'false-positive'],
     signal_key: 'code-quality-care',
     description: "Greptile flagged a valid issue — fix, ack and ship, or mark false positive?",
   },
-  'ship-greptile-comment-false-positive': {
-    id: 'ship-greptile-comment-false-positive',
-    skill: 'ship',
+  'ship-pr-greptile-comment-false-positive': {
+    id: 'ship-pr-greptile-comment-false-positive',
+    skill: 'ship-pr',
     category: 'approval',
     door_type: 'two-way',
     options: ['reply', 'fix-anyway', 'ignore'],
     description: "Greptile comment looks like a false positive — reply to explain, fix anyway, or ignore silently?",
   },
-  'ship-todos-create': {
-    id: 'ship-todos-create',
-    skill: 'ship',
+  'ship-pr-todos-create': {
+    id: 'ship-pr-todos-create',
+    skill: 'ship-pr',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'skip'],
     description: "No TODOS.md found — create a skeleton file now?",
   },
-  'ship-todos-reorganize': {
-    id: 'ship-todos-reorganize',
-    skill: 'ship',
+  'ship-pr-todos-reorganize': {
+    id: 'ship-pr-todos-reorganize',
+    skill: 'ship-pr',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'skip'],
     signal_key: 'detail-preference',
     description: "TODOS.md doesn't follow the recommended structure — reorganize now?",
   },
-  'ship-changelog-voice-polish': {
-    id: 'ship-changelog-voice-polish',
-    skill: 'ship',
+  'ship-pr-changelog-voice-polish': {
+    id: 'ship-pr-changelog-voice-polish',
+    skill: 'ship-pr',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'skip'],
     signal_key: 'detail-preference',
     description: "CHANGELOG entry could be polished for voice — apply edits?",
   },
-  'ship-version-bump-tier': {
-    id: 'ship-version-bump-tier',
-    skill: 'ship',
+  'ship-pr-version-bump-tier': {
+    id: 'ship-pr-version-bump-tier',
+    skill: 'ship-pr',
     category: 'routing',
     door_type: 'two-way',
     options: ['major', 'minor', 'patch'],
@@ -181,26 +181,26 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /pr-review — pre-landing code review
   // -----------------------------------------------------------------------
-  'review-finding-fix': {
-    id: 'review-finding-fix',
-    skill: 'review',
+  'pr-review-finding-fix': {
+    id: 'pr-review-finding-fix',
+    skill: 'pr-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['fix-now', 'ack-and-ship', 'false-positive'],
     signal_key: 'code-quality-care',
     description: "Review finding — fix now, ack and ship, or false positive?",
   },
-  'review-sql-safety': {
-    id: 'review-sql-safety',
-    skill: 'review',
+  'pr-review-sql-safety': {
+    id: 'pr-review-sql-safety',
+    skill: 'pr-review',
     category: 'approval',
     door_type: 'one-way',
     options: ['fix-now', 'investigate'],
     description: "Potential SQL injection / unsafe query — fix or investigate further?",
   },
-  'review-llm-trust-boundary': {
-    id: 'review-llm-trust-boundary',
-    skill: 'review',
+  'pr-review-llm-trust-boundary': {
+    id: 'pr-review-llm-trust-boundary',
+    skill: 'pr-review',
     category: 'approval',
     door_type: 'one-way',
     options: ['fix-now', 'investigate'],
@@ -210,8 +210,8 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /idea-review — YC diagnostic + builder brainstorm
   // -----------------------------------------------------------------------
-  'office-hours-mode-goal': {
-    id: 'office-hours-mode-goal',
+  'idea-review-mode-goal': {
+    id: 'idea-review-mode-goal',
     skill: 'idea-review',
     category: 'routing',
     door_type: 'two-way',
@@ -219,32 +219,32 @@ export const QUESTIONS = {
     signal_key: 'session-mode',
     description: "What's your goal with this session? (Sets mode: startup vs builder)",
   },
-  'office-hours-premise-confirm': {
-    id: 'office-hours-premise-confirm',
+  'idea-review-premise-confirm': {
+    id: 'idea-review-premise-confirm',
     skill: 'idea-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'reject'],
     description: "Premise check — agree or disagree?",
   },
-  'office-hours-cross-model-run': {
-    id: 'office-hours-cross-model-run',
+  'idea-review-cross-model-run': {
+    id: 'idea-review-cross-model-run',
     skill: 'idea-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'skip'],
     description: "Want a second-opinion cross-model review of your brainstorm?",
   },
-  'office-hours-landscape-privacy-gate': {
-    id: 'office-hours-landscape-privacy-gate',
+  'idea-review-landscape-privacy-gate': {
+    id: 'idea-review-landscape-privacy-gate',
     skill: 'idea-review',
     category: 'approval',
     door_type: 'one-way',
     options: ['accept', 'skip'],
     description: "Run a web search for landscape awareness? (Sends generalized terms to search provider.)",
   },
-  'office-hours-approach-choose': {
-    id: 'office-hours-approach-choose',
+  'idea-review-approach-choose': {
+    id: 'idea-review-approach-choose',
     skill: 'idea-review',
     category: 'routing',
     door_type: 'two-way',
@@ -252,8 +252,8 @@ export const QUESTIONS = {
     signal_key: 'scope-appetite',
     description: "Which implementation approach? (minimal viable vs ideal architecture vs creative lateral)",
   },
-  'office-hours-design-doc-approve': {
-    id: 'office-hours-design-doc-approve',
+  'idea-review-design-doc-approve': {
+    id: 'idea-review-design-doc-approve',
     skill: 'idea-review',
     category: 'approval',
     door_type: 'two-way',
@@ -264,8 +264,8 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /plan-business-review — scope & strategy
   // -----------------------------------------------------------------------
-  'plan-ceo-review-mode': {
-    id: 'plan-ceo-review-mode',
+  'plan-business-review-mode': {
+    id: 'plan-business-review-mode',
     skill: 'plan-business-review',
     category: 'routing',
     door_type: 'two-way',
@@ -273,8 +273,8 @@ export const QUESTIONS = {
     signal_key: 'scope-appetite',
     description: "Review mode: push scope up, cherry-pick expansions, hold scope, or cut to minimum?",
   },
-  'plan-ceo-review-expansion-proposal': {
-    id: 'plan-ceo-review-expansion-proposal',
+  'plan-business-review-expansion-proposal': {
+    id: 'plan-business-review-expansion-proposal',
     skill: 'plan-business-review',
     category: 'cherry-pick',
     door_type: 'two-way',
@@ -282,24 +282,24 @@ export const QUESTIONS = {
     signal_key: 'scope-appetite',
     description: "Scope expansion proposal — add to plan, defer to TODOs, or skip?",
   },
-  'plan-ceo-review-premise-revise': {
-    id: 'plan-ceo-review-premise-revise',
+  'plan-business-review-premise-revise': {
+    id: 'plan-business-review-premise-revise',
     skill: 'plan-business-review',
     category: 'approval',
     door_type: 'one-way',
     options: ['revise', 'hold'],
     description: "Cross-model challenged an agreed premise — revise or keep?",
   },
-  'plan-ceo-review-outside-voice': {
-    id: 'plan-ceo-review-outside-voice',
+  'plan-business-review-outside-voice': {
+    id: 'plan-business-review-outside-voice',
     skill: 'plan-business-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'skip'],
     description: "Get an outside-voice second opinion on the plan?",
   },
-  'plan-ceo-review-promote-to-docs': {
-    id: 'plan-ceo-review-promote-to-docs',
+  'plan-business-review-promote-to-docs': {
+    id: 'plan-business-review-promote-to-docs',
     skill: 'plan-business-review',
     category: 'approval',
     door_type: 'two-way',
@@ -310,8 +310,8 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /plan-tech-review — architecture & tests (required gate)
   // -----------------------------------------------------------------------
-  'plan-eng-review-arch-finding': {
-    id: 'plan-eng-review-arch-finding',
+  'plan-tech-review-arch-finding': {
+    id: 'plan-tech-review-arch-finding',
     skill: 'plan-tech-review',
     category: 'approval',
     door_type: 'one-way',
@@ -319,8 +319,8 @@ export const QUESTIONS = {
     signal_key: 'architecture-care',
     description: "Architecture finding — fix, defer, or accept the risk?",
   },
-  'plan-eng-review-scope-reduce': {
-    id: 'plan-eng-review-scope-reduce',
+  'plan-tech-review-scope-reduce': {
+    id: 'plan-tech-review-scope-reduce',
     skill: 'plan-tech-review',
     category: 'routing',
     door_type: 'two-way',
@@ -328,8 +328,8 @@ export const QUESTIONS = {
     signal_key: 'scope-appetite',
     description: "Plan touches 8+ files — reduce scope or hold?",
   },
-  'plan-eng-review-test-gap': {
-    id: 'plan-eng-review-test-gap',
+  'plan-tech-review-test-gap': {
+    id: 'plan-tech-review-test-gap',
     skill: 'plan-tech-review',
     category: 'approval',
     door_type: 'two-way',
@@ -337,16 +337,16 @@ export const QUESTIONS = {
     signal_key: 'test-discipline',
     description: "Test gap identified — add now, defer, or skip?",
   },
-  'plan-eng-review-outside-voice': {
-    id: 'plan-eng-review-outside-voice',
+  'plan-tech-review-outside-voice': {
+    id: 'plan-tech-review-outside-voice',
     skill: 'plan-tech-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'skip'],
     description: "Get an outside-voice second opinion on the plan?",
   },
-  'plan-eng-review-todo-add': {
-    id: 'plan-eng-review-todo-add',
+  'plan-tech-review-todo-add': {
+    id: 'plan-tech-review-todo-add',
     skill: 'plan-tech-review',
     category: 'cherry-pick',
     door_type: 'two-way',
@@ -357,8 +357,8 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /plan-ux-review — UI/UX plan audit
   // -----------------------------------------------------------------------
-  'plan-design-review-mode': {
-    id: 'plan-design-review-mode',
+  'plan-ux-review-mode': {
+    id: 'plan-ux-review-mode',
     skill: 'plan-ux-review',
     category: 'routing',
     door_type: 'two-way',
@@ -366,8 +366,8 @@ export const QUESTIONS = {
     signal_key: 'design-care',
     description: "Design review depth: expand for competitive edge, polish every touchpoint, or triage critical gaps?",
   },
-  'plan-design-review-fix': {
-    id: 'plan-design-review-fix',
+  'plan-ux-review-fix': {
+    id: 'plan-ux-review-fix',
     skill: 'plan-ux-review',
     category: 'approval',
     door_type: 'two-way',
@@ -379,15 +379,15 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /plan-dx-review — developer experience plan audit
   // -----------------------------------------------------------------------
-  'plan-devex-review-persona': {
-    id: 'plan-devex-review-persona',
+  'plan-dx-review-persona': {
+    id: 'plan-dx-review-persona',
     skill: 'plan-dx-review',
     category: 'clarification',
     door_type: 'two-way',
     description: "Who is your target developer? (Determines persona for review.)",
   },
-  'plan-devex-review-mode': {
-    id: 'plan-devex-review-mode',
+  'plan-dx-review-mode': {
+    id: 'plan-dx-review-mode',
     skill: 'plan-dx-review',
     category: 'routing',
     door_type: 'two-way',
@@ -395,8 +395,8 @@ export const QUESTIONS = {
     signal_key: 'devex-care',
     description: "DX review depth: expand for competitive advantage, polish every touchpoint, or triage critical gaps?",
   },
-  'plan-devex-review-friction-fix': {
-    id: 'plan-devex-review-friction-fix',
+  'plan-dx-review-friction-fix': {
+    id: 'plan-dx-review-friction-fix',
     skill: 'plan-dx-review',
     category: 'approval',
     door_type: 'two-way',
@@ -408,18 +408,18 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /qa-fix — QA testing
   // -----------------------------------------------------------------------
-  'qa-bug-fix-scope': {
-    id: 'qa-bug-fix-scope',
-    skill: 'qa',
+  'qa-fix-bug-fix-scope': {
+    id: 'qa-fix-bug-fix-scope',
+    skill: 'qa-fix',
     category: 'approval',
     door_type: 'two-way',
     options: ['fix-now', 'defer', 'skip'],
     signal_key: 'code-quality-care',
     description: "Bug found during QA — fix now, defer, or skip?",
   },
-  'qa-tier': {
-    id: 'qa-tier',
-    skill: 'qa',
+  'qa-fix-tier': {
+    id: 'qa-fix-tier',
+    skill: 'qa-fix',
     category: 'routing',
     door_type: 'two-way',
     options: ['quick', 'standard', 'deep'],
@@ -429,17 +429,17 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /debug-root-cause — root-cause debugging
   // -----------------------------------------------------------------------
-  'investigate-hypothesis-confirm': {
-    id: 'investigate-hypothesis-confirm',
-    skill: 'investigate',
+  'debug-root-cause-hypothesis-confirm': {
+    id: 'debug-root-cause-hypothesis-confirm',
+    skill: 'debug-root-cause',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'reject', 'refine'],
     description: "Root-cause hypothesis — accept, reject, or refine before proceeding to fix?",
   },
-  'investigate-fix-apply': {
-    id: 'investigate-fix-apply',
-    skill: 'investigate',
+  'debug-root-cause-fix-apply': {
+    id: 'debug-root-cause-fix-apply',
+    skill: 'debug-root-cause',
     category: 'approval',
     door_type: 'one-way',
     options: ['accept', 'reject'],
@@ -449,8 +449,8 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /merge-and-deploy — merge + deploy + verify
   // -----------------------------------------------------------------------
-  'land-and-deploy-merge-confirm': {
-    id: 'land-and-deploy-merge-confirm',
+  'merge-and-deploy-merge-confirm': {
+    id: 'merge-and-deploy-merge-confirm',
     skill: 'merge-and-deploy',
     category: 'approval',
     door_type: 'one-way',
@@ -458,8 +458,8 @@ export const QUESTIONS = {
     signal_key: 'decision-autonomy',
     description: "Merge this PR to base branch?",
   },
-  'land-and-deploy-rollback': {
-    id: 'land-and-deploy-rollback',
+  'merge-and-deploy-rollback': {
+    id: 'merge-and-deploy-rollback',
     skill: 'merge-and-deploy',
     category: 'approval',
     door_type: 'one-way',
@@ -471,16 +471,16 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /security-audit — security audit
   // -----------------------------------------------------------------------
-  'cso-global-scan-approval': {
-    id: 'cso-global-scan-approval',
+  'security-audit-global-scan-approval': {
+    id: 'security-audit-global-scan-approval',
     skill: 'security-audit',
     category: 'approval',
     door_type: 'one-way',
     options: ['accept', 'deny'],
     description: "Run a global security scan? (Scans files outside this branch.)",
   },
-  'cso-finding-fix': {
-    id: 'cso-finding-fix',
+  'security-audit-finding-fix': {
+    id: 'security-audit-finding-fix',
     skill: 'security-audit',
     category: 'approval',
     door_type: 'one-way',
@@ -555,23 +555,23 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /tune-questions — the skill itself
   // -----------------------------------------------------------------------
-  'plan-tune-enable-setup': {
-    id: 'plan-tune-enable-setup',
+  'tune-questions-enable-setup': {
+    id: 'tune-questions-enable-setup',
     skill: 'tune-questions',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'skip'],
     description: "Question tuning is off — enable it and set up your profile?",
   },
-  'plan-tune-declared-dimension': {
-    id: 'plan-tune-declared-dimension',
+  'tune-questions-declared-dimension': {
+    id: 'tune-questions-declared-dimension',
     skill: 'tune-questions',
     category: 'clarification',
     door_type: 'two-way',
     description: "Self-declaration question (one per dimension during /tune-questions setup)",
   },
-  'plan-tune-confirm-mutation': {
-    id: 'plan-tune-confirm-mutation',
+  'tune-questions-confirm-mutation': {
+    id: 'tune-questions-confirm-mutation',
     skill: 'tune-questions',
     category: 'approval',
     door_type: 'two-way',
@@ -582,16 +582,16 @@ export const QUESTIONS = {
   // -----------------------------------------------------------------------
   // /auto-plan-review — sequential auto-review
   // -----------------------------------------------------------------------
-  'autoplan-taste-decision': {
-    id: 'autoplan-taste-decision',
+  'auto-plan-review-taste-decision': {
+    id: 'auto-plan-review-taste-decision',
     skill: 'auto-plan-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'override', 'investigate'],
     description: "Autoplan surfaced a taste decision at the final gate — accept, override, or investigate?",
   },
-  'autoplan-user-challenge': {
-    id: 'autoplan-user-challenge',
+  'auto-plan-review-user-challenge': {
+    id: 'auto-plan-review-user-challenge',
     skill: 'auto-plan-review',
     category: 'approval',
     door_type: 'one-way',

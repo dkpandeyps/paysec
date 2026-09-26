@@ -117,9 +117,9 @@ describe('question-registry schema', () => {
 
 describe('question-registry helpers', () => {
   test('getQuestion returns entry for known id', () => {
-    const q = getQuestion('ship-test-failure-triage');
+    const q = getQuestion('ship-pr-test-failure-triage');
     expect(q).toBeDefined();
-    expect(q?.skill).toBe('ship');
+    expect(q?.skill).toBe('ship-pr');
     expect(q?.door_type).toBe('one-way');
   });
 
@@ -129,11 +129,11 @@ describe('question-registry helpers', () => {
 
   test('getOneWayDoorIds returns Set of one-way ids', () => {
     const ids = getOneWayDoorIds();
-    expect(ids.has('ship-test-failure-triage')).toBe(true);
-    expect(ids.has('review-sql-safety')).toBe(true);
-    expect(ids.has('land-and-deploy-merge-confirm')).toBe(true);
+    expect(ids.has('ship-pr-test-failure-triage')).toBe(true);
+    expect(ids.has('pr-review-sql-safety')).toBe(true);
+    expect(ids.has('merge-and-deploy-merge-confirm')).toBe(true);
     // And does NOT include a known two-way door:
-    expect(ids.has('ship-changelog-voice-polish')).toBe(false);
+    expect(ids.has('ship-pr-changelog-voice-polish')).toBe(false);
   });
 
   test('getAllRegisteredIds count matches QUESTIONS keys', () => {
@@ -159,18 +159,18 @@ describe('one-way door safety', () => {
   test('every destructive/security question is declared one-way', () => {
     // Safety-critical question ids must exist and be one-way.
     const mustBeOneWay = [
-      'ship-test-failure-triage',         // shipping broken tests
-      'review-sql-safety',                 // SQL injection path
-      'review-llm-trust-boundary',         // LLM trust boundary
-      'cso-global-scan-approval',          // scans outside branch
-      'cso-finding-fix',                   // security finding
-      'land-and-deploy-merge-confirm',     // actual merge
-      'land-and-deploy-rollback',          // rollback decision
-      'investigate-fix-apply',             // applying a fix
-      'plan-ceo-review-premise-revise',    // changing agreed premise
-      'plan-eng-review-arch-finding',      // architecture change
-      'office-hours-landscape-privacy-gate',// sending data to search provider
-      'autoplan-user-challenge',           // scope direction change
+      'ship-pr-test-failure-triage',         // shipping broken tests
+      'pr-review-sql-safety',                 // SQL injection path
+      'pr-review-llm-trust-boundary',         // LLM trust boundary
+      'security-audit-global-scan-approval',          // scans outside branch
+      'security-audit-finding-fix',                   // security finding
+      'merge-and-deploy-merge-confirm',     // actual merge
+      'merge-and-deploy-rollback',          // rollback decision
+      'debug-root-cause-fix-apply',             // applying a fix
+      'plan-business-review-premise-revise',    // changing agreed premise
+      'plan-tech-review-arch-finding',      // architecture change
+      'idea-review-landscape-privacy-gate',// sending data to search provider
+      'auto-plan-review-user-challenge',           // scope direction change
     ];
     const oneWayIds = getOneWayDoorIds();
     for (const id of mustBeOneWay) {
@@ -218,9 +218,9 @@ describe('registry breadth', () => {
   });
 
   test('/tune-questions itself registers its enable + setup + mutation-confirm', () => {
-    expect(getQuestion('plan-tune-enable-setup')).toBeDefined();
-    expect(getQuestion('plan-tune-declared-dimension')).toBeDefined();
-    expect(getQuestion('plan-tune-confirm-mutation')).toBeDefined();
+    expect(getQuestion('tune-questions-enable-setup')).toBeDefined();
+    expect(getQuestion('tune-questions-declared-dimension')).toBeDefined();
+    expect(getQuestion('tune-questions-confirm-mutation')).toBeDefined();
   });
 });
 
@@ -392,11 +392,11 @@ describe('AskUserQuestion template coverage (informational)', () => {
 
 describe('one-way-doors classifier', () => {
   test('registry lookup wins when question_id is known', () => {
-    const result = classifyQuestion({ question_id: 'ship-test-failure-triage' });
+    const result = classifyQuestion({ question_id: 'ship-pr-test-failure-triage' });
     expect(result.oneWay).toBe(true);
     expect(result.reason).toBe('registry');
 
-    const safeResult = classifyQuestion({ question_id: 'ship-changelog-voice-polish' });
+    const safeResult = classifyQuestion({ question_id: 'ship-pr-changelog-voice-polish' });
     expect(safeResult.oneWay).toBe(false);
     expect(safeResult.reason).toBe('registry');
   });
@@ -558,7 +558,7 @@ describe('end-to-end pipeline (binaries working together)', () => {
           [
             JSON.stringify({
               skill: 'plan-business-review',
-              question_id: 'plan-ceo-review-mode',
+              question_id: 'plan-business-review-mode',
               question_summary: 'mode?',
               user_choice: 'expand',
               session_id: `s${i}`,

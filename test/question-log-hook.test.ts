@@ -122,7 +122,7 @@ describe('PostToolUse hook (native AskUserQuestion)', () => {
       tool_input: {
         questions: [
           {
-            question: 'D2 — Marker test <paysec-qid:ship-test-failure-triage>\nRecommendation: A',
+            question: 'D2 — Marker test <paysec-qid:ship-pr-test-failure-triage>\nRecommendation: A',
             options: ['A) Fix now (recommended)', 'B) Investigate', 'C) Ack and ship'],
           },
         ],
@@ -132,7 +132,7 @@ describe('PostToolUse hook (native AskUserQuestion)', () => {
     });
     const events = readLog();
     expect(events.length).toBe(1);
-    expect(events[0].question_id).toBe('ship-test-failure-triage');
+    expect(events[0].question_id).toBe('ship-pr-test-failure-triage');
     // Marker stripped from summary
     expect((events[0].question_summary as string).includes('<paysec-qid:')).toBe(false);
   });

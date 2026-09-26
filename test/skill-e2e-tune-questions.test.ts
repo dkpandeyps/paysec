@@ -78,7 +78,7 @@ describeIfSelected('PlanTune E2E', ['plan-tune-inspect'], () => {
       {
         ts: '2026-04-10T10:00:00Z',
         skill: 'plan-business-review',
-        question_id: 'plan-ceo-review-mode',
+        question_id: 'plan-business-review-mode',
         question_summary: 'Which review mode?',
         category: 'routing',
         door_type: 'two-way',
@@ -91,7 +91,7 @@ describeIfSelected('PlanTune E2E', ['plan-tune-inspect'], () => {
       {
         ts: '2026-04-11T10:00:00Z',
         skill: 'ship',
-        question_id: 'ship-test-failure-triage',
+        question_id: 'ship-pr-test-failure-triage',
         question_summary: 'Test failed',
         category: 'approval',
         door_type: 'one-way',
@@ -104,7 +104,7 @@ describeIfSelected('PlanTune E2E', ['plan-tune-inspect'], () => {
       {
         ts: '2026-04-12T10:00:00Z',
         skill: 'ship',
-        question_id: 'ship-changelog-voice-polish',
+        question_id: 'ship-pr-changelog-voice-polish',
         question_summary: 'Polish changelog voice',
         category: 'approval',
         door_type: 'two-way',
@@ -161,9 +161,9 @@ IMPORTANT:
     const output = result.output.toLowerCase();
 
     // Agent must have surfaced at least 2 of the 3 logged question_ids
-    const mentionsCEO = output.includes('plan-ceo-review-mode') || output.includes('review mode');
-    const mentionsShipTest = output.includes('ship-test-failure-triage') || output.includes('test failed');
-    const mentionsChangelog = output.includes('changelog') || output.includes('ship-changelog-voice-polish');
+    const mentionsCEO = output.includes('plan-business-review-mode') || output.includes('review mode');
+    const mentionsShipTest = output.includes('ship-pr-test-failure-triage') || output.includes('test failed');
+    const mentionsChangelog = output.includes('changelog') || output.includes('ship-pr-changelog-voice-polish');
     const foundCount = [mentionsCEO, mentionsShipTest, mentionsChangelog].filter(Boolean).length;
 
     // Agent should note override behavior (user overrode CEO review and changelog polish)

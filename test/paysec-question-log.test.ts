@@ -51,7 +51,7 @@ describe('paysec-question-log — valid payloads', () => {
     const r = run(
       JSON.stringify({
         skill: 'ship',
-        question_id: 'ship-test-failure-triage',
+        question_id: 'ship-pr-test-failure-triage',
         question_summary: 'tests failed',
         user_choice: 'fix-now',
       }),
@@ -61,7 +61,7 @@ describe('paysec-question-log — valid payloads', () => {
     expect(lines.length).toBe(1);
     const rec = JSON.parse(lines[0]);
     expect(rec.skill).toBe('ship');
-    expect(rec.question_id).toBe('ship-test-failure-triage');
+    expect(rec.question_id).toBe('ship-pr-test-failure-triage');
     expect(rec.user_choice).toBe('fix-now');
     expect(rec.ts).toBeDefined();
     expect(new Date(rec.ts).toString()).not.toBe('Invalid Date');
@@ -71,7 +71,7 @@ describe('paysec-question-log — valid payloads', () => {
     const r = run(
       JSON.stringify({
         skill: 'review',
-        question_id: 'review-finding-fix',
+        question_id: 'pr-review-finding-fix',
         question_summary: 'SQL finding',
         category: 'approval',
         door_type: 'two-way',
@@ -90,7 +90,7 @@ describe('paysec-question-log — valid payloads', () => {
     const r = run(
       JSON.stringify({
         skill: 'ship',
-        question_id: 'ship-release-pipeline-missing',
+        question_id: 'ship-pr-release-pipeline-missing',
         question_summary: 'no release pipeline',
         user_choice: 'defer',
         recommended: 'accept',

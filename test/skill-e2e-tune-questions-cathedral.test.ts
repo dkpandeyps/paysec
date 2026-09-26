@@ -130,7 +130,7 @@ describeIfSelected('PlanTune cathedral E2E: hook capture', ['plan-tune-hook-capt
         questions: [
           {
             question:
-              'D1 — Cathedral E2E capture <paysec-qid:ship-test-failure-triage>\nRecommendation: A',
+              'D1 — Cathedral E2E capture <paysec-qid:ship-pr-test-failure-triage>\nRecommendation: A',
             options: ['A) Fix now (recommended)', 'B) Investigate'],
           },
         ],
@@ -154,7 +154,7 @@ describeIfSelected('PlanTune cathedral E2E: hook capture', ['plan-tune-hook-capt
     expect(lines.length).toBeGreaterThanOrEqual(1);
     const evt = JSON.parse(lines[0]);
     expect(evt.source).toBe('hook');
-    expect(evt.question_id).toBe('ship-test-failure-triage');
+    expect(evt.question_id).toBe('ship-pr-test-failure-triage');
   });
 });
 
@@ -170,7 +170,7 @@ describeIfSelected('PlanTune cathedral E2E: enforcement', ['plan-tune-enforcemen
     fs.mkdirSync(path.join(fixture.stateRoot, 'projects', fixture.slug), { recursive: true });
     fs.writeFileSync(
       path.join(fixture.stateRoot, 'projects', fixture.slug, 'question-preferences.json'),
-      JSON.stringify({ 'ship-changelog-voice-polish': 'never-ask' }),
+      JSON.stringify({ 'ship-pr-changelog-voice-polish': 'never-ask' }),
     );
   });
 
@@ -194,7 +194,7 @@ describeIfSelected('PlanTune cathedral E2E: enforcement', ['plan-tune-enforcemen
         questions: [
           {
             question:
-              '<paysec-qid:ship-changelog-voice-polish> Polish CHANGELOG entry?',
+              '<paysec-qid:ship-pr-changelog-voice-polish> Polish CHANGELOG entry?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
@@ -226,7 +226,7 @@ describeIfSelected('PlanTune cathedral E2E: enforcement', ['plan-tune-enforcemen
       .map((l) => JSON.parse(l));
     const auto = events.filter((e) => e.source === 'auto-decided');
     expect(auto.length).toBe(1);
-    expect(auto[0].question_id).toBe('ship-changelog-voice-polish');
+    expect(auto[0].question_id).toBe('ship-pr-changelog-voice-polish');
   });
 });
 
@@ -278,7 +278,7 @@ describeIfSelected('PlanTune cathedral E2E: annotation', ['plan-tune-annotation'
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-todos-reorganize> Reorganize TODOs?',
+            question: '<paysec-qid:ship-pr-todos-reorganize> Reorganize TODOs?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
@@ -326,7 +326,7 @@ describeIfSelected('PlanTune cathedral E2E: codex import', ['plan-tune-codex-imp
         payload: {
           type: 'agent_message',
           message:
-            'D1 — Cathedral import <paysec-qid:plan-eng-review-scope-reduce>\nRecommendation: A\nA) Reduce (recommended)\nB) Keep',
+            'D1 — Cathedral import <paysec-qid:plan-tech-review-scope-reduce>\nRecommendation: A\nA) Reduce (recommended)\nB) Keep',
         },
       }),
       JSON.stringify({
@@ -365,7 +365,7 @@ describeIfSelected('PlanTune cathedral E2E: codex import', ['plan-tune-codex-imp
       .map((l) => JSON.parse(l));
     expect(events.length).toBe(1);
     expect(events[0].source).toBe('codex-import-marker');
-    expect(events[0].question_id).toBe('plan-eng-review-scope-reduce');
+    expect(events[0].question_id).toBe('plan-tech-review-scope-reduce');
   });
 });
 
@@ -438,7 +438,7 @@ describeIfSelected('PlanTune cathedral E2E: dream cycle', ['plan-tune-dream-cycl
         questions: [
           {
             question:
-              '<paysec-qid:plan-eng-review-test-gap> Add tests for this gap?',
+              '<paysec-qid:plan-tech-review-test-gap> Add tests for this gap?',
             options: ['A) Add (recommended)', 'B) Skip'],
           },
         ],

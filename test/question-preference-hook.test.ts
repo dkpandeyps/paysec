@@ -225,7 +225,7 @@ describe('passes through (no enforcement)', () => {
 
 describe('enforces never-ask preferences', () => {
   test('marker + never-ask + two-way + clean recommendation → deny', () => {
-    writeProjectPref('ship-pre-landing-review-fix', 'never-ask');
+    writeProjectPref('ship-pr-pre-landing-review-fix', 'never-ask');
     const r = runHook({
       session_id: 's5',
       tool_name: 'AskUserQuestion',
@@ -234,7 +234,7 @@ describe('enforces never-ask preferences', () => {
         questions: [
           {
             question:
-              '<paysec-qid:ship-pre-landing-review-fix> Pre-landing review flagged issue.',
+              '<paysec-qid:ship-pr-pre-landing-review-fix> Pre-landing review flagged issue.',
             options: ['A) Fix now (recommended)', 'B) Skip'],
           },
         ],
@@ -246,7 +246,7 @@ describe('enforces never-ask preferences', () => {
   });
 
   test('one-way door → pass-through even with never-ask (safety override)', () => {
-    writeProjectPref('ship-test-failure-triage', 'never-ask');
+    writeProjectPref('ship-pr-test-failure-triage', 'never-ask');
     const r = runHook({
       session_id: 's6',
       tool_name: 'AskUserQuestion',
@@ -254,7 +254,7 @@ describe('enforces never-ask preferences', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-test-failure-triage> Tests failed.',
+            question: '<paysec-qid:ship-pr-test-failure-triage> Tests failed.',
             options: ['A) Fix now (recommended)', 'B) Investigate', 'C) Ack and ship'],
           },
         ],
@@ -264,7 +264,7 @@ describe('enforces never-ask preferences', () => {
   });
 
   test('ambiguous recommendation (two labels) → pass-through (D2 refuse-on-ambiguous)', () => {
-    writeProjectPref('ship-pre-landing-review-fix', 'never-ask');
+    writeProjectPref('ship-pr-pre-landing-review-fix', 'never-ask');
     const r = runHook({
       session_id: 's7',
       tool_name: 'AskUserQuestion',
@@ -272,7 +272,7 @@ describe('enforces never-ask preferences', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-pre-landing-review-fix> Ambiguous',
+            question: '<paysec-qid:ship-pr-pre-landing-review-fix> Ambiguous',
             options: ['A) Fix now (recommended)', 'B) Skip (recommended)'],
           },
         ],
@@ -282,7 +282,7 @@ describe('enforces never-ask preferences', () => {
   });
 
   test('no recommendation marker AND no prose match → pass-through', () => {
-    writeProjectPref('ship-pre-landing-review-fix', 'never-ask');
+    writeProjectPref('ship-pr-pre-landing-review-fix', 'never-ask');
     const r = runHook({
       session_id: 's8',
       tool_name: 'AskUserQuestion',
@@ -290,7 +290,7 @@ describe('enforces never-ask preferences', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-pre-landing-review-fix> No rec',
+            question: '<paysec-qid:ship-pr-pre-landing-review-fix> No rec',
             options: ['A) Foo', 'B) Bar'],
           },
         ],
@@ -347,8 +347,8 @@ describe('enforces never-ask preferences', () => {
 
 describe('precedence: project wins over global (D8)', () => {
   test('project never-ask + global always-ask → enforce never-ask', () => {
-    writeProjectPref('ship-pre-landing-review-fix', 'never-ask');
-    writeGlobalPref('ship-pre-landing-review-fix', 'always-ask');
+    writeProjectPref('ship-pr-pre-landing-review-fix', 'never-ask');
+    writeGlobalPref('ship-pr-pre-landing-review-fix', 'always-ask');
     const r = runHook({
       session_id: 's9',
       tool_name: 'AskUserQuestion',
@@ -356,7 +356,7 @@ describe('precedence: project wins over global (D8)', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pr-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],
@@ -366,7 +366,7 @@ describe('precedence: project wins over global (D8)', () => {
   });
 
   test('only global never-ask → enforce (fallback path)', () => {
-    writeGlobalPref('ship-pre-landing-review-fix', 'never-ask');
+    writeGlobalPref('ship-pr-pre-landing-review-fix', 'never-ask');
     const r = runHook({
       session_id: 's10',
       tool_name: 'AskUserQuestion',
@@ -374,7 +374,7 @@ describe('precedence: project wins over global (D8)', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pr-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],
@@ -384,8 +384,8 @@ describe('precedence: project wins over global (D8)', () => {
   });
 
   test('project always-ask + global never-ask → pass-through (project wins)', () => {
-    writeProjectPref('ship-pre-landing-review-fix', 'always-ask');
-    writeGlobalPref('ship-pre-landing-review-fix', 'never-ask');
+    writeProjectPref('ship-pr-pre-landing-review-fix', 'always-ask');
+    writeGlobalPref('ship-pr-pre-landing-review-fix', 'never-ask');
     const r = runHook({
       session_id: 's11',
       tool_name: 'AskUserQuestion',
@@ -393,7 +393,7 @@ describe('precedence: project wins over global (D8)', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pr-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],
@@ -409,7 +409,7 @@ describe('precedence: project wins over global (D8)', () => {
 
 describe('MCP variant', () => {
   test('mcp__conductor__AskUserQuestion accepted and enforced', () => {
-    writeProjectPref('ship-pre-landing-review-fix', 'never-ask');
+    writeProjectPref('ship-pr-pre-landing-review-fix', 'never-ask');
     const r = runHook({
       session_id: 's12',
       tool_name: 'mcp__conductor__AskUserQuestion',
@@ -417,7 +417,7 @@ describe('MCP variant', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pr-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],
@@ -474,7 +474,7 @@ describe('Conductor prose redirect', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-test-failure-triage> Tests failed.',
+            question: '<paysec-qid:ship-pr-test-failure-triage> Tests failed.',
             options: ['A) Fix now (recommended)', 'B) Investigate', 'C) Ack and ship'],
           },
         ],
@@ -499,7 +499,7 @@ describe('Conductor prose redirect', () => {
   });
 
   test('PRECEDENCE: full never-ask auto-decide still wins over Conductor prose', () => {
-    writeProjectPref('ship-pre-landing-review-fix', 'never-ask');
+    writeProjectPref('ship-pr-pre-landing-review-fix', 'never-ask');
     const r = runHook({
       session_id: 'c5',
       tool_name: 'AskUserQuestion',
@@ -507,7 +507,7 @@ describe('Conductor prose redirect', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-pre-landing-review-fix> Pre-landing review flagged issue.',
+            question: '<paysec-qid:ship-pr-pre-landing-review-fix> Pre-landing review flagged issue.',
             options: ['A) Fix now (recommended)', 'B) Skip'],
           },
         ],
@@ -535,7 +535,7 @@ describe('Conductor prose redirect', () => {
 
 describe('auto-decided event tagging', () => {
   test('logs source=auto-decided event when enforcing', () => {
-    writeProjectPref('ship-pre-landing-review-fix', 'never-ask');
+    writeProjectPref('ship-pr-pre-landing-review-fix', 'never-ask');
     runHook({
       session_id: 's13',
       tool_name: 'AskUserQuestion',
@@ -543,7 +543,7 @@ describe('auto-decided event tagging', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pr-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],
@@ -551,13 +551,13 @@ describe('auto-decided event tagging', () => {
     }, fixtureCwd);
     const events = autoDecidedEvents();
     expect(events.length).toBe(1);
-    expect(events[0].question_id).toBe('ship-pre-landing-review-fix');
+    expect(events[0].question_id).toBe('ship-pr-pre-landing-review-fix');
     expect(events[0].user_choice).toContain('Fix');
     expect(events[0].tool_use_id).toBe('tu-13');
   });
 
   test('writes .auto-decided-<tool_use_id> marker for PostToolUse coordination', () => {
-    writeProjectPref('ship-pre-landing-review-fix', 'never-ask');
+    writeProjectPref('ship-pr-pre-landing-review-fix', 'never-ask');
     runHook({
       session_id: 's14',
       tool_name: 'AskUserQuestion',
@@ -565,7 +565,7 @@ describe('auto-decided event tagging', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pr-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],

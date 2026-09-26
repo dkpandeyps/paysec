@@ -95,7 +95,7 @@ describe('marker-first import (source=codex-import-marker)', () => {
   test('extracts marker id from agent_message and pairs with next user_message', () => {
     const sessionPath = writeSessionFile([
       agentMessage(
-        'D1 — Test\nELI10: blah\n<paysec-qid:ship-test-failure-triage> Tests failed.\nRecommendation: A\nA) Fix now (recommended)\nB) Investigate\nC) Ack and ship',
+        'D1 — Test\nELI10: blah\n<paysec-qid:ship-pr-test-failure-triage> Tests failed.\nRecommendation: A\nA) Fix now (recommended)\nB) Investigate\nC) Ack and ship',
       ),
       userMessage('A'),
     ]);
@@ -105,7 +105,7 @@ describe('marker-first import (source=codex-import-marker)', () => {
     const events = readImportedEvents();
     expect(events.length).toBe(1);
     expect(events[0].source).toBe('codex-import-marker');
-    expect(events[0].question_id).toBe('ship-test-failure-triage');
+    expect(events[0].question_id).toBe('ship-pr-test-failure-triage');
     expect(events[0].user_choice).toContain('Fix now');
     expect(events[0].recommended).toContain('Fix now');
   });

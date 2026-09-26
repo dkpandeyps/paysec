@@ -77,7 +77,7 @@ describe('memory injection', () => {
         applied_at: '2026-05-01T00:00:00Z',
       },
     ]);
-    // ship-todos-reorganize has signal_key 'detail-preference' per registry.
+    // ship-pr-todos-reorganize has signal_key 'detail-preference' per registry.
     const r = runHook({
       session_id: 's1',
       tool_name: 'AskUserQuestion',
@@ -85,7 +85,7 @@ describe('memory injection', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-todos-reorganize> Reorganize?',
+            question: '<paysec-qid:ship-pr-todos-reorganize> Reorganize?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
@@ -112,7 +112,7 @@ describe('memory injection', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-todos-reorganize> Reorganize?',
+            question: '<paysec-qid:ship-pr-todos-reorganize> Reorganize?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
@@ -138,7 +138,7 @@ describe('memory injection', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-todos-reorganize> Reorganize?',
+            question: '<paysec-qid:ship-pr-todos-reorganize> Reorganize?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
@@ -163,7 +163,7 @@ describe('memory injection', () => {
     fs.mkdirSync(path.join(stateRoot, 'projects', cwdSlug), { recursive: true });
     fs.writeFileSync(
       path.join(stateRoot, 'projects', cwdSlug, 'question-preferences.json'),
-      JSON.stringify({ 'ship-todos-reorganize': 'never-ask' }),
+      JSON.stringify({ 'ship-pr-todos-reorganize': 'never-ask' }),
     );
     const r = runHook({
       session_id: 's4',
@@ -172,13 +172,13 @@ describe('memory injection', () => {
       tool_input: {
         questions: [
           {
-            question: '<paysec-qid:ship-todos-reorganize> Reorganize?',
+            question: '<paysec-qid:ship-pr-todos-reorganize> Reorganize?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
       },
     });
-    // ship-todos-reorganize is two-way per registry — enforcement should fire.
+    // ship-pr-todos-reorganize is two-way per registry — enforcement should fire.
     expect(r.parsed?.hookSpecificOutput?.permissionDecision).toBe('deny');
     expect(r.parsed?.hookSpecificOutput?.permissionDecisionReason).toContain('tune-questions auto-decide');
     // Memory context isn't injected on deny path (it's already in the reason),
@@ -201,7 +201,7 @@ describe('per-session memory cache', () => {
       tool_use_id: 'tu-c1',
       tool_input: {
         questions: [
-          { question: '<paysec-qid:ship-todos-reorganize> Q', options: ['A', 'B'] },
+          { question: '<paysec-qid:ship-pr-todos-reorganize> Q', options: ['A', 'B'] },
         ],
       },
     });
@@ -219,7 +219,7 @@ describe('per-session memory cache', () => {
       tool_use_id: 'tu-e',
       tool_input: {
         questions: [
-          { question: '<paysec-qid:ship-todos-reorganize> Q', options: ['A', 'B'] },
+          { question: '<paysec-qid:ship-pr-todos-reorganize> Q', options: ['A', 'B'] },
         ],
       },
     });

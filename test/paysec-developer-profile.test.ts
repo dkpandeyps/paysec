@@ -242,7 +242,7 @@ describe('paysec-developer-profile --derive', () => {
       expect(
         logQuestion({
           skill: 'plan-business-review',
-          question_id: 'plan-ceo-review-mode',
+          question_id: 'plan-business-review-mode',
           question_summary: 'mode?',
           user_choice: 'expand',
           session_id: `s${i}`,
@@ -264,7 +264,7 @@ describe('paysec-developer-profile --derive', () => {
     for (let i = 0; i < 3; i++) {
       logQuestion({
         skill: 'plan-business-review',
-        question_id: 'plan-ceo-review-mode',
+        question_id: 'plan-business-review-mode',
         question_summary: 'mode?',
         user_choice: 'reduce',
         session_id: `s${i}`,
@@ -279,7 +279,7 @@ describe('paysec-developer-profile --derive', () => {
     for (let i = 0; i < 3; i++) {
       logQuestion({
         skill: 'plan-business-review',
-        question_id: 'plan-ceo-review-mode',
+        question_id: 'plan-business-review-mode',
         question_summary: 'mode?',
         user_choice: 'expand',
         session_id: `s${i}`,
@@ -317,7 +317,7 @@ describe('paysec-developer-profile --trace <dim>', () => {
     for (let i = 0; i < 3; i++) {
       logQuestion({
         skill: 'plan-business-review',
-        question_id: 'plan-ceo-review-mode',
+        question_id: 'plan-business-review-mode',
         question_summary: 'mode?',
         user_choice: 'expand',
         session_id: `s${i}`,
@@ -325,14 +325,14 @@ describe('paysec-developer-profile --trace <dim>', () => {
     }
     const r = runDev('--trace', 'scope_appetite');
     expect(r.stdout).toContain('3 events for scope_appetite');
-    expect(r.stdout).toContain('plan-ceo-review-mode');
+    expect(r.stdout).toContain('plan-business-review-mode');
     expect(r.stdout).toContain('expand');
   });
 
   test('reports no contributions for untouched dimension', () => {
     logQuestion({
       skill: 'plan-business-review',
-      question_id: 'plan-ceo-review-mode',
+      question_id: 'plan-business-review-mode',
       question_summary: 'x',
       user_choice: 'expand',
       session_id: 's1',
