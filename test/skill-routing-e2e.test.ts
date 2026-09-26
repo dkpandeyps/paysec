@@ -1,0 +1,706 @@
+import { describe, test, expect, afterAll } from 'bun:test';
+import { runSkillTest } from './helpers/session-runner';
+import type { SkillTestResult } from './helpers/session-runner';
+import { EvalCollector } from './helpers/eval-store';
+import type { EvalTestEntry } from './helpers/eval-store';
+import { selectTests, detectBaseBranch, getChangedFiles, E2E_TOUCHFILES, E2E_TIERS, GLOBAL_TOUCHFILES } from './helpers/touchfiles';
+import { extractSkillHead } from './helpers/skill-fixture';
+import { spawnSync } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+import { generateRoutingInjection } from '../scripts/resolvers/preamble/generate-routing-injection';
+import type { TemplateContext } from '../scripts/resolvers/types';
+
+const ROOT = path.resolve(import.meta.dir, '..');
+
+// Skip unless EVALS=1.
+const evalsEnabled = !!process.env.EVALS;
+const describeE2E = evalsEnabled ? describe : describe.skip;
+
+// Eval result collector
+const evalCollector = evalsEnabled ? new EvalCollector('e2e-routing') : null;
+
+// Unique run ID for this session
+const runId = new Date().toISOString().replace(/[:.]/g, '').replace('T', '-').slice(0, 15);
+
+// --- Diff-based test selection ---
+// Journey routing tests use E2E_TOUCHFILES (entries prefixed 'journey-' in touchfiles.ts).
+let selectedTests: string[] | null = null;
+
+if (evalsEnabled && !process.env.EVALS_ALL) {
+  const baseBranch = process.env.EVALS_BASE
+    || detectBaseBranch(ROOT)
+    || 'main';
+  const changedFiles = getChangedFiles(baseBranch, ROOT);
+
+  if (changedFiles.length > 0) {
+    const selection = selectTests(changedFiles, E2E_TOUCHFILES, GLOBAL_TOUCHFILES);
+    selectedTests = selection.selected;
+    process.stderr.write(`\nRouting E2E selection (${selection.reason}): ${selection.selected.length}/${Object.keys(E2E_TOUCHFILES).length} tests\n`);
+    if (selection.skipped.length > 0) {
+      process.stderr.write(`  Skipped: ${selection.skipped.join(', ')}\n`);
+    }
+    process.stderr.write('\n');
+  }
+}
+
+// Apply EVALS_TIER filter (same logic as e2e-helpers.ts)
+if (evalsEnabled && process.env.EVALS_TIER) {
+  const tier = process.env.EVALS_TIER as 'gate' | 'periodic';
+  const tierTests = Object.entries(E2E_TIERS)
+    .filter(([, t]) => t === tier)
+    .map(([name]) => name);
+
+  if (selectedTests === null) {
+    selectedTests = tierTests;
+  } else {
+    selectedTests = selectedTests.filter(t => tierTests.includes(t));
+  }
+  process.stderr.write(`Routing EVALS_TIER=${tier}: ${selectedTests.length} tests\n\n`);
+}
+
+// --- Helper functions ---
+
+/** Install SKILL.md fixtures for auto-discovery.
+ *  Installs to project-level (.claude/skills/) only. Writing to the user's
+ *  ~/.claude/skills/ is unsafe: it may contain symlinks from the real paysec
+ *  install that point to different worktrees or dangling targets.
+ *
+ *  ROUTING tests only read each skill's frontmatter (name + description) to
+ *  pick a skill, so install frontmatter + the first ~30 body lines instead
+ *  of ~20 full 1000-1900-line files (CLAUDE.md: "extract, don't copy"). */
+interface RoutingWorkDirOpts {
+  /** Extra skill dirs to install beyond the journey default set. */
+  extraSkills?: string[];
+  /** Replace the strict test routing rules with this CLAUDE.md body. */
+  claudeMd?: string;
+}
+
+/**
+ * The routing section paysec actually injects into a user's CLAUDE.md
+ * (generate-routing-injection.ts). Look-alike tests route under these rules,
+ * which leave pairs like /qa-fix vs /qa-report to the skill descriptions.
+ */
+function userRoutingClaudeMd(): string {
+  const injection = generateRoutingInjection({ paths: { binDir: '~/.claude/skills/paysec/bin' } } as TemplateContext);
+  const m = injection.match(/```markdown\n([\s\S]*?)```/);
+  if (!m) throw new Error('routing injection no longer carries a ```markdown rules block');
+  return `# Project Instructions\n${m[1]}`;
+}
+
+function installSkills(tmpDir: string, opts: RoutingWorkDirOpts = {}) {
+  const skillDirs = [
+    '', // root paysec SKILL.md
+    'qa-fix', 'qa-report', 'ship-pr', 'pr-review', 'plan-business-review', 'plan-tech-review',
+    'plan-ux-review', 'design-qa', 'design-system', 'weekly-retro',
+    'docs-release-update', 'debug-root-cause', 'idea-review', 'browser', 'import-browser-cookies',
+    'paysec-upgrade', 'humanizer',
+    ...(opts.extraSkills ?? []),
+  ];
+
+  const targetBase = path.join(tmpDir, '.claude', 'skills');
+
+  for (const skill of skillDirs) {
+    const srcPath = path.join(ROOT, skill, 'SKILL.md');
+    if (!fs.existsSync(srcPath)) continue;
+
+    const skillName = skill || 'paysec';
+    const destDir = path.join(targetBase, skillName);
+    fs.mkdirSync(destDir, { recursive: true });
+    fs.writeFileSync(path.join(destDir, 'SKILL.md'), extractSkillHead(srcPath));
+  }
+
+  // Write a CLAUDE.md with explicit routing instructions.
+  // The skill descriptions in system-reminder aren't strong enough to override
+  // Claude's default behavior of answering directly. A CLAUDE.md instruction
+  // puts routing rules in project context which Claude weighs more heavily.
+  fs.writeFileSync(path.join(tmpDir, 'CLAUDE.md'), `# Project Instructions
+
+## Skill routing
+
+When the user's request matches an available skill, ALWAYS invoke it using the Skill
+tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
+The skill has specialized workflows that produce better results than ad-hoc answers.
+
+Key routing rules:
+- Product ideas, "is this worth building", brainstorming → invoke idea-review
+- Bugs, errors, "why is this broken", 500 errors → invoke debug-root-cause
+- Ship, deploy, push, create PR → invoke ship-pr
+- QA, test the site, find bugs → invoke qa-fix
+- Code review, check my diff → invoke pr-review
+- Update docs after shipping → invoke docs-release-update
+- Weekly retro → invoke weekly-retro
+- Design system, brand → invoke design-system
+- Visual audit, design polish → invoke design-qa
+- Architecture review → invoke plan-tech-review
+`);
+  if (opts.claudeMd !== undefined) fs.writeFileSync(path.join(tmpDir, 'CLAUDE.md'), opts.claudeMd);
+}
+
+/** Init a git repo with config */
+function initGitRepo(dir: string) {
+  const run = (cmd: string, args: string[]) =>
+    spawnSync(cmd, args, { cwd: dir, stdio: 'pipe', timeout: 5000 });
+  run('git', ['init']);
+  run('git', ['config', 'user.email', 'test@test.com']);
+  run('git', ['config', 'user.name', 'Test']);
+}
+
+/**
+ * Create a routing test working directory.
+ * Uses the actual repo checkout (ROOT) which has CLAUDE.md, .claude/skills/,
+ * and full project context. This matches the local environment where routing
+ * tests pass reliably. In containerized CI, bare tmpDirs lack the context
+ * Claude needs to make correct routing decisions.
+ */
+function createRoutingWorkDir(suffix: string, opts: RoutingWorkDirOpts = {}): string {
+  // Clone the repo checkout into a tmpDir so concurrent tests don't interfere
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), `routing-${suffix}-`));
+  // Copy essential context files
+  const filesToCopy = ['CLAUDE.md', 'README.md', 'package.json', 'ETHOS.md'];
+  for (const f of filesToCopy) {
+    const src = path.join(ROOT, f);
+    if (fs.existsSync(src)) fs.copyFileSync(src, path.join(tmpDir, f));
+  }
+  // Copy skill files
+  installSkills(tmpDir, opts);
+  // Init git
+  initGitRepo(tmpDir);
+  spawnSync('git', ['add', '.'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+  spawnSync('git', ['commit', '-m', 'initial'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+  return tmpDir;
+}
+
+function logCost(label: string, result: { costEstimate: { turnsUsed: number; estimatedTokens: number; estimatedCost: number }; duration: number }) {
+  const { turnsUsed, estimatedTokens, estimatedCost } = result.costEstimate;
+  const durationSec = Math.round(result.duration / 1000);
+  console.log(`${label}: $${estimatedCost.toFixed(2)} (${turnsUsed} turns, ${(estimatedTokens / 1000).toFixed(1)}k tokens, ${durationSec}s)`);
+}
+
+function recordRouting(name: string, result: SkillTestResult, expectedSkill: string, actualSkill: string | undefined) {
+  evalCollector?.addTest({
+    name,
+    suite: 'Skill Routing E2E',
+    tier: 'e2e',
+    passed: actualSkill === expectedSkill,
+    duration_ms: result.duration,
+    cost_usd: result.costEstimate.estimatedCost,
+    transcript: result.transcript,
+    output: result.output?.slice(0, 2000),
+    turns_used: result.costEstimate.turnsUsed,
+    exit_reason: result.exitReason,
+  });
+}
+
+// Skip individual tests based on selectedTests (diff + tier filtering)
+const testIfSelected = (name: string, fn: () => Promise<void>, timeout?: number) => {
+  if (selectedTests !== null && !selectedTests.includes(name)) {
+    test.skip(name, () => {});
+  } else {
+    test.concurrent(name, fn, timeout);
+  }
+};
+
+// --- Tests ---
+
+describeE2E('Skill Routing E2E — Developer Journey', () => {
+  afterAll(() => {
+    evalCollector?.finalize();
+  });
+
+  testIfSelected('journey-ideation', async () => {
+    const tmpDir = createRoutingWorkDir('ideation');
+    try {
+
+      const testName = 'journey-ideation';
+      const expectedSkill = 'idea-review';
+      const result = await runSkillTest({
+        prompt: "I've been thinking about building a waitlist management tool for restaurants. The existing solutions are expensive and overcomplicated. I want something simple — a tablet app where hosts can add parties, see wait times, and text customers when their table is ready. Help me think through whether this is worth building and what the key design decisions are.",
+        workingDirectory: tmpDir,
+        maxTurns: 5,
+        allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+        timeout: 60_000,
+        testName,
+        runId,
+      });
+
+      const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+      const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+
+      logCost(`journey: ${testName}`, result);
+      recordRouting(testName, result, expectedSkill, actualSkill);
+
+      expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+      expect([expectedSkill], `Expected skill ${expectedSkill} but got ${actualSkill}`).toContain(actualSkill);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 150_000);
+
+  testIfSelected('journey-plan-eng', async () => {
+    const tmpDir = createRoutingWorkDir('plan-eng');
+    try {
+      fs.writeFileSync(path.join(tmpDir, 'plan.md'), `# Waitlist App Architecture
+
+## Components
+- REST API (Express.js)
+- PostgreSQL database
+- React frontend
+- SMS integration (Twilio)
+
+## Data Model
+- restaurants (id, name, settings)
+- parties (id, restaurant_id, name, size, phone, status, created_at)
+- wait_estimates (id, restaurant_id, avg_wait_minutes)
+
+## API Endpoints
+- POST /api/parties - add party to waitlist
+- GET /api/parties - list current waitlist
+- PATCH /api/parties/:id/status - update party status
+- GET /api/estimate - get current wait estimate
+`);
+      spawnSync('git', ['add', '.'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+      spawnSync('git', ['commit', '-m', 'initial'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+
+      const testName = 'journey-plan-eng';
+      const expectedSkill = 'plan-tech-review';
+      const result = await runSkillTest({
+        prompt: "I wrote up a plan for the waitlist app in plan.md. Can you take a look at the architecture and make sure I'm not missing any edge cases or failure modes before I start coding?",
+        workingDirectory: tmpDir,
+        maxTurns: 5,
+        allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+        timeout: 60_000,
+        testName,
+        runId,
+      });
+
+      const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+      const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+
+      logCost(`journey: ${testName}`, result);
+      recordRouting(testName, result, expectedSkill, actualSkill);
+
+      expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+      expect([expectedSkill], `Expected skill ${expectedSkill} but got ${actualSkill}`).toContain(actualSkill);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 150_000);
+
+  // Removed: journey-think-bigger
+  // Tested ambiguous routing ("think bigger" → plan-business-review) but Claude
+  // legitimately answers directly instead of routing. Never passed reliably.
+  // The other 10 journey tests cover routing with clear signals.
+
+  testIfSelected('journey-debug', async () => {
+    const tmpDir = createRoutingWorkDir('debug');
+    try {
+      const run = (cmd: string, args: string[]) =>
+        spawnSync(cmd, args, { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+
+      fs.mkdirSync(path.join(tmpDir, 'src'), { recursive: true });
+      fs.writeFileSync(path.join(tmpDir, 'src/api.ts'), `
+import express from 'express';
+const app = express();
+
+app.get('/api/waitlist', async (req, res) => {
+  const db = req.app.locals.db;
+  const parties = await db.query('SELECT * FROM parties WHERE status = $1', ['waiting']);
+  res.json(parties.rows);
+});
+
+export default app;
+`);
+      fs.writeFileSync(path.join(tmpDir, 'error.log'), `
+[2026-03-18T10:23:45Z] ERROR: GET /api/waitlist - 500 Internal Server Error
+  TypeError: Cannot read properties of undefined (reading 'query')
+    at /src/api.ts:5:32
+    at Layer.handle [as handle_request] (/node_modules/express/lib/router/layer.js:95:5)
+[2026-03-18T10:23:46Z] ERROR: GET /api/waitlist - 500 Internal Server Error
+  TypeError: Cannot read properties of undefined (reading 'query')
+`);
+
+      run('git', ['add', '.']);
+      run('git', ['commit', '-m', 'initial']);
+      run('git', ['checkout', '-b', 'feature/waitlist-api']);
+
+      const testName = 'journey-debug';
+      const expectedSkill = 'debug-root-cause';
+      const result = await runSkillTest({
+        prompt: "The GET /api/waitlist endpoint was working fine yesterday but now it's returning 500 errors. The tests are passing locally but the endpoint fails when I hit it with curl. Can you figure out what's going on?",
+        workingDirectory: tmpDir,
+        maxTurns: 5,
+        allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+        timeout: 60_000,
+        testName,
+        runId,
+      });
+
+      const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+      const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+
+      logCost(`journey: ${testName}`, result);
+      recordRouting(testName, result, expectedSkill, actualSkill);
+
+      expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+      const validSkills = ['debug-root-cause', 'qa-fix'];
+      expect(validSkills, `Expected one of ${validSkills.join('/')} but got ${actualSkill}`).toContain(actualSkill);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 150_000);
+
+  testIfSelected('journey-qa', async () => {
+    const tmpDir = createRoutingWorkDir('qa');
+    try {
+      fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify({ name: 'waitlist-app', scripts: { dev: 'next dev' } }, null, 2));
+      fs.mkdirSync(path.join(tmpDir, 'src'), { recursive: true });
+      fs.writeFileSync(path.join(tmpDir, 'src/index.html'), '<html><body><h1>Waitlist App</h1></body></html>');
+      spawnSync('git', ['add', '.'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+      spawnSync('git', ['commit', '-m', 'initial'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+
+      const testName = 'journey-qa';
+      const expectedSkill = 'qa-fix';
+      const alternateSkills = ['qa-report', 'browser'];
+      const result = await runSkillTest({
+        prompt: "I think the app is mostly working now. Can you go through the site and test everything — find any bugs and fix them?",
+        workingDirectory: tmpDir,
+        maxTurns: 5,
+        allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+        timeout: 60_000,
+        testName,
+        runId,
+      });
+
+      const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+      const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+      const acceptable = [expectedSkill, ...alternateSkills];
+
+      logCost(`journey: ${testName}`, result);
+      recordRouting(testName, result, expectedSkill, actualSkill);
+
+      expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+      expect(acceptable, `Expected skill ${expectedSkill} but got ${actualSkill}`).toContain(actualSkill);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 150_000);
+
+  testIfSelected('journey-code-review', async () => {
+    const tmpDir = createRoutingWorkDir('code-review');
+    try {
+      const run = (cmd: string, args: string[]) =>
+        spawnSync(cmd, args, { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+
+      fs.writeFileSync(path.join(tmpDir, 'app.ts'), '// base\n');
+      run('git', ['add', '.']);
+      run('git', ['commit', '-m', 'add base app']);
+      run('git', ['checkout', '-b', 'feature/add-waitlist']);
+      fs.writeFileSync(path.join(tmpDir, 'app.ts'), '// updated with waitlist feature\nimport { WaitlistService } from "./waitlist";\n');
+      fs.writeFileSync(path.join(tmpDir, 'waitlist.ts'), 'export class WaitlistService {\n  async addParty(name: string, size: number) {\n    // TODO: implement\n  }\n}\n');
+      run('git', ['add', '.']);
+      run('git', ['commit', '-m', 'feat: add waitlist service']);
+
+      const testName = 'journey-code-review';
+      const expectedSkill = 'pr-review';
+      const result = await runSkillTest({
+        prompt: "I'm about to merge this into main. Can you look over my changes and flag anything risky before I land it?",
+        workingDirectory: tmpDir,
+        maxTurns: 5,
+        allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+        timeout: 120_000,
+        testName,
+        runId,
+      });
+
+      const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+      const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+
+      logCost(`journey: ${testName}`, result);
+      recordRouting(testName, result, expectedSkill, actualSkill);
+
+      expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+      expect([expectedSkill], `Expected skill ${expectedSkill} but got ${actualSkill}`).toContain(actualSkill);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 150_000);
+
+  testIfSelected('journey-ship', async () => {
+    const tmpDir = createRoutingWorkDir('ship');
+    try {
+      const run = (cmd: string, args: string[]) =>
+        spawnSync(cmd, args, { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+
+      fs.writeFileSync(path.join(tmpDir, 'app.ts'), '// base\n');
+      run('git', ['add', '.']);
+      run('git', ['commit', '-m', 'add base app']);
+      run('git', ['checkout', '-b', 'feature/waitlist']);
+      fs.writeFileSync(path.join(tmpDir, 'app.ts'), '// waitlist feature\n');
+      run('git', ['add', '.']);
+      run('git', ['commit', '-m', 'feat: waitlist']);
+
+      const testName = 'journey-ship';
+      const expectedSkill = 'ship-pr';
+      const result = await runSkillTest({
+        prompt: "This looks good. Let's get it deployed — push the code up and create a PR.",
+        workingDirectory: tmpDir,
+        maxTurns: 5,
+        allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+        timeout: 60_000,
+        testName,
+        runId,
+      });
+
+      const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+      const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+
+      logCost(`journey: ${testName}`, result);
+      recordRouting(testName, result, expectedSkill, actualSkill);
+
+      expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+      expect([expectedSkill], `Expected skill ${expectedSkill} but got ${actualSkill}`).toContain(actualSkill);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 150_000);
+
+  testIfSelected('journey-docs', async () => {
+    const tmpDir = createRoutingWorkDir('docs');
+    try {
+      const run = (cmd: string, args: string[]) =>
+        spawnSync(cmd, args, { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+
+      fs.writeFileSync(path.join(tmpDir, 'README.md'), '# Waitlist App\nA simple waitlist management tool.\n');
+      fs.mkdirSync(path.join(tmpDir, 'src'), { recursive: true });
+      fs.writeFileSync(path.join(tmpDir, 'src/api.ts'), '// API code\n');
+      run('git', ['add', '.']);
+      run('git', ['commit', '-m', 'feat: ship waitlist feature']);
+
+      const testName = 'journey-docs';
+      const expectedSkill = 'docs-release-update';
+      const result = await runSkillTest({
+        prompt: "We just shipped the waitlist feature. Can you go through the README and any other docs and make sure they match what we actually built?",
+        workingDirectory: tmpDir,
+        maxTurns: 5,
+        allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+        timeout: 60_000,
+        testName,
+        runId,
+      });
+
+      const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+      const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+
+      logCost(`journey: ${testName}`, result);
+      recordRouting(testName, result, expectedSkill, actualSkill);
+
+      expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+      expect([expectedSkill], `Expected skill ${expectedSkill} but got ${actualSkill}`).toContain(actualSkill);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 150_000);
+
+  testIfSelected('journey-retro', async () => {
+    const tmpDir = createRoutingWorkDir('retro');
+    try {
+      const run = (cmd: string, args: string[]) =>
+        spawnSync(cmd, args, { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+
+      fs.writeFileSync(path.join(tmpDir, 'api.ts'), 'export function getParties() { return []; }\n');
+      run('git', ['add', '.']);
+      run('git', ['commit', '-m', 'feat: add parties API', '--date', '2026-03-12T09:30:00']);
+
+      fs.writeFileSync(path.join(tmpDir, 'ui.tsx'), 'export function WaitlistView() { return <div>Waitlist</div>; }\n');
+      run('git', ['add', '.']);
+      run('git', ['commit', '-m', 'feat: add waitlist UI', '--date', '2026-03-13T14:00:00']);
+
+      fs.writeFileSync(path.join(tmpDir, 'README.md'), '# Waitlist App\n');
+      run('git', ['add', '.']);
+      run('git', ['commit', '-m', 'docs: add README', '--date', '2026-03-14T16:00:00']);
+
+      const testName = 'journey-retro';
+      const expectedSkill = 'weekly-retro';
+      const result = await runSkillTest({
+        prompt: "It's Friday. What did we ship this week? I want to do a quick retrospective on what the team accomplished.",
+        workingDirectory: tmpDir,
+        maxTurns: 5,
+        allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+        timeout: 120_000,
+        testName,
+        runId,
+      });
+
+      const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+      const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+
+      logCost(`journey: ${testName}`, result);
+      recordRouting(testName, result, expectedSkill, actualSkill);
+
+      expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+      expect([expectedSkill], `Expected skill ${expectedSkill} but got ${actualSkill}`).toContain(actualSkill);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 150_000);
+
+  testIfSelected('journey-design-system', async () => {
+    const tmpDir = createRoutingWorkDir('design-system');
+    try {
+
+      const testName = 'journey-design-system';
+      const expectedSkill = 'design-system';
+      const result = await runSkillTest({
+        prompt: "Before we build the UI, I want to establish a design system — typography, colors, spacing, the whole thing. Can you put together brand guidelines for this project?",
+        workingDirectory: tmpDir,
+        maxTurns: 5,
+        allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+        timeout: 60_000,
+        testName,
+        runId,
+      });
+
+      const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+      const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+
+      logCost(`journey: ${testName}`, result);
+      recordRouting(testName, result, expectedSkill, actualSkill);
+
+      expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+      expect([expectedSkill], `Expected skill ${expectedSkill} but got ${actualSkill}`).toContain(actualSkill);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 150_000);
+
+  testIfSelected('journey-visual-qa', async () => {
+    const tmpDir = createRoutingWorkDir('visual-qa');
+    try {
+      const run = (cmd: string, args: string[]) =>
+        spawnSync(cmd, args, { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+
+      fs.mkdirSync(path.join(tmpDir, 'src'), { recursive: true });
+      fs.writeFileSync(path.join(tmpDir, 'src/styles.css'), `
+body { font-family: sans-serif; }
+.header { font-size: 24px; margin: 20px; }
+.card { padding: 16px; margin: 8px; border: 1px solid #ccc; }
+.button { background: #007bff; color: white; padding: 10px 20px; }
+`);
+      fs.writeFileSync(path.join(tmpDir, 'src/index.html'), `
+<html>
+<head><link rel="stylesheet" href="styles.css"></head>
+<body>
+  <div class="header">Waitlist</div>
+  <div class="card">Party of 4 - Smith</div>
+  <div class="card">Party of 2 - Jones</div>
+</body>
+</html>
+`);
+      run('git', ['add', '.']);
+      run('git', ['commit', '-m', 'initial UI']);
+
+      const testName = 'journey-visual-qa';
+      const expectedSkill = 'design-qa';
+      const result = await runSkillTest({
+        prompt: "Something looks off on the site. The spacing between sections is inconsistent and the font sizes don't feel right. Can you audit the visual design and fix anything that doesn't look polished?",
+        workingDirectory: tmpDir,
+        maxTurns: 5,
+        allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+        timeout: 60_000,
+        testName,
+        runId,
+      });
+
+      const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+      const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+
+      logCost(`journey: ${testName}`, result);
+      recordRouting(testName, result, expectedSkill, actualSkill);
+
+      expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+      const validSkills = ['design-qa', 'qa-fix', 'qa-report', 'browser'];
+      expect(validSkills, `Expected one of ${validSkills.join('/')} but got ${actualSkill}`).toContain(actualSkill);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }, 150_000);
+
+  // ── Look-alike pairs ────────────────────────────────────────────────
+  // Skills whose names/descriptions are close (report-only vs fix QA, plan vs
+  // live UX review, the safety modes). Routed under the rules paysec really
+  // injects into a user's CLAUDE.md, so the pick rests on the descriptions.
+  // Each case has exactly one right answer; a miss means a description needs
+  // sharpening.
+  const LOOKALIKE_CASES: Array<{
+    name: string; expected: string; prompt: string; setup?: (dir: string) => void;
+  }> = [
+    {
+      name: 'lookalike-qa-report',
+      expected: 'qa-report',
+      prompt: "Test the checkout flow on our staging site at https://staging.example.com and give me a written bug report. Don't change any code, I'm only collecting findings for the team.",
+    },
+    {
+      name: 'lookalike-qa-fix',
+      expected: 'qa-fix',
+      prompt: 'Test the signup page on http://localhost:3000, find whatever is broken, and fix the bugs in the code.',
+    },
+    {
+      name: 'lookalike-plan-ux',
+      expected: 'plan-ux-review',
+      prompt: 'Before we build anything, review the user experience in our onboarding design plan at docs/onboarding-plan.md. Nothing is implemented yet.',
+      setup: (dir) => {
+        fs.mkdirSync(path.join(dir, 'docs'), { recursive: true });
+        fs.writeFileSync(path.join(dir, 'docs', 'onboarding-plan.md'),
+          '# Onboarding plan\n\n1. Signup form: email + password\n2. Verify email\n3. Pick a plan\n4. Invite teammates\n');
+      },
+    },
+    {
+      name: 'lookalike-safe-mode',
+      expected: 'safe-mode',
+      prompt: "I'm about to work on the production database server. Warn me before you run anything destructive like rm -rf, DROP TABLE, or a force push.",
+    },
+    {
+      name: 'lookalike-lock-edits',
+      expected: 'lock-edits',
+      prompt: 'For the rest of this session, only allow file edits inside src/payments. Block edits anywhere else.',
+    },
+  ];
+
+  for (const c of LOOKALIKE_CASES) {
+    testIfSelected(c.name, async () => {
+      const tmpDir = createRoutingWorkDir(c.name, {
+        extraSkills: ['safe-mode', 'full-guard', 'lock-edits', 'unlock-edits'],
+        claudeMd: userRoutingClaudeMd(),
+      });
+      try {
+        if (c.setup) {
+          c.setup(tmpDir);
+          spawnSync('git', ['add', '.'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+          spawnSync('git', ['commit', '-m', 'fixture'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+        }
+        const result = await runSkillTest({
+          prompt: c.prompt,
+          workingDirectory: tmpDir,
+          maxTurns: 5,
+          allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+          timeout: 60_000,
+          testName: c.name,
+          runId,
+        });
+
+        const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+        const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+
+        logCost(`journey: ${c.name}`, result);
+        recordRouting(c.name, result, c.expected, actualSkill);
+
+        expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+        expect(actualSkill, `Look-alike routing: expected ${c.expected} but got ${actualSkill}`).toBe(c.expected);
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
+    }, 150_000);
+  }
+});

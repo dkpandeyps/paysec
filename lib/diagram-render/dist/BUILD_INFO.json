@@ -1,0 +1,14 @@
+{
+  "name": "paysec-diagram-render",
+  "sha256": "910f30fde3010f6d6543cbdd7afb18351f8344734be7697bf34fd4e2ca77a798",
+  "srcSha256": "ee37e343a61b0ff54c2602417a25df71e241cec92b924669438b7ff25c5524d6",
+  "bytes": 9627783,
+  "bunVersion": "1.3.14",
+  "deps": {
+    "@excalidraw/excalidraw": "0.18.0",
+    "@excalidraw/mermaid-to-excalidraw": "1.1.2",
+    "mermaid": "11.12.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}

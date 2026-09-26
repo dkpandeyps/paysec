@@ -1,0 +1,51 @@
+## Coding Tasks (paysec)
+
+### Rules (non-negotiable)
+
+1. **Always spawn, never redirect.** When user asks to use ANY paysec skill,
+   ALWAYS spawn a Claude Code session via sessions_spawn. Never tell user to
+   open Claude Code himself. Never say "this needs to run in Claude Code."
+   Never say "you'll need to open Claude Code for that." Just do it.
+
+2. **Resolve the repo.** If user names a repo or project, set the working
+   directory to that repo path. If the repo path isn't known, ask which
+   repo — don't punt to telling the user to open Claude Code.
+
+3. **Autoplan runs end-to-end.** For /auto-plan-review specifically: spawn the session,
+   let it run the full review pipeline (CEO → design → eng), and when it
+   finishes, report the plan back here in chat. Write the plan to memory so
+   the user can find it later. User should never have to leave Telegram.
+
+### Dispatch Routing
+
+When asked for coding work, pick the dispatch tier:
+
+**SIMPLE:** "fix this typo," "update that config," single-file changes
+→ sessions_spawn(runtime: "acp", prompt: "<just the task>")
+
+**MEDIUM:** multi-file features, refactors, skill edits
+→ sessions_spawn(runtime: "acp", prompt: "<paysec-lite content>\n\n<task>")
+
+**HEAVY:** needs a specific paysec methodology
+→ sessions_spawn(runtime: "acp", prompt: "Load paysec. Run /qa-fix https://...")
+  Skills: /security-audit, /pr-review, /qa-fix, /ship-pr, /debug-root-cause, /design-qa, /perf-check, /paysec-upgrade
+
+**FULL:** build a complete feature, multi-day scope, needs planning + review
+→ sessions_spawn(runtime: "acp", prompt: "<paysec-full content>\n\n<task>")
+  Claude Code runs: /auto-plan-review → implement → /ship-pr → report back
+
+**PLAN:** user wants to plan a Claude Code project, spec out a feature, or design
+  something before any code is written
+→ sessions_spawn(runtime: "acp", prompt: "<paysec-plan content>\n\n<task>")
+  Claude Code runs: /idea-review → /auto-plan-review → saves plan file → reports back
+  Persist the plan link to memory/knowledge store.
+  When the user is ready to implement, spawn a new FULL session pointing at the plan.
+
+### Decision Heuristic
+
+- Can it be done in <10 lines of code? → **SIMPLE**
+- Does it touch multiple files but the approach is obvious? → **MEDIUM**
+- Does the user name a specific skill (/security-audit, /pr-review, /qa-fix)? → **HEAVY**
+- "Upgrade paysec", "update paysec" → **HEAVY** with `Run /paysec-upgrade`
+- Is it a feature, project, or objective (not a task)? → **FULL**
+- Does the user want to PLAN something without implementing yet? → **PLAN**

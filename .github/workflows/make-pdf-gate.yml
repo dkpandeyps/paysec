@@ -1,0 +1,95 @@
+name: md-to-pdf copy-paste gate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'md-to-pdf/**'
+      - 'lib/diagram-render/**'
+      - 'test/diagram-render-drift.test.ts'
+      - 'browser/src/meta-commands.ts'
+      - 'browser/src/write-commands.ts'
+      - 'browser/src/commands.ts'
+      - 'browser/src/cli.ts'
+      - 'scripts/resolvers/md-to-pdf.ts'
+      - 'package.json'
+      - '.github/workflows/make-pdf-gate.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: make-pdf-gate-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    strategy:
+      fail-fast: false
+      matrix:
+        # macOS only: the Linux leg became redundant when the free-tests lane
+        # started running md-to-pdf/test (incl. e2e/) on every PR via the
+        # canonical runner — this gate's remaining value is macOS rendering
+        # coverage on make-pdf-scoped changes.
+        os: [macos-latest]
+        # Windows is tolerant-mode — Xpdf / Poppler-Windows extraction
+        # differs enough from the Linux/macOS baseline that the strict
+        # exact-diff gate is unreliable. Enable once the normalized
+        # comparator proves tolerant enough (Codex round 2 #18).
+        #
+        # include:
+        #   - os: windows-latest
+        #     tolerant: true
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install poppler (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install poppler
+
+      - name: Install poppler-utils (Ubuntu)
+        if: matrix.os == 'ubicloud-standard-8'
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+
+      # Install a color-emoji font BEFORE Chromium launches so the emoji render
+      # gate has a fallback font. macOS ships Apple Color Emoji already.
+      - name: Install color-emoji font (Ubuntu)
+        if: matrix.os == 'ubicloud-standard-8'
+        run: |
+          sudo apt-get install -y fonts-noto-color-emoji
+          fc-cache -f || true
+          fc-match -f '%{family[0]}\t%{color}\n' ':lang=und-zsye:charset=1F600' || true
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install chromium
+
+      - name: Build binaries
+        run: bun run build
+
+      - name: ad-hoc codesign (Apple Silicon)
+        if: matrix.os == 'macos-latest'
+        run: |
+          for bin in browser/dist/browse browser/dist/find-browse design/dist/design md-to-pdf/dist/pdf; do
+            codesign --remove-signature "$bin" 2>/dev/null || true
+            codesign -s - -f "$bin" || true
+          done
+
+      - name: Log toolchain versions
+        run: |
+          echo "OS: ${{ matrix.os }}"
+          bun --version
+          which pdftotext && pdftotext -v 2>&1 | head -1 || true
+
+      - name: Run md-to-pdf unit tests
+        run: bun test md-to-pdf/test/*.test.ts test/diagram-render-drift.test.ts
+
+      - name: Run E2E gates (combined-features copy-paste + emoji render)
+        env:
+          BROWSE_BIN: ${{ github.workspace }}/browser/dist/browse
+        run: bun test md-to-pdf/test/e2e/

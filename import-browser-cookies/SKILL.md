@@ -1,0 +1,306 @@
+---
+name: import-browser-cookies
+preamble-tier: 1
+version: 1.0.0
+description: Import cookies from your real Chromium browser into the headless browse session. (paysec)
+triggers:
+  - import browser cookies
+  - login to test site
+  - setup authenticated session
+allowed-tools:
+  - Bash
+  - Read
+  - AskUserQuestion
+---
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: bun run gen:skill-docs -->
+
+
+## When to invoke this skill
+
+Opens an interactive picker UI where you select which cookie domains to import.
+Use before QA testing authenticated pages. Use when asked to "import cookies",
+"login to the site", or "authenticate the browser".
+
+## Preamble (run first)
+
+```bash
+_PAYSEC_PREAMBLE="$HOME/.claude/skills/paysec/bin/paysec-preamble"; [ -x "$_PAYSEC_PREAMBLE" ] || _PAYSEC_PREAMBLE=".claude/skills/paysec/bin/paysec-preamble"
+if [ -x "$_PAYSEC_PREAMBLE" ]; then "$_PAYSEC_PREAMBLE" --skill import-browser-cookies --overlay claude --ppid "$PPID"; else echo "PAYSEC_PREAMBLE: unavailable (paysec bin not found; re-run ./setup)"; fi
+```
+
+## Plan Mode Safe Operations
+
+In plan mode, allowed because they inform the plan: `$B`, `$D`, `codex exec`/`codex review`, writes to `~/.paysec/`, writes to the plan file, and `open` for generated artifacts.
+
+## Skill Invocation During Plan Mode
+
+If the user invokes a skill in plan mode, the skill takes precedence over generic plan mode behavior. **Treat the skill file as executable instructions, not reference.** Follow it step by step starting from Step 0; any AskUserQuestion the skill fires is the workflow operating within plan mode, not a violation of it — and a skill whose instructions resolve a question themselves (e.g. a plan-mode auto-select) may legitimately not ask it. AskUserQuestion (any variant — `mcp__*__AskUserQuestion` or native; see "AskUserQuestion Format → Tool resolution") satisfies plan mode's end-of-turn requirement. If AskUserQuestion is unavailable or a call fails, follow the AskUserQuestion Format failure fallback: `headless` → BLOCKED; `interactive` → the prose fallback (also satisfies end-of-turn). At a STOP point, stop immediately. Do not continue the workflow or call ExitPlanMode there. Commands marked "PLAN MODE EXCEPTION — ALWAYS RUN" execute. Call ExitPlanMode only after the skill workflow completes, or if the user tells you to cancel the skill or leave plan mode.
+
+If `PROACTIVE` is `"false"`, do not auto-invoke or proactively suggest skills. If a skill seems useful, ask: "I think /skillname might help here — want me to run it?"
+
+If `SKILL_PREFIX` is `"true"`, suggest/invoke `/paysec-*` names. Disk paths stay `~/.claude/skills/paysec/[skill-name]/SKILL.md`.
+
+If `UPDATE_CHECK` is `"false"`, skip the next two lines — the update-check binary emits nothing in that mode, so there is no `UPGRADE_AVAILABLE` / `JUST_UPGRADED` output to act on.
+
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/paysec/paysec-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined).
+
+If output shows `JUST_UPGRADED <from> <to>`: print "Running paysec v{to} (just updated!)". If `SPAWNED_SESSION` is true, skip feature discovery.
+
+Feature discovery, max one prompt per session:
+- Missing `~/.claude/skills/paysec/.feature-prompted-continuous-checkpoint`: AskUserQuestion for Continuous checkpoint auto-commits. If accepted, run `~/.claude/skills/paysec/bin/paysec-config set checkpoint_mode continuous`. Always touch marker.
+- Missing `~/.claude/skills/paysec/.feature-prompted-model-overlay`: inform "Model overlays are active. MODEL_OVERLAY shows the patch." Always touch marker.
+
+After upgrade prompts, continue workflow.
+
+If `WRITING_STYLE_PENDING` is `yes`: Read `~/.claude/skills/paysec/preamble/sections/writing-style-migration.md` and follow it. Otherwise skip it.
+
+If `LAKE_INTRO` is `no`: Read `~/.claude/skills/paysec/preamble/sections/lake-intro.md` and follow it. Otherwise skip it.
+
+If `TEL_PROMPTED` is `no`: do NOT ask about telemetry. paysec never uploads usage data. Silently run:
+```bash
+~/.claude/skills/paysec/bin/paysec-config set telemetry off
+touch ~/.paysec/.telemetry-prompted
+```
+
+If `PROACTIVE_PROMPTED` is `no` AND `TEL_PROMPTED` is `yes`: Read `~/.claude/skills/paysec/preamble/sections/proactive-prompt.md` and follow it. Otherwise skip it.
+
+## First-run guidance (one-time)
+
+If `ACTIVATED` is `no` OR `FIRST_LOOP_SHOWN` is `no`: Read `~/.claude/skills/paysec/preamble/sections/first-run-guidance.md` and follow it. Otherwise skip it.
+
+If `HAS_ROUTING` is `no` AND `ROUTING_DECLINED` is `false` AND `PROACTIVE_PROMPTED` is `yes`: Read `~/.claude/skills/paysec/preamble/sections/routing-injection.md` and follow it. Otherwise skip it.
+
+If `VENDORED_PAYSEC` is `yes`: Read `~/.claude/skills/paysec/preamble/sections/vendoring-deprecation.md` and follow it. Otherwise skip it.
+
+If `SPAWNED_SESSION` is `"true"`, you are running inside a session spawned by an
+AI orchestrator (e.g., OpenClaw). In spawned sessions:
+- Do NOT use AskUserQuestion for interactive prompts. Auto-choose the recommended option.
+- Do NOT run upgrade checks, telemetry prompts, routing injection, or lake intro.
+- Focus on completing the task and reporting results via prose output.
+- End with a completion report: what shipped, decisions made, anything uncertain.
+
+## Artifacts Sync (skill start)
+
+```bash
+"$HOME/.claude/skills/paysec/bin/paysec-artifacts-sync-start" 2>/dev/null || echo "ARTIFACTS_SYNC: off"
+```
+
+
+
+Privacy stop-gate: if output shows `ARTIFACTS_SYNC: off`, `artifacts_sync_mode_prompted` is `false`, and gbrain is on PATH or `gbrain doctor --fast --json` works, ask once:
+
+> paysec can publish your artifacts (CEO plans, designs, reports) to a private GitHub repo that GBrain indexes across machines. How much should sync?
+
+Options:
+- A) Everything allowlisted (recommended)
+- B) Only artifacts
+- C) Decline, keep everything local
+
+After answer:
+
+```bash
+# Chosen mode: full | artifacts-only | off
+"$HOME/.claude/skills/paysec/bin/paysec-config" set artifacts_sync_mode <choice>
+"$HOME/.claude/skills/paysec/bin/paysec-config" set artifacts_sync_mode_prompted true
+```
+
+If A/B and `~/.paysec/.git` is missing, ask whether to run `paysec-artifacts-init`. Do not block the skill.
+
+At skill END before telemetry:
+
+```bash
+"$HOME/.claude/skills/paysec/bin/paysec-brain-sync" --discover-new 2>/dev/null || true
+"$HOME/.claude/skills/paysec/bin/paysec-brain-sync" --once 2>/dev/null || true
+```
+
+
+## Model-Specific Behavioral Patch (claude)
+
+The following nudges are tuned for the claude model family. They are
+**subordinate** to skill workflow, STOP points, AskUserQuestion gates, plan-mode
+safety, and /ship-pr review gates. If a nudge below conflicts with skill instructions,
+the skill wins. Treat these as preferences, not rules.
+
+**Todo-list discipline.** When working through a multi-step plan, mark each task
+complete individually as you finish it. Do not batch-complete at the end. If a task
+turns out to be unnecessary, mark it skipped with a one-line reason.
+
+**Think before heavy actions.** For complex operations (refactors, migrations,
+non-trivial new features), briefly state your approach before executing. This lets
+the user course-correct cheaply instead of mid-flight.
+
+**Dedicated tools over Bash.** Prefer Read, Edit, Write, Glob, Grep over shell
+equivalents (cat, sed, find, grep). The dedicated tools are cheaper and clearer.
+
+## Voice
+
+Direct, concrete, builder-to-builder. Name the file, function, command, and user-visible impact. No filler.
+
+No em dashes. No AI vocabulary: delve, crucial, robust, comprehensive, nuanced, multifaceted. Never corporate or academic. Short paragraphs. End with what to do.
+
+The user has context you do not. Cross-model agreement is a recommendation, not a decision. The user decides.
+
+## Completion Status Protocol
+
+When completing a skill workflow, report status using one of:
+- **DONE** — completed with evidence.
+- **DONE_WITH_CONCERNS** — completed, but list concerns.
+- **BLOCKED** — cannot proceed; state blocker and what was tried.
+- **NEEDS_CONTEXT** — missing info; state exactly what is needed.
+
+Escalate after 3 failed attempts, uncertain security-sensitive changes, or scope you cannot verify. Format: `STATUS`, `REASON`, `ATTEMPTED`, `RECOMMENDATION`.
+
+## Operational Self-Improvement
+
+Before completing, if you discovered a durable project quirk or command fix that would save 5+ minutes next time, log it:
+
+```bash
+~/.claude/skills/paysec/bin/paysec-learnings-log '{"skill":"SKILL_NAME","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"observed"}'
+```
+
+Do not log obvious facts or one-time transient errors.
+
+## Telemetry (run last)
+
+After workflow completion, log telemetry. Use skill `name:` from frontmatter. OUTCOME is success/error/abort/unknown.
+
+**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes telemetry to
+`~/.paysec/analytics/`, matching preamble analytics writes.
+
+Run this bash:
+
+```bash
+# Fresh shell: preamble variables are gone, so re-read the telemetry setting
+# (missing config => off) and leave duration blank when the start is unknown.
+_TEL=$(~/.claude/skills/paysec/bin/paysec-config get telemetry 2>/dev/null || echo off)
+_TEL=${_TEL:-off}
+_TEL_END=$(date +%s)
+_TEL_DUR=""
+[ -n "${_TEL_START:-}" ] && _TEL_DUR=$(( _TEL_END - _TEL_START ))
+rm -f ~/.paysec/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
+# Session timeline: record skill completion (local-only, never sent anywhere)
+~/.claude/skills/paysec/bin/paysec-timeline-log '{"skill":"SKILL_NAME","event":"completed","branch":"'$(git branch --show-current 2>/dev/null || echo unknown)'","outcome":"OUTCOME","duration_s":"'"$_TEL_DUR"'","session":"'"$_SESSION_ID"'"}' 2>/dev/null || true
+# Local analytics (gated on telemetry setting)
+if [ "$_TEL" != "off" ]; then
+echo '{"skill":"SKILL_NAME","duration_s":"'"$_TEL_DUR"'","outcome":"OUTCOME","browse":"USED_BROWSE","session":"'"$_SESSION_ID"'","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' >> ~/.paysec/analytics/skill-usage.jsonl 2>/dev/null || true
+fi
+# Remote telemetry (opt-in, requires binary)
+if [ "$_TEL" != "off" ] && [ -x ~/.claude/skills/paysec/bin/paysec-telemetry-log ]; then
+  ~/.claude/skills/paysec/bin/paysec-telemetry-log \
+    --skill "SKILL_NAME" --duration "$_TEL_DUR" --outcome "OUTCOME" \
+    --used-browse "USED_BROWSE" --session-id "$_SESSION_ID" \
+    --error-message "ERROR_MESSAGE" --failed-step "FAILED_STEP" 2>/dev/null &
+fi
+```
+
+Replace `SKILL_NAME`, `OUTCOME`, and `USED_BROWSE` before running.
+Replace `ERROR_MESSAGE` with a short description of the error (if outcome is error,
+otherwise use empty string ""), and `FAILED_STEP` with the step name or number where
+the failure occurred (if outcome is error, otherwise use empty string "").
+
+## Plan Status Footer
+
+Skills that run plan reviews (`/plan-*-review`, `/codex-second-opinion review`) include the EXIT PLAN MODE GATE blocking checklist at the end of the skill, which verifies the plan file ends with `## PAYSEC REVIEW REPORT` before ExitPlanMode is called. Skills that don't run plan reviews (operational skills like `/ship-pr`, `/qa-fix`, `/pr-review`) typically don't operate in plan mode and have no review report to verify; this footer is a no-op for them. Writing the plan file is the one edit allowed in plan mode.
+
+# Setup Browser Cookies
+
+Import logged-in sessions from your real Chromium browser into the headless browse session.
+
+## CDP mode check
+
+First, check if browse is already connected to the user's real browser:
+```bash
+$B status 2>/dev/null | grep -q "Mode: cdp" && echo "CDP_MODE=true" || echo "CDP_MODE=false"
+```
+If `CDP_MODE=true`: tell the user "Not needed — you're connected to your real browser via CDP. Your cookies and sessions are already available." and stop. No cookie import needed.
+
+## How it works
+
+1. Find the browse binary
+2. Run `cookie-import-browser` to detect installed browsers and open the picker UI
+3. User selects which cookie domains to import in their browser
+4. Cookies are decrypted and loaded into the Playwright session
+
+## Steps
+
+### 1. Find the browse binary
+
+## SETUP (run this check BEFORE any browse command)
+
+```bash
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+B=""
+[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/paysec/browser/dist/browse" ] && B="$_ROOT/.claude/skills/paysec/browser/dist/browse"
+[ -z "$B" ] && B="$HOME/.claude/skills/paysec/browser/dist/browse"
+if [ -x "$B" ]; then
+  echo "READY: $B"
+else
+  echo "NEEDS_SETUP"
+fi
+```
+
+If `NEEDS_SETUP`:
+1. Tell the user: "paysec browse needs a one-time build (~10 seconds). OK to proceed?" Then STOP and wait.
+2. Run: `cd <SKILL_DIR> && ./setup`
+3. If `bun` is not installed:
+   ```bash
+   if ! command -v bun >/dev/null 2>&1; then
+     BUN_VERSION="1.3.10"
+     BUN_INSTALL_SHA="bab8acfb046aac8c72407bdcce903957665d655d7acaa3e11c7c4616beae68dd"
+     tmpfile=$(mktemp)
+     curl -fsSL "https://bun.sh/install" -o "$tmpfile"
+     actual_sha=$(shasum -a 256 "$tmpfile" | awk '{print $1}')
+     if [ "$actual_sha" != "$BUN_INSTALL_SHA" ]; then
+       echo "ERROR: bun install script checksum mismatch" >&2
+       echo "  expected: $BUN_INSTALL_SHA" >&2
+       echo "  got:      $actual_sha" >&2
+       rm "$tmpfile"; exit 1
+     fi
+     BUN_VERSION="$BUN_VERSION" bash "$tmpfile"
+     rm "$tmpfile"
+   fi
+   ```
+
+### 2. Open the cookie picker
+
+```bash
+$B cookie-import-browser
+```
+
+This auto-detects installed Chromium browsers and opens
+an interactive picker UI in your default browser where you can:
+- Switch between installed browsers
+- Search domains
+- Click "+" to import a domain's cookies
+- Click trash to remove imported cookies
+
+Tell the user: **"Cookie picker opened — select the domains you want to import in your browser, then tell me when you're done."**
+
+### 3. Direct import (alternative)
+
+If the user specifies a domain directly (e.g., `/import-browser-cookies github.com`), skip the UI:
+
+```bash
+$B cookie-import-browser comet --domain github.com
+```
+
+Replace `comet` with the appropriate browser if specified.
+
+### 4. Verify
+
+After the user confirms they're done:
+
+```bash
+$B cookies
+```
+
+Show the user a summary of imported cookies (domain counts).
+
+## Notes
+
+- On macOS, the first import per browser may trigger a Keychain dialog — click "Allow" / "Always Allow"
+- On Linux, `v11` cookies may require `secret-tool`/libsecret access; `v10` cookies use Chromium's standard fallback key
+- Cookie picker is served on the same port as the browse server (no extra process)
+- Only domain names and cookie counts are shown in the UI — no cookie values are exposed
+- The browse session persists cookies between commands, so imported cookies work immediately

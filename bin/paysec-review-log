@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# paysec-review-log — atomically log a review result
+# Usage: paysec-review-log '{"skill":"...","timestamp":"...","status":"..."}'
+#
+# Binding fields (content-addressed staleness): every appended record is
+# stamped with commit_full, tree, dirty (informational) and wtree (the GATING
+# working-tree fingerprint from bin/paysec-wtree). These are computed
+# AUTHORITATIVELY here — caller-supplied values for the four keys are ignored,
+# so a stale rendered template (or a forged field) cannot bind a record to
+# content it wasn't made on. All other caller fields pass through untouched.
+# Outside a git repo the fields are simply omitted (legacy consumers fall back
+# to their heuristics).
+#
+# Known limitation: binding happens at LOG time, not review-START time — edits
+# made between finishing a review and logging it (including fixes the review
+# itself applied) are certified by the stamped fingerprint. paysec-evidence
+# closes this window for test runs (before/after capture); review flows log
+# immediately after reviewing, which keeps the window small but nonzero.
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+eval "$("$SCRIPT_DIR/paysec-slug" 2>/dev/null)"
+PAYSEC_HOME="${PAYSEC_HOME:-$HOME/.paysec}"
+mkdir -p "$PAYSEC_HOME/projects/$SLUG"
+
+INPUT="$1"
+
+# Compute binding fields (best-effort; empty outside a git repo).
+COMMIT_FULL=$(git rev-parse HEAD 2>/dev/null || true)
+TREE=""
+WTREE=""
+DIRTY=""
+if [ -n "$COMMIT_FULL" ]; then
+  TREE=$(git rev-parse 'HEAD^{tree}' 2>/dev/null || true)
+  WTREE=$("$SCRIPT_DIR/paysec-wtree" 2>/dev/null || true)
+  if [ -n "$(git status --porcelain -uno 2>/dev/null | head -1)" ]; then
+    DIRTY="true"
+  else
+    DIRTY="false"
+  fi
+fi
+
+# Validate (reject malformed or injection attempts) AND stamp in one pass.
+# Caller values for the binding keys are dropped before stamping.
+STAMPED=$(printf '%s' "$INPUT" | PAYSEC_STAMP_COMMIT_FULL="$COMMIT_FULL" PAYSEC_STAMP_TREE="$TREE" PAYSEC_STAMP_WTREE="$WTREE" PAYSEC_STAMP_DIRTY="$DIRTY" bun -e "
+const rec = JSON.parse(await Bun.stdin.text());
+for (const k of ['commit_full', 'tree', 'wtree', 'dirty']) delete rec[k];
+const env = process.env;
+if (env.PAYSEC_STAMP_COMMIT_FULL) rec.commit_full = env.PAYSEC_STAMP_COMMIT_FULL;
+if (env.PAYSEC_STAMP_TREE) rec.tree = env.PAYSEC_STAMP_TREE;
+if (env.PAYSEC_STAMP_WTREE) rec.wtree = env.PAYSEC_STAMP_WTREE;
+if (env.PAYSEC_STAMP_DIRTY) rec.dirty = env.PAYSEC_STAMP_DIRTY === 'true';
+console.log(JSON.stringify(rec));
+" 2>/dev/null) || {
+  # Not valid JSON — refuse to append
+  echo "paysec-review-log: invalid JSON, skipping" >&2
+  exit 1
+}
+
+echo "$STAMPED" >> "$PAYSEC_HOME/projects/$SLUG/$BRANCH-reviews.jsonl"
+
+# gbrain-sync: enqueue for cross-machine sync (no-op if sync is off).
+"$SCRIPT_DIR/paysec-brain-enqueue" "projects/$SLUG/$BRANCH-reviews.jsonl" 2>/dev/null &

@@ -1,0 +1,201 @@
+#!/usr/bin/env bun
+/**
+ * paysec-test-register — record every test case a paysec skill runs, then build a
+ * Test Case Register (Markdown + PDF) listing all of them with their results.
+ *
+ * Commands
+ *   paysec-test-register start <skill> "<target>"          → prints the run directory (create once per skill run)
+ *   paysec-test-register add <run_dir> '<json>'             → append one test case (call once per test / check)
+ *   paysec-test-register import-junit <run_dir> <file.xml> [module]
+ *                                                           → import every <testcase> from a JUnit XML report
+ *   paysec-test-register build <run_dir>                    → writes test-case-register.md + .pdf, prints paths
+ *   paysec-test-register show <run_dir>                     → prints totals (quick check)
+ *
+ * Test case JSON fields (only id, title/input and result are required):
+ *   {"id":"QA-001","module":"Login page","target":"email field","type":"negative",
+ *    "input":"notanemail","expected":"validation error","actual":"error shown",
+ *    "result":"pass|fail|skipped|blocked","severity":"high","evidence":".paysec/qa-reports/screenshots/x.png",
+ *    "notes":"..."}
+ *
+ * Output: <run_dir>/test-cases.jsonl, <run_dir>/meta.json, <run_dir>/test-case-register.{md,pdf}
+ * Run directories live under <project>/.paysec/test-registers/<skill>-<YYYYMMDD-HHMMSS>/.
+ *
+ * Every text field is passed through paysec's secret redaction before it is written, and any
+ * value typed into a password field is masked, so credentials never reach the register.
+ */
+import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from "fs";
+import { join, resolve, dirname } from "path";
+import { spawnSync } from "child_process";
+import { redactFindingSpans } from "../lib/redact-engine";
+
+const PAYSEC_ROOT = resolve(import.meta.dir, "..");
+const MAX_CELL = 180;
+type Result = "PASS" | "FAIL" | "SKIPPED" | "BLOCKED" | "UNKNOWN";
+
+function die(msg: string, code = 1): never { console.error(`paysec-test-register: ${msg}`); process.exit(code); }
+const now = () => new Date();
+const stamp = (d = now()) => d.toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
+
+function safe(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const t = Array.isArray(v) ? v.map(safe).join(", ") : typeof v === "object" ? JSON.stringify(v) : String(v);
+  if (!t) return "";
+  const r = redactFindingSpans(t);
+  return r === null ? "[REDACTED]" : r;
+}
+function normResult(v: unknown): Result {
+  const r = String(v ?? "").toLowerCase().trim();
+  if (/^(pass|passed|ok|success|true)$/.test(r)) return "PASS";
+  if (/^(fail|failed|failure|error|false|bug|defect)$/.test(r)) return "FAIL";
+  if (/^(skip|skipped|n\/a|na|not run)$/.test(r)) return "SKIPPED";
+  if (/^(blocked|blocker)$/.test(r)) return "BLOCKED";
+  return "UNKNOWN";
+}
+function readJsonl(file: string): any[] {
+  if (!existsSync(file)) return [];
+  return readFileSync(file, "utf-8").split("\n").filter(Boolean).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+}
+function requireRun(dir?: string): string {
+  if (!dir) die("missing <run_dir>");
+  if (!existsSync(join(dir, "meta.json"))) die(`not a register run directory (no meta.json): ${dir}`);
+  return dir;
+}
+function addCase(dir: string, raw: any) {
+  const passwordish = /pass(word|wd)?|secret|token|otp|pin\b/i.test(`${raw.target ?? ""} ${raw.field ?? ""} ${raw.title ?? ""}`);
+  const rec = {
+    id: safe(raw.id ?? raw.test_id) || `TC-${String(readJsonl(join(dir, "test-cases.jsonl")).length + 1).padStart(3, "0")}`,
+    module: safe(raw.module ?? raw.page ?? raw.suite ?? raw.area),
+    target: safe(raw.target ?? raw.field ?? raw.element),
+    type: safe(raw.type ?? raw.category),
+    title: safe(raw.title ?? raw.scenario ?? raw.name),
+    input: passwordish && raw.input ? "[REDACTED]" : safe(raw.input ?? raw.steps ?? raw.action),
+    expected: safe(raw.expected),
+    actual: safe(raw.actual),
+    result: normResult(raw.result ?? raw.status),
+    severity: safe(raw.severity),
+    evidence: safe(raw.evidence ?? raw.screenshot),
+    notes: safe(raw.notes),
+    duration_ms: typeof raw.duration_ms === "number" ? raw.duration_ms : undefined,
+    at: now().toISOString(),
+  };
+  appendFileSync(join(dir, "test-cases.jsonl"), JSON.stringify(rec) + "\n", "utf-8");
+  return rec;
+}
+
+// ── JUnit import (pytest --junitxml, vitest/bun --reporter=junit, jest-junit, mocha, go-junit-report…) ──
+function decode(s: string) { return s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&"); }
+function attr(tag: string, name: string) { const m = tag.match(new RegExp(`\\b${name}="([^"]*)"`)); return m ? decode(m[1]) : ""; }
+function importJunit(dir: string, file: string, moduleOverride?: string) {
+  if (!existsSync(file)) die(`JUnit file not found: ${file}`);
+  const xml = readFileSync(file, "utf-8");
+  const re = /<testcase\b([^>]*?)(\/>|>([\s\S]*?)<\/testcase>)/g;
+  let m: RegExpExecArray | null, n = 0;
+  while ((m = re.exec(xml))) {
+    const head = m[1], body = m[3] ?? "";
+    const fail = body.match(/<(failure|error)\b([^>]*)>?([\s\S]*?)(<\/(failure|error)>|$)/);
+    const skipped = /<skipped\b/.test(body);
+    const name = attr(`<x ${head}>`, "name"), cls = attr(`<x ${head}>`, "classname") || attr(`<x ${head}>`, "file");
+    const time = parseFloat(attr(`<x ${head}>`, "time"));
+    addCase(dir, {
+      id: `${cls ? cls + " › " : ""}${name}`.slice(0, 160), module: moduleOverride ?? (cls || "tests"), type: "automated",
+      title: name, input: "", expected: "test passes",
+      actual: fail ? (attr(`<x ${fail[2]}>`, "message") || decode(fail[3] ?? "").trim().split("\n")[0] || fail[1]) : skipped ? "skipped" : "passed",
+      result: fail ? "fail" : skipped ? "skipped" : "pass", evidence: "", duration_ms: Number.isFinite(time) ? Math.round(time * 1000) : undefined,
+    });
+    n++;
+  }
+  if (n === 0) die(`no <testcase> elements found in ${file}`, 3);
+  console.log(`imported ${n} test cases from ${file}`);
+}
+
+// ── rendering ───────────────────────────────────────────────────────────────
+const cell = (v: unknown) => { let t = String(v ?? "").replace(/\r?\n/g, " ").replace(/\|/g, "\\|").trim(); if (t.length > MAX_CELL) t = t.slice(0, MAX_CELL - 1) + "…"; return t || "—"; };
+const badge = (r: Result) => ({ PASS: "✅ PASS", FAIL: "❌ FAIL", SKIPPED: "⏭️ SKIPPED", BLOCKED: "⛔ BLOCKED", UNKNOWN: "❔ UNKNOWN" }[r]);
+function render(dir: string): { md: string; count: number; totals: Record<Result, number> } {
+  const meta = JSON.parse(readFileSync(join(dir, "meta.json"), "utf-8"));
+  const rows = readJsonl(join(dir, "test-cases.jsonl"));
+  const totals: Record<Result, number> = { PASS: 0, FAIL: 0, SKIPPED: 0, BLOCKED: 0, UNKNOWN: 0 };
+  for (const r of rows) totals[(r.result as Result) ?? "UNKNOWN"]++;
+  const L: string[] = [
+    `# Test Case Register — /${meta.skill}`, "",
+    `**Target:** ${cell(meta.target)}  `, `**Started:** ${meta.started_at}  `, `**Built:** ${now().toISOString()}  `,
+    `**Test cases:** ${rows.length}`, "",
+    "## Summary", "",
+    "| Total | ✅ Pass | ❌ Fail | ⏭️ Skipped | ⛔ Blocked | ❔ Unknown | Pass rate |", "|---|---|---|---|---|---|---|",
+    `| ${rows.length} | ${totals.PASS} | ${totals.FAIL} | ${totals.SKIPPED} | ${totals.BLOCKED} | ${totals.UNKNOWN} | ${rows.length ? Math.round((totals.PASS / Math.max(1, rows.length - totals.SKIPPED)) * 100) : 0}% |`, "",
+  ];
+  const fails = rows.filter(r => r.result === "FAIL" || r.result === "BLOCKED");
+  if (fails.length) {
+    L.push(`## Failed and blocked test cases (${fails.length})`, "", "| Test ID | Module | Scenario | Expected | Actual | Severity | Evidence |", "|---|---|---|---|---|---|---|");
+    for (const r of fails) L.push(`| ${cell(r.id)} | ${cell(r.module)} | ${cell(r.title || r.input || r.target)} | ${cell(r.expected)} | ${cell(r.actual)} | ${cell(r.severity)} | ${cell(r.evidence)} |`);
+    L.push("");
+  }
+  L.push(`## All test cases (${rows.length})`, "");
+  const byModule = new Map<string, any[]>();
+  for (const r of rows) { const k = r.module || "General"; if (!byModule.has(k)) byModule.set(k, []); byModule.get(k)!.push(r); }
+  for (const [mod, list] of byModule) {
+    const p = list.filter(x => x.result === "PASS").length, f = list.filter(x => x.result === "FAIL").length;
+    L.push(`### ${cell(mod)} — ${list.length} tests (${p} pass, ${f} fail)`, "",
+      "| # | Test ID | Scenario / target | Type | Input / steps | Expected | Actual | Result | Evidence |", "|---|---|---|---|---|---|---|---|---|");
+    list.forEach((r, i) => L.push(`| ${i + 1} | ${cell(r.id)} | ${cell([r.title, r.target].filter(Boolean).join(" — "))} | ${cell(r.type)} | ${cell(r.input)} | ${cell(r.expected)} | ${cell(r.actual)} | ${badge(r.result)} | ${cell(r.evidence)} |`));
+    L.push("");
+  }
+  if (!rows.length) L.push("*No test cases were recorded for this run.*", "");
+  L.push("---", "", `*Generated by paysec-test-register from \`${dir.replace(/\\/g, "/")}/test-cases.jsonl\`. Long cells are truncated to ${MAX_CELL} characters; the JSONL keeps the full record. Secrets are redacted.*`, "");
+  return { md: L.join("\n"), count: rows.length, totals };
+}
+function findPdfBin(): string | null {
+  if (process.env.PAYSEC_REGISTER_NO_PDF === "1") return null;   // Markdown only (tests, CI)
+  const env = process.env.PAYSEC_PDF_BIN; if (env && existsSync(env)) return env;
+  for (const c of ["md-to-pdf/dist/pdf.exe", "md-to-pdf/dist/pdf"]) { const p = join(PAYSEC_ROOT, c); if (existsSync(p)) return p; }
+  return null;
+}
+
+// ── CLI ─────────────────────────────────────────────────────────────────────
+const [cmd, ...args] = process.argv.slice(2);
+switch (cmd) {
+  case "start": {
+    const [skill, target = ""] = args;
+    if (!skill) die("usage: start <skill> \"<target>\"");
+    const base = process.env.PAYSEC_REGISTER_DIR ?? join(process.cwd(), ".paysec", "test-registers");
+    const dir = join(base, `${skill.replace(/[^a-z0-9-]/gi, "")}-${stamp()}`);
+    mkdirSync(dir, { recursive: true });
+    const gi = join(process.cwd(), ".paysec", ".gitignore"); if (!existsSync(gi)) { mkdirSync(dirname(gi), { recursive: true }); writeFileSync(gi, "*\n"); }
+    writeFileSync(join(dir, "meta.json"), JSON.stringify({ skill, target: safe(target), started_at: now().toISOString(), cwd: process.cwd() }, null, 2));
+    writeFileSync(join(dir, "test-cases.jsonl"), "");
+    console.log(dir.replace(/\\/g, "/"));
+    break;
+  }
+  case "add": {
+    const dir = requireRun(args[0]);
+    if (!args[1]) die("usage: add <run_dir> '<json>'");
+    let raw: any; try { raw = JSON.parse(args[1]); } catch (e) { die(`invalid JSON: ${(e as Error).message}`); }
+    for (const r of Array.isArray(raw) ? raw : [raw]) { const rec = addCase(dir, r); console.log(`recorded ${rec.id}: ${rec.result}`); }
+    break;
+  }
+  case "import-junit": { importJunit(requireRun(args[0]), args[1] ?? die("usage: import-junit <run_dir> <file.xml> [module]"), args[2]); break; }
+  case "show": {
+    const { count, totals } = render(requireRun(args[0]));
+    console.log(`test cases: ${count} | pass ${totals.PASS} | fail ${totals.FAIL} | skipped ${totals.SKIPPED} | blocked ${totals.BLOCKED} | unknown ${totals.UNKNOWN}`);
+    break;
+  }
+  case "build": {
+    const dir = requireRun(args[0]);
+    const { md, count, totals } = render(dir);
+    const mdPath = join(dir, "test-case-register.md"); writeFileSync(mdPath, md, "utf-8");
+    console.log(`REGISTER_MD: ${mdPath.replace(/\\/g, "/")}`);
+    const pdf = findPdfBin(), pdfPath = join(dir, "test-case-register.pdf");
+    if (!pdf) { console.log("REGISTER_PDF: (skipped — paysec md-to-pdf binary not built; run ./setup)"); }
+    else {
+      const env = { ...process.env };
+      if (!env.PAYSEC_BROWSE_BIN) for (const c of ["browser/dist/browse.exe", "browser/dist/browse"]) { const p = join(PAYSEC_ROOT, c); if (existsSync(p)) { env.PAYSEC_BROWSE_BIN = p; break; } }
+      const r = spawnSync(pdf, ["generate", mdPath, pdfPath, "--title", `Test Case Register — /${JSON.parse(readFileSync(join(dir, "meta.json"), "utf-8")).skill}`], { env, encoding: "utf-8" });
+      console.log(existsSync(pdfPath) ? `REGISTER_PDF: ${pdfPath.replace(/\\/g, "/")}` : `REGISTER_PDF: (failed — ${(r.stderr || r.stdout || "").trim().split("\n").pop()}) — Markdown is still complete`);
+    }
+    console.log(`REGISTER_TOTALS: ${count} test cases | pass ${totals.PASS} | fail ${totals.FAIL} | skipped ${totals.SKIPPED} | blocked ${totals.BLOCKED}`);
+    break;
+  }
+  default:
+    console.log("usage: paysec-test-register start <skill> \"<target>\" | add <run_dir> '<json>' | import-junit <run_dir> <file.xml> [module] | build <run_dir> | show <run_dir>");
+    process.exit(cmd ? 2 : 0);
+}
