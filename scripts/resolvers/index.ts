@@ -28,6 +28,7 @@ import { generateLearningsSearch, generateLearningsLog } from './learnings';
 import { generateConfidenceCalibration } from './confidence';
 import { generateInvokeSkill } from './composition';
 import { generateReviewArmy } from './review-army';
+import { generateTestCaseRegister } from './test-register';
 import { generateDxFramework } from './dx';
 import { generateGBrainContextLoad, generateGBrainSaveResults, generateBrainPreflight, generateBrainCacheRefresh, generateBrainWriteBack } from './gbrain';
 import { generateTasksSectionEmit, generateTasksSectionAggregate } from './tasks-section';
@@ -95,6 +96,7 @@ export const RESOLVERS: Record<string, ResolverFn> = {
   BRAIN_WRITE_BACK: generateBrainWriteBack,
   TASKS_SECTION_EMIT: generateTasksSectionEmit,
   TASKS_SECTION_AGGREGATE: generateTasksSectionAggregate,
+  TEST_CASE_REGISTER: generateTestCaseRegister,
   SECTION,
   SECTION_INDEX,
 };
