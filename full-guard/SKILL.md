@@ -1,7 +1,7 @@
 ---
-name: guard
+name: full-guard
 version: 0.1.0
-description: "Full safety mode: destructive command warnings + directory-scoped edits. (gstack)"
+description: "Full safety mode: destructive command warnings + directory-scoped edits. (paysec)"
 triggers:
   - full safety mode
   - guard against mistakes
@@ -15,17 +15,17 @@ hooks:
     - matcher: "Bash"
       hooks:
         - type: command
-          command: "bash $HOME/.claude/skills/gstack/careful/bin/check-careful.sh"
+          command: "bash $HOME/.claude/skills/paysec/safe-mode/bin/check-careful.sh"
           statusMessage: "Checking for destructive commands..."
     - matcher: "Edit"
       hooks:
         - type: command
-          command: "bash $HOME/.claude/skills/gstack/freeze/bin/check-freeze.sh"
+          command: "bash $HOME/.claude/skills/paysec/lock-edits/bin/check-freeze.sh"
           statusMessage: "Checking freeze boundary..."
     - matcher: "Write"
       hooks:
         - type: command
-          command: "bash $HOME/.claude/skills/gstack/freeze/bin/check-freeze.sh"
+          command: "bash $HOME/.claude/skills/paysec/lock-edits/bin/check-freeze.sh"
           statusMessage: "Checking freeze boundary..."
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
@@ -34,23 +34,23 @@ hooks:
 
 ## When to invoke this skill
 
-Combines /careful (warns before rm -rf, DROP TABLE, force-push, etc.) with
-/freeze (blocks edits outside a specified directory). Use for maximum safety
+Combines /safe-mode (warns before rm -rf, DROP TABLE, force-push, etc.) with
+/lock-edits (blocks edits outside a specified directory). Use for maximum safety
 when touching prod or debugging live systems. Use when asked to "guard mode",
 "full safety", "lock it down", or "maximum safety".
 
-# /guard — Full Safety Mode
+# /full-guard — Full Safety Mode
 
 Activates both destructive command warnings and directory-scoped edit restrictions.
-This is the combination of `/careful` + `/freeze` in a single command.
+This is the combination of `/safe-mode` + `/lock-edits` in a single command.
 
-**Dependency note:** This skill references hook scripts from the sibling `/careful`
-and `/freeze` skill directories. Both must be installed (they are installed together
-by the gstack setup script).
+**Dependency note:** This skill references hook scripts from the sibling `/safe-mode`
+and `/lock-edits` skill directories. Both must be installed (they are installed together
+by the paysec setup script).
 
 ```bash
-mkdir -p ~/.gstack/analytics
-echo '{"skill":"guard","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
+mkdir -p ~/.paysec/analytics
+echo '{"skill":"guard","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.paysec/analytics/skill-usage.jsonl 2>/dev/null || true
 ```
 
 ## Setup
@@ -71,8 +71,8 @@ echo "$FREEZE_DIR"
 2. Ensure trailing slash and save to the freeze state file:
 ```bash
 FREEZE_DIR="${FREEZE_DIR%/}/"
-eval "$(~/.claude/skills/gstack/bin/gstack-paths)"
-STATE_DIR="$GSTACK_STATE_ROOT"
+eval "$(~/.claude/skills/paysec/bin/paysec-paths)"
+STATE_DIR="$PAYSEC_STATE_ROOT"
 mkdir -p "$STATE_DIR"
 echo "$FREEZE_DIR" > "$STATE_DIR/freeze-dir.txt"
 echo "Freeze boundary set: $FREEZE_DIR"
@@ -82,9 +82,9 @@ Tell the user:
 - "**Guard mode active.** Two protections are now running:"
 - "1. **Destructive command guard** — rm -rf, DROP TABLE, force-push, etc. warn before executing (overridable); catastrophic shapes (recursive delete of / or ~, force-push to the default branch) are hard-denied"
 - "2. **Edit boundary** — file edits restricted to `<path>/`. Edits outside this directory are blocked."
-- "To remove the edit boundary, run `/unfreeze`. To deactivate everything, end the session."
+- "To remove the edit boundary, run `/unlock-edits`. To deactivate everything, end the session."
 
 ## What's protected
 
-See `/careful` for the full list of destructive command patterns and safe exceptions.
-See `/freeze` for how edit boundary enforcement works.
+See `/safe-mode` for the full list of destructive command patterns and safe exceptions.
+See `/lock-edits` for how edit boundary enforcement works.

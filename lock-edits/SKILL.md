@@ -1,7 +1,7 @@
 ---
-name: freeze
+name: lock-edits
 version: 0.1.0
-description: Restrict file edits to a specific directory for the session. (gstack)
+description: Restrict file edits to a specific directory for the session. (paysec)
 triggers:
   - freeze edits to directory
   - lock editing scope
@@ -15,12 +15,12 @@ hooks:
     - matcher: "Edit"
       hooks:
         - type: command
-          command: "bash $HOME/.claude/skills/gstack/freeze/bin/check-freeze.sh"
+          command: "bash $HOME/.claude/skills/paysec/lock-edits/bin/check-freeze.sh"
           statusMessage: "Checking freeze boundary..."
     - matcher: "Write"
       hooks:
         - type: command
-          command: "bash $HOME/.claude/skills/gstack/freeze/bin/check-freeze.sh"
+          command: "bash $HOME/.claude/skills/paysec/lock-edits/bin/check-freeze.sh"
           statusMessage: "Checking freeze boundary..."
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
@@ -35,14 +35,14 @@ Write outside the allowed path. Use when debugging to prevent accidentally
 Use when asked to "freeze", "restrict edits", "only edit this folder",
 or "lock down edits".
 
-# /freeze — Restrict Edits to a Directory
+# /lock-edits — Restrict Edits to a Directory
 
 Lock file edits to a specific directory. Any Edit or Write operation targeting
 a file outside the allowed path will be **blocked** (not just warned).
 
 ```bash
-mkdir -p ~/.gstack/analytics
-echo '{"skill":"freeze","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
+mkdir -p ~/.paysec/analytics
+echo '{"skill":"freeze","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.paysec/analytics/skill-usage.jsonl 2>/dev/null || true
 ```
 
 ## Setup
@@ -63,21 +63,21 @@ echo "$FREEZE_DIR"
 2. Ensure trailing slash and save to the freeze state file:
 ```bash
 FREEZE_DIR="${FREEZE_DIR%/}/"
-eval "$(~/.claude/skills/gstack/bin/gstack-paths)"
-STATE_DIR="$GSTACK_STATE_ROOT"
+eval "$(~/.claude/skills/paysec/bin/paysec-paths)"
+STATE_DIR="$PAYSEC_STATE_ROOT"
 mkdir -p "$STATE_DIR"
 echo "$FREEZE_DIR" > "$STATE_DIR/freeze-dir.txt"
 echo "Freeze boundary set: $FREEZE_DIR"
 ```
 
 Tell the user: "Edits are now restricted to `<path>/`. Any Edit or Write
-outside this directory will be blocked. To change the boundary, run `/freeze`
-again. To remove it, run `/unfreeze` or end the session."
+outside this directory will be blocked. To change the boundary, run `/lock-edits`
+again. To remove it, run `/unlock-edits` or end the session."
 
 ## How it works
 
 The hook reads `file_path` from the Edit/Write tool input JSON (shared
-real-JSON extractor with /careful — one copy, sourced by both hooks), then
+real-JSON extractor with /safe-mode — one copy, sourced by both hooks), then
 checks whether the path starts with the freeze directory. If not, it returns a
 `hookSpecificOutput` payload with `permissionDecision: "deny"` to block the
 operation (nested under `hookSpecificOutput` — Claude Code ignores a top-level
@@ -98,4 +98,4 @@ are supported.
 - The trailing `/` on the freeze directory prevents `/src` from matching `/src-old`
 - Freeze applies to Edit and Write tools only — Read, Bash, Glob, Grep are unaffected
 - This prevents accidental edits, not a security boundary — Bash commands like `sed` can still modify files outside the boundary
-- To deactivate, run `/unfreeze` or end the conversation
+- To deactivate, run `/unlock-edits` or end the conversation

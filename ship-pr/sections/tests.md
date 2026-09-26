@@ -1,5 +1,56 @@
 <!-- AUTO-GENERATED from tests.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
+## Test Case Register (required for every run)
+
+Every run of /ship-pr produces a **Test Case Register**: a PDF listing every test case executed. Each row shows the
+ID, module, scenario, input, expected, actual, result and evidence, with a summary and a list of failures first.
+Other reports summarise; the register is complete.
+
+### 1. Start the register (once, before the first test)
+
+```bash
+~/.claude/skills/paysec/bin/paysec-test-register start ship-pr "<target: URL, page, or branch>"
+```
+
+It prints a run directory such as `.paysec/test-registers/ship-pr-20260925-101500`. Shell variables do not survive
+between commands, so reuse that exact path literally as `<run_dir>` in every later register command.
+
+### 2. Record the automated test results
+
+Run the project's test suite so it also writes a **JUnit XML** report, then import it. Every test case is listed:
+
+| Runner | Command addition |
+|---|---|
+| pytest | `--junitxml=<run_dir>/junit.xml` |
+| vitest | `--reporter=default --reporter=junit --outputFile=<run_dir>/junit.xml` |
+| bun test | `--reporter=junit --reporter-outfile=<run_dir>/junit.xml` |
+| jest | `--reporters=default --reporters=jest-junit` (needs `jest-junit`; output `junit.xml`) |
+| mocha | `--reporter mocha-junit-reporter` (needs the package) |
+| go test | `go test -v ./... 2>&1 \| go-junit-report > <run_dir>/junit.xml` (needs go-junit-report) |
+| Maven / Gradle | reports already in `target/surefire-reports/*.xml` / `build/test-results/**/*.xml` |
+
+```bash
+~/.claude/skills/paysec/bin/paysec-test-register import-junit <run_dir> <path/to/junit.xml> "<suite name, e.g. Unit tests>"
+```
+
+Import each XML file if there are several. If the runner cannot produce JUnit XML, record **one case per test file or
+suite** from the runner output with `add` (result pass/fail and the failing test names in `actual`), and say in the
+final report that per-test detail was not available.
+
+### 3. Build the register (always, at the end, even if the run failed or recorded nothing)
+
+```bash
+~/.claude/skills/paysec/bin/paysec-test-register build <run_dir>
+```
+
+It prints `REGISTER_MD:`, `REGISTER_PDF:` and `REGISTER_TOTALS:`. **Include the PDF path and the totals line in your
+final report.** If the PDF step fails, give the Markdown path and the reason printed. `~/.claude/skills/paysec/bin/paysec-test-register show <run_dir>` prints
+totals at any time.
+
+Build the register (step 3 above) **before the final ship report**, and include its PDF path in that report.
+
+---
+
 ## Step 4: Test Framework Bootstrap
 
 ## Test Framework Bootstrap
@@ -34,7 +85,7 @@ git ls-files | grep -cE '(^|/)(tests?|spec|__tests__)/|(^|/)tests?\.py$|(^|/)tes
 # Rust keeps unit tests inside src/, so file names alone miss them
 [ -f Cargo.toml ] && git grep -lF '#[test]' -- 'src' >/dev/null 2>&1 && echo "TESTS:rust in-source"
 # Check opt-out marker
-[ -f .gstack/no-test-bootstrap ] && echo "BOOTSTRAP_DECLINED"
+[ -f .paysec/no-test-bootstrap ] && echo "BOOTSTRAP_DECLINED"
 ```
 
 Map the markers to the command you will OFFER — never to one you run on a guess:
@@ -65,7 +116,7 @@ Absent config files and absent `tests/` directories are NOT evidence of "no test
 "I couldn't detect your project's language. What runtime are you using?"
 Options: A) Node.js/TypeScript B) Ruby/Rails C) Python D) Go E) Rust F) PHP G) Elixir H) This project doesn't need tests.
 If the runtime you need isn't listed, offer "Other" and take the runtime plus the test command as free text.
-If user picks H → write `.gstack/no-test-bootstrap` and continue without tests.
+If user picks H → write `.paysec/no-test-bootstrap` and continue without tests.
 
 **If an ecosystem matched but there is no existing-test evidence at all — bootstrap:**
 
@@ -99,7 +150,7 @@ B) [Alternative] — [rationale]. Includes: [packages]
 C) Skip — don't set up testing right now
 RECOMMENDATION: Choose A because [reason based on project context]"
 
-If user picks C → write `.gstack/no-test-bootstrap`. Tell user: "If you change your mind later, delete `.gstack/no-test-bootstrap` and re-run." Continue without tests.
+If user picks C → write `.paysec/no-test-bootstrap`. Tell user: "If you change your mind later, delete `.paysec/no-test-bootstrap` and re-run." Continue without tests.
 
 If multiple runtimes detected (monorepo) → ask which runtime to set up first, with option to do both sequentially.
 
@@ -198,16 +249,16 @@ Running bare test migrations without INSTANCE hits an orphan DB and corrupts str
 Run both test suites in parallel, each wrapped in the evidence ledger. The
 wrapper is transparent (streams output live, exit code passes through) and
 records `{command, exit, working-tree fingerprint, log path}` to
-`~/.gstack/projects/<slug>/<branch>-evidence.jsonl` — Step 16 cites this
+`~/.paysec/projects/<slug>/<branch>-evidence.jsonl` — Step 16 cites this
 record instead of re-running when the content hasn't changed:
 
 ```bash
-~/.claude/skills/gstack/bin/gstack-evidence run --label tests -- 'bin/test-lane 2>&1' &
-~/.claude/skills/gstack/bin/gstack-evidence run --label vitest -- 'npm run test 2>&1' &
+~/.claude/skills/paysec/bin/paysec-evidence run --label tests -- 'bin/test-lane 2>&1' &
+~/.claude/skills/paysec/bin/paysec-evidence run --label vitest -- 'npm run test 2>&1' &
 wait
 ```
 
-After both complete, check the `gstack-evidence: recorded label=... exit=...
+After both complete, check the `paysec-evidence: recorded label=... exit=...
 log=...` summary lines — each carries the lane's exit code and a per-run log
 file (no shared /tmp collisions between concurrent ships). Read the log files
 for failure detail.
@@ -276,13 +327,13 @@ Use AskUserQuestion:
 ### Step T4: Execute the chosen action
 
 **If "Investigate and fix now":**
-- Switch to /investigate mindset: root cause first, then minimal fix.
+- Switch to /debug-root-cause mindset: root cause first, then minimal fix.
 - Fix the pre-existing failure.
 - Commit the fix separately from the branch's changes: `git commit -m "fix: pre-existing test failure in <test-file>"`
 - Continue with the workflow.
 
 **If "Add as P0 TODO":**
-- If `TODOS.md` exists, add the entry following the format in `review/TODOS-format.md` (or `.claude/skills/review/TODOS-format.md`).
+- If `TODOS.md` exists, add the entry following the format in `pr-review/TODOS-format.md` (or `.claude/skills/pr-review/TODOS-format.md`).
 - If `TODOS.md` does not exist, create it with the standard header and add the entry.
 - Entry should include: title, the error output, which branch it was noticed on, and priority P0.
 - Continue with the workflow — treat the pre-existing failure as non-blocking.
@@ -301,14 +352,14 @@ Use AskUserQuestion:
     ```bash
     gh issue create \
       --title "Pre-existing test failure: <test-name>" \
-      --body "Found failing on branch <current-branch>. Failure is pre-existing.\n\n**Error:**\n```\n<first 10 lines>\n```\n\n**Last modified by:** <author>\n**Noticed by:** gstack /ship on <date>" \
+      --body "Found failing on branch <current-branch>. Failure is pre-existing.\n\n**Error:**\n```\n<first 10 lines>\n```\n\n**Last modified by:** <author>\n**Noticed by:** paysec /ship-pr on <date>" \
       --assignee "<github-username>"
     ```
   - **If GitLab:**
     ```bash
     glab issue create \
       -t "Pre-existing test failure: <test-name>" \
-      -d "Found failing on branch <current-branch>. Failure is pre-existing.\n\n**Error:**\n```\n<first 10 lines>\n```\n\n**Last modified by:** <author>\n**Noticed by:** gstack /ship on <date>" \
+      -d "Found failing on branch <current-branch>. Failure is pre-existing.\n\n**Error:**\n```\n<first 10 lines>\n```\n\n**Last modified by:** <author>\n**Noticed by:** paysec /ship-pr on <date>" \
       -a "<gitlab-username>"
     ```
 - If neither CLI is available or `--assignee`/`-a` fails (user not in org, etc.), create the issue without assignee and note who should look at it in the body.
@@ -362,7 +413,7 @@ Map runner → test file: `post_generation_eval_runner.rb` → `post_generation_
 
 **3. Run affected suites at `EVAL_JUDGE_TIER=full`:**
 
-`/ship` is a pre-merge gate, so always use full tier (Sonnet structural + Opus persona judges).
+`/ship-pr` is a pre-merge gate, so always use full tier (Sonnet structural + Opus persona judges).
 
 ```bash
 EVAL_JUDGE_TIER=full EVAL_VERBOSE=1 bin/test-lane --eval test/evals/<suite>_eval_test.rb 2>&1 | tee /tmp/ship_evals.txt
@@ -373,13 +424,13 @@ If multiple suites need to run, run them sequentially (each needs a test lane). 
 **Long eval suites (30+ min): launch detached so a turn boundary can't kill them.**
 A plain backgrounded eval lives in the harness's process group and dies to a
 SIGTERM ("polite quit") on a turn boundary, a stopped monitor, or an interruption
-(observed mid-`/ship`: `script terminated by signal SIGTERM`). Run it through
-`~/.claude/skills/gstack/bin/gstack-detach` instead — it survives in its own
+(observed mid-`/ship-pr`: `script terminated by signal SIGTERM`). Run it through
+`~/.claude/skills/paysec/bin/paysec-detach` instead — it survives in its own
 session, serializes against other worktrees via a machine lock (no API
-saturation), and writes a guaranteed `### gstack-detach EXIT=<code> ###` sentinel:
+saturation), and writes a guaranteed `### paysec-detach EXIT=<code> ###` sentinel:
 
 ```bash
-~/.claude/skills/gstack/bin/gstack-detach --label ship-evals --lock gstack-evals --timeout 5400 -- <project eval command>
+~/.claude/skills/paysec/bin/paysec-detach --label ship-evals --lock paysec-evals --timeout 5400 -- <project eval command>
 ```
 
 Then poll the printed log path; break on the `EXIT=` sentinel (covers both pass
@@ -393,11 +444,11 @@ poller is reaped.
 
 **5. Save eval output** — include eval results and cost dashboard in the PR body (Step 19).
 
-**Tier reference (for context — /ship always uses `full`):**
+**Tier reference (for context — /ship-pr always uses `full`):**
 | Tier | When | Speed (cached) | Cost |
 |------|------|----------------|------|
 | `fast` (Haiku) | Dev iteration, smoke tests | ~5s (14x faster) | ~$0.07/run |
 | `standard` (Sonnet) | Default dev, `bin/test-lane --eval` | ~17s (4x faster) | ~$0.37/run |
-| `full` (Opus persona) | **`/ship` and pre-merge** | ~72s (baseline) | ~$1.27/run |
+| `full` (Opus persona) | **`/ship-pr` and pre-merge** | ~72s (baseline) | ~$1.27/run |
 
 ---
