@@ -555,9 +555,9 @@ describe('host config correctness', () => {
     expect(openclaw.coAuthorTrailer).toContain('OpenClaw');
   });
 
-  test('every external host skips the codex skill', () => {
+  test('every external host skips the codex-second-opinion skill', () => {
     for (const config of getExternalHosts()) {
-      expect(config.generation.skipSkills).toContain('codex');
+      expect(config.generation.skipSkills).toContain('codex-second-opinion');
     }
   });
 

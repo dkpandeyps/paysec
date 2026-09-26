@@ -71,9 +71,9 @@ if (evalsEnabled && process.env.EVALS_TIER) {
 function installSkills(tmpDir: string) {
   const skillDirs = [
     '', // root paysec SKILL.md
-    'qa', 'qa-report', 'ship', 'review', 'plan-business-review', 'plan-tech-review',
-    'plan-ux-review', 'design-qa', 'design-system', 'retro',
-    'docs-release-update', 'investigate', 'idea-review', 'browse', 'import-browser-cookies',
+    'qa-fix', 'qa-report', 'ship-pr', 'pr-review', 'plan-business-review', 'plan-tech-review',
+    'plan-ux-review', 'design-qa', 'design-system', 'weekly-retro',
+    'docs-release-update', 'debug-root-cause', 'idea-review', 'browser', 'import-browser-cookies',
     'paysec-upgrade', 'humanizer',
   ];
 
@@ -103,12 +103,12 @@ The skill has specialized workflows that produce better results than ad-hoc answ
 
 Key routing rules:
 - Product ideas, "is this worth building", brainstorming → invoke idea-review
-- Bugs, errors, "why is this broken", 500 errors → invoke investigate
-- Ship, deploy, push, create PR → invoke ship
-- QA, test the site, find bugs → invoke qa
-- Code review, check my diff → invoke review
+- Bugs, errors, "why is this broken", 500 errors → invoke debug-root-cause
+- Ship, deploy, push, create PR → invoke ship-pr
+- QA, test the site, find bugs → invoke qa-fix
+- Code review, check my diff → invoke pr-review
 - Update docs after shipping → invoke docs-release-update
-- Weekly retro → invoke retro
+- Weekly retro → invoke weekly-retro
 - Design system, brand → invoke design-system
 - Visual audit, design polish → invoke design-qa
 - Architecture review → invoke plan-tech-review
@@ -303,7 +303,7 @@ export default app;
       run('git', ['checkout', '-b', 'feature/waitlist-api']);
 
       const testName = 'journey-debug';
-      const expectedSkill = 'investigate';
+      const expectedSkill = 'debug-root-cause';
       const result = await runSkillTest({
         prompt: "The GET /api/waitlist endpoint was working fine yesterday but now it's returning 500 errors. The tests are passing locally but the endpoint fails when I hit it with curl. Can you figure out what's going on?",
         workingDirectory: tmpDir,
@@ -321,7 +321,7 @@ export default app;
       recordRouting(testName, result, expectedSkill, actualSkill);
 
       expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
-      const validSkills = ['investigate', 'qa'];
+      const validSkills = ['debug-root-cause', 'qa-fix'];
       expect(validSkills, `Expected one of ${validSkills.join('/')} but got ${actualSkill}`).toContain(actualSkill);
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -338,7 +338,7 @@ export default app;
       spawnSync('git', ['commit', '-m', 'initial'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
 
       const testName = 'journey-qa';
-      const expectedSkill = 'qa';
+      const expectedSkill = 'qa-fix';
       const alternateSkills = ['qa-report', 'browser'];
       const result = await runSkillTest({
         prompt: "I think the app is mostly working now. Can you go through the site and test everything — find any bugs and fix them?",
@@ -380,7 +380,7 @@ export default app;
       run('git', ['commit', '-m', 'feat: add waitlist service']);
 
       const testName = 'journey-code-review';
-      const expectedSkill = 'review';
+      const expectedSkill = 'pr-review';
       const result = await runSkillTest({
         prompt: "I'm about to merge this into main. Can you look over my changes and flag anything risky before I land it?",
         workingDirectory: tmpDir,
@@ -419,7 +419,7 @@ export default app;
       run('git', ['commit', '-m', 'feat: waitlist']);
 
       const testName = 'journey-ship';
-      const expectedSkill = 'ship';
+      const expectedSkill = 'ship-pr';
       const result = await runSkillTest({
         prompt: "This looks good. Let's get it deployed — push the code up and create a PR.",
         workingDirectory: tmpDir,
@@ -499,7 +499,7 @@ export default app;
       run('git', ['commit', '-m', 'docs: add README', '--date', '2026-03-14T16:00:00']);
 
       const testName = 'journey-retro';
-      const expectedSkill = 'retro';
+      const expectedSkill = 'weekly-retro';
       const result = await runSkillTest({
         prompt: "It's Friday. What did we ship this week? I want to do a quick retrospective on what the team accomplished.",
         workingDirectory: tmpDir,

@@ -112,7 +112,7 @@ When the user's request matches an available skill, ALWAYS invoke it via
 the Skill tool as your FIRST action.
 
 Key routing rules:
-- /web-scrape, "scrape", "get data from", "extract from" → invoke scrape
+- /web-scrape, "scrape", "get data from", "extract from" → invoke web-scrape
 - /save-scrape-skill, "save-scrape-skill", "codify this scrape" → invoke save-scrape-skill
 
 Environment:
@@ -189,7 +189,7 @@ describeIfSelected('Browser-skills Phase 2a E2E (/scrape + /save-scrape-skill)',
 
   // ── 1. /web-scrape match path: bundled hackernews-frontpage matches ──────
   testConcurrentIfSelected('scrape-match-path', async () => {
-    const { workDir, paysecHome } = setupSkillifyWorkdir('match', ['scrape']);
+    const { workDir, paysecHome } = setupSkillifyWorkdir('match', ['web-scrape']);
     installBundledHackernewsSkill(workDir);
 
     const result = await runSkillTest({
@@ -228,7 +228,7 @@ Do NOT enter the prototype phase. Do NOT use AskUserQuestion.`,
 
   // ── 2. /web-scrape prototype path: drive $B primitives against fixture ────
   testConcurrentIfSelected('scrape-prototype-path', async () => {
-    const { workDir, paysecHome } = setupSkillifyWorkdir('prototype', ['scrape']);
+    const { workDir, paysecHome } = setupSkillifyWorkdir('prototype', ['web-scrape']);
 
     // Stage a local HTML fixture the agent can goto via file://
     const fixturePath = path.join(workDir, 'fixture.html');

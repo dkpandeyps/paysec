@@ -74,7 +74,7 @@ _UPDATE_CHECK=$($PAYSEC_BIN/paysec-config get update_check 2>/dev/null || echo "
 echo "UPDATE_CHECK: $_UPDATE_CHECK"
 mkdir -p ~/.paysec/analytics
 if [ "$_TEL" != "off" ]; then
-echo '{"skill":"ship","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(_repo=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null | tr -cd 'a-zA-Z0-9._-'); echo "${_repo:-unknown}")'"}'  >> ~/.paysec/analytics/skill-usage.jsonl 2>/dev/null || true
+echo '{"skill":"ship-pr","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(_repo=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null | tr -cd 'a-zA-Z0-9._-'); echo "${_repo:-unknown}")'"}'  >> ~/.paysec/analytics/skill-usage.jsonl 2>/dev/null || true
 fi
 for _PF in $(find ~/.paysec/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do
   if [ -f "$_PF" ]; then
@@ -96,7 +96,7 @@ if [ -f "$_LEARN_FILE" ]; then
 else
   echo "LEARNINGS: 0"
 fi
-$PAYSEC_BIN/paysec-timeline-log '{"skill":"ship","event":"started","branch":"'"$_BRANCH"'","session":"'"$_SESSION_ID"'"}' 2>/dev/null &
+$PAYSEC_BIN/paysec-timeline-log '{"skill":"ship-pr","event":"started","branch":"'"$_BRANCH"'","session":"'"$_SESSION_ID"'"}' 2>/dev/null &
 _HAS_ROUTING="no"
 for _RF in AGENTS.md AGENTS.md; do
   if [ -f "$_RF" ] && grep -q "## Skill routing" "$_RF" 2>/dev/null; then
@@ -186,33 +186,11 @@ touch ~/.paysec/.completeness-intro-seen
 
 Only run `open` if yes. Always run `touch`.
 
-If `TEL_PROMPTED` is `no` AND `LAKE_INTRO` is `yes`: ask telemetry once via AskUserQuestion:
-
-> Help paysec get better. Share usage data only: skill, duration, crashes, stable device ID. No code or file paths. Your repo name is recorded locally only and stripped before any upload.
-
-Options:
-- A) Help paysec get better! (recommended)
-- B) No thanks
-
-If A: run `$PAYSEC_BIN/paysec-config set telemetry community`
-
-If B: ask follow-up:
-
-> Anonymous mode sends only aggregate usage, no unique ID.
-
-Options:
-- A) Sure, anonymous is fine
-- B) No thanks, fully off
-
-If B→A: run `$PAYSEC_BIN/paysec-config set telemetry anonymous`
-If B→B: run `$PAYSEC_BIN/paysec-config set telemetry off`
-
-Always run:
+If `TEL_PROMPTED` is `no`: do NOT ask about telemetry. paysec never uploads usage data. Silently run:
 ```bash
+$PAYSEC_BIN/paysec-config set telemetry off
 touch ~/.paysec/.telemetry-prompted
 ```
-
-Skip if `TEL_PROMPTED` is `yes`.
 
 If `PROACTIVE_PROMPTED` is `no` AND `TEL_PROMPTED` is `yes`: ask once:
 
@@ -715,7 +693,7 @@ Before each AskUserQuestion, choose `question_id` from `$PAYSEC_ROOT/scripts/que
 
 After answer, log best-effort (PostToolUse hook also captures deterministically when installed; dedup on (source, tool_use_id) handles double-writes):
 ```bash
-$PAYSEC_BIN/paysec-question-log '{"skill":"ship","question_id":"<id>","question_summary":"<short>","category":"<approval|clarification|routing|cherry-pick|feedback-loop>","door_type":"<one-way|two-way>","options_count":N,"user_choice":"<key>","recommended":"<key>","session_id":"'"$_SESSION_ID"'"}' 2>/dev/null || true
+$PAYSEC_BIN/paysec-question-log '{"skill":"ship-pr","question_id":"<id>","question_summary":"<short>","category":"<approval|clarification|routing|cherry-pick|feedback-loop>","door_type":"<one-way|two-way>","options_count":N,"user_choice":"<key>","recommended":"<key>","session_id":"'"$_SESSION_ID"'"}' 2>/dev/null || true
 ```
 
 For two-way questions, offer: "Tune this question? Reply `tune: never-ask`, `tune: always-ask`, or free-form."
@@ -934,7 +912,7 @@ $PAYSEC_ROOT/bin/paysec-review-read
 
 Parse the output. Find the most recent entry for each skill (plan-business-review, plan-tech-review, review, plan-ux-review, design-review-lite, adversarial-review, codex-review, codex-plan-review). Ignore entries with timestamps older than 7 days. For the Eng Review row, show whichever is more recent between `review` (diff-scoped pre-landing review) and `plan-tech-review` (plan-stage architecture review). Append "(DIFF)" or "(PLAN)" to the status to distinguish. For the Adversarial row, show whichever is more recent between `adversarial-review` (new auto-scaled) and `codex-review` (legacy). For Design Review, show whichever is more recent between `plan-ux-review` (full visual audit) and `design-review-lite` (code-level check). Append "(FULL)" or "(LITE)" to the status to distinguish. For the Outside Voice row, show the most recent `codex-plan-review` entry — this captures outside voices from both /plan-business-review and /plan-tech-review.
 
-**Source attribution:** If the most recent entry for a skill has a \`"via"\` field, append it to the status label in parentheses. Examples: `plan-tech-review` with `via:"auto-plan-review"` shows as "CLEAR (PLAN via /auto-plan-review)". `review` with `via:"ship"` shows as "CLEAR (DIFF via /ship-pr)". Entries without a `via` field show as "CLEAR (PLAN)" or "CLEAR (DIFF)" as before.
+**Source attribution:** If the most recent entry for a skill has a \`"via"\` field, append it to the status label in parentheses. Examples: `plan-tech-review` with `via:"auto-plan-review"` shows as "CLEAR (PLAN via /auto-plan-review)". `review` with `via:"ship-pr"` shows as "CLEAR (DIFF via /ship-pr)". Entries without a `via` field show as "CLEAR (PLAN)" or "CLEAR (DIFF)" as before.
 
 Note: `autoplan-voices` and `design-outside-voices` entries are audit-trail-only (forensic data for cross-model consensus analysis). They do not appear in the dashboard and are not checked by any consumer.
 
@@ -1029,6 +1007,57 @@ git fetch origin <base> && git merge origin/<base> --no-edit
 **If there are merge conflicts:** Try to auto-resolve if they are simple (VERSION, schema.rb, CHANGELOG ordering). If conflicts are complex or ambiguous, **STOP** and show them.
 
 **If already up to date:** Continue silently.
+
+---
+
+## Test Case Register (required for every run)
+
+Every run of /ship-pr produces a **Test Case Register**: a PDF listing every test case executed. Each row shows the
+ID, module, scenario, input, expected, actual, result and evidence, with a summary and a list of failures first.
+Other reports summarise; the register is complete.
+
+### 1. Start the register (once, before the first test)
+
+```bash
+$PAYSEC_BIN/paysec-test-register start ship-pr "<target: URL, page, or branch>"
+```
+
+It prints a run directory such as `.paysec/test-registers/ship-pr-20260925-101500`. Shell variables do not survive
+between commands, so reuse that exact path literally as `<run_dir>` in every later register command.
+
+### 2. Record the automated test results
+
+Run the project's test suite so it also writes a **JUnit XML** report, then import it. Every test case is listed:
+
+| Runner | Command addition |
+|---|---|
+| pytest | `--junitxml=<run_dir>/junit.xml` |
+| vitest | `--reporter=default --reporter=junit --outputFile=<run_dir>/junit.xml` |
+| bun test | `--reporter=junit --reporter-outfile=<run_dir>/junit.xml` |
+| jest | `--reporters=default --reporters=jest-junit` (needs `jest-junit`; output `junit.xml`) |
+| mocha | `--reporter mocha-junit-reporter` (needs the package) |
+| go test | `go test -v ./... 2>&1 \| go-junit-report > <run_dir>/junit.xml` (needs go-junit-report) |
+| Maven / Gradle | reports already in `target/surefire-reports/*.xml` / `build/test-results/**/*.xml` |
+
+```bash
+$PAYSEC_BIN/paysec-test-register import-junit <run_dir> <path/to/junit.xml> "<suite name, e.g. Unit tests>"
+```
+
+Import each XML file if there are several. If the runner cannot produce JUnit XML, record **one case per test file or
+suite** from the runner output with `add` (result pass/fail and the failing test names in `actual`), and say in the
+final report that per-test detail was not available.
+
+### 3. Build the register (always, at the end, even if the run failed or recorded nothing)
+
+```bash
+$PAYSEC_BIN/paysec-test-register build <run_dir>
+```
+
+It prints `REGISTER_MD:`, `REGISTER_PDF:` and `REGISTER_TOTALS:`. **Include the PDF path and the totals line in your
+final report.** If the PDF step fails, give the Markdown path and the reason printed. `$PAYSEC_BIN/paysec-test-register show <run_dir>` prints
+totals at any time.
+
+Build the register (step 3 above) **before the final ship report**, and include its PDF path in that report.
 
 ---
 
@@ -2166,7 +2195,7 @@ Output a summary header: `Pre-Landing Review: N issues (X critical, Y informatio
 
 9. Persist the review result to the review log:
 ```bash
-$PAYSEC_ROOT/bin/paysec-review-log '{"skill":"review","timestamp":"TIMESTAMP","status":"STATUS","issues_found":N,"critical":N,"informational":N,"quality_score":SCORE,"specialists":SPECIALISTS_JSON,"findings":FINDINGS_JSON,"commit":"'"$(git rev-parse --short HEAD)"'","via":"ship"}'
+$PAYSEC_ROOT/bin/paysec-review-log '{"skill":"review","timestamp":"TIMESTAMP","status":"STATUS","issues_found":N,"critical":N,"informational":N,"quality_score":SCORE,"specialists":SPECIALISTS_JSON,"findings":FINDINGS_JSON,"commit":"'"$(git rev-parse --short HEAD)"'","via":"ship-pr"}'
 ```
 Substitute TIMESTAMP (ISO 8601), STATUS ("clean" if no issues, "issues_found" otherwise),
 and N values from the summary counts above. The `via:"ship"` distinguishes from standalone `/pr-review` runs.
@@ -2236,7 +2265,7 @@ If you discovered a non-obvious pattern, pitfall, or architectural insight durin
 this session, log it for future sessions:
 
 ```bash
-$PAYSEC_BIN/paysec-learnings-log '{"skill":"ship","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
+$PAYSEC_BIN/paysec-learnings-log '{"skill":"ship-pr","type":"TYPE","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"SOURCE","files":["path/to/relevant/file"]}'
 ```
 
 **Types:** `pattern` (reusable approach), `pitfall` (what NOT to do), `preference`

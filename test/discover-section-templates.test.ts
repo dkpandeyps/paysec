@@ -52,6 +52,6 @@ describe('discoverSectionTemplates', () => {
   });
 
   test('skills without a sections/ dir contribute nothing', () => {
-    expect(found.some(f => f.skillDir === 'review')).toBe(false);
+    expect(found.some(f => f.skillDir === 'pr-review')).toBe(false);
   });
 });

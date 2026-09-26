@@ -314,7 +314,7 @@ describe('Update check preamble', () => {
 
 describe('Cross-skill path consistency', () => {
   test('REMOTE_SLUG derivation pattern is identical across files that use it', () => {
-    const patterns = extractRemoteSlugPatterns(ROOT, ['qa', 'review']);
+    const patterns = extractRemoteSlugPatterns(ROOT, ['qa-fix', 'pr-review']);
     const allPatterns: string[] = [];
 
     for (const [, filePatterns] of patterns) {
@@ -1733,8 +1733,8 @@ describe('Codex skill validation', () => {
     const skills: string[] = [];
     for (const entry of fs.readdirSync(ROOT, { withFileTypes: true })) {
       if (!entry.isDirectory() || entry.name.startsWith('.') || entry.name === 'node_modules') continue;
-      if (entry.name === 'codex') continue; // Claude-only skill
-      if (entry.name === 'claude') continue; // External-host-only skill
+      if (entry.name === 'codex-second-opinion') continue; // Claude-only skill
+      if (entry.name === 'claude-second-opinion') continue; // External-host-only skill
       if (fs.existsSync(path.join(ROOT, entry.name, 'SKILL.md.tmpl'))) {
         skills.push(entry.name);
       }

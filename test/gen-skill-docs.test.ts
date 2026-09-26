@@ -2785,13 +2785,14 @@ describe('telemetry', () => {
     expect(content).toContain('paysec-config get telemetry');
   });
 
-  test('generated SKILL.md contains telemetry opt-in prompt', () => {
+  test('generated SKILL.md never prompts for telemetry and forces it off', () => {
     const content = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
     expect(content).toContain('.telemetry-prompted');
-    expect(content).toContain('Help paysec get better');
-    expect(content).toContain('paysec-config set telemetry community');
-    expect(content).toContain('paysec-config set telemetry anonymous');
+    expect(content).toContain('paysec never uploads usage data');
     expect(content).toContain('paysec-config set telemetry off');
+    expect(content).not.toContain('get better');
+    expect(content).not.toContain('paysec-config set telemetry community');
+    expect(content).not.toContain('paysec-config set telemetry anonymous');
   });
 
   test('generated SKILL.md contains telemetry epilogue', () => {
@@ -3088,7 +3089,7 @@ describe('LEARNINGS_SEARCH resolver', () => {
 });
 
 describe('LEARNINGS_LOG resolver', () => {
-  const LOG_SKILLS = ['review', 'retro', 'investigate'];
+  const LOG_SKILLS = ['pr-review', 'weekly-retro', 'debug-root-cause'];
 
   for (const skill of LOG_SKILLS) {
     test(`${skill} generated SKILL.md contains learnings log`, () => {
