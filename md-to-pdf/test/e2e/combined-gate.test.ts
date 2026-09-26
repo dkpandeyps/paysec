@@ -1,7 +1,7 @@
 /**
  * Combined-features copy-paste gate — the P0 CI gate.
  *
- * This test runs the compiled `make-pdf/dist/pdf` binary against a fixture
+ * This test runs the compiled `md-to-pdf/dist/pdf` binary against a fixture
  * that has every v1 typography feature on (smartypants, hyphens, chapter
  * breaks, bold/italic, inline code, blockquote, lists, headings). It then
  * pipes the output through pdftotext and asserts the extracted text
@@ -26,11 +26,11 @@ import { copyPasteGate, resolvePdftotext } from "../../src/pdftotext";
 const FIXTURE = path.resolve(__dirname, "../fixtures/combined-gate.md");
 const EXPECTED = path.resolve(__dirname, "../fixtures/combined-gate.expected.txt");
 const ROOT = path.resolve(__dirname, "../../..");
-const PDF_BIN = path.join(ROOT, "make-pdf/dist/pdf");
-const BROWSE_BIN = path.join(ROOT, "browse/dist/browse");
+const PDF_BIN = path.join(ROOT, "md-to-pdf/dist/pdf");
+const BROWSE_BIN = path.join(ROOT, "browser/dist/browse");
 
 function prerequisitesAvailable(): { ok: true } | { ok: false; reason: string } {
-  if (!fs.existsSync(PDF_BIN)) return { ok: false, reason: `make-pdf binary missing (${PDF_BIN}). Run bun run build.` };
+  if (!fs.existsSync(PDF_BIN)) return { ok: false, reason: `md-to-pdf binary missing (${PDF_BIN}). Run bun run build.` };
   if (!fs.existsSync(BROWSE_BIN)) return { ok: false, reason: `browse binary missing (${BROWSE_BIN}).` };
   if (!fs.existsSync(FIXTURE)) return { ok: false, reason: `fixture missing (${FIXTURE}).` };
   if (!fs.existsSync(EXPECTED)) return { ok: false, reason: `expected.txt missing (${EXPECTED}).` };

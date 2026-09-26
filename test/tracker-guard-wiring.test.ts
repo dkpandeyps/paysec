@@ -6,11 +6,11 @@ import { execSync } from 'child_process';
 /**
  * Wiring scanner: every tracker-TEXT read (PR/issue bodies, comment bodies,
  * issue titles judged by the model) in skill templates, resolvers, and runtime
- * reference docs must flow through bin/gstack-issue-guard. Same posture as
+ * reference docs must flow through bin/paysec-issue-guard. Same posture as
  * test/egress-receipt-wiring.test.ts: a regex tripwire behind a centralized
  * helper — it catches drift, it is not the enforcement itself.
  *
- * A line is compliant when it mentions gstack-issue-guard, or when the
+ * A line is compliant when it mentions paysec-issue-guard, or when the
  * (file, reason) pair is enumerated in SCANNER_EXEMPT below. Exemptions are
  * REASONED — a new raw read needs either the guard or an entry here explaining
  * why it is not model-context ingress.
@@ -42,19 +42,19 @@ const READ_PATTERNS: { name: string; re: RegExp }[] = [
 // (file, pattern-name) exemptions with reasons. Keep every entry REASONED.
 const SCANNER_EXEMPT: { file: string; pattern: string; reason: string }[] = [
   {
-    file: 'review/greptile-triage.md',
+    file: 'pr-review/greptile-triage.md',
     pattern: 'gh comment-body api read',
     reason:
-      'raw fetch lands in /tmp json FILES (metadata/body split); body text is read into context only via the gstack-issue-guard --stdin pipes documented in the same file',
+      'raw fetch lands in /tmp json FILES (metadata/body split); body text is read into context only via the paysec-issue-guard --stdin pipes documented in the same file',
   },
   {
-    file: 'document-release/sections/release-body.md.tmpl',
+    file: 'docs-release-update/sections/release-body.md.tmpl',
     pattern: 'gh pr body read',
     reason:
       'two-artifact flow: this is the RAW write-back tempfile fetch; the context read is enveloped at step 1b and a banner tripwire guards the write side',
   },
   {
-    file: 'document-release/sections/release-body.md.tmpl',
+    file: 'docs-release-update/sections/release-body.md.tmpl',
     pattern: 'glab body/description read',
     reason: 'two-artifact flow (GitLab twin of the raw write-back fetch); context read enveloped at step 1b',
   },
@@ -80,7 +80,7 @@ function trackedFiles(): string[] {
 }
 
 describe('tracker-text wiring scanner', () => {
-  test('every tracker-text read flows through gstack-issue-guard (or carries a reasoned exemption)', () => {
+  test('every tracker-text read flows through paysec-issue-guard (or carries a reasoned exemption)', () => {
     const violations: string[] = [];
     for (const rel of trackedFiles()) {
       const abs = path.join(ROOT, rel);
@@ -89,12 +89,12 @@ describe('tracker-text wiring scanner', () => {
       lines.forEach((line, i) => {
         for (const { name, re } of READ_PATTERNS) {
           if (!re.test(line)) continue;
-          if (line.includes('gstack-issue-guard')) continue;
+          if (line.includes('paysec-issue-guard')) continue;
           // Multi-line shell pipeline: a read whose continuation lines pipe
           // into the guard is compliant (spec's dedupe block ends in `\`).
           if (line.trimEnd().endsWith('\\')) {
             const continuation = lines.slice(i + 1, i + 4).join('\n');
-            if (continuation.includes('gstack-issue-guard')) continue;
+            if (continuation.includes('paysec-issue-guard')) continue;
           }
           const exempt = SCANNER_EXEMPT.some((e) => e.file === rel && e.pattern === name);
           if (exempt) continue;
@@ -104,8 +104,8 @@ describe('tracker-text wiring scanner', () => {
     }
     if (violations.length > 0) {
       throw new Error(
-        `Raw tracker-text read(s) outside gstack-issue-guard:\n  ${violations.join('\n  ')}\n\n` +
-          `Fix: pipe the read through bin/gstack-issue-guard (--stdin for pre-fetched text), or — ` +
+        `Raw tracker-text read(s) outside paysec-issue-guard:\n  ${violations.join('\n  ')}\n\n` +
+          `Fix: pipe the read through bin/paysec-issue-guard (--stdin for pre-fetched text), or — ` +
           `if this is genuinely not model-context ingress (mechanical rewrite, state routing, raw ` +
           `write-back artifact) — add a REASONED entry to SCANNER_EXEMPT in this file.`,
       );
@@ -119,22 +119,22 @@ describe('tracker-text wiring scanner', () => {
       expect(fs.existsSync(abs)).toBe(true);
       const content = fs.readFileSync(abs, 'utf-8');
       const pat = READ_PATTERNS.find((p) => p.name === e.pattern)!;
-      const hasMatch = content.split('\n').some((l) => pat.re.test(l) && !l.includes('gstack-issue-guard'));
+      const hasMatch = content.split('\n').some((l) => pat.re.test(l) && !l.includes('paysec-issue-guard'));
       expect(hasMatch).toBe(true);
     }
   });
 
   test('the guarded sites actually mention the guard (wiring, not just lib existence)', () => {
     const mustMention = [
-      'review/greptile-triage.md',
-      'document-release/sections/release-body.md.tmpl',
-      'spec/SKILL.md.tmpl',
-      'land-and-deploy/SKILL.md.tmpl',
+      'pr-review/greptile-triage.md',
+      'docs-release-update/sections/release-body.md.tmpl',
+      'write-spec/SKILL.md.tmpl',
+      'merge-and-deploy/SKILL.md.tmpl',
       'scripts/resolvers/review.ts',
     ];
     for (const rel of mustMention) {
       const content = fs.readFileSync(path.join(ROOT, rel), 'utf-8');
-      expect(content).toContain('gstack-issue-guard');
+      expect(content).toContain('paysec-issue-guard');
     }
   });
 });

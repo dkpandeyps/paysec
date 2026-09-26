@@ -1,7 +1,7 @@
 /**
- * gstack-gbrain-repo-policy — per-remote trust-tier policy store.
+ * paysec-gbrain-repo-policy — per-remote trust-tier policy store.
  *
- * Covers the setup-gbrain D3/D2-eng decisions end-to-end:
+ * Covers the brain-setup D3/D2-eng decisions end-to-end:
  *   - D3 triad semantics (read-write / read-only / deny / unset)
  *   - Remote-URL normalization (ssh/https/shorthand all collapse to the same key)
  *   - D2-eng schema-version field (_schema_version: 2) written on new files
@@ -10,7 +10,7 @@
  *   - Corrupt-file quarantine (file renamed to .corrupt-<ts>, fresh file created)
  *   - 0600 permissions on the policy file
  *
- * Each test uses a temp GSTACK_HOME so nothing leaks into the user's real ~/.gstack.
+ * Each test uses a temp PAYSEC_HOME so nothing leaks into the user's real ~/.paysec.
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
@@ -20,13 +20,13 @@ import * as os from 'os';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const BIN = path.join(ROOT, 'bin', 'gstack-gbrain-repo-policy');
+const BIN = path.join(ROOT, 'bin', 'paysec-gbrain-repo-policy');
 
 let tmpHome: string;
 
 function run(args: string[], opts: { env?: Record<string, string> } = {}) {
   const res = spawnSync(BIN, args, {
-    env: { ...process.env, GSTACK_HOME: tmpHome, ...(opts.env || {}) },
+    env: { ...process.env, PAYSEC_HOME: tmpHome, ...(opts.env || {}) },
     encoding: 'utf-8',
   });
   return {
@@ -259,7 +259,7 @@ describe('get without arg (auto-detect from current dir)', () => {
     const cwdTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'no-git-'));
     try {
       const res = spawnSync(BIN, ['get'], {
-        env: { ...process.env, GSTACK_HOME: tmpHome },
+        env: { ...process.env, PAYSEC_HOME: tmpHome },
         cwd: cwdTmp,
         encoding: 'utf-8',
       });
@@ -272,14 +272,14 @@ describe('get without arg (auto-detect from current dir)', () => {
 
 // ── #2140 sync-path chokepoint ──────────────────────────────────────────────
 // The tier above is a STORE. This block pins the ENFORCEMENT: a direct
-// gstack-gbrain-sync invocation (skill prose bypassed — cron, curiosity,
+// paysec-gbrain-sync invocation (skill prose bypassed — cron, curiosity,
 // automation) must honor deny/read-only at the code-import stage, and the
 // egress receipt's "per-repo policy chokepoint (repoPolicyTier)" consent
 // string must describe code that exists. Wave-1 shipped the receipt string
 // without the function; these tests make that impossible to repeat.
 
-describe('gstack-gbrain-sync code stage honors the repo policy (#2140 sync path)', () => {
-  const SYNC = path.join(ROOT, 'bin', 'gstack-gbrain-sync.ts');
+describe('paysec-gbrain-sync code stage honors the repo policy (#2140 sync path)', () => {
+  const SYNC = path.join(ROOT, 'bin', 'paysec-gbrain-sync.ts');
   const REPO_URL = 'https://github.com/acme/widget.git';
 
   let repoDir: string;
@@ -301,7 +301,7 @@ describe('gstack-gbrain-sync code stage honors the repo policy (#2140 sync path)
       encoding: 'utf-8',
       timeout: 60_000,
       // HOME also redirected so engine detection can't find a real ~/.gbrain.
-      env: { ...process.env, GSTACK_HOME: tmpHome, HOME: tmpHome },
+      env: { ...process.env, PAYSEC_HOME: tmpHome, HOME: tmpHome },
     });
     let stages: any[] = [];
     try {

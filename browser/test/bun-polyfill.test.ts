@@ -139,13 +139,13 @@ describe('bun-polyfill', () => {
     expect(result.stdout.toString().trim()).toBe('exit:143');
   });
 
-  // GSTACK_SPAWN_MAX_BUFFER caps the drain so a runaway child can't OOM the
+  // PAYSEC_SPAWN_MAX_BUFFER caps the drain so a runaway child can't OOM the
   // server. Past the cap, the pipe keeps flowing (child doesn't block) but
   // further bytes are dropped. Set a small cap, write more than that, assert
   // the captured stdout equals the cap and the child exits cleanly.
-  test('Bun.spawn caps buffered output at GSTACK_SPAWN_MAX_BUFFER', async () => {
+  test('Bun.spawn caps buffered output at PAYSEC_SPAWN_MAX_BUFFER', async () => {
     const result = Bun.spawnSync(['node', '-e', `
-      process.env.GSTACK_SPAWN_MAX_BUFFER = '${1024}';
+      process.env.PAYSEC_SPAWN_MAX_BUFFER = '${1024}';
       require(${JSON.stringify(polyfillPath)});
       (async () => {
         // Child writes 10 KB; cap is 1 KB; drained output should be exactly 1 KB

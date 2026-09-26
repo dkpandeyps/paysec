@@ -64,8 +64,8 @@ if (!evalsEnabled) {
 
 // Codex E2E touchfiles — keyed by test name, same pattern as E2E_TOUCHFILES
 const CODEX_E2E_TOUCHFILES: Record<string, string[]> = {
-  'codex-discover-skill':    ['codex/**', '.agents/skills/**', 'test/helpers/codex-session-runner.ts'],
-  'codex-review-findings':   ['review/**', '.agents/skills/gstack-review/**', 'codex/**', 'test/helpers/codex-session-runner.ts'],
+  'codex-discover-skill':    ['codex-second-opinion/**', '.agents/skills/**', 'test/helpers/codex-session-runner.ts'],
+  'codex-review-findings':   ['pr-review/**', '.agents/skills/paysec-pr-review/**', 'codex-second-opinion/**', 'test/helpers/codex-session-runner.ts'],
 };
 
 let selectedTests: string[] | null = null; // null = run all
@@ -140,19 +140,19 @@ describeCodex('Codex E2E', () => {
   });
 
   testIfSelected('codex-discover-skill', async () => {
-    // Install gstack-review skill to a temp HOME and ask Codex to list skills.
+    // Install paysec-pr-review skill to a temp HOME and ask Codex to list skills.
     // Deliberately installs the FULL generated SKILL.md (no `sections`): this
     // test's purpose is to prove the real artifact loads under Codex — the
     // stderr assertions below ('invalid' / 'Skipped loading') would be
     // meaningless against an extracted fixture.
-    const skillDir = path.join(testWorktree, '.agents', 'skills', 'gstack-review');
+    const skillDir = path.join(testWorktree, '.agents', 'skills', 'paysec-pr-review');
 
     const result = await runCodexSkill({
       skillDir,
       prompt: 'List any skills or instructions you have available. Just list the names.',
       timeoutMs: 60_000,
       cwd: testWorktree,
-      skillName: 'gstack-review',
+      skillName: 'paysec-pr-review',
     });
 
     logCodexCost('codex-discover-skill', result);
@@ -169,26 +169,26 @@ describeCodex('Codex E2E', () => {
     // The output should reference the skill name in some form
     const outputLower = result.output.toLowerCase();
     expect(
-      outputLower.includes('review') || outputLower.includes('gstack') || outputLower.includes('skill'),
+      outputLower.includes('review') || outputLower.includes('paysec') || outputLower.includes('skill'),
     ).toBe(true);
   }, 120_000);
 
-  // Validates that Codex can invoke the gstack-review skill, run a diff-based
+  // Validates that Codex can invoke the paysec-pr-review skill, run a diff-based
   // code review, and produce structured review output with findings/issues.
   // Accepts Codex timeout (exit 124/137) as non-failure since that's a CLI perf issue.
   testIfSelected('codex-review-findings', async () => {
-    // Install gstack-review and ask Codex to review the worktree. The skill
+    // Install paysec-pr-review and ask Codex to review the worktree. The skill
     // fixture is EXTRACTED to the core review-workflow sections — the full
     // Codex host variant is ~1460 lines and this test only exercises the
     // diff-review flow (CLAUDE.md: "E2E test fixtures: extract, don't copy").
-    const skillDir = path.join(testWorktree, '.agents', 'skills', 'gstack-review');
+    const skillDir = path.join(testWorktree, '.agents', 'skills', 'paysec-pr-review');
 
     const result = await runCodexSkill({
       skillDir,
-      prompt: 'Run the gstack-review skill on this repository. Review the current branch diff and report your findings.',
+      prompt: 'Run the paysec-pr-review skill on this repository. Review the current branch diff and report your findings.',
       timeoutMs: 540_000,
       cwd: testWorktree,
-      skillName: 'gstack-review',
+      skillName: 'paysec-pr-review',
       sections: CODEX_REVIEW_E2E_SECTIONS,
     });
 

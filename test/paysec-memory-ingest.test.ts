@@ -1,5 +1,5 @@
 /**
- * Unit tests for bin/gstack-memory-ingest.ts (Lane A).
+ * Unit tests for bin/paysec-memory-ingest.ts (Lane A).
  *
  * Covers the unit-testable internals: parseTranscriptJsonl (Codex + Claude Code +
  * truncated last line), buildTranscriptPage / buildArtifactPage shape, repoSlug,
@@ -20,12 +20,12 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { spawnSync } from "child_process";
 
-const SCRIPT = join(import.meta.dir, "..", "bin", "gstack-memory-ingest.ts");
+const SCRIPT = join(import.meta.dir, "..", "bin", "paysec-memory-ingest.ts");
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function makeTestHome(): string {
-  return mkdtempSync(join(tmpdir(), "gstack-memory-ingest-"));
+  return mkdtempSync(join(tmpdir(), "paysec-memory-ingest-"));
 }
 
 function runScript(args: string[], env: Record<string, string> = {}): { stdout: string; stderr: string; exitCode: number } {
@@ -60,11 +60,11 @@ function writeCodexSession(home: string, ymd: string, content: string): string {
 
 // ── --help and --probe ─────────────────────────────────────────────────────
 
-describe("gstack-memory-ingest CLI", () => {
+describe("paysec-memory-ingest CLI", () => {
   it("prints usage on --help and exits 0", () => {
     const r = runScript(["--help"]);
     expect(r.exitCode).toBe(0);
-    expect(r.stderr).toContain("Usage: gstack-memory-ingest");
+    expect(r.stderr).toContain("Usage: paysec-memory-ingest");
     expect(r.stderr).toContain("--probe");
     expect(r.stderr).toContain("--incremental");
     expect(r.stderr).toContain("--bulk");
@@ -78,9 +78,9 @@ describe("gstack-memory-ingest CLI", () => {
 
   it("--probe on empty home reports 0 files", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
-    const r = runScript(["--probe"], { HOME: home, GSTACK_HOME: gstackHome });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
+    const r = runScript(["--probe"], { HOME: home, PAYSEC_HOME: paysecHome });
     expect(r.exitCode).toBe(0);
     expect(r.stdout).toContain("Total files in window: 0");
     rmSync(home, { recursive: true, force: true });
@@ -88,12 +88,12 @@ describe("gstack-memory-ingest CLI", () => {
 
   it("--probe finds Claude Code sessions", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
     const session = `{"type":"user","message":{"role":"user","content":"hello"},"timestamp":"${new Date().toISOString()}","cwd":"/tmp/x"}\n{"type":"assistant","message":{"role":"assistant","content":"hi"},"timestamp":"${new Date().toISOString()}"}\n`;
     writeClaudeCodeSession(home, "tmp-x", "abc123", session);
 
-    const r = runScript(["--probe"], { HOME: home, GSTACK_HOME: gstackHome });
+    const r = runScript(["--probe"], { HOME: home, PAYSEC_HOME: paysecHome });
     expect(r.exitCode).toBe(0);
     expect(r.stdout).toContain("Total files in window: 1");
     expect(r.stdout).toContain("transcript");
@@ -102,30 +102,30 @@ describe("gstack-memory-ingest CLI", () => {
 
   it("--probe finds Codex sessions", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
     const today = new Date();
     const ymd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const session = `{"type":"session_meta","payload":{"id":"sess-xyz","cwd":"/tmp/x","git":{"repository_url":"https://github.com/foo/bar"}},"timestamp":"${today.toISOString()}"}\n`;
     writeCodexSession(home, ymd, session);
 
-    const r = runScript(["--probe"], { HOME: home, GSTACK_HOME: gstackHome });
+    const r = runScript(["--probe"], { HOME: home, PAYSEC_HOME: paysecHome });
     expect(r.exitCode).toBe(0);
     expect(r.stdout).toContain("Total files in window: 1");
     rmSync(home, { recursive: true, force: true });
   });
 
-  it("--probe finds gstack artifacts (learnings, eureka, ceo-plan)", () => {
+  it("--probe finds paysec artifacts (learnings, eureka, ceo-plan)", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(join(gstackHome, "analytics"), { recursive: true });
-    mkdirSync(join(gstackHome, "projects", "foo-bar", "ceo-plans"), { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(join(paysecHome, "analytics"), { recursive: true });
+    mkdirSync(join(paysecHome, "projects", "foo-bar", "ceo-plans"), { recursive: true });
 
-    writeFileSync(join(gstackHome, "analytics", "eureka.jsonl"), '{"insight":"lake first"}\n');
-    writeFileSync(join(gstackHome, "projects", "foo-bar", "learnings.jsonl"), '{"key":"a","insight":"b"}\n');
-    writeFileSync(join(gstackHome, "projects", "foo-bar", "ceo-plans", "2026-05-01-test.md"), "# Plan\n");
+    writeFileSync(join(paysecHome, "analytics", "eureka.jsonl"), '{"insight":"lake first"}\n');
+    writeFileSync(join(paysecHome, "projects", "foo-bar", "learnings.jsonl"), '{"key":"a","insight":"b"}\n');
+    writeFileSync(join(paysecHome, "projects", "foo-bar", "ceo-plans", "2026-05-01-test.md"), "# Plan\n");
 
-    const r = runScript(["--probe"], { HOME: home, GSTACK_HOME: gstackHome });
+    const r = runScript(["--probe"], { HOME: home, PAYSEC_HOME: paysecHome });
     expect(r.exitCode).toBe(0);
     expect(r.stdout).toContain("Total files in window: 3");
     expect(r.stdout).toContain("eureka");
@@ -136,14 +136,14 @@ describe("gstack-memory-ingest CLI", () => {
 
   it("--sources filter limits the walk to specific types", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(join(gstackHome, "analytics"), { recursive: true });
-    mkdirSync(join(gstackHome, "projects", "foo", "ceo-plans"), { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(join(paysecHome, "analytics"), { recursive: true });
+    mkdirSync(join(paysecHome, "projects", "foo", "ceo-plans"), { recursive: true });
 
-    writeFileSync(join(gstackHome, "analytics", "eureka.jsonl"), '{"insight":"x"}\n');
-    writeFileSync(join(gstackHome, "projects", "foo", "learnings.jsonl"), '{"key":"a"}\n');
+    writeFileSync(join(paysecHome, "analytics", "eureka.jsonl"), '{"insight":"x"}\n');
+    writeFileSync(join(paysecHome, "projects", "foo", "learnings.jsonl"), '{"key":"a"}\n');
 
-    const r = runScript(["--probe", "--sources", "eureka"], { HOME: home, GSTACK_HOME: gstackHome });
+    const r = runScript(["--probe", "--sources", "eureka"], { HOME: home, PAYSEC_HOME: paysecHome });
     expect(r.exitCode).toBe(0);
     expect(r.stdout).toContain("Total files in window: 1");
     expect(r.stdout).toContain("eureka");
@@ -160,29 +160,29 @@ describe("gstack-memory-ingest CLI", () => {
 
 // ── State file behavior ────────────────────────────────────────────────────
 
-describe("gstack-memory-ingest state file", () => {
+describe("paysec-memory-ingest state file", () => {
   it("--incremental on empty home creates state file with schema_version: 1", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
-    const r = runScript(["--incremental", "--quiet"], { HOME: home, GSTACK_HOME: gstackHome });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
+    const r = runScript(["--incremental", "--quiet"], { HOME: home, PAYSEC_HOME: paysecHome });
     expect(r.exitCode).toBe(0);
-    const statePath = join(gstackHome, ".transcript-ingest-state.json");
+    const statePath = join(paysecHome, ".transcript-ingest-state.json");
     expect(existsSync(statePath)).toBe(true);
     const state = JSON.parse(readFileSync(statePath, "utf-8"));
     expect(state.schema_version).toBe(1);
-    expect(state.last_writer).toBe("gstack-memory-ingest");
+    expect(state.last_writer).toBe("paysec-memory-ingest");
     rmSync(home, { recursive: true, force: true });
   });
 
   it("backs up state file on schema_version mismatch", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
-    const statePath = join(gstackHome, ".transcript-ingest-state.json");
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
+    const statePath = join(paysecHome, ".transcript-ingest-state.json");
     writeFileSync(statePath, JSON.stringify({ schema_version: 999, sessions: {} }), "utf-8");
 
-    const r = runScript(["--incremental", "--quiet"], { HOME: home, GSTACK_HOME: gstackHome });
+    const r = runScript(["--incremental", "--quiet"], { HOME: home, PAYSEC_HOME: paysecHome });
     expect(r.exitCode).toBe(0);
     expect(existsSync(statePath + ".bak")).toBe(true);
 
@@ -193,12 +193,12 @@ describe("gstack-memory-ingest state file", () => {
 
   it("backs up state file on JSON parse error", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
-    const statePath = join(gstackHome, ".transcript-ingest-state.json");
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
+    const statePath = join(paysecHome, ".transcript-ingest-state.json");
     writeFileSync(statePath, "{ this is not valid json", "utf-8");
 
-    const r = runScript(["--incremental", "--quiet"], { HOME: home, GSTACK_HOME: gstackHome });
+    const r = runScript(["--incremental", "--quiet"], { HOME: home, PAYSEC_HOME: paysecHome });
     expect(r.exitCode).toBe(0);
     expect(existsSync(statePath + ".bak")).toBe(true);
     rmSync(home, { recursive: true, force: true });
@@ -207,7 +207,7 @@ describe("gstack-memory-ingest state file", () => {
 
 // ── Security: cwd in transcript JSONL must not reach a shell ─────────────
 
-describe("gstack-memory-ingest security: untrusted cwd cannot trigger shell substitution", () => {
+describe("paysec-memory-ingest security: untrusted cwd cannot trigger shell substitution", () => {
   it("does not invoke /bin/sh when a transcript record contains $() in cwd", () => {
     // Transcript JSONL is an untrusted surface — a record's `.cwd` value
     // can be set by anyone who can write to ~/.claude/projects (cross-machine
@@ -216,10 +216,10 @@ describe("gstack-memory-ingest security: untrusted cwd cannot trigger shell subs
     // interpolation, or `cwd="$(...)"` triggers command substitution under
     // /bin/sh -c on the next ingest run.
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
 
-    const markerDir = mkdtempSync(join(tmpdir(), "gstack-mi-cwd-marker-"));
+    const markerDir = mkdtempSync(join(tmpdir(), "paysec-mi-cwd-marker-"));
     const marker = join(markerDir, "PWNED");
     // Plain $(...) — what an attacker would write into a transcript record.
     // execFileSync passes this verbatim to git as a -C argument; execSync
@@ -239,8 +239,8 @@ describe("gstack-memory-ingest security: untrusted cwd cannot trigger shell subs
 
     const r = runScript(["--incremental", "--quiet"], {
       HOME: home,
-      GSTACK_HOME: gstackHome,
-      GSTACK_MEMORY_INGEST_NO_WRITE: "1",
+      PAYSEC_HOME: paysecHome,
+      PAYSEC_MEMORY_INGEST_NO_WRITE: "1",
     });
 
     expect(r.exitCode).toBe(0);
@@ -255,7 +255,7 @@ describe("gstack-memory-ingest security: untrusted cwd cannot trigger shell subs
 
 describe("internal: parseTranscriptJsonl + buildTranscriptPage shape", () => {
   it("parses a Claude Code JSONL session", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-mi-parse-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-mi-parse-"));
     const file = join(dir, "abc123.jsonl");
     const content =
       `{"type":"user","message":{"role":"user","content":"hi"},"timestamp":"2026-05-01T00:00:00Z","cwd":"/tmp/foo"}\n` +
@@ -269,7 +269,7 @@ describe("internal: parseTranscriptJsonl + buildTranscriptPage shape", () => {
     mkdirSync(projDir, { recursive: true });
     writeFileSync(join(projDir, "abc123.jsonl"), content, "utf-8");
 
-    const r = runScript(["--probe"], { HOME: home, GSTACK_HOME: join(home, ".gstack") });
+    const r = runScript(["--probe"], { HOME: home, PAYSEC_HOME: join(home, ".paysec") });
     expect(r.exitCode).toBe(0);
     expect(r.stdout).toContain("Total files in window: 1");
 
@@ -288,7 +288,7 @@ describe("internal: parseTranscriptJsonl + buildTranscriptPage shape", () => {
       `{"type":"assistant","message":{"role":"assistant","content":"this is truncat`; // no closing brace + no newline
     writeFileSync(join(projDir, "trunc.jsonl"), content, "utf-8");
 
-    const r = runScript(["--probe"], { HOME: home, GSTACK_HOME: join(home, ".gstack") });
+    const r = runScript(["--probe"], { HOME: home, PAYSEC_HOME: join(home, ".paysec") });
     // Should not crash; should report 1 transcript
     expect(r.exitCode).toBe(0);
     expect(r.stdout).toContain("Total files in window: 1");
@@ -298,7 +298,7 @@ describe("internal: parseTranscriptJsonl + buildTranscriptPage shape", () => {
 
 // ── --limit shortcut for smoke tests ───────────────────────────────────────
 
-describe("gstack-memory-ingest --limit", () => {
+describe("paysec-memory-ingest --limit", () => {
   it("respects --limit by stopping after N writes (mocked via --probe shortcut)", () => {
     const r = runScript(["--probe", "--limit", "1"]);
     // --limit doesn't apply to probe but argument should parse without error
@@ -321,7 +321,7 @@ describe("gstack-memory-ingest --limit", () => {
  *  - emits a valid `--json` summary on stdout (status, imported, etc.)
  *  - optionally drops failures to a sync-failures.jsonl path (HOME/.gbrain/)
  *
- * Architecture being verified (post plan-eng-review + Codex outside-voice):
+ * Architecture being verified (post plan-tech-review + Codex outside-voice):
  *  - new code uses `gbrain import <stagingDir> --no-embed --json` ONE time,
  *    not `gbrain put <slug>` per file. The fixture would catch a regression
  *    to the legacy per-file loop because (a) `put` is no longer advertised,
@@ -427,7 +427,7 @@ esac
   return { binDir, logFile, argsFile, stagingListFile };
 }
 
-describe("gstack-memory-ingest writer (gbrain v0.20+ batch `import` interface)", () => {
+describe("paysec-memory-ingest writer (gbrain v0.20+ batch `import` interface)", () => {
   it("probes the gbrain executable directly instead of shelling through command -v", () => {
     const source = readFileSync(SCRIPT, "utf-8");
 
@@ -440,8 +440,8 @@ describe("gstack-memory-ingest writer (gbrain v0.20+ batch `import` interface)",
 
   it("invokes `gbrain import <dir> --no-embed --json` exactly once with hierarchical staging", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
     const { binDir, logFile, argsFile, stagingListFile } = installFakeGbrain(home);
 
     // Single Claude Code session fixture. --include-unattributed lets it
@@ -453,7 +453,7 @@ describe("gstack-memory-ingest writer (gbrain v0.20+ batch `import` interface)",
 
     const r = runScript(["--bulk", "--include-unattributed", "--quiet"], {
       HOME: home,
-      GSTACK_HOME: gstackHome,
+      PAYSEC_HOME: paysecHome,
       PATH: `${binDir}:${process.env.PATH || ""}`,
     });
 
@@ -479,9 +479,9 @@ describe("gstack-memory-ingest writer (gbrain v0.20+ batch `import` interface)",
 
   // Silent-data-loss regression: gbrain accepts the import call, exits 0, and
   // reports imported=0 because collect_files found nothing in the staging dir
-  // (real-world cause: gstack-artifacts-init writes `.gitignore = "*"` into
-  // $GSTACK_HOME, and `gbrain import` honours .gitignore, so every file staged
-  // under $GSTACK_HOME is invisible to it).
+  // (real-world cause: paysec-artifacts-init writes `.gitignore = "*"` into
+  // $PAYSEC_HOME, and `gbrain import` honours .gitignore, so every file staged
+  // under $PAYSEC_HOME is invisible to it).
   //
   // No per-file failure is written to sync-failures.jsonl — gbrain never SAW
   // the files — so readNewFailures returns empty. Before the reconciliation
@@ -490,8 +490,8 @@ describe("gstack-memory-ingest writer (gbrain v0.20+ batch `import` interface)",
   // "N written". State then said "done", so no later run ever retried.
   it("refuses to advance state when gbrain imports fewer pages than were staged", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
     const { binDir, logFile } = installFakeGbrain(home, { collectNothing: true });
 
     const session =
@@ -501,7 +501,7 @@ describe("gstack-memory-ingest writer (gbrain v0.20+ batch `import` interface)",
 
     const r = runScript(["--bulk", "--include-unattributed", "--quiet"], {
       HOME: home,
-      GSTACK_HOME: gstackHome,
+      PAYSEC_HOME: paysecHome,
       PATH: `${binDir}:${process.env.PATH || ""}`,
     });
 
@@ -515,7 +515,7 @@ describe("gstack-memory-ingest writer (gbrain v0.20+ batch `import` interface)",
 
     // The critical assertion: state must NOT mark the session ingested, or the
     // next run skips it forever and the transcript is lost silently.
-    const statePath = join(gstackHome, ".transcript-ingest-state.json");
+    const statePath = join(paysecHome, ".transcript-ingest-state.json");
     if (existsSync(statePath)) {
       const state = JSON.parse(readFileSync(statePath, "utf-8"));
       expect(Object.keys(state.sessions || {}).length).toBe(0);
@@ -530,8 +530,8 @@ describe("gstack-memory-ingest writer (gbrain v0.20+ batch `import` interface)",
   // contents instead of fake-gbrain stdin.
   it("strips NUL bytes from the staged body before gbrain import", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
 
     // Shim that copies staging dir into stagingCopy so we can inspect the
     // exact bytes that would have been fed to gbrain.
@@ -569,7 +569,7 @@ esac
 
     const r = runScript(["--bulk", "--include-unattributed", "--quiet"], {
       HOME: home,
-      GSTACK_HOME: gstackHome,
+      PAYSEC_HOME: paysecHome,
       PATH: `${binDir}:${process.env.PATH || ""}`,
     });
 
@@ -596,8 +596,8 @@ esac
 
   it("injects title/type/tags into the staged page's YAML frontmatter", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
 
     // This shim sleeps long enough to let us read the staging dir mid-run.
     // Easier path: intercept by copying the staging dir before gbrain exits.
@@ -629,7 +629,7 @@ esac
 
     const r = runScript(["--bulk", "--include-unattributed", "--quiet"], {
       HOME: home,
-      GSTACK_HOME: gstackHome,
+      PAYSEC_HOME: paysecHome,
       PATH: `${binDir}:${process.env.PATH || ""}`,
     });
     expect(r.exitCode).toBe(0);
@@ -654,8 +654,8 @@ esac
 
   it("D7: files listed in ~/.gbrain/sync-failures.jsonl are NOT recorded in state", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
 
     // Write TWO sessions so we can verify one lands and the other doesn't.
     const sessionA =
@@ -708,13 +708,13 @@ esac
 
     const r = runScript(["--bulk", "--include-unattributed", "--quiet"], {
       HOME: home,
-      GSTACK_HOME: gstackHome,
+      PAYSEC_HOME: paysecHome,
       PATH: `${binDir}:${process.env.PATH || ""}`,
     });
     expect(r.exitCode).toBe(0);
 
     // State file should have exactly 1 session entry (the non-failed one).
-    const statePath = join(gstackHome, ".transcript-ingest-state.json");
+    const statePath = join(paysecHome, ".transcript-ingest-state.json");
     expect(existsSync(statePath)).toBe(true);
     const state = JSON.parse(readFileSync(statePath, "utf-8"));
     const sessionPaths = Object.keys(state.sessions || {});
@@ -725,8 +725,8 @@ esac
 
   it("emits ERR with system_error and exits non-zero when gbrain CLI is missing the `import` subcommand", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
 
     // Fake gbrain that advertises ONLY `put` (legacy) — no `import`.
     const binDir = join(home, "legacy-bin");
@@ -747,7 +747,7 @@ esac
 
     const r = runScript(["--bulk", "--include-unattributed"], {
       HOME: home,
-      GSTACK_HOME: gstackHome,
+      PAYSEC_HOME: paysecHome,
       PATH: `${binDir}:${process.env.PATH || ""}`,
     });
 
@@ -760,8 +760,8 @@ esac
 
   it("--scan-secrets opt-in: skips files with gitleaks findings, lets clean files through", () => {
     const home = makeTestHome();
-    const gstackHome = join(home, ".gstack");
-    mkdirSync(gstackHome, { recursive: true });
+    const paysecHome = join(home, ".paysec");
+    mkdirSync(paysecHome, { recursive: true });
     const { binDir } = installFakeGbrain(home);
 
     // Fake gitleaks: prints a "finding" for any file whose path contains
@@ -804,7 +804,7 @@ exit 0
     // before fake-gbrain in PATH so both shims resolve.
     const r = runScript(["--bulk", "--include-unattributed", "--scan-secrets"], {
       HOME: home,
-      GSTACK_HOME: gstackHome,
+      PAYSEC_HOME: paysecHome,
       PATH: `${fakeGitleaksDir}:${binDir}:${process.env.PATH || ""}`,
     });
 
@@ -826,7 +826,7 @@ exit 0
 // reporting machine).
 describe("#2105 codex response_item rollout shape", () => {
   it("extracts messages from response_item records", async () => {
-    const { parseTranscriptJsonl } = await import("../bin/gstack-memory-ingest");
+    const { parseTranscriptJsonl } = await import("../bin/paysec-memory-ingest");
     const dir = mkdtempSync(join(tmpdir(), "ingest-2105-"));
     const file = join(dir, "rollout-2026-06-01.jsonl");
     writeFileSync(file, [
@@ -847,7 +847,7 @@ describe("#2105 codex response_item rollout shape", () => {
   });
 
   it("legacy payload.message shape still parses", async () => {
-    const { parseTranscriptJsonl } = await import("../bin/gstack-memory-ingest");
+    const { parseTranscriptJsonl } = await import("../bin/paysec-memory-ingest");
     const dir = mkdtempSync(join(tmpdir(), "ingest-2105-legacy-"));
     const file = join(dir, "rollout-legacy.jsonl");
     writeFileSync(file, [

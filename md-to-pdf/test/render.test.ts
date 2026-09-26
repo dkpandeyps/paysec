@@ -266,7 +266,7 @@ describe("render (end-to-end)", () => {
 
   test("respects text-align: left — no justify in print CSS", () => {
     const result = render({ markdown: `para1\n\npara2\n` });
-    // The rule from the design-review fix: no p + p indent, text-align: left.
+    // The rule from the design-qa fix: no p + p indent, text-align: left.
     expect(result.printCss).toContain("text-align: left");
     expect(result.printCss).not.toContain("text-align: justify");
     expect(result.printCss).not.toContain("text-indent");

@@ -1,15 +1,15 @@
 ---
-name: context-save
+name: save-context
 preamble-tier: 2
 version: 1.0.0
 description: |
   Save working context. Captures git state, decisions made, and remaining work
   so any future session can pick up without losing a beat.
   Use when asked to "save progress", "save state", "context save", or
-  "save my work". Pair with /context-restore to resume later.
+  "save my work". Pair with /restore-context to resume later.
   Formerly /checkpoint — renamed because Claude Code treats /checkpoint as a
   native rewind alias in current environments, which was shadowing this skill.
-  (gstack)
+  (paysec)
 allowed-tools:
   - Bash
   - Read
@@ -26,12 +26,12 @@ triggers:
 
 {{PREAMBLE}}
 
-# /context-save — Save Working Context
+# /save-context — Save Working Context
 
 You are a **Staff Engineer who keeps meticulous session notes**. Your job is to
 capture the full working context — what's being done, what decisions were made,
 what's left — so that any future session (even on a different branch or workspace)
-can resume without losing a beat via `/context-restore`.
+can resume without losing a beat via `/restore-context`.
 
 **HARD GATE:** Do NOT implement code changes. This skill captures state only.
 
@@ -41,14 +41,14 @@ can resume without losing a beat via `/context-restore`.
 
 Parse the user's input to determine the mode:
 
-- `/context-save` or `/context-save <title>` → **Save**
-- `/context-save list` → **List**
+- `/save-context` or `/save-context <title>` → **Save**
+- `/save-context list` → **List**
 
-If the user provides a title after the command (e.g., `/context-save auth refactor`),
+If the user provides a title after the command (e.g., `/save-context auth refactor`),
 use it as the title. Otherwise, infer a title from the current work.
 
-If the user types `/context-save resume` or `/context-save restore`, tell them:
-"Use `/context-restore` instead — save and restore are separate skills now."
+If the user types `/save-context resume` or `/save-context restore`, tell them:
+"Use `/restore-context` instead — save and restore are separate skills now."
 
 ---
 
@@ -118,8 +118,8 @@ allowlist: only `a-z 0-9 - .` survive.
 
 ```bash
 {{SLUG_SETUP}}
-eval "$(~/.claude/skills/gstack/bin/gstack-paths)"
-CHECKPOINT_DIR="$GSTACK_STATE_ROOT/projects/$SLUG/checkpoints"
+eval "$(~/.claude/skills/paysec/bin/paysec-paths)"
+CHECKPOINT_DIR="$PAYSEC_STATE_ROOT/projects/$SLUG/checkpoints"
 mkdir -p "$CHECKPOINT_DIR"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 # Bash-side title sanitize. Pass the raw title as $1 when running this block.
@@ -194,7 +194,7 @@ Modified: {N} files
 Duration: {duration or "unknown"}
 ════════════════════════════════════════
 
-Restore later with /context-restore.
+Restore later with /restore-context.
 ```
 
 ---
@@ -205,8 +205,8 @@ Restore later with /context-restore.
 
 ```bash
 {{SLUG_SETUP}}
-eval "$(~/.claude/skills/gstack/bin/gstack-paths)"
-CHECKPOINT_DIR="$GSTACK_STATE_ROOT/projects/$SLUG/checkpoints"
+eval "$(~/.claude/skills/paysec/bin/paysec-paths)"
+CHECKPOINT_DIR="$PAYSEC_STATE_ROOT/projects/$SLUG/checkpoints"
 if [ -d "$CHECKPOINT_DIR" ]; then
   echo "CHECKPOINT_DIR=$CHECKPOINT_DIR"
   # Use find + sort instead of ls -1t: filename YYYYMMDD-HHMMSS prefix is the
@@ -222,7 +222,7 @@ fi
 
 **Default behavior:** Show saved contexts for the **current branch** only.
 
-If the user passes `--all` (e.g., `/context-save list --all`), show contexts
+If the user passes `--all` (e.g., `/save-context list --all`), show contexts
 from **all branches**.
 
 Read the frontmatter of each file to extract `status`, `branch`, and
@@ -255,7 +255,7 @@ SAVED CONTEXTS (all branches)
 ```
 
 If there are no saved contexts, tell the user: "No saved contexts yet. Run
-`/context-save` to save your current working state."
+`/save-context` to save your current working state."
 
 ---
 
@@ -263,11 +263,11 @@ If there are no saved contexts, tell the user: "No saved contexts yet. Run
 
 - **Never modify code.** This skill only reads state and writes the context file.
 - **Always include the branch name** in frontmatter — critical for cross-branch
-  `/context-restore`.
+  `/restore-context`.
 - **Saved files are append-only.** Never overwrite or delete existing files. Each
   save creates a new file.
 - **Infer, don't interrogate.** Use git state and conversation context to fill in
   the file. Only use AskUserQuestion if the title genuinely cannot be inferred.
-- **This is a gstack skill, not a Claude Code built-in.** When the user types
-  `/context-save`, invoke this skill via the Skill tool. The old `/checkpoint`
+- **This is a paysec skill, not a Claude Code built-in.** When the user types
+  `/save-context`, invoke this skill via the Skill tool. The old `/checkpoint`
   name collided with Claude Code's native `/rewind` alias — the rename fixed that.

@@ -4,17 +4,17 @@ import { resolveEvalModel } from "../lib/eval-model";
 
 describe("resolveEvalModel", () => {
   test("explicit argument wins over everything", () => {
-    expect(resolveEvalModel("capture", "my-model", { GSTACK_EVAL_MODEL: "x" } as never)).toBe("my-model");
+    expect(resolveEvalModel("capture", "my-model", { PAYSEC_EVAL_MODEL: "x" } as never)).toBe("my-model");
   });
   test("per-kind env beats the global env", () => {
-    expect(resolveEvalModel("warmup", null, { GSTACK_EVAL_MODEL_WARMUP: "w", GSTACK_EVAL_MODEL: "g" } as never)).toBe("w");
+    expect(resolveEvalModel("warmup", null, { PAYSEC_EVAL_MODEL_WARMUP: "w", PAYSEC_EVAL_MODEL: "g" } as never)).toBe("w");
   });
   test("global env beats the default", () => {
-    expect(resolveEvalModel("distill", null, { GSTACK_EVAL_MODEL: "g" } as never)).toBe("g");
+    expect(resolveEvalModel("distill", null, { PAYSEC_EVAL_MODEL: "g" } as never)).toBe("g");
   });
   test("defaults per kind", () => {
     // capture defaults to Sonnet per D1a (2026-08 review): Opus is opt-in via
-    // explicit arg or GSTACK_EVAL_MODEL_CAPTURE.
+    // explicit arg or PAYSEC_EVAL_MODEL_CAPTURE.
     expect(resolveEvalModel("capture", null, {} as never)).toBe("claude-sonnet-4-6");
     expect(resolveEvalModel("warmup", null, {} as never)).toBe("claude-haiku-4-5");
     expect(resolveEvalModel("distill", null, {} as never)).toBe("claude-haiku-4-5-20251001");

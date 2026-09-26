@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-# gstack-brain-enqueue — atomically append a path to the GBrain sync queue.
+# paysec-brain-enqueue — atomically append a path to the GBrain sync queue.
 #
 # Usage:
-#   gstack-brain-enqueue <file-path>
+#   paysec-brain-enqueue <file-path>
 #
-# Called by writer scripts (gstack-learnings-log, gstack-timeline-log, etc.)
+# Called by writer scripts (paysec-learnings-log, paysec-timeline-log, etc.)
 # after their local write. Fire-and-forget; failures are silent (never blocks
-# the writer). Queue is drained by `gstack-brain-sync --once` invoked from the
+# the writer). Queue is drained by `paysec-brain-sync --once` invoked from the
 # preamble at skill START and END boundaries.
 #
 # No-op when:
 #   - artifacts_sync_mode is off (the default)
-#   - ~/.gstack/.git doesn't exist (feature not initialized)
-#   - <file-path> matches a line in ~/.gstack/.brain-skip.txt
+#   - ~/.paysec/.git doesn't exist (feature not initialized)
+#   - <file-path> matches a line in ~/.paysec/.brain-skip.txt
 #
 # Env:
-#   GSTACK_HOME — override ~/.gstack state directory (aligns with writers).
-#                 Tests use GSTACK_HOME=/tmp/test-$$ for isolation.
+#   PAYSEC_HOME — override ~/.paysec state directory (aligns with writers).
+#                 Tests use PAYSEC_HOME=/tmp/test-$$ for isolation.
 #
 # Concurrency: POSIX append is atomic up to PIPE_BUF (~4KB Linux, 512 BSD).
 # Queue lines are ~200 bytes, safe under concurrent callers.
@@ -27,16 +27,16 @@ set -uo pipefail
 FILE="${1:-}"
 [ -z "$FILE" ] && exit 0
 
-GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
-QUEUE="$GSTACK_HOME/.brain-queue.jsonl"
-SKIP_FILE="$GSTACK_HOME/.brain-skip.txt"
+PAYSEC_HOME="${PAYSEC_HOME:-$HOME/.paysec}"
+QUEUE="$PAYSEC_HOME/.brain-queue.jsonl"
+SKIP_FILE="$PAYSEC_HOME/.brain-skip.txt"
 
 # Fast exits: no git repo, no sync.
-[ ! -d "$GSTACK_HOME/.git" ] && exit 0
+[ ! -d "$PAYSEC_HOME/.git" ] && exit 0
 
 # Check sync mode. off → silent no-op.
 SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
-MODE=$("$SCRIPT_DIR/gstack-config" get artifacts_sync_mode 2>/dev/null || echo off)
+MODE=$("$SCRIPT_DIR/paysec-config" get artifacts_sync_mode 2>/dev/null || echo off)
 [ "$MODE" = "off" ] && exit 0
 
 # User-maintained skip list (for secret-scan false positives).

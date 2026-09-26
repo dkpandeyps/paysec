@@ -50,7 +50,7 @@ function findSection(skill: string, id: string): SectionEntry {
 
 /**
  * {{SECTION:id}} — pointer on Claude, inline on other hosts.
- * Claude path uses the stable gstack-root install (`{skillRoot}/{skill}/sections/`),
+ * Claude path uses the stable paysec-root install (`{skillRoot}/{skill}/sections/`),
  * which always exists, instead of a naked relative path (Codex outside-voice #7).
  */
 export const SECTION: ResolverFn = (ctx: TemplateContext, args?: string[]): string => {

@@ -1,8 +1,8 @@
 /**
- * Tests for bin/gstack-config bash script.
+ * Tests for bin/paysec-config bash script.
  *
  * Uses Bun.spawnSync to invoke the script with temp dirs and
- * GSTACK_STATE_DIR env override for full isolation.
+ * PAYSEC_STATE_DIR env override for full isolation.
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
@@ -10,21 +10,21 @@ import { mkdtempSync, writeFileSync, rmSync, readFileSync, existsSync } from 'fs
 import { join } from 'path';
 import { tmpdir } from 'os';
 
-const SCRIPT = join(import.meta.dir, '..', '..', 'bin', 'gstack-config');
+const SCRIPT = join(import.meta.dir, '..', '..', 'bin', 'paysec-config');
 
 let stateDir: string;
 
 function run(args: string[] = [], extraEnv: Record<string, string> = {}) {
-  // The script resolves its state dir as GSTACK_STATE_ROOT > GSTACK_HOME >
-  // GSTACK_STATE_DIR > $HOME/.gstack. Strip the higher-precedence vars so a
+  // The script resolves its state dir as PAYSEC_STATE_ROOT > PAYSEC_HOME >
+  // PAYSEC_STATE_DIR > $HOME/.paysec. Strip the higher-precedence vars so a
   // stray value in the harness env (another test file's leftovers, operator
-  // shell) can never outrank the per-test GSTACK_STATE_DIR isolation.
+  // shell) can never outrank the per-test PAYSEC_STATE_DIR isolation.
   const env: Record<string, string | undefined> = {
     ...process.env,
-    GSTACK_STATE_DIR: stateDir,
+    PAYSEC_STATE_DIR: stateDir,
   };
-  delete env.GSTACK_STATE_ROOT;
-  delete env.GSTACK_HOME;
+  delete env.PAYSEC_STATE_ROOT;
+  delete env.PAYSEC_HOME;
   Object.assign(env, extraEnv); // per-test overrides always win, deliberately
 
   const result = Bun.spawnSync(['bash', SCRIPT, ...args], {
@@ -40,14 +40,14 @@ function run(args: string[] = [], extraEnv: Record<string, string> = {}) {
 }
 
 beforeEach(() => {
-  stateDir = mkdtempSync(join(tmpdir(), 'gstack-config-test-'));
+  stateDir = mkdtempSync(join(tmpdir(), 'paysec-config-test-'));
 });
 
 afterEach(() => {
   rmSync(stateDir, { recursive: true, force: true });
 });
 
-describe('gstack-config', () => {
+describe('paysec-config', () => {
   // ─── get ──────────────────────────────────────────────────
   test('get on missing file returns the default, exit 0', () => {
     // auto_upgrade has a default of false; get falls back to the defaults table.
@@ -111,7 +111,7 @@ describe('gstack-config', () => {
 
   test('set creates state dir if missing', () => {
     const nestedDir = join(stateDir, 'nested', 'dir');
-    const { exitCode } = run(['set', 'foo', 'bar'], { GSTACK_STATE_DIR: nestedDir });
+    const { exitCode } = run(['set', 'foo', 'bar'], { PAYSEC_STATE_DIR: nestedDir });
     expect(exitCode).toBe(0);
     expect(existsSync(join(nestedDir, 'config.yaml'))).toBe(true);
   });
@@ -170,7 +170,7 @@ describe('gstack-config', () => {
   test('first set writes annotated header with docs', () => {
     run(['set', 'telemetry', 'off']);
     const content = readFileSync(join(stateDir, 'config.yaml'), 'utf-8');
-    expect(content).toContain('# gstack configuration');
+    expect(content).toContain('# paysec configuration');
     expect(content).toContain('edit freely');
     expect(content).toContain('proactive:');
     expect(content).toContain('telemetry:');
@@ -208,7 +208,7 @@ describe('gstack-config', () => {
     run(['set', 'foo', 'bar']);
     run(['set', 'baz', 'qux']);
     const content = readFileSync(join(stateDir, 'config.yaml'), 'utf-8');
-    const headerCount = (content.match(/# gstack configuration/g) || []).length;
+    const headerCount = (content.match(/# paysec configuration/g) || []).length;
     expect(headerCount).toBe(1);
   });
 
@@ -225,7 +225,7 @@ describe('gstack-config', () => {
     run(['set', 'new_key', 'new_value']);
     const content = readFileSync(join(stateDir, 'config.yaml'), 'utf-8');
     expect(content).toContain('existing: value');
-    expect(content).not.toContain('# gstack configuration');
+    expect(content).not.toContain('# paysec configuration');
   });
 
   // ─── routing_declined ──────────────────────────────────────

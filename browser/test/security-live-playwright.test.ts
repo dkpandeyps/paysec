@@ -17,7 +17,7 @@
  * the deterministic signal must BOTH be present.
  *
  * ML portion is skipped gracefully if the model cache is absent (first-run
- * CI). To prime: `bun run browse/src/sidebar-agent.ts` for ~30s and kill it.
+ * CI). To prime: `bun run browser/src/sidebar-agent.ts` for ~30s and kill it.
  */
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
@@ -36,7 +36,7 @@ import {
 // Check if TestSavantAI model cache exists. If missing, ML tests skip.
 const MODEL_CACHE = path.join(
   os.homedir(),
-  '.gstack',
+  '.paysec',
   'models',
   'testsavant-small',
   'onnx',

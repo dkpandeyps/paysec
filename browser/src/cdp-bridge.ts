@@ -33,7 +33,7 @@ const CDP_ACQUIRE_TIMEOUT_MS = 5000;
 // which on a long-lived headed browser shows up as steadily-climbing
 // browser-process RSS. To make the leak class unforgettable, callers should
 // go through one of these two helpers and a static-grep test
-// (browse/test/cdp-session-cleanup.test.ts) fails CI if any source file
+// (browser/test/cdp-session-cleanup.test.ts) fails CI if any source file
 // calls `newCDPSession(` outside this module.
 
 /**

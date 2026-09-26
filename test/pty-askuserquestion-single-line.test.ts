@@ -5,7 +5,7 @@
  * parser then finds only option 1 and the >= 2 check fails forever while the
  * (correct) question sits on screen. Both fixture strings below are condensed
  * from REAL observed failure buffers of
- * test/skill-e2e-plan-design-with-ui.test.ts.
+ * test/skill-e2e-plan-ux-with-ui.test.ts.
  */
 
 import { describe, expect, it } from 'bun:test';
@@ -21,7 +21,7 @@ import {
 // escapes.
 const SINGLE_LINE_QUESTION =
   '────────────Planning: /tmp/x/.claude/plans/soft-questing-jellyfish.md──────────' +
-  ' ☐ Review target What should I review? <gstack-qid:plan-design-review-scope-gate>' +
+  ' ☐ Review target What should I review? <paysec-qid:plan-design-review-scope-gate>' +
   '❯1.Branch diff (current WIP)     Review the design implications of what changed. ' +
   'Recommendation: A when a branch diff exists.2.Planordesigndoc   Paste or point me to a plan file. ' +
   '3. Spcific page, file, r pah   Name a specific file. 4. Type something.' +

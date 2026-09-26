@@ -1,4 +1,4 @@
-// Unit tests for browse/src/sanitize.ts (#1440).
+// Unit tests for browser/src/sanitize.ts (#1440).
 // Covers stripLoneSurrogates (raw UTF-16) and stripLoneSurrogateEscapes
 // (\uXXXX escape text) used by the response chokepoints.
 

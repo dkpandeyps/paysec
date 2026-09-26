@@ -1,12 +1,12 @@
 /**
  * Plan-tune v1.49 gate regression tests.
  *
- * v1.49 shipped two prose-driven implicit gates inside plan-tune/SKILL.md.tmpl
+ * v1.49 shipped two prose-driven implicit gates inside tune-questions/SKILL.md.tmpl
  * Step 0:
- *   - Consent gate:  question_tuning=false AND ~/.gstack/.question-tuning-prompted missing
+ *   - Consent gate:  question_tuning=false AND ~/.paysec/.question-tuning-prompted missing
  *                    → run "Consent + opt-in".
  *   - Setup gate:    question_tuning=true AND declared empty AND
- *                    ~/.gstack/.declared-setup-prompted missing → run "5-Q setup".
+ *                    ~/.paysec/.declared-setup-prompted missing → run "5-Q setup".
  *
  * The gates are evaluated by the agent reading the template's bash + prose.
  * The cathedral (T5/T6) replaces enforcement with hooks, but it must NOT break
@@ -18,7 +18,7 @@
  *   2. setup-gate fires under the right conditions and stops re-firing after marker.
  *   3. marker idempotency: re-invoking after either decision produces zero re-prompts.
  *
- * Strategy: exercise the helpers the gates depend on (gstack-config get,
+ * Strategy: exercise the helpers the gates depend on (paysec-config get,
  * developer-profile.json schema, marker file paths). If those break, the
  * gates break. Plus a static-template assertion so the gate language can't
  * be silently deleted from the template.
@@ -31,14 +31,14 @@ import * as os from 'os';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const BIN_CONFIG = path.join(ROOT, 'bin', 'gstack-config');
-const BIN_DEV = path.join(ROOT, 'bin', 'gstack-developer-profile');
-const SKILL_TMPL = path.join(ROOT, 'plan-tune', 'SKILL.md.tmpl');
+const BIN_CONFIG = path.join(ROOT, 'bin', 'paysec-config');
+const BIN_DEV = path.join(ROOT, 'bin', 'paysec-developer-profile');
+const SKILL_TMPL = path.join(ROOT, 'tune-questions', 'SKILL.md.tmpl');
 
 let stateRoot: string;
 
 beforeEach(() => {
-  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-gate-'));
+  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-gate-'));
 });
 
 afterEach(() => {
@@ -53,8 +53,8 @@ function runBin(
   for (const [k, v] of Object.entries(process.env)) {
     if (v !== undefined) env[k] = v;
   }
-  env.GSTACK_STATE_ROOT = stateRoot;
-  delete env.GSTACK_HOME;
+  env.PAYSEC_STATE_ROOT = stateRoot;
+  delete env.PAYSEC_HOME;
   const res = spawnSync(bin, args, { env, encoding: 'utf-8', cwd: ROOT });
   return {
     stdout: res.stdout ?? '',
@@ -66,7 +66,7 @@ function runBin(
 /**
  * Simulate the consent-gate check as the agent would evaluate it from
  * the template's Step 0 prose. Mirrors exactly the conditions in
- * plan-tune/SKILL.md.tmpl §"Implicit gates run first" → "Consent gate."
+ * tune-questions/SKILL.md.tmpl §"Implicit gates run first" → "Consent gate."
  */
 function evaluateConsentGate(): boolean {
   const qt = runBin(BIN_CONFIG, ['get', 'question_tuning']).stdout.trim() || 'false';
@@ -75,7 +75,7 @@ function evaluateConsentGate(): boolean {
 }
 
 /**
- * Simulate the setup-gate check. Mirrors plan-tune/SKILL.md.tmpl §"Setup gate."
+ * Simulate the setup-gate check. Mirrors tune-questions/SKILL.md.tmpl §"Setup gate."
  */
 function evaluateSetupGate(): boolean {
   const qt = runBin(BIN_CONFIG, ['get', 'question_tuning']).stdout.trim() || 'false';

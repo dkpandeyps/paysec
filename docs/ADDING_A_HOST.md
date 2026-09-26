@@ -1,6 +1,6 @@
-# Adding a New Host to gstack
+# Adding a New Host to paysec
 
-gstack uses a declarative host config system. Each supported AI coding agent
+paysec uses a declarative host config system. Each supported AI coding agent
 (Claude, Codex, Factory, Kiro, OpenCode, Slate, Cursor, OpenClaw, Hermes,
 GBrain) is defined as a typed TypeScript config object built by the
 `defineHost()` factory. Adding a new host means creating one file and
@@ -60,16 +60,16 @@ That expands to the full `HostConfig` with these defaults:
 
 - `cliCommand: 'myhost'` (the name; binary for `command -v` detection)
 - `cliAliases: []`
-- `globalRoot` / `localSkillRoot`: `.myhost/skills/gstack`, `hostSubdir`: `.myhost`
+- `globalRoot` / `localSkillRoot`: `.myhost/skills/paysec`, `hostSubdir`: `.myhost`
 - `usesEnvVars: true` (false only for Claude, which uses literal `~` paths)
 - `frontmatter`: allowlist keeping `name` + `description`, no description limit
 - `generation`: no metadata file, `skipSkills: ['codex']` (codex skill is Claude-only)
 - `pathRewrites`: the standard trio derived from the resolved paths
-  (`~/.claude/skills/gstack` → `~/{globalRoot}`, `.claude/skills/gstack` →
+  (`~/.claude/skills/paysec` → `~/{globalRoot}`, `.claude/skills/paysec` →
   `{localSkillRoot}`, `.claude/skills` → `{hostSubdir}/skills`)
 - `suppressedResolvers`: the GBrain pair (`GBRAIN_CONTEXT_LOAD`, `GBRAIN_SAVE_RESULTS`)
-- `runtimeRoot`: the shared asset list (`bin`, `browse/dist`, `browse/bin`,
-  `gstack-upgrade`, `ETHOS.md` + review checklist files)
+- `runtimeRoot`: the shared asset list (`bin`, `browser/dist`, `browser/bin`,
+  `paysec-upgrade`, `ETHOS.md` + review checklist files)
 - `install`: `{ linkingStrategy: 'symlink-generated' }`
 - `learningsMode: 'basic'`
 
@@ -79,7 +79,7 @@ Override any field by passing it to `defineHost()`. Two path-rewrite options:
   codex-path cleanup, or `{ from: 'CLAUDE.md', to: 'AGENTS.md' }` for
   AGENTS.md hosts). Use this when the standard trio is right but you need more.
 - `pathRewrites`: replaces the derived list entirely. Only for non-mechanical
-  cases — codex and factory rewrite the global path to `$GSTACK_ROOT` and add
+  cases — codex and factory rewrite the global path to `$PAYSEC_ROOT` and add
   an extra review-path rewrite; claude has an empty list.
 
 The two are mutually exclusive (the factory throws if you pass both).
@@ -121,7 +121,7 @@ Add `.myhost/` to `.gitignore` (generated skill docs are gitignored).
 bun run gen:skill-docs --host myhost
 
 # Verify output exists and has no .claude/skills leakage
-ls .myhost/skills/gstack-*/SKILL.md
+ls .myhost/skills/paysec-*/SKILL.md
 grep -r ".claude/skills" .myhost/skills/ | head -5
 # (should be empty)
 

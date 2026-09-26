@@ -1,12 +1,12 @@
 /**
- * End-to-end integration test for the pair-agent flow under dual-listener.
+ * End-to-end integration test for the pair-remote-agent flow under dual-listener.
  *
  * Spawns the browse daemon as a subprocess with BROWSE_HEADLESS_SKIP=1 so
  * the HTTP layer runs without launching a real browser.  Then exercises the
  * full ceremony: /pair with root Bearer → setup_key → /connect → scoped
  * token → /command rejection and acceptance paths.
  *
- * This is the "receipt" for the wave's central 'pair-agent still works'
+ * This is the "receipt" for the wave's central 'pair-remote-agent still works'
  * claim.  Source-level tests in dual-listener.test.ts cover the tunnel
  * surface filter shape.  Source-level tests in sse-session-cookie.test.ts
  * cover the cookie registry.  This file covers the BEHAVIOR: does an HTTP
@@ -22,10 +22,10 @@ import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { GSTACK_EXTENSION_ID } from '../src/server';
+import { PAYSEC_EXTENSION_ID } from '../src/server';
 
 const ROOT = path.resolve(import.meta.dir, '../..');
-const SERVER_ENTRY = path.join(ROOT, 'browse/src/server.ts');
+const SERVER_ENTRY = path.join(ROOT, 'browser/src/server.ts');
 
 interface DaemonHandle {
   proc: ReturnType<typeof Bun.spawn>;
@@ -84,7 +84,7 @@ function killDaemon(handle: DaemonHandle): void {
   try { fs.rmSync(handle.tempDir, { recursive: true, force: true }); } catch {}
 }
 
-describe('pair-agent flow end-to-end (HTTP only, no ngrok)', () => {
+describe('pair-remote-agent flow end-to-end (HTTP only, no ngrok)', () => {
   let daemon: DaemonHandle;
 
   beforeAll(async () => {
@@ -97,7 +97,7 @@ describe('pair-agent flow end-to-end (HTTP only, no ngrok)', () => {
 
   test('GET /health returns daemon status and NEVER includes a token (even for chrome-extension origins)', async () => {
     const resp = await fetch(`${daemon.baseUrl}/health`, {
-      headers: { Origin: `chrome-extension://${GSTACK_EXTENSION_ID}` },
+      headers: { Origin: `chrome-extension://${PAYSEC_EXTENSION_ID}` },
     });
     expect(resp.status).toBe(200);
     const body = await resp.json() as any;
@@ -119,7 +119,7 @@ describe('pair-agent flow end-to-end (HTTP only, no ngrok)', () => {
     // the hostname out rather than compare the raw header (amendment C9).
     const resp = await fetch(`${daemon.baseUrl}/extension-token`, {
       method: 'POST',
-      headers: { Origin: `chrome-extension://${GSTACK_EXTENSION_ID}` },
+      headers: { Origin: `chrome-extension://${PAYSEC_EXTENSION_ID}` },
     });
     expect(resp.status).toBe(200);
     const body = await resp.json() as any;
@@ -203,7 +203,7 @@ describe('pair-agent flow end-to-end (HTTP only, no ngrok)', () => {
     expect(resp.status).toBe(401);
   });
 
-  test('POST /sse-session with root Bearer returns a Set-Cookie for gstack_sse', async () => {
+  test('POST /sse-session with root Bearer returns a Set-Cookie for paysec_sse', async () => {
     const resp = await fetch(`${daemon.baseUrl}/sse-session`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${daemon.token}` },
@@ -211,7 +211,7 @@ describe('pair-agent flow end-to-end (HTTP only, no ngrok)', () => {
     expect(resp.status).toBe(200);
     const setCookie = resp.headers.get('set-cookie');
     expect(setCookie).not.toBeNull();
-    expect(setCookie!).toContain('gstack_sse=');
+    expect(setCookie!).toContain('paysec_sse=');
     expect(setCookie!).toContain('HttpOnly');
     expect(setCookie!).toContain('SameSite=Strict');
   });
@@ -240,7 +240,7 @@ describe('pair-agent flow end-to-end (HTTP only, no ngrok)', () => {
   // separate eventsource-based harness.
 
   test('/welcome regex gate: safe slug resolves; dangerous slug does not path-traverse', async () => {
-    // The regex gate lives in server.ts — we can't easily flip GSTACK_SLUG
+    // The regex gate lives in server.ts — we can't easily flip PAYSEC_SLUG
     // on a running daemon, but we CAN verify the endpoint serves something
     // reasonable for the default 'unknown' slug (no crash, no 500).
     const resp = await fetch(`${daemon.baseUrl}/welcome`);

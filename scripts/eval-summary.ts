@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Aggregate summary of eval runs from the project eval dir
- * (~/.gstack/projects/<slug>/evals; legacy fallback ~/.gstack-dev/evals)
+ * (~/.paysec/projects/<slug>/evals; legacy fallback ~/.paysec-dev/evals)
  *
  * Usage: bun run eval:summary
  */

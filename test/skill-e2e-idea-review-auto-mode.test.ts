@@ -1,11 +1,11 @@
 /**
- * office-hours AskUserQuestion-blocked regression (gate, paid, real-PTY).
+ * idea-review AskUserQuestion-blocked regression (gate, paid, real-PTY).
  *
  * v1.21+ regression: Conductor launches Claude Code with
  * `--disallowedTools AskUserQuestion --permission-mode default` (verified
- * by inspecting the parent claude process via `ps`). office-hours' first
+ * by inspecting the parent claude process via `ps`). idea-review' first
  * step issues a startup-vs-builder mode AskUserQuestion
- * (office-hours/SKILL.md.tmpl:69); when AskUserQuestion is disallowed at
+ * (idea-review/SKILL.md.tmpl:69); when AskUserQuestion is disallowed at
  * the tool-registry level the model cannot ask and silently picks one mode,
  * breaking the whole interactive premise. This test asserts that question
  * still surfaces — fix must route through mcp__conductor__AskUserQuestion
@@ -22,12 +22,12 @@ import { runPlanSkillObservation, planFileHasDecisionsSection } from './helpers/
 
 const describeE2E = describeE2ETier('gate');
 
-describeE2E('office-hours AskUserQuestion-blocked smoke (gate)', () => {
+describeE2E('idea-review AskUserQuestion-blocked smoke (gate)', () => {
   // Pass envelope is ['asked', 'plan_ready']; failure signals are
   // 'auto_decided' + silent_write/exited/timeout.
   test('AskUserQuestion surfaces when --disallowedTools AskUserQuestion is set', async () => {
     const obs = await runPlanSkillObservation({
-      skillName: 'office-hours',
+      skillName: 'idea-review',
       inPlanMode: true,
       extraArgs: ['--disallowedTools', 'AskUserQuestion'],
       timeoutMs: 300_000,
@@ -40,7 +40,7 @@ describeE2E('office-hours AskUserQuestion-blocked smoke (gate)', () => {
       obs.outcome === 'timeout'
     ) {
       throw new Error(
-        `office-hours AskUserQuestion-blocked regression: outcome=${obs.outcome}\n` +
+        `idea-review AskUserQuestion-blocked regression: outcome=${obs.outcome}\n` +
           `summary: ${obs.summary}\n` +
           `elapsed: ${obs.elapsedMs}ms\n` +
           `--- evidence (last 2KB visible) ---\n${obs.evidence}`,
@@ -49,7 +49,7 @@ describeE2E('office-hours AskUserQuestion-blocked smoke (gate)', () => {
     if (obs.outcome === 'plan_ready') {
       if (!obs.planFile || !planFileHasDecisionsSection(obs.planFile)) {
         throw new Error(
-          `office-hours AskUserQuestion-blocked regression: plan_ready without a "## Decisions" section in ${obs.planFile ?? '<no plan file detected>'} — startup-vs-builder mode question was silently skipped.\n` +
+          `idea-review AskUserQuestion-blocked regression: plan_ready without a "## Decisions" section in ${obs.planFile ?? '<no plan file detected>'} — startup-vs-builder mode question was silently skipped.\n` +
             `--- evidence (last 2KB visible) ---\n${obs.evidence}`,
         );
       }

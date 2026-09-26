@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 /**
- * gstack-brain-context-load — V1 retrieval surface (Lane C).
+ * paysec-brain-context-load — V1 retrieval surface (Lane C).
  *
- * Called from the gstack preamble at every skill start. Reads the active skill's
+ * Called from the paysec preamble at every skill start. Reads the active skill's
  * `gbrain.context_queries:` frontmatter (Layer 2) or falls back to a generic
  * salience block (Layer 1). Dispatches each query by kind:
  *
@@ -28,10 +28,10 @@
  * internals switch from 4-call composition to a single MCP call.
  *
  * Usage:
- *   gstack-brain-context-load --skill office-hours --repo garrytan-gstack
- *   gstack-brain-context-load --skill-file ./SKILL.md --repo X --user Y
- *   gstack-brain-context-load --window 14d --explain
- *   gstack-brain-context-load --quiet
+ *   paysec-brain-context-load --skill idea-review --repo garrytan-paysec
+ *   paysec-brain-context-load --skill-file ./SKILL.md --repo X --user Y
+ *   paysec-brain-context-load --window 14d --explain
+ *   paysec-brain-context-load --quiet
  */
 
 import { existsSync, readFileSync, statSync, readdirSync, accessSync, constants } from "fs";
@@ -39,7 +39,7 @@ import { join, dirname, basename, resolve, delimiter } from "path";
 import { spawnSync } from "child_process";
 import { homedir } from "os";
 
-import { parseSkillManifest, type GbrainManifest, type GbrainManifestQuery, withErrorContext } from "../lib/gstack-memory-helpers";
+import { parseSkillManifest, type GbrainManifest, type GbrainManifestQuery, withErrorContext } from "../lib/paysec-memory-helpers";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -67,16 +67,16 @@ interface QueryResult {
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const HOME = homedir();
-const GSTACK_HOME = process.env.GSTACK_HOME || join(HOME, ".gstack");
+const PAYSEC_HOME = process.env.PAYSEC_HOME || join(HOME, ".paysec");
 // 500ms hard cap per Section 1C; overridable for slow/loaded environments
 // (test harnesses under CI load, cold CLI starts).
-const MCP_TIMEOUT_MS = Math.max(1, parseInt(process.env.GSTACK_BRAIN_TIMEOUT_MS || "", 10) || 500);
+const MCP_TIMEOUT_MS = Math.max(1, parseInt(process.env.PAYSEC_BRAIN_TIMEOUT_MS || "", 10) || 500);
 const PAGE_SIZE_CAP = 10 * 1024; // 10KB per query result before truncation
 
 // ── CLI ────────────────────────────────────────────────────────────────────
 
 function printUsage(): void {
-  console.error(`Usage: gstack-brain-context-load [options]
+  console.error(`Usage: paysec-brain-context-load [options]
 
 Options:
   --skill <name>          Active skill name (looks up SKILL.md path)
@@ -177,10 +177,10 @@ function resolveSkillFile(args: CliArgs): string | null {
     return resolve(args.skillFile);
   }
   if (!args.skill) return null;
-  // Look in common gstack skill locations
+  // Look in common paysec skill locations
   const candidates = [
     join(HOME, ".claude", "skills", args.skill, "SKILL.md"),
-    join(HOME, ".claude", "skills", "gstack", args.skill, "SKILL.md"),
+    join(HOME, ".claude", "skills", "paysec", args.skill, "SKILL.md"),
     join(process.cwd(), ".claude", "skills", args.skill, "SKILL.md"),
     join(process.cwd(), args.skill, "SKILL.md"),
   ];
@@ -438,7 +438,7 @@ async function loadContext(args: CliArgs): Promise<{ rendered: string; results: 
         case "list": return dispatchList(q, args);
         case "filesystem": return dispatchFilesystem(q, args);
       }
-    }, "gstack-brain-context-load");
+    }, "paysec-brain-context-load");
     results.push(r);
   }
 
@@ -477,6 +477,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error(`gstack-brain-context-load fatal: ${err instanceof Error ? err.message : String(err)}`);
+  console.error(`paysec-brain-context-load fatal: ${err instanceof Error ? err.message : String(err)}`);
   process.exit(1);
 });

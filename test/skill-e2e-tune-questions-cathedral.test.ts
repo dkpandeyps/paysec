@@ -1,5 +1,5 @@
 /**
- * /plan-tune cathedral E2E (T16) — 5 scenarios, all gate tier per D12.
+ * /tune-questions cathedral E2E (T16) — 5 scenarios, all gate tier per D12.
  *
  * Each scenario verifies that the cathedral's substrate works end-to-end
  * against a real `claude -p` invocation. Unit tests in test/{question-log-hook,
@@ -14,8 +14,8 @@
  *   - plan-tune-codex-import
  *   - plan-tune-dream-cycle
  *
- * Each scenario uses GSTACK_STATE_ROOT to isolate from the user's real
- * ~/.gstack (per cathedral T1 + Codex D16 fix). Cost budget ~$3-4/scenario.
+ * Each scenario uses PAYSEC_STATE_ROOT to isolate from the user's real
+ * ~/.paysec (per cathedral T1 + Codex D16 fix). Cost budget ~$3-4/scenario.
  */
 
 import { beforeAll, afterAll, expect } from 'bun:test';
@@ -41,10 +41,10 @@ afterAll(() => {
 /** Scaffold a fixture project with the bins + scripts the cathedral needs. */
 function scaffoldFixture(prefix: string): { workDir: string; stateRoot: string; slug: string } {
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-  const stateRoot = path.join(workDir, '.gstack-state');
+  const stateRoot = path.join(workDir, '.paysec-state');
   fs.mkdirSync(stateRoot, { recursive: true });
 
-  // git init so gstack-slug resolves a deterministic slug.
+  // git init so paysec-slug resolves a deterministic slug.
   spawnSync('git', ['init', '-b', 'main'], { cwd: workDir, stdio: 'pipe' });
   spawnSync('git', ['config', 'user.email', 't@t.com'], { cwd: workDir, stdio: 'pipe' });
   spawnSync('git', ['config', 'user.name', 'T'], { cwd: workDir, stdio: 'pipe' });
@@ -56,15 +56,15 @@ function scaffoldFixture(prefix: string): { workDir: string; stateRoot: string; 
   const binDir = path.join(workDir, 'bin');
   fs.mkdirSync(binDir, { recursive: true });
   for (const script of [
-    'gstack-slug',
-    'gstack-config',
-    'gstack-paths',
-    'gstack-question-log',
-    'gstack-question-preference',
-    'gstack-developer-profile',
-    'gstack-codex-session-import',
-    'gstack-distill-free-text',
-    'gstack-distill-apply',
+    'paysec-slug',
+    'paysec-config',
+    'paysec-paths',
+    'paysec-question-log',
+    'paysec-question-preference',
+    'paysec-developer-profile',
+    'paysec-codex-session-import',
+    'paysec-distill-free-text',
+    'paysec-distill-apply',
   ]) {
     const src = path.join(ROOT, 'bin', script);
     if (fs.existsSync(src)) {
@@ -130,7 +130,7 @@ describeIfSelected('PlanTune cathedral E2E: hook capture', ['plan-tune-hook-capt
         questions: [
           {
             question:
-              'D1 — Cathedral E2E capture <gstack-qid:ship-test-failure-triage>\nRecommendation: A',
+              'D1 — Cathedral E2E capture <paysec-qid:ship-test-failure-triage>\nRecommendation: A',
             options: ['A) Fix now (recommended)', 'B) Investigate'],
           },
         ],
@@ -141,8 +141,8 @@ describeIfSelected('PlanTune cathedral E2E: hook capture', ['plan-tune-hook-capt
     const res = spawnSync(hookPath, [], {
       env: {
         ...process.env,
-        GSTACK_STATE_ROOT: fixture.stateRoot,
-        GSTACK_QUESTION_LOG_NO_DERIVE: '1',
+        PAYSEC_STATE_ROOT: fixture.stateRoot,
+        PAYSEC_QUESTION_LOG_NO_DERIVE: '1',
       },
       input: JSON.stringify(payload),
       encoding: 'utf-8',
@@ -194,7 +194,7 @@ describeIfSelected('PlanTune cathedral E2E: enforcement', ['plan-tune-enforcemen
         questions: [
           {
             question:
-              '<gstack-qid:ship-changelog-voice-polish> Polish CHANGELOG entry?',
+              '<paysec-qid:ship-changelog-voice-polish> Polish CHANGELOG entry?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
@@ -204,8 +204,8 @@ describeIfSelected('PlanTune cathedral E2E: enforcement', ['plan-tune-enforcemen
     const res = spawnSync(hookPath, [], {
       env: {
         ...process.env,
-        GSTACK_STATE_ROOT: fixture.stateRoot,
-        GSTACK_QUESTION_LOG_NO_DERIVE: '1',
+        PAYSEC_STATE_ROOT: fixture.stateRoot,
+        PAYSEC_QUESTION_LOG_NO_DERIVE: '1',
       },
       input: JSON.stringify(payload),
       encoding: 'utf-8',
@@ -278,7 +278,7 @@ describeIfSelected('PlanTune cathedral E2E: annotation', ['plan-tune-annotation'
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-todos-reorganize> Reorganize TODOs?',
+            question: '<paysec-qid:ship-todos-reorganize> Reorganize TODOs?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
@@ -288,8 +288,8 @@ describeIfSelected('PlanTune cathedral E2E: annotation', ['plan-tune-annotation'
     const res = spawnSync(hookPath, [], {
       env: {
         ...process.env,
-        GSTACK_STATE_ROOT: fixture.stateRoot,
-        GSTACK_QUESTION_LOG_NO_DERIVE: '1',
+        PAYSEC_STATE_ROOT: fixture.stateRoot,
+        PAYSEC_QUESTION_LOG_NO_DERIVE: '1',
       },
       input: JSON.stringify(payload),
       encoding: 'utf-8',
@@ -326,7 +326,7 @@ describeIfSelected('PlanTune cathedral E2E: codex import', ['plan-tune-codex-imp
         payload: {
           type: 'agent_message',
           message:
-            'D1 — Cathedral import <gstack-qid:plan-eng-review-scope-reduce>\nRecommendation: A\nA) Reduce (recommended)\nB) Keep',
+            'D1 — Cathedral import <paysec-qid:plan-eng-review-scope-reduce>\nRecommendation: A\nA) Reduce (recommended)\nB) Keep',
         },
       }),
       JSON.stringify({
@@ -343,12 +343,12 @@ describeIfSelected('PlanTune cathedral E2E: codex import', ['plan-tune-codex-imp
   });
 
   testConcurrentIfSelected('importer extracts events with codex-import-marker source', async () => {
-    const bin = path.join(fixture.workDir, 'bin', 'gstack-codex-session-import');
+    const bin = path.join(fixture.workDir, 'bin', 'paysec-codex-session-import');
     const res = spawnSync(bin, [sessionFile], {
       env: {
         ...process.env,
-        GSTACK_STATE_ROOT: fixture.stateRoot,
-        GSTACK_QUESTION_LOG_NO_DERIVE: '1',
+        PAYSEC_STATE_ROOT: fixture.stateRoot,
+        PAYSEC_QUESTION_LOG_NO_DERIVE: '1',
       },
       encoding: 'utf-8',
       cwd: fixture.workDir,
@@ -406,10 +406,10 @@ describeIfSelected('PlanTune cathedral E2E: dream cycle', ['plan-tune-dream-cycl
   });
 
   testConcurrentIfSelected('apply → re-fire → memory injected via additionalContext', async () => {
-    // 1. Apply the proposal via gstack-distill-apply.
-    const applyBin = path.join(fixture.workDir, 'bin', 'gstack-distill-apply');
+    // 1. Apply the proposal via paysec-distill-apply.
+    const applyBin = path.join(fixture.workDir, 'bin', 'paysec-distill-apply');
     const applyRes = spawnSync(applyBin, ['--proposal', '0'], {
-      env: { ...process.env, GSTACK_STATE_ROOT: fixture.stateRoot },
+      env: { ...process.env, PAYSEC_STATE_ROOT: fixture.stateRoot },
       encoding: 'utf-8',
       cwd: fixture.workDir,
     });
@@ -438,7 +438,7 @@ describeIfSelected('PlanTune cathedral E2E: dream cycle', ['plan-tune-dream-cycl
         questions: [
           {
             question:
-              '<gstack-qid:plan-eng-review-test-gap> Add tests for this gap?',
+              '<paysec-qid:plan-eng-review-test-gap> Add tests for this gap?',
             options: ['A) Add (recommended)', 'B) Skip'],
           },
         ],
@@ -448,8 +448,8 @@ describeIfSelected('PlanTune cathedral E2E: dream cycle', ['plan-tune-dream-cycl
     const hookRes = spawnSync(hookPath, [], {
       env: {
         ...process.env,
-        GSTACK_STATE_ROOT: fixture.stateRoot,
-        GSTACK_QUESTION_LOG_NO_DERIVE: '1',
+        PAYSEC_STATE_ROOT: fixture.stateRoot,
+        PAYSEC_QUESTION_LOG_NO_DERIVE: '1',
       },
       input: JSON.stringify(payload),
       encoding: 'utf-8',

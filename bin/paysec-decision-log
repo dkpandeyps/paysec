@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 /**
- * gstack-decision-log — append a durable decision (or supersede/redact/compact it).
+ * paysec-decision-log — append a durable decision (or supersede/redact/compact it).
  *
  * Usage:
- *   gstack-decision-log '{"decision":"...","rationale":"...","scope":"repo","source":"user"}'
- *   gstack-decision-log --supersede <decision-id>
- *   gstack-decision-log --redact <decision-id>
- *   gstack-decision-log --compact
+ *   paysec-decision-log '{"decision":"...","rationale":"...","scope":"repo","source":"user"}'
+ *   paysec-decision-log --supersede <decision-id>
+ *   paysec-decision-log --redact <decision-id>
+ *   paysec-decision-log --compact
  *
- * Event-sourced (lib/gstack-decision): every call appends an event and refreshes the
+ * Event-sourced (lib/paysec-decision): every call appends an event and refreshes the
  * bounded active snapshot. NON-INTERACTIVE — never prompts (agents/skills call this;
  * a prompt would hang them). Validation + injection + HIGH-secret rejection happen in
  * validateDecide; a rejected decision exits 1 with a message, nothing persisted.
@@ -25,19 +25,19 @@ import {
   rebuildSnapshot,
   compact,
   type DecisionEvent,
-} from "../lib/gstack-decision";
+} from "../lib/paysec-decision";
 import { resolveSlug, gitBranch, flagValue } from "../lib/bin-context";
 
 const HERE = import.meta.dir;
 
 const args = process.argv.slice(2);
-const slug = resolveSlug(`${HERE}/gstack-slug`);
+const slug = resolveSlug(`${HERE}/paysec-slug`);
 const paths = decisionPaths(slug);
 mkdirSync(dirname(paths.log), { recursive: true });
 
 function enqueue(): void {
   // Fire-and-forget cross-machine sync (no-op when artifacts_sync is off).
-  spawnSync(`${HERE}/gstack-brain-enqueue`, [`projects/${slug}/decisions.jsonl`], { stdio: "ignore" });
+  spawnSync(`${HERE}/paysec-brain-enqueue`, [`projects/${slug}/decisions.jsonl`], { stdio: "ignore" });
 }
 
 if (args.includes("--compact")) {
@@ -61,13 +61,13 @@ function validPayload(raw: string): DecisionEvent {
   try {
     obj = JSON.parse(raw);
   } catch {
-    process.stderr.write("gstack-decision-log: invalid JSON\n");
+    process.stderr.write("paysec-decision-log: invalid JSON\n");
     process.exit(1);
   }
   if (obj.scope === "branch" && !obj.branch) obj.branch = gitBranch();
   const res = validateDecide(obj);
   if (!res.ok) {
-    process.stderr.write(`gstack-decision-log: ${res.error}\n`);
+    process.stderr.write(`paysec-decision-log: ${res.error}\n`);
     process.exit(1);
   }
   return res.event;
@@ -79,12 +79,12 @@ if (supersedeId || redactId) {
   const kind = supersedeId ? "supersede" : "redact";
   const targetId = (supersedeId || redactId) as string;
   if (targetId.trimStart().startsWith("{")) {
-    process.stderr.write(`gstack-decision-log: --${kind} needs the target decision id before the replacement JSON\n`);
+    process.stderr.write(`paysec-decision-log: --${kind} needs the target decision id before the replacement JSON\n`);
     process.exit(1);
   }
   if (kind === "redact" && jsonArg) {
     process.stderr.write(
-      "gstack-decision-log: --redact expunges and takes no replacement; log the replacement in its own call so it isn't dropped\n",
+      "paysec-decision-log: --redact expunges and takes no replacement; log the replacement in its own call so it isn't dropped\n",
     );
     process.exit(1);
   }
@@ -103,7 +103,7 @@ if (supersedeId || redactId) {
 
 if (!jsonArg) {
   process.stderr.write(
-    "gstack-decision-log: provide a JSON decision, or --supersede/--redact <id>, or --compact\n",
+    "paysec-decision-log: provide a JSON decision, or --supersede/--redact <id>, or --compact\n",
   );
   process.exit(1);
 }

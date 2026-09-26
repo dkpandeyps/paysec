@@ -4,7 +4,7 @@
  * Local E2E runs spawn `claude` (and codex/gemini/SDK) children that, until
  * this module, inherited the operator's full session context: ~/.claude
  * (user CLAUDE.md, .claude.json MCP servers incl. gbrain + Conductor,
- * skills), ~/.gstack decision logs, and CONDUCTOR_-/CLAUDECODE-style env vars.
+ * skills), ~/.paysec decision logs, and CONDUCTOR_-/CLAUDECODE-style env vars.
  * CI was hermetic only by accident (fresh Docker /home/runner). This module
  * makes local children see a CI-equivalent clean room by default.
  *
@@ -14,13 +14,13 @@
  *   │ HTTP(S)_PROXY, SSL_CERT_*   │── allowlist ─────────► kept (network)
  *   │ ANTHROPIC_API_KEY/BASE_URL/ │── named list ────────► kept (auth)
  *   │   AUTH_TOKEN                │
- *   │ GSTACK_ANTHROPIC_API_KEY    │── promotedEnv() ─────► ANTHROPIC_API_KEY
+ *   │ PAYSEC_ANTHROPIC_API_KEY    │── promotedEnv() ─────► ANTHROPIC_API_KEY
  *   │ CONDUCTOR_*, CLAUDECODE,    │
- *   │ CLAUDE_*, GSTACK_*, MCP_*,  │── dropped ───────────► ∅
+ *   │ CLAUDE_*, PAYSEC_*, MCP_*,  │── dropped ───────────► ∅
  *   │ GBRAIN_*, GH_TOKEN, ...     │
  *   └─────────────────────────────┘
  *      + per-runner extraAllow (codex: OpenAI vars; gemini: Google vars)
- *      + CLAUDE_CONFIG_DIR=<runRoot>/.claude  GSTACK_HOME=<runRoot>/gstack-home
+ *      + CLAUDE_CONFIG_DIR=<runRoot>/.claude  PAYSEC_HOME=<runRoot>/paysec-home
  *      + per-test overrides spread LAST
  *
  * Escape hatch: EVALS_HERMETIC=0 restores the legacy contaminated env
@@ -36,7 +36,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { promotedEnv } from '../../lib/conductor-env-shim';
-import { isProcessAlive, safeUnlink } from '../../browse/src/error-handling';
+import { isProcessAlive, safeUnlink } from '../../browser/src/error-handling';
 import { skillCensus, frontmatterName } from './skill-census';
 
 /** Exact env names a hermetic child keeps. Everything not listed (or matched
@@ -61,7 +61,7 @@ const ALLOW_EXACT = new Set([
 
 /** Prefix rules: eval-harness knobs + CI metadata. Deliberately NOT here:
  * CONDUCTOR_* / CLAUDE_* (incl. CLAUDECODE, CLAUDE_CODE_ENTRYPOINT) /
- * GSTACK_* / MCP_* / GBRAIN_* — session-context contamination; and operator
+ * PAYSEC_* / MCP_* / GBRAIN_* — session-context contamination; and operator
  * credentials (GH_TOKEN, SSH_AUTH_SOCK, GIT_*, OPENAI_API_KEY,
  * VOYAGE_API_KEY) — CI doesn't have them and eval children have no business
  * using them. A test that legitimately needs one opts in via its own env
@@ -82,7 +82,7 @@ export function isHermeticEnabled(env: NodeJS.ProcessEnv = process.env): boolean
 
 /**
  * Pure allowlist scrub. No I/O. Overrides spread LAST so per-test env
- * (GSTACK_HOME, CONDUCTOR_WORKSPACE_PATH, GSTACK_HEADLESS opt-out) always
+ * (PAYSEC_HOME, CONDUCTOR_WORKSPACE_PATH, PAYSEC_HEADLESS opt-out) always
  * wins over the scrub — that is the documented re-contamination escape and
  * the wiring tripwire forbids passing raw process.env through it.
  */
@@ -168,11 +168,11 @@ export interface HermeticDirs {
    * claude-pty-runner.ts:191 anchors plan-file paths on `.claude/plans/`
    * under a /var|/tmp prefix. Renaming this segment breaks PTY plan tests. */
   configDir: string;
-  gstackHome: string;
+  paysecHome: string;
   runRoot: string;
 }
 
-const DIR_PREFIX = 'gstack-hermetic-';
+const DIR_PREFIX = 'paysec-hermetic-';
 
 let cachedDirs: HermeticDirs | null = null;
 
@@ -196,7 +196,7 @@ export function getHermeticDirs(): HermeticDirs {
   // Embed our pid so the GC of future processes can check liveness.
   const runRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${DIR_PREFIX}${process.pid}-`));
   const configDir = path.join(runRoot, '.claude');
-  const gstackHome = path.join(runRoot, 'gstack-home');
+  const paysecHome = path.join(runRoot, 'paysec-home');
 
   // A half-seeded config dir means children hang on first-run prompts until
   // the test timeout — far worse than failing loudly here. So we throw on
@@ -205,9 +205,9 @@ export function getHermeticDirs(): HermeticDirs {
   // process exit, so remove it before rethrowing.
   try {
     fs.mkdirSync(configDir, { recursive: true });
-    fs.mkdirSync(gstackHome, { recursive: true });
+    fs.mkdirSync(paysecHome, { recursive: true });
     const seed = buildSeedConfig({
-      apiKey: process.env.ANTHROPIC_API_KEY ?? process.env.GSTACK_ANTHROPIC_API_KEY,
+      apiKey: process.env.ANTHROPIC_API_KEY ?? process.env.PAYSEC_ANTHROPIC_API_KEY,
       trustedDirs: [repoRoot()],
     });
     fs.writeFileSync(path.join(configDir, '.claude.json'), JSON.stringify(seed, null, 2));
@@ -222,7 +222,7 @@ export function getHermeticDirs(): HermeticDirs {
     try { fs.rmSync(runRoot, { recursive: true, force: true }); } catch { /* GC reclaims */ }
   });
 
-  cachedDirs = { configDir, gstackHome, runRoot };
+  cachedDirs = { configDir, paysecHome, runRoot };
   return cachedDirs;
 }
 
@@ -234,13 +234,13 @@ let cachedSkillsConfigDir: string | null = null;
  * gets a REAL directory `<configDir>/skills/<registryName>/` containing a
  * SYMLINK to that skill's SKILL.md (absolute path), plus a `sections/`
  * symlink when the skill has one. registryName is the frontmatter `name:`
- * (dir-name fallback), NO gstack- prefix; the root SKILL.md router registers
- * as `_gstack-command`. skillCensus().registryEntries is the authoritative
+ * (dir-name fallback), NO paysec- prefix; the root SKILL.md router registers
+ * as `_paysec-command`. skillCensus().registryEntries is the authoritative
  * set of what must appear here.
  *
  * The default hermetic dir deliberately seeds no skills — correct for
  * children that install their own or probe setup behavior — but a PTY test
- * that TYPES `/office-hours` needs the slash command to exist, or claude
+ * that TYPES `/idea-review` needs the slash command to exist, or claude
  * rejects it as Unknown command before any model turn and the gate measures
  * nothing. Separate dir, same runRoot: opt-in per session, never contaminates
  * the default-config children, and the existing exit teardown + pid-aware GC
@@ -251,7 +251,7 @@ let cachedSkillsConfigDir: string | null = null;
  * - Seeding reads the LIVE repo tree BY DESIGN — the skills ARE the subject
  *   under test; a snapshot would measure stale copies.
  * - HOME is not hermeticized, so the ~64 absolute
- *   `~/.claude/skills/gstack/...` preamble references inside each SKILL.md
+ *   `~/.claude/skills/paysec/...` preamble references inside each SKILL.md
  *   still resolve to the operator install (same limitation as CI).
  */
 export function hermeticSkillsConfigDir(): string {
@@ -263,7 +263,7 @@ export function hermeticSkillsConfigDir(): string {
   fs.writeFileSync(
     path.join(configDir, '.claude.json'),
     JSON.stringify(buildSeedConfig({
-      apiKey: process.env.ANTHROPIC_API_KEY ?? process.env.GSTACK_ANTHROPIC_API_KEY,
+      apiKey: process.env.ANTHROPIC_API_KEY ?? process.env.PAYSEC_ANTHROPIC_API_KEY,
       trustedDirs: [repoRoot()],
     }), null, 2),
   );
@@ -272,11 +272,11 @@ export function hermeticSkillsConfigDir(): string {
     const skillMd = path.join(root, rel);
     const skillDir = path.dirname(rel);
     const registryName = rel === 'SKILL.md'
-      ? '_gstack-command'
+      ? '_paysec-command'
       : frontmatterName(skillMd) || skillDir;
     const target = path.join(skillsDir, registryName);
     // Idempotent overwrite mirrors setup's re-link: connect-chrome (a dir
-    // symlink to open-gstack-browser) shares its target's frontmatter name,
+    // symlink to open-paysec-browser) shares its target's frontmatter name,
     // so the two walk entries collapse to one registry dir.
     fs.mkdirSync(target, { recursive: true });
     safeUnlink(path.join(target, 'SKILL.md'));
@@ -337,7 +337,7 @@ export function hermeticChildEnv(
   const dirs = getHermeticDirs();
   return buildHermeticEnv(
     process.env,
-    { CLAUDE_CONFIG_DIR: dirs.configDir, GSTACK_HOME: dirs.gstackHome },
+    { CLAUDE_CONFIG_DIR: dirs.configDir, PAYSEC_HOME: dirs.paysecHome },
     overrides,
     opts,
   );

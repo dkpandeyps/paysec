@@ -1,7 +1,7 @@
 /**
- * Static invariant tests for /spec (consolidates 13 gate-tier checks).
+ * Static invariant tests for /write-spec (consolidates 13 gate-tier checks).
  *
- * Each test asserts a specific contract the spec/SKILL.md.tmpl must encode.
+ * Each test asserts a specific contract the write-spec/SKILL.md.tmpl must encode.
  * If the template drifts away from a contract, the test fails immediately —
  * no LLM, no E2E cost.
  *
@@ -15,24 +15,24 @@
  *   spec-quality-gate-fallback   — codex timeout/unavailable skip-with-warn
  *   spec-quality-gate-redaction  — fail-closed secret regex list + BLOCKED
  *   spec-quality-gate-secret-sink — invariant: raw spec not persisted on block
- *   spec-archive            — gstack-paths eval + atomic tmp/mv + PID suffix
+ *   spec-archive            — paysec-paths eval + atomic tmp/mv + PID suffix
  *   spec-archive-sync-exclusion  — /specs/ auto-exclude from sync allowlist
  *   spec-audit-flag         — flag routes to Audit/Cleanup template
  *   spec-concurrency        — PID suffix in branch + atomic archive write
- *   spec-plan-mode-detection — reads GSTACK_PLAN_MODE env
+ *   spec-plan-mode-detection — reads PAYSEC_PLAN_MODE env
  */
 import { describe, test, expect } from 'bun:test';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const TMPL = fs.readFileSync(path.join(ROOT, 'spec', 'SKILL.md.tmpl'), 'utf-8');
+const TMPL = fs.readFileSync(path.join(ROOT, 'write-spec', 'SKILL.md.tmpl'), 'utf-8');
 // The redaction taxonomy + invocation bash are injected by the gen-skill-docs
 // resolver, so the literal patterns/bash live in the GENERATED SKILL.md, not the
 // .tmpl. Redaction assertions read the generated file.
-const GEN = fs.readFileSync(path.join(ROOT, 'spec', 'SKILL.md'), 'utf-8');
+const GEN = fs.readFileSync(path.join(ROOT, 'write-spec', 'SKILL.md'), 'utf-8');
 
-describe('/spec phase-gating', () => {
+describe('/write-spec phase-gating', () => {
   test('HARD GATE prose forbids producing issue after first message', () => {
     expect(TMPL).toMatch(/HARD GATE.*Do NOT produce an issue after the first message/i);
     expect(TMPL).toMatch(/Always start with[\s\S]*?Phase 1/);
@@ -44,14 +44,14 @@ describe('/spec phase-gating', () => {
   });
 });
 
-describe('/spec Phase 4 revise loop', () => {
+describe('/write-spec Phase 4 revise loop', () => {
   test('Phase 4 asks "what did I get wrong" and iterates', () => {
     expect(TMPL).toMatch(/What did I get wrong\?/);
     expect(TMPL).toMatch(/Iterate until the user confirms/i);
   });
 });
 
-describe('/spec --dedupe gh failure handling', () => {
+describe('/write-spec --dedupe gh failure handling', () => {
   test('handles gh-not-installed, unauthed, rate-limited paths', () => {
     // Template wraps gh in backticks: "`gh` not installed" or "`gh` is not installed".
     expect(TMPL).toMatch(/gh.{0,5}not installed/i);
@@ -69,7 +69,7 @@ describe('/spec --dedupe gh failure handling', () => {
   });
 });
 
-describe('/spec --execute dirty-worktree gate', () => {
+describe('/write-spec --execute dirty-worktree gate', () => {
   test('runs git status --porcelain before spawn', () => {
     expect(TMPL).toMatch(/git status --porcelain/);
   });
@@ -83,7 +83,7 @@ describe('/spec --execute dirty-worktree gate', () => {
   });
 });
 
-describe('/spec --execute race + concurrency hardening', () => {
+describe('/write-spec --execute race + concurrency hardening', () => {
   test('captures SHA pin via git rev-parse HEAD (not "HEAD" string)', () => {
     expect(TMPL).toMatch(/PIN_SHA=\$\(git rev-parse HEAD\)/);
     expect(TMPL).toMatch(/git worktree add[^\n]*\$PIN_SHA/);
@@ -96,7 +96,7 @@ describe('/spec --execute race + concurrency hardening', () => {
   });
 });
 
-describe('/spec quality gate fallback', () => {
+describe('/write-spec quality gate fallback', () => {
   test('skips on codex timeout with explanatory message', () => {
     // `didn.t` matches both ASCII `'` and Unicode curly `’` apostrophes.
     expect(TMPL).toMatch(/codex didn.t respond in[\s\S]{0,80}2 minutes/);
@@ -109,29 +109,29 @@ describe('/spec quality gate fallback', () => {
   });
 });
 
-describe('/spec fail-closed redaction (shared engine)', () => {
-  test('the full taxonomy (with secret prefixes) lives in the generated /cso doc', () => {
-    // cso is carved — the Secrets Archaeology prose + prefixes moved into
+describe('/write-spec fail-closed redaction (shared engine)', () => {
+  test('the full taxonomy (with secret prefixes) lives in the generated /security-audit doc', () => {
+    // security-audit is carved — the Secrets Archaeology prose + prefixes moved into
     // sections/audit-phases.md; read the skeleton+sections union.
-    const csoDir = path.join(ROOT, 'cso');
-    let cso = fs.readFileSync(path.join(csoDir, 'SKILL.md'), 'utf-8');
+    const csoDir = path.join(ROOT, 'security-audit');
+    let auditDoc = fs.readFileSync(path.join(csoDir, 'SKILL.md'), 'utf-8');
     const secDir = path.join(csoDir, 'sections');
     if (fs.existsSync(secDir)) {
       for (const f of fs.readdirSync(secDir).sort()) {
-        if (f.endsWith('.md') && !f.endsWith('.md.tmpl')) cso += '\n' + fs.readFileSync(path.join(secDir, f), 'utf-8');
+        if (f.endsWith('.md') && !f.endsWith('.md.tmpl')) auditDoc += '\n' + fs.readFileSync(path.join(secDir, f), 'utf-8');
       }
     }
-    expect(cso).toContain('AKIA');
-    expect(cso).toMatch(/ghp_|gho_|ghs_/);
-    expect(cso).toContain('sk-ant-');
-    expect(cso).toContain('BEGIN');
+    expect(auditDoc).toContain('AKIA');
+    expect(auditDoc).toMatch(/ghp_|gho_|ghs_/);
+    expect(auditDoc).toContain('sk-ant-');
+    expect(auditDoc).toContain('BEGIN');
   });
-  test('/spec points to the full taxonomy without inlining the catalog', () => {
-    expect(GEN).toMatch(/Full taxonomy.*lib\/redact-patterns\.ts|\/cso/);
+  test('/write-spec points to the full taxonomy without inlining the catalog', () => {
+    expect(GEN).toMatch(/Full taxonomy.*lib\/redact-patterns\.ts|\/security-audit/);
     expect(GEN).toMatch(/~30 secret\/PII\/legal patterns/);
   });
-  test('redaction routes through the shared gstack-redact bin, not inline regex', () => {
-    expect(GEN).toContain('gstack-redact');
+  test('redaction routes through the shared paysec-redact bin, not inline regex', () => {
+    expect(GEN).toContain('paysec-redact');
     expect(GEN).toContain('--from-file');
     // The old inline 7-regex prose is gone from the template.
     expect(TMPL).not.toMatch(/AWS access key.*regex.*AKIA\[0-9A-Z\]/);
@@ -147,7 +147,7 @@ describe('/spec fail-closed redaction (shared engine)', () => {
   });
 });
 
-describe('/spec redaction at every sink (scan-at-sink)', () => {
+describe('/write-spec redaction at every sink (scan-at-sink)', () => {
   test('scan precedes the gh issue create (pre-issue)', () => {
     const scanIdx = GEN.indexOf('Re-scan before filing');
     const fileIdx = GEN.indexOf('gh issue create --title');
@@ -168,7 +168,7 @@ describe('/spec redaction at every sink (scan-at-sink)', () => {
   });
 });
 
-describe('/spec quality gate secret-sink invariant', () => {
+describe('/write-spec quality gate secret-sink invariant', () => {
   test('declares "raw spec must NOT be persisted" when the scan BLOCKS', () => {
     expect(TMPL).toMatch(/raw spec must NOT[\s\S]*be persisted/i);
   });
@@ -177,7 +177,7 @@ describe('/spec quality gate secret-sink invariant', () => {
   });
 });
 
-describe('/spec Phase 4.5a semantic content review', () => {
+describe('/write-spec Phase 4.5a semantic content review', () => {
   test('semantic pass precedes the regex scan', () => {
     const semIdx = TMPL.indexOf('Phase 4.5a: Semantic Content Review');
     const regexIdx = TMPL.indexOf('Phase 4.5b: Fail-closed redaction');
@@ -207,18 +207,18 @@ describe('/spec Phase 4.5a semantic content review', () => {
   });
 });
 
-describe('/spec --no-gate keeps redacting', () => {
+describe('/write-spec --no-gate keeps redacting', () => {
   test('flag table says redaction still runs under --no-gate', () => {
     expect(TMPL).toMatch(/Redaction.*still runs.*no flag that disables it/i);
   });
 });
 
-describe('/spec archive', () => {
-  test('uses eval $(gstack-paths) not hardcoded ~/.gstack/', () => {
-    expect(TMPL).toMatch(/eval "\$\(.+gstack-paths\)"/);
-    expect(TMPL).toMatch(/\$GSTACK_STATE_ROOT\/projects\/\$SLUG\/specs/);
-    // No hardcoded ~/.gstack/projects path:
-    expect(TMPL).not.toMatch(/~\/\.gstack\/projects\/\$SLUG\/specs/);
+describe('/write-spec archive', () => {
+  test('uses eval $(paysec-paths) not hardcoded ~/.paysec/', () => {
+    expect(TMPL).toMatch(/eval "\$\(.+paysec-paths\)"/);
+    expect(TMPL).toMatch(/\$PAYSEC_STATE_ROOT\/projects\/\$SLUG\/specs/);
+    // No hardcoded ~/.paysec/projects path:
+    expect(TMPL).not.toMatch(/~\/\.paysec\/projects\/\$SLUG\/specs/);
   });
   test('atomic write via .tmp + mv', () => {
     expect(TMPL).toMatch(/\$ARCHIVE_PATH\.tmp/);
@@ -227,21 +227,21 @@ describe('/spec archive', () => {
   test('PID suffix in archive filename', () => {
     expect(TMPL).toMatch(/ARCHIVE_NAME=.*\$\$/);
   });
-  test('frontmatter includes spec_issue_number for /ship integration', () => {
+  test('frontmatter includes spec_issue_number for /ship-pr integration', () => {
     expect(TMPL).toMatch(/spec_issue_number:/);
     expect(TMPL).toMatch(/spec_branch:/);
     expect(TMPL).toMatch(/spec_executed:/);
   });
 });
 
-describe('/spec archive sync exclusion', () => {
+describe('/write-spec archive sync exclusion', () => {
   test('/specs/ excluded from artifacts-sync by default; --sync-archive opt-in', () => {
     expect(TMPL).toMatch(/\/specs\/.*auto-excluded.*artifacts-sync|excluded from.*allowlist/i);
     expect(TMPL).toMatch(/--sync-archive/);
   });
 });
 
-describe('/spec --audit flag', () => {
+describe('/write-spec --audit flag', () => {
   test('flag table includes --audit with routing to Audit template', () => {
     expect(TMPL).toMatch(/\| `--audit` \|/);
     expect(TMPL).toMatch(/Audit\/Cleanup template/);
@@ -256,14 +256,14 @@ describe('/spec --audit flag', () => {
   });
 });
 
-describe('/spec plan-mode-aware Phase 5 (DX7/DX11/F1)', () => {
-  test('reads GSTACK_PLAN_MODE env at Phase 5 dispatch', () => {
-    expect(TMPL).toMatch(/GSTACK_PLAN_MODE/);
+describe('/write-spec plan-mode-aware Phase 5 (DX7/DX11/F1)', () => {
+  test('reads PAYSEC_PLAN_MODE env at Phase 5 dispatch', () => {
+    expect(TMPL).toMatch(/PAYSEC_PLAN_MODE/);
     expect(TMPL).toMatch(/plan-mode-aware default/i);
   });
   test('plan-mode active → file-only path; inactive → file + spawn', () => {
-    expect(TMPL).toMatch(/GSTACK_PLAN_MODE=active.*file-only path/);
-    expect(TMPL).toMatch(/GSTACK_PLAN_MODE=inactive.*file \+ spawn/);
+    expect(TMPL).toMatch(/PAYSEC_PLAN_MODE=active.*file-only path/);
+    expect(TMPL).toMatch(/PAYSEC_PLAN_MODE=inactive.*file \+ spawn/);
   });
   test('--file-only / --no-execute / --plan-file override flags', () => {
     expect(TMPL).toMatch(/--file-only/);
@@ -272,7 +272,7 @@ describe('/spec plan-mode-aware Phase 5 (DX7/DX11/F1)', () => {
   });
 });
 
-describe('/spec Phase 3 hard-grep with fallback', () => {
+describe('/write-spec Phase 3 hard-grep with fallback', () => {
   test('Phase 3 mandates reading evidence before asking', () => {
     expect(TMPL).toMatch(/Mandatory:[\s\S]*MUST read at least one[\s\S]*evidence/i);
   });
@@ -285,8 +285,8 @@ describe('/spec Phase 3 hard-grep with fallback', () => {
   });
 });
 
-describe('/spec concurrency safety (overlap with race; codex F5/F6/F10)', () => {
-  test('two concurrent /spec runs get distinct branches via $$ PID', () => {
+describe('/write-spec concurrency safety (overlap with race; codex F5/F6/F10)', () => {
+  test('two concurrent /write-spec runs get distinct branches via $$ PID', () => {
     expect(TMPL).toMatch(/SPAWN_BRANCH=.*\$\$/);
   });
   test('atomic archive write prevents JSONL/file interleave', () => {

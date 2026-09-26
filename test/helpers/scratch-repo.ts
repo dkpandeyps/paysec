@@ -66,7 +66,7 @@ export function findFilesBySuffix(root: string, suffix: string): string[] {
  * post-spawn gh branches (success, failure, garbage JSON) without network.
  */
 export function makeGhShimPath(mode: 'fail' | 'json' | 'garbage', jsonPayload = '{}'): { pathEnv: string; shimDir: string } {
-  const shimDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-gh-shim-'));
+  const shimDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-gh-shim-'));
   const body =
     mode === 'fail'
       ? '#!/bin/sh\necho "shim: gh failed" >&2\nexit 1\n'

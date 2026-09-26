@@ -22,13 +22,13 @@ let savedHome: string | undefined;
 
 beforeEach(() => {
   home = fs.mkdtempSync(path.join(os.tmpdir(), "design-receipt-"));
-  savedHome = process.env.GSTACK_HOME;
-  process.env.GSTACK_HOME = home;
+  savedHome = process.env.PAYSEC_HOME;
+  process.env.PAYSEC_HOME = home;
 });
 
 afterEach(() => {
-  if (savedHome === undefined) delete process.env.GSTACK_HOME;
-  else process.env.GSTACK_HOME = savedHome;
+  if (savedHome === undefined) delete process.env.PAYSEC_HOME;
+  else process.env.PAYSEC_HOME = savedHome;
   try { fs.chmodSync(path.join(home, "security"), 0o700); } catch {}
   fs.rmSync(home, { recursive: true, force: true });
 });
@@ -131,6 +131,6 @@ describe("receiptedFetch", () => {
     const warning = captured.join("");
     expect(warning).toContain("egress receipt could not be written");
     expect(warning).toContain("fail-open");
-    expect(warning).toContain("gstack-egress");
+    expect(warning).toContain("paysec-egress");
   });
 });

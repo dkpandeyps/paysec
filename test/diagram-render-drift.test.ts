@@ -66,7 +66,7 @@ describe("diagram-render bundle drift", () => {
   test("page invariants: module script, base href, escaped terminators, error trap", async () => {
     const html = await Bun.file(DIST_HTML).text();
     expect(html).toContain('<script type="module">');
-    expect(html).toContain('<base href="https://gstack-render.localhost/">');
+    expect(html).toContain('<base href="https://paysec-render.localhost/">');
     expect(html).toContain("window.__errors = []");
     // The inline module must contain no live </script> other than the page's
     // own closers: head error-trap closer + module closer.

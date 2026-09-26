@@ -73,7 +73,7 @@ describe('terminal-agent watchdog (v1.44+)', () => {
 
   test('6. tick interval is env-overridable for tests', () => {
     const src = fs.readFileSync(SERVER_TS, 'utf-8');
-    expect(src).toContain('GSTACK_AGENT_WATCHDOG_TICK_MS');
+    expect(src).toContain('PAYSEC_AGENT_WATCHDOG_TICK_MS');
   });
 
   test('7. CLI cold-start path uses the same spawnTerminalAgent helper', () => {

@@ -1,4 +1,4 @@
-// AUTO-GENERATED from gstack/ios-qa/templates/DebugBridgeWiring.swift.template
+// AUTO-GENERATED from paysec/ios-device-qa/templates/DebugBridgeWiring.swift.template
 //
 // Wiring snippet for the app's @main entry. Users paste this into their
 // App.swift inside the `init()` of the SwiftUI App struct, gated by
@@ -13,12 +13,12 @@ import DebugBridgeUI
 #endif
 
 @MainActor
-func startGstackDebugBridge<State>(
+func startPaysecDebugBridge<State>(
     appState: State,
     register: (State) -> Void
 ) {
     // Read --recording flag from launch arguments
-    let recording = ProcessInfo.processInfo.arguments.contains("--gstack-recording")
+    let recording = ProcessInfo.processInfo.arguments.contains("--paysec-recording")
 
     // Install the UI resolvers before opening the listener. A warm daemon can
     // issue its first request as soon as StateServer starts; it must never see
@@ -46,7 +46,7 @@ func startGstackDebugBridge<State>(
 //
 //       init() {
 //           #if DEBUG
-//           startGstackDebugBridge(
+//           startPaysecDebugBridge(
 //               appState: appState,
 //               register: MyAppStateAccessor.register
 //           )

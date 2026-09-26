@@ -1,18 +1,18 @@
 ---
-name: ios-sync
+name: ios-bridge-sync
 preamble-tier: 3
 version: 1.0.0
 description: |
-  Regenerate the iOS debug bridge against the latest upstream gstack
+  Regenerate the iOS debug bridge against the latest upstream paysec
   templates. Updates StateServer.swift, DebugOverlay.swift, Package.swift,
-  and the typed @Observable state accessors. Use after you upgrade gstack
+  and the typed @Observable state accessors. Use after you upgrade paysec
   or add new ViewModels/properties that need accessor coverage.
   Use when asked to "resync the iOS debug bridge", "regenerate iOS
-  accessors", or "update the gstack iOS instrumentation". (gstack)
+  accessors", or "update the paysec iOS instrumentation". (paysec)
 voice-triggers:
   - "resync the iOS debug bridge"
   - "regenerate iOS accessors"
-  - "update the gstack iOS instrumentation"
+  - "update the paysec iOS instrumentation"
 allowed-tools:
   - Bash
   - Read
@@ -24,31 +24,31 @@ allowed-tools:
 triggers:
   - resync the ios debug bridge
   - regenerate ios accessors
-  - update the gstack ios instrumentation
+  - update the paysec ios instrumentation
 ---
 
 {{PREAMBLE}}
 
 # Resync the iOS debug bridge
 
-After `/ios-qa` is installed in an app, the user may:
+After `/ios-device-qa` is installed in an app, the user may:
 
 1. Add new `@Observable` classes or properties that need accessor coverage.
-2. Upgrade gstack to a newer version with hardening fixes.
+2. Upgrade paysec to a newer version with hardening fixes.
 3. Move the `// @Snapshotable` generator marker comment to a different field.
 
 This skill regenerates the relevant artifacts in place.
 
-**Templates live in upstream gstack.** The installed
-`gstack-ios-qa-regen` launcher resolves its own gstack root and copies only
-the supported bridge files from `ios-qa/templates/`. The fork's HTTP-fetch
+**Templates live in upstream paysec.** The installed
+`paysec-ios-qa-regen` launcher resolves its own paysec root and copies only
+the supported bridge files from `ios-device-qa/templates/`. The fork's HTTP-fetch
 and wildcard-copy patterns are gone.
 
 ## Phase 1: Detect installed version
 
-1. Read `<app>/DebugBridgeGenerated/.gstack-version` (written by /ios-qa
+1. Read `<app>/DebugBridgeGenerated/.paysec-version` (written by /ios-device-qa
    during install). If missing, treat the install as "unknown old version".
-2. Read upstream version from `$GSTACK_ROOT/VERSION`.
+2. Read upstream version from `$PAYSEC_ROOT/VERSION`.
 3. If versions match AND no new `@Observable` classes were added, exit
    early with "already up to date".
 
@@ -59,7 +59,7 @@ accessor scanner should inspect; `--bridge-dir` is the local Swift package
 that the app links in Debug builds:
 
 ```bash
-~/.claude/skills/gstack/bin/gstack-ios-qa-regen \
+~/.claude/skills/paysec/bin/paysec-ios-qa-regen \
   --app-source "$APP_SOURCE_DIR" \
   --bridge-dir "$APP_SOURCE_DIR/DebugBridge"
 ```

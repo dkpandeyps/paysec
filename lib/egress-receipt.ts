@@ -1,6 +1,6 @@
 /**
  * egress-receipt — hash-chained, content-free receipts for every
- * gstack-initiated off-machine send (`~/.gstack/security/egress.jsonl`, 0600).
+ * paysec-initiated off-machine send (`~/.paysec/security/egress.jsonl`, 0600).
  *
  * THREAT MODEL: the egress ledger is forensic observability — it records
  * ATTEMPTED egress so accidents are auditable; it is not an exfiltration
@@ -20,7 +20,7 @@
  *     line ("" for line 1). `verifyLedger` recomputes the chain.
  *
  * Node builtins only, so bun TS binaries and the compiled browse binary can
- * both import it (same constraint as browse/src/security.ts: no native
+ * both import it (same constraint as browser/src/security.ts: no native
  * modules).
  */
 
@@ -56,11 +56,11 @@ const TAIL_READ_BYTES = 4096;
 type Env = Record<string, string | undefined>;
 
 export interface WriteReceiptOptions {
-  /** gstack home; resolved from env when omitted */
+  /** paysec home; resolved from env when omitted */
   home?: string;
   /** env for home resolution (tests) */
   env?: Env;
-  /** which gstack component is sending */
+  /** which paysec component is sending */
   sink: string;
   /** destination host[:port] */
   host: string;
@@ -98,13 +98,13 @@ export interface VerifyResult {
 }
 
 /**
- * Same resolution order as the rest of gstack (shell sinks, selection code):
- * GSTACK_HOME, legacy GSTACK_STATE_DIR, then $HOME/.gstack.
+ * Same resolution order as the rest of paysec (shell sinks, selection code):
+ * PAYSEC_HOME, legacy PAYSEC_STATE_DIR, then $HOME/.paysec.
  */
 export function resolveEgressHome(env: Env = process.env): string {
-  const configured = env.GSTACK_HOME || env.GSTACK_STATE_DIR;
+  const configured = env.PAYSEC_HOME || env.PAYSEC_STATE_DIR;
   if (configured) return path.resolve(configured);
-  return path.join(env.HOME || os.homedir(), '.gstack');
+  return path.join(env.HOME || os.homedir(), '.paysec');
 }
 
 export function egressLedgerPath(home: string): string {
@@ -228,15 +228,15 @@ function warnLedgerSizeOnce(ledger: string): void {
 
 /**
  * Self-explanatory size warning: says what the ledger is (records what
- * gstack ATTEMPTS to send off-machine), how to inspect it, and that
+ * paysec ATTEMPTS to send off-machine), how to inspect it, and that
  * trimming arrives with rotation.
  */
 export function ledgerSizeWarning(ledger: string, size: number): string {
   const mb = (size / (1024 * 1024)).toFixed(1);
   return (
-    `gstack: egress ledger is large (${mb}MB): ${ledger}. ` +
-    `This file records what gstack ATTEMPTS to send off-machine (content-free receipts, for auditing). ` +
-    `Inspect it with 'gstack-egress list'. Trimming arrives with ledger rotation (TODO); until then it only grows.`
+    `paysec: egress ledger is large (${mb}MB): ${ledger}. ` +
+    `This file records what paysec ATTEMPTS to send off-machine (content-free receipts, for auditing). ` +
+    `Inspect it with 'paysec-egress list'. Trimming arrives with ledger rotation (TODO); until then it only grows.`
   );
 }
 

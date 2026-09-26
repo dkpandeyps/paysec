@@ -2,9 +2,9 @@ import { describe, test, expect } from "bun:test";
 import { readFileSync } from "fs";
 import path from "path";
 
-const SCRIPT = path.join(import.meta.dir, "..", "bin", "gstack-learnings-search");
+const SCRIPT = path.join(import.meta.dir, "..", "bin", "paysec-learnings-search");
 
-describe("gstack-learnings-search injection prevention", () => {
+describe("paysec-learnings-search injection prevention", () => {
   const script = readFileSync(SCRIPT, "utf-8");
 
   test("no shell interpolation inside bun -e string", () => {
@@ -37,18 +37,18 @@ describe("gstack-learnings-search injection prevention", () => {
     // the bun block. CROSS is still set on the bash command line (it
     // controls whether the cross-project find runs at all), but the bun
     // block reads the tag, not the env var.
-    expect(bunBlock).toContain("process.env.GSTACK_SEARCH_TYPE");
-    expect(bunBlock).toContain("process.env.GSTACK_SEARCH_QUERY");
-    expect(bunBlock).toContain("process.env.GSTACK_SEARCH_LIMIT");
+    expect(bunBlock).toContain("process.env.PAYSEC_SEARCH_TYPE");
+    expect(bunBlock).toContain("process.env.PAYSEC_SEARCH_QUERY");
+    expect(bunBlock).toContain("process.env.PAYSEC_SEARCH_LIMIT");
   });
 
   test("env vars are set on the bun command line", () => {
     // The env vars must be passed to bun, not just set in the shell.
     // SLUG removed by PR #1619 — see above.
-    expect(script).toContain("GSTACK_SEARCH_TYPE=");
-    expect(script).toContain("GSTACK_SEARCH_QUERY=");
-    expect(script).toContain("GSTACK_SEARCH_LIMIT=");
-    expect(script).toContain("GSTACK_SEARCH_CROSS=");
+    expect(script).toContain("PAYSEC_SEARCH_TYPE=");
+    expect(script).toContain("PAYSEC_SEARCH_QUERY=");
+    expect(script).toContain("PAYSEC_SEARCH_LIMIT=");
+    expect(script).toContain("PAYSEC_SEARCH_CROSS=");
   });
 
   test("current vs cross-project rows distinguished by inline tags, not SLUG env (#1619)", () => {

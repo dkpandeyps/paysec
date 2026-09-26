@@ -2,12 +2,12 @@ import { describe, test, expect } from 'bun:test';
 import * as path from 'path';
 import * as fs from 'fs';
 
-// Static tripwires for the C (machine-wide) render in `gstack-config
+// Static tripwires for the C (machine-wide) render in `paysec-config
 // gbrain-refresh`. The render mutates the shared global install, so the guards
 // that stop it from touching the wrong directory are load-bearing — these fail
 // CI if any guard is dropped.
 const ROOT = path.resolve(import.meta.dir, '..');
-const SRC = fs.readFileSync(path.join(ROOT, 'bin', 'gstack-config'), 'utf-8');
+const SRC = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-config'), 'utf-8');
 
 // Pull out just the gbrain-refresh healthy-status branch so assertions can't
 // be satisfied by unrelated text elsewhere in the file. The case label grew
@@ -24,18 +24,18 @@ function okBranch(): string {
   return SRC.slice(ok, end);
 }
 
-describe('gstack-config gbrain-refresh: machine-wide render guards', () => {
+describe('paysec-config gbrain-refresh: machine-wide render guards', () => {
   const branch = okBranch();
 
   test('targets the global install', () => {
-    expect(branch).toContain('$HOME/.claude/skills/gstack');
+    expect(branch).toContain('$HOME/.claude/skills/paysec');
   });
 
   test('refuses a symlinked install (would dirty a dev worktree)', () => {
     expect(branch).toMatch(/\[ -L "\$INSTALL_DIR" \]/);
   });
 
-  test('verifies it is a real gstack clone before mutating it', () => {
+  test('verifies it is a real paysec clone before mutating it', () => {
     expect(branch).toContain('$INSTALL_DIR/VERSION');
     expect(branch).toContain('$INSTALL_DIR/package.json');
   });

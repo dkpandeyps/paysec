@@ -1,9 +1,9 @@
 #!/usr/bin/env -S bun run
 /**
- * gstack-gbrain-detect — emit current gbrain/gstack-brain state as JSON.
+ * paysec-gbrain-detect — emit current gbrain/paysec-brain state as JSON.
  *
  * Rewritten from bash to TypeScript in v{X.Y.Z.0} to share the engine-status
- * classifier with bin/gstack-gbrain-sync.ts. Single source of truth via
+ * classifier with bin/paysec-gbrain-sync.ts. Single source of truth via
  * lib/gbrain-local-status.ts. Filename and exec semantics unchanged: callers
  * just shell out to the file path; the bun shebang resolves at runtime.
  *
@@ -15,9 +15,9 @@
  *     "gbrain_engine": "pglite"|"postgres" | null,
  *     "gbrain_doctor_ok": true|false,
  *     "gbrain_mcp_mode": "local-stdio"|"remote-http"|"none",
- *     "gstack_brain_sync_mode": "off"|"artifacts-only"|"full",
- *     "gstack_brain_git": true|false,
- *     "gstack_artifacts_remote": "https://..." | "",
+ *     "paysec_brain_sync_mode": "off"|"artifacts-only"|"full",
+ *     "paysec_brain_git": true|false,
+ *     "paysec_artifacts_remote": "https://..." | "",
  *     "gbrain_local_status": "ok"|"no-cli"|"missing-config"|"broken-config"|"broken-db"|"engine-locked"|"timeout"|"thin-client",
  *     "gbrain_pooler_mode": "transaction"|"session"|null
  *   }
@@ -28,9 +28,9 @@
  * output — downstream parsers must not depend on key order (none currently do).
  *
  * Env:
- *   GSTACK_HOME      — override ~/.gstack for state lookups (used by tests).
+ *   PAYSEC_HOME      — override ~/.paysec for state lookups (used by tests).
  *   HOME             — effective user home (drives ~/.gbrain/config.json path).
- *   GSTACK_DETECT_NO_CACHE=1 — bypass the 60s local-status cache.
+ *   PAYSEC_DETECT_NO_CACHE=1 — bypass the 60s local-status cache.
  */
 
 import { execFileSync } from "child_process";
@@ -45,9 +45,9 @@ import {
 } from "../lib/gbrain-local-status";
 import { gbrainConfigDir, isTransactionModePooler } from "../lib/gbrain-exec";
 
-const STATE_DIR = process.env.GSTACK_HOME || join(userHome(), ".gstack");
+const STATE_DIR = process.env.PAYSEC_HOME || join(userHome(), ".paysec");
 const SCRIPT_DIR = __dirname;
-const CONFIG_BIN = join(SCRIPT_DIR, "gstack-config");
+const CONFIG_BIN = join(SCRIPT_DIR, "paysec-config");
 // Honors GBRAIN_HOME with gbrain's own configDir() semantics (#2521:
 // GBRAIN_HOME is a parent dir, `.gbrain` is appended) — must stay consistent
 // with lib/gbrain-local-status's config resolution, or the detect JSON
@@ -108,8 +108,8 @@ function detectConfig(): { exists: boolean; engine: "pglite" | "postgres" | null
 // --- pooler mode detection (#1435) ---
 //
 // Reads DATABASE_URL from ~/.gbrain/config.json and checks whether it targets
-// a PgBouncer transaction-mode pooler (port 6543). Surfaced so /sync-gbrain
-// and /setup-gbrain can advise users when search may require GBRAIN_PREPARE.
+// a PgBouncer transaction-mode pooler (port 6543). Surfaced so /brain-sync
+// and /brain-setup can advise users when search may require GBRAIN_PREPARE.
 function detectPoolerMode(): "transaction" | "session" | "unknown" | null {
   const parsed = tryReadJSON(GBRAIN_CONFIG) as { database_url?: string } | null;
   if (!parsed?.database_url) return null;
@@ -141,7 +141,7 @@ function detectSyncMode(): "off" | "artifacts-only" | "full" {
   return "off";
 }
 
-// --- gstack-brain git repo present? ---
+// --- paysec-brain git repo present? ---
 function detectBrainGit(): boolean {
   return existsSync(join(STATE_DIR, ".git"));
 }
@@ -239,8 +239,8 @@ function readRemoteMcpUrl(): string {
 
 // --- artifacts remote URL with brain-* fallback during the rename migration window ---
 function detectArtifactsRemote(): string {
-  const newPath = join(userHome(), ".gstack-artifacts-remote.txt");
-  const oldPath = join(userHome(), ".gstack-brain-remote.txt");
+  const newPath = join(userHome(), ".paysec-artifacts-remote.txt");
+  const oldPath = join(userHome(), ".paysec-brain-remote.txt");
   for (const p of [newPath, oldPath]) {
     if (existsSync(p)) {
       try {
@@ -256,7 +256,7 @@ function detectArtifactsRemote(): string {
 function main(): void {
   const gbrain = detectGbrain();
   const config = detectConfig();
-  const noCache = process.env.GSTACK_DETECT_NO_CACHE === "1";
+  const noCache = process.env.PAYSEC_DETECT_NO_CACHE === "1";
 
   // Order MATCHES the bash version's jq output for callers that visually grep
   // (key order doesn't affect JSON parsers, but minimizes review noise).
@@ -267,9 +267,9 @@ function main(): void {
     gbrain_engine: config.engine,
     gbrain_doctor_ok: detectDoctor(gbrain.onPath),
     gbrain_mcp_mode: detectMcpMode(),
-    gstack_brain_sync_mode: detectSyncMode(),
-    gstack_brain_git: detectBrainGit(),
-    gstack_artifacts_remote: detectArtifactsRemote(),
+    paysec_brain_sync_mode: detectSyncMode(),
+    paysec_brain_git: detectBrainGit(),
+    paysec_artifacts_remote: detectArtifactsRemote(),
     gbrain_local_status: localEngineStatus({ noCache }),
     gbrain_pooler_mode: detectPoolerMode(),
   };
@@ -292,11 +292,11 @@ function main(): void {
 // server) holds the embedded DB, #2456 — gbrain is installed and healthy in
 // all four; none must silently suppress brain features), 1 otherwise. Runs
 // detection live (never reads the possibly-stale gbrain-detection.json), so
-// callers — setup, bin/dev-setup, and `gstack-config gbrain-refresh` — can
+// callers — setup, bin/dev-setup, and `paysec-config gbrain-refresh` — can
 // decide whether to render the gbrain :user variant without duplicating the
 // JSON grep. Prints nothing on stdout.
 if (process.argv.includes("--is-ok")) {
-  const noCache = process.env.GSTACK_DETECT_NO_CACHE === "1";
+  const noCache = process.env.PAYSEC_DETECT_NO_CACHE === "1";
   const status = localEngineStatus({ noCache });
   process.exit(
     status === "ok" || status === "timeout" || status === "thin-client" || status === "engine-locked"

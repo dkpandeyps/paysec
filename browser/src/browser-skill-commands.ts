@@ -9,7 +9,7 @@
  *   rm <name> [--global]                       — tombstone a user-tier skill
  *
  * Load-bearing: spawnSkill mints a per-spawn scoped token (read+write scope)
- * and passes it via GSTACK_SKILL_TOKEN. The skill never sees the daemon root
+ * and passes it via PAYSEC_SKILL_TOKEN. The skill never sees the daemon root
  * token. Untrusted skills get a scrubbed env (no $HOME, $PATH minimal, no
  * secrets like $GITHUB_TOKEN/$OPENAI_API_KEY/etc.) and a locked cwd. Trusted
  * skills (frontmatter `trusted: true`) inherit the full process env.
@@ -244,10 +244,10 @@ interface RunToFilesResult {
  * always complete. It also removes the pipe-buffer stall risk on chatty
  * children. `Bun.spawnSync` captures reliably too, but blocking the event loop
  * is not an option here — a spawned skill calls back into this same daemon on
- * GSTACK_PORT, so a synchronous wait would deadlock it.
+ * PAYSEC_PORT, so a synchronous wait would deadlock it.
  */
 async function runToFiles(cmd: string[], opts: RunToFilesOptions): Promise<RunToFilesResult> {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-skill-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-skill-'));
   const outPath = path.join(dir, 'stdout');
   const errPath = path.join(dir, 'stderr');
   try {
@@ -343,7 +343,7 @@ export interface SpawnSkillResult {
  *
  * 1. Mint a scoped token (read+write only; expires at timeout + 30s slack).
  * 2. Build the env: trusted=true → process.env; trusted=false → scrubbed.
- *    GSTACK_PORT and GSTACK_SKILL_TOKEN are always set.
+ *    PAYSEC_PORT and PAYSEC_SKILL_TOKEN are always set.
  * 3. Spawn `bun run script.ts -- <args>` with cwd=skill.dir.
  * 4. Capture stdout (capped at 1MB) and stderr; enforce timeout.
  * 5. On exit/timeout, revoke the token. Always.
@@ -397,8 +397,8 @@ const SECRET_KEY_PATTERNS = [
 
 /**
  * Allowlist for untrusted spawns. Anything not in this list is dropped.
- * Includes: minimal PATH, locale, terminal type. Skills get GSTACK_PORT +
- * GSTACK_SKILL_TOKEN injected separately.
+ * Includes: minimal PATH, locale, terminal type. Skills get PAYSEC_PORT +
+ * PAYSEC_SKILL_TOKEN injected separately.
  */
 const UNTRUSTED_ALLOWLIST = new Set([
   'LANG', 'LC_ALL', 'LC_CTYPE',
@@ -420,7 +420,7 @@ export function buildSpawnEnv(opts: BuildEnvOptions): Record<string, string> {
     // if the parent had one in env (defense in depth).
     for (const [k, v] of Object.entries(process.env)) {
       if (v === undefined) continue;
-      if (k === 'GSTACK_TOKEN') continue; // never propagate root token
+      if (k === 'PAYSEC_TOKEN') continue; // never propagate root token
       out[k] = v;
     }
     // Set a minimal PATH if missing.
@@ -438,7 +438,7 @@ export function buildSpawnEnv(opts: BuildEnvOptions): Record<string, string> {
   }
 
   // Drop anything that pattern-matches a secret. (Trusted path can have secrets
-  // intentionally — e.g. an internal-tool skill — but we still strip GSTACK_TOKEN
+  // intentionally — e.g. an internal-tool skill — but we still strip PAYSEC_TOKEN
   // above.)
   if (!opts.trusted) {
     for (const k of Object.keys(out)) {
@@ -447,8 +447,8 @@ export function buildSpawnEnv(opts: BuildEnvOptions): Record<string, string> {
   }
 
   // Inject the daemon connection (always last so callers can't override).
-  out.GSTACK_PORT = String(opts.port);
-  out.GSTACK_SKILL_TOKEN = opts.skillToken;
+  out.PAYSEC_PORT = String(opts.port);
+  out.PAYSEC_SKILL_TOKEN = opts.skillToken;
 
   return out;
 }

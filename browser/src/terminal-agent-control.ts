@@ -4,7 +4,7 @@
  *
  * Why this exists: pre-v1.44 used `pkill -f terminal-agent\.ts`, which
  * matches any process whose argv contains the string and would kill
- * sibling gstack sessions on the same host. The agent now writes a
+ * sibling paysec sessions on the same host. The agent now writes a
  * structured `terminal-agent-pid` record (`{pid, gen, startedAt}`) and
  * every kill site routes through `killAgentByRecord` here — identity-based,
  * no regex.
@@ -22,7 +22,7 @@ import { atomicWriteSync } from '../../lib/fs-atomic';
 
 /**
  * Locate the terminal-agent script on disk. In dev (cli.ts running via
- * `bun run`), it lives next to this file in browse/src. In a compiled
+ * `bun run`), it lives next to this file in browser/src. In a compiled
  * binary, Bun's --compile bakes the source into the executable and
  * exposes it relative to process.execPath. Either path must work or
  * the agent can't be spawned at all.

@@ -1,10 +1,10 @@
 /**
- * Regression pin: `gstack-memory-ingest` must pass `--include-gitignored` to
+ * Regression pin: `paysec-memory-ingest` must pass `--include-gitignored` to
  * `gbrain import`.
  *
- * gstack-artifacts-init writes an ignore-everything `.gitignore` (a bare `*`,
- * headed "Do not edit") at the root of `~/.gstack`. The memory ingest stages
- * pages into `~/.gstack/.staging-ingest-<pid>-<ts>/`, which is INSIDE that
+ * paysec-artifacts-init writes an ignore-everything `.gitignore` (a bare `*`,
+ * headed "Do not edit") at the root of `~/.paysec`. The memory ingest stages
+ * pages into `~/.paysec/.staging-ingest-<pid>-<ts>/`, which is INSIDE that
  * repo, and gbrain's markdown collector honours .gitignore. So the collector
  * walks the staging dir, matches every file against `*`, and collects zero.
  *
@@ -27,7 +27,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { readFileSync } from "fs";
 
-const SOURCE_PATH = join(import.meta.dir, "..", "bin", "gstack-memory-ingest.ts");
+const SOURCE_PATH = join(import.meta.dir, "..", "bin", "paysec-memory-ingest.ts");
 
 /** Strip comments so the pin only inspects executable code. */
 function stripComments(src: string): string {
@@ -35,7 +35,7 @@ function stripComments(src: string): string {
   return noBlock.replace(/\/\/[^\n]*/g, "");
 }
 
-describe("gstack-memory-ingest: gbrain import must not be filtered by .gitignore", () => {
+describe("paysec-memory-ingest: gbrain import must not be filtered by .gitignore", () => {
   it("passes --include-gitignored in active code", () => {
     const stripped = stripComments(readFileSync(SOURCE_PATH, "utf-8"));
     expect(stripped).toContain("--include-gitignored");
@@ -65,7 +65,7 @@ describe("gstack-memory-ingest: gbrain import must not be filtered by .gitignore
   });
 
   it("proves the ceiling stops git discovery from the staging dir — including through a symlink", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-ingest-ceiling-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-ingest-ceiling-"));
     try {
       const git = (args: string[], cwd: string, env?: NodeJS.ProcessEnv) =>
         execFileSync("git", args, {
@@ -73,9 +73,9 @@ describe("gstack-memory-ingest: gbrain import must not be filtered by .gitignore
           encoding: "utf-8",
           env: { ...process.env, ...env },
         });
-      // ~/.gstack shape: a git repo whose root ignores everything, with the
+      // ~/.paysec shape: a git repo whose root ignores everything, with the
       // staging dir as a direct child.
-      const home = join(dir, "gstack-home");
+      const home = join(dir, "paysec-home");
       mkdirSync(home, { recursive: true });
       git(["init", "-q", "."], home);
       writeFileSync(join(home, ".gitignore"), "*\n", "utf-8");
@@ -110,7 +110,7 @@ describe("gstack-memory-ingest: gbrain import must not be filtered by .gitignore
   });
 
   it("demonstrates the collision: an ignore-everything root hides staged pages", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-ingest-gitignore-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-ingest-gitignore-"));
     try {
       const git = (...args: string[]) =>
         execFileSync("git", args, { cwd: dir, encoding: "utf-8" });
@@ -120,7 +120,7 @@ describe("gstack-memory-ingest: gbrain import must not be filtered by .gitignore
       mkdirSync(staging, { recursive: true });
       writeFileSync(join(staging, "page.md"), "# a staged page\n", "utf-8");
 
-      // Exactly what gstack-artifacts-init writes at the root of ~/.gstack.
+      // Exactly what paysec-artifacts-init writes at the root of ~/.paysec.
       writeFileSync(join(dir, ".gitignore"), "*\n", "utf-8");
 
       // `git ls-files --others --exclude-standard` is the same view a

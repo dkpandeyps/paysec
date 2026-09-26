@@ -65,7 +65,7 @@ describe('Tab Isolation', () => {
       expect(bm.checkTabAccess(1, 'agent-2', { isWrite: true })).toBe(true);
     });
 
-    // Own-only-policy tokens — pair-agent / tunnel. Strict ownership for
+    // Own-only-policy tokens — pair-remote-agent / tunnel. Strict ownership for
     // every read and write. The v1.6.0.0 dual-listener threat model.
     it('own-only scoped agent CANNOT read an unowned tab', () => {
       expect(bm.checkTabAccess(1, 'agent-1', { isWrite: false, ownOnly: true })).toBe(false);
@@ -84,7 +84,7 @@ describe('Tab Isolation', () => {
       // Workaround: assert the read+ownership shape through a stand-in.
       // Use the read-side claim that an agent-owned tab passes ownership
       // checks; this is exercised end-to-end by browser-skill-commands
-      // and pair-agent tests where real tabs exist.
+      // and pair-remote-agent tests where real tabs exist.
       // For the unit layer: assert false-on-mismatch as the contract.
       expect(bm.checkTabAccess(1, 'someone-else', { isWrite: false, ownOnly: true })).toBe(false);
     });
@@ -228,15 +228,15 @@ describe('generateInstructionBlock', () => {
   });
 });
 
-// Test CLI source-level behavior (pair-agent headed mode, ngrok detection)
+// Test CLI source-level behavior (pair-remote-agent headed mode, ngrok detection)
 import * as fs from 'fs';
 import * as path from 'path';
 
 const CLI_SRC = fs.readFileSync(path.join(import.meta.dir, '../src/cli.ts'), 'utf-8');
 
-describe('pair-agent CLI behavior', () => {
-  // Extract the pair-agent block: from "pair-agent" dispatch to "process.exit(0)"
-  const pairStart = CLI_SRC.indexOf("command === 'pair-agent'");
+describe('pair-remote-agent CLI behavior', () => {
+  // Extract the pair-remote-agent block: from "pair-remote-agent" dispatch to "process.exit(0)"
+  const pairStart = CLI_SRC.indexOf("command === 'pair-remote-agent'");
   const pairEnd = CLI_SRC.indexOf('process.exit(0)', pairStart);
   const pairBlock = CLI_SRC.slice(pairStart, pairEnd);
 
@@ -252,7 +252,7 @@ describe('pair-agent CLI behavior', () => {
     expect(pairBlock).toContain('const browseBin = process.execPath');
   });
 
-  it('isNgrokAvailable checks gstack env, NGROK_AUTHTOKEN, and native config', () => {
+  it('isNgrokAvailable checks paysec env, NGROK_AUTHTOKEN, and native config', () => {
     const ngrokBlock = CLI_SRC.slice(
       CLI_SRC.indexOf('function isNgrokAvailable'),
       CLI_SRC.indexOf('// ─── Pair-Agent DX')

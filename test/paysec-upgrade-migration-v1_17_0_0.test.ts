@@ -1,10 +1,10 @@
 /**
- * gstack-upgrade/migrations/v1.17.0.0.sh — migration script unit tests.
+ * paysec-upgrade/migrations/v1.17.0.0.sh — migration script unit tests.
  *
- * The migration runs on /gstack-upgrade for users with brain-sync configured but
+ * The migration runs on /paysec-upgrade for users with brain-sync configured but
  * never wired up to gbrain. It has 4 skip conditions and one happy path.
  *
- * Strategy: stub gstack-config and gstack-gbrain-source-wireup binaries on PATH
+ * Strategy: stub paysec-config and paysec-gbrain-source-wireup binaries on PATH
  * so each skip condition can be triggered independently. The migration script
  * itself is plain bash — we exercise it directly.
  */
@@ -16,42 +16,42 @@ import * as path from 'path';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const MIGRATION = path.join(ROOT, 'gstack-upgrade', 'migrations', 'v1.17.0.0.sh');
+const MIGRATION = path.join(ROOT, 'paysec-upgrade', 'migrations', 'v1.17.0.0.sh');
 
 let tmpHome: string;
 let fakeBinDir: string;
 let stubLog: string;
 
 function makeFakeStubs(opts: {
-  configValue?: string; // value gstack-config returns for gbrain_sync_mode
-  configMissing?: boolean; // gstack-config binary itself missing (test edge)
+  configValue?: string; // value paysec-config returns for gbrain_sync_mode
+  configMissing?: boolean; // paysec-config binary itself missing (test edge)
   wireupMissing?: boolean; // wireup binary missing
   wireupExitCode?: number;
 }) {
-  const skillsBin = path.join(tmpHome, '.claude', 'skills', 'gstack', 'bin');
+  const skillsBin = path.join(tmpHome, '.claude', 'skills', 'paysec', 'bin');
   fs.mkdirSync(skillsBin, { recursive: true });
 
   if (!opts.configMissing) {
     const cfg = `#!/bin/bash
-echo "gstack-config $@" >> "${stubLog}"
+echo "paysec-config $@" >> "${stubLog}"
 [ "$1" = "get" ] && [ "$2" = "gbrain_sync_mode" ] && echo "${opts.configValue ?? ''}"
 exit 0
 `;
-    fs.writeFileSync(path.join(skillsBin, 'gstack-config'), cfg, { mode: 0o755 });
+    fs.writeFileSync(path.join(skillsBin, 'paysec-config'), cfg, { mode: 0o755 });
   }
 
   if (!opts.wireupMissing) {
     const wu = `#!/bin/bash
-echo "gstack-gbrain-source-wireup $@" >> "${stubLog}"
+echo "paysec-gbrain-source-wireup $@" >> "${stubLog}"
 exit ${opts.wireupExitCode ?? 0}
 `;
-    fs.writeFileSync(path.join(skillsBin, 'gstack-gbrain-source-wireup'), wu, { mode: 0o755 });
+    fs.writeFileSync(path.join(skillsBin, 'paysec-gbrain-source-wireup'), wu, { mode: 0o755 });
   }
 }
 
 function makeBrainGitRepo() {
-  const gstackHome = path.join(tmpHome, '.gstack');
-  fs.mkdirSync(path.join(gstackHome, '.git'), { recursive: true });
+  const paysecHome = path.join(tmpHome, '.paysec');
+  fs.mkdirSync(path.join(paysecHome, '.git'), { recursive: true });
 }
 
 function run(opts: { env?: Record<string, string> } = {}) {
@@ -73,7 +73,7 @@ function stubCalls(): string[] {
 }
 
 beforeEach(() => {
-  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-migration-test-'));
+  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-migration-test-'));
   fakeBinDir = path.join(tmpHome, 'fake-bin');
   fs.mkdirSync(fakeBinDir, { recursive: true });
   stubLog = path.join(tmpHome, 'stub-calls.log');
@@ -99,7 +99,7 @@ describe('migrations/v1.17.0.0.sh', () => {
     expect(r.status).toBe(0);
     // Helper should not have been invoked
     const calls = stubCalls();
-    expect(calls.some((c) => c.startsWith('gstack-gbrain-source-wireup'))).toBe(false);
+    expect(calls.some((c) => c.startsWith('paysec-gbrain-source-wireup'))).toBe(false);
   });
 
   test('gbrain_sync_mode unset/empty: exit 0 silently', () => {
@@ -107,16 +107,16 @@ describe('migrations/v1.17.0.0.sh', () => {
     const r = run();
     expect(r.status).toBe(0);
     const calls = stubCalls();
-    expect(calls.some((c) => c.startsWith('gstack-gbrain-source-wireup'))).toBe(false);
+    expect(calls.some((c) => c.startsWith('paysec-gbrain-source-wireup'))).toBe(false);
   });
 
-  test('no ~/.gstack/.git: exit 0 silently (no brain-sync configured)', () => {
+  test('no ~/.paysec/.git: exit 0 silently (no brain-sync configured)', () => {
     makeFakeStubs({ configValue: 'full' });
-    // Do NOT call makeBrainGitRepo() — no .gstack/.git directory exists
+    // Do NOT call makeBrainGitRepo() — no .paysec/.git directory exists
     const r = run();
     expect(r.status).toBe(0);
     const calls = stubCalls();
-    expect(calls.some((c) => c.startsWith('gstack-gbrain-source-wireup'))).toBe(false);
+    expect(calls.some((c) => c.startsWith('paysec-gbrain-source-wireup'))).toBe(false);
   });
 
   test('helper missing on PATH: prints warning, exit 0 (defensive)', () => {
@@ -133,9 +133,9 @@ describe('migrations/v1.17.0.0.sh', () => {
     const r = run();
     expect(r.status).toBe(0);
     const calls = stubCalls();
-    expect(calls.some((c) => c.startsWith('gstack-gbrain-source-wireup'))).toBe(true);
+    expect(calls.some((c) => c.startsWith('paysec-gbrain-source-wireup'))).toBe(true);
     // Note: migration invokes WITHOUT --strict (benign-skip semantics for batch upgrade)
-    const helperCall = calls.find((c) => c.startsWith('gstack-gbrain-source-wireup'));
+    const helperCall = calls.find((c) => c.startsWith('paysec-gbrain-source-wireup'));
     expect(helperCall).not.toContain('--strict');
   });
 

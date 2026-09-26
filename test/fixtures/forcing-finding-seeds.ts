@@ -5,7 +5,7 @@
  * Used by gate-tier finding-floor tests
  * (test/skill-e2e-plan-{eng,ceo,design,devex}-finding-floor.test.ts) as
  * the minimum-cost regression for the May 2026 transcript bug:
- *   "/plan-eng-review reviewed a real PR diff, wrote a multi-section
+ *   "/plan-tech-review reviewed a real PR diff, wrote a multi-section
  *    review plan to ~/.claude/plans/ and called ExitPlanMode without
  *    ever firing AskUserQuestion."
  *
@@ -24,7 +24,7 @@
  */
 
 export const FORCING_FLOOR_ENG = [
-  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/gstack-test-plan-eng-floor.md (use Edit/Write to that exact path).',
+  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/paysec-test-plan-eng-floor.md (use Edit/Write to that exact path).',
   '',
   '# Plan: Add request-id propagation across services',
   '',
@@ -36,7 +36,7 @@ export const FORCING_FLOOR_ENG = [
 ].join('\n');
 
 export const FORCING_FLOOR_CEO = [
-  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/gstack-test-plan-ceo-floor.md (use Edit/Write to that exact path).',
+  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/paysec-test-plan-ceo-floor.md (use Edit/Write to that exact path).',
   '',
   '# Plan: Launch a "developer-friendly" pricing tier',
   '',
@@ -52,7 +52,7 @@ export const FORCING_FLOOR_CEO = [
 ].join('\n');
 
 export const FORCING_FLOOR_DESIGN = [
-  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/gstack-test-plan-design-floor.md (use Edit/Write to that exact path).',
+  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/paysec-test-plan-design-floor.md (use Edit/Write to that exact path).',
   '',
   '# Plan: Marketing landing page',
   '',
@@ -64,7 +64,7 @@ export const FORCING_FLOOR_DESIGN = [
 ].join('\n');
 
 export const FORCING_FLOOR_DEVEX = [
-  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/gstack-test-plan-devex-floor.md (use Edit/Write to that exact path).',
+  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/paysec-test-plan-devex-floor.md (use Edit/Write to that exact path).',
   '',
   '# Plan: SDK quickstart docs',
   '',
@@ -86,17 +86,17 @@ export const FORCING_FLOOR_DEVEX = [
  * Multi-finding batching regression seed (periodic tier).
  *
  * Mirrors the May 2026 transcript bug shape: 4 distinct non-trivial findings
- * spread across plan-eng-review's standard sections (Architecture, Code
+ * spread across plan-tech-review's standard sections (Architecture, Code
  * Quality, Tests, Performance). Each finding is independent — there is no
  * legitimate reason to batch them into a single AskUserQuestion.
  *
- * Used by test/skill-e2e-plan-eng-multi-finding-batching.test.ts to assert
+ * Used by test/skill-e2e-plan-tech-multi-finding-batching.test.ts to assert
  * the agent fires >= 3 review-phase AUQs (i.e., does NOT batch them into a
  * "## Decisions to confirm" section + ExitPlanMode). Floor of 3 (not 4) is
  * the [N-1] tolerance from the existing finding-count band convention.
  */
 export const FORCING_BATCHING_ENG = [
-  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/gstack-test-plan-eng-batching.md (use Edit/Write to that exact path).',
+  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/paysec-test-plan-eng-batching.md (use Edit/Write to that exact path).',
   '',
   '# Plan: Add background job retry framework',
   '',
@@ -133,7 +133,7 @@ export const FORCING_BATCHING_ENG = [
  * scope decision. Each is independent (no dependencies between them) so
  * the natural compliant shape is a per-option split chain at parent D<N>.
  *
- * Used by test/skill-e2e-plan-ceo-split-overflow.test.ts to assert the
+ * Used by test/skill-e2e-plan-business-split-overflow.test.ts to assert the
  * agent fires >= 4 review-phase AUQs (floor uses the standard [N-1]
  * tolerance band, accounting for one expected scope-reduction-or-merge
  * call before the per-option chain begins).
@@ -143,7 +143,7 @@ export const FORCING_BATCHING_ENG = [
  * TODOs without asking"). That's the bug. Floor of 4 detects it.
  */
 export const FORCING_SPLIT_OVERFLOW_CEO = [
-  'Please review this plan and help me decide scope. Write your plan-mode plan to /tmp/gstack-test-plan-ceo-split-overflow.md (use Edit/Write to that exact path).',
+  'Please review this plan and help me decide scope. Write your plan-mode plan to /tmp/paysec-test-plan-ceo-split-overflow.md (use Edit/Write to that exact path).',
   '',
   '# Plan: Pick which chat-platform integrations to ship this quarter',
   '',

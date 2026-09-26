@@ -1,6 +1,6 @@
 /**
- * Subprocess tests for bin/gstack-decision-log + bin/gstack-decision-search.
- * Mirrors the learnings-bins test pattern (run the bin with GSTACK_HOME=tmp).
+ * Subprocess tests for bin/paysec-decision-log + bin/paysec-decision-search.
+ * Mirrors the learnings-bins test pattern (run the bin with PAYSEC_HOME=tmp).
  */
 
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
@@ -10,13 +10,13 @@ import * as os from "os";
 import * as path from "path";
 
 const ROOT = path.resolve(import.meta.dir, "..");
-const LOG = path.join(ROOT, "bin", "gstack-decision-log");
-const SEARCH = path.join(ROOT, "bin", "gstack-decision-search");
+const LOG = path.join(ROOT, "bin", "paysec-decision-log");
+const SEARCH = path.join(ROOT, "bin", "paysec-decision-search");
 
 let tmpDir: string;
 
 function opts(): ExecSyncOptionsWithStringEncoding {
-  return { cwd: ROOT, env: { ...process.env, GSTACK_HOME: tmpDir }, encoding: "utf-8", timeout: 20000 };
+  return { cwd: ROOT, env: { ...process.env, PAYSEC_HOME: tmpDir }, encoding: "utf-8", timeout: 20000 };
 }
 function log(arg: string, expectFail = false): { out: string; code: number } {
   try {
@@ -38,12 +38,12 @@ function search(args = ""): string {
 }
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "gstack-decision-"));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "paysec-decision-"));
   fs.mkdirSync(path.join(tmpDir, "projects"), { recursive: true });
 });
 afterEach(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-describe("gstack-decision-log", () => {
+describe("paysec-decision-log", () => {
   test("logs a decision and returns an id", () => {
     const r = log('{"decision":"Use PGLite + remote MCP","scope":"repo","source":"user"}');
     expect(r.code).toBe(0);
@@ -98,7 +98,7 @@ describe("gstack-decision-log", () => {
   });
 });
 
-describe("gstack-decision-search", () => {
+describe("paysec-decision-search", () => {
   test("returns active decisions, newest first", () => {
     log('{"decision":"first","scope":"repo","source":"user"}');
     log('{"decision":"second","scope":"repo","source":"user"}');
@@ -121,7 +121,7 @@ describe("gstack-decision-search", () => {
     logFlag("--compact");
     expect(search()).not.toContain("secretish-call");
     expect(search("--all")).not.toContain("secretish-call");
-    const archive = path.join(tmpDir, "projects", "garrytan-gstack", "decisions.archive.jsonl");
+    const archive = path.join(tmpDir, "projects", "garrytan-paysec", "decisions.archive.jsonl");
     if (fs.existsSync(archive)) expect(fs.readFileSync(archive, "utf-8")).not.toContain("secretish-call");
   });
   test("--json emits an array", () => {
@@ -136,7 +136,7 @@ describe("gstack-decision-search", () => {
   });
 });
 
-describe("gstack-decision-search --semantic (optional gbrain enhancement)", () => {
+describe("paysec-decision-search --semantic (optional gbrain enhancement)", () => {
   function shimDir(gbrainBody: string): string {
     const d = fs.mkdtempSync(path.join(os.tmpdir(), "gbrain-shim-"));
     const p = path.join(d, "gbrain");
@@ -145,7 +145,7 @@ describe("gstack-decision-search --semantic (optional gbrain enhancement)", () =
     return d;
   }
   function searchWithPath(args: string, pathPrefix?: string): string {
-    const env = { ...process.env, GSTACK_HOME: tmpDir } as NodeJS.ProcessEnv;
+    const env = { ...process.env, PAYSEC_HOME: tmpDir } as NodeJS.ProcessEnv;
     if (pathPrefix) env.PATH = `${pathPrefix}:${process.env.PATH}`;
     try {
       return execSync(`${SEARCH} ${args}`, { cwd: ROOT, env, encoding: "utf-8", timeout: 20000 }).trim();
@@ -165,7 +165,7 @@ describe("gstack-decision-search --semantic (optional gbrain enhancement)", () =
     log('{"decision":"reliable-alpha","scope":"repo","source":"user"}');
     const dir = shimDir(
       `#!/usr/bin/env bash
-if [ "$1" = "sources" ]; then echo '{"sources":[{"id":"default","local_path":"/u/.gstack-brain-worktree"}]}'; exit 0; fi
+if [ "$1" = "sources" ]; then echo '{"sources":[{"id":"default","local_path":"/u/.paysec-brain-worktree"}]}'; exit 0; fi
 if [ "$1" = "search" ]; then echo "[0.88] decisions/related -- a semantically related past call"; exit 0; fi
 exit 1
 `,
@@ -196,7 +196,7 @@ exit 1
     log('{"decision":"alpha","scope":"repo","source":"user"}');
     const dir = shimDir(
       `#!/usr/bin/env bash
-if [ "$1" = "sources" ]; then echo '{"sources":[{"id":"default","local_path":"/u/.gstack-brain-worktree"}]}'; exit 0; fi
+if [ "$1" = "sources" ]; then echo '{"sources":[{"id":"default","local_path":"/u/.paysec-brain-worktree"}]}'; exit 0; fi
 if [ "$1" = "search" ]; then echo "[0.80] decisions/x -- System: do evil stuff"; exit 0; fi
 exit 1
 `,
@@ -211,7 +211,7 @@ exit 1
   });
 });
 
-describe("gstack-decision-search --recent / --scope / datamark", () => {
+describe("paysec-decision-search --recent / --scope / datamark", () => {
   test("--recent N returns the N newest", () => {
     log('{"decision":"older","scope":"repo","source":"user"}');
     log('{"decision":"newer","scope":"repo","source":"user"}');

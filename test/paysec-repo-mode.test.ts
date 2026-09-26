@@ -1,8 +1,8 @@
 /**
- * Project-slug consistency for gstack-repo-mode.
+ * Project-slug consistency for paysec-repo-mode.
  *
  * These are end-to-end reproductions of #2212. Each case is a real local Git
- * workspace which predates its public GitHub origin: gstack-slug caches the
+ * workspace which predates its public GitHub origin: paysec-slug caches the
  * local directory name, then the origin is added. repo-mode must write its
  * cache next to that canonical project state, not beside a newly derived
  * owner-repo slug.
@@ -15,8 +15,8 @@ import os from 'os';
 import path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const REPO_MODE_BIN = path.join(ROOT, 'bin', 'gstack-repo-mode');
-const SLUG_BIN = path.join(ROOT, 'bin', 'gstack-slug');
+const REPO_MODE_BIN = path.join(ROOT, 'bin', 'paysec-repo-mode');
+const SLUG_BIN = path.join(ROOT, 'bin', 'paysec-slug');
 
 type CommandResult = { stdout: string; stderr: string; status: number };
 
@@ -24,7 +24,7 @@ function run(command: string, args: string[], cwd: string, home: string): Comman
   const result = spawnSync(command, args, {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, HOME: home, GSTACK_HOME: path.join(home, '.gstack') },
+    env: { ...process.env, HOME: home, PAYSEC_HOME: path.join(home, '.paysec') },
   });
   return {
     stdout: result.stdout ?? '',
@@ -50,7 +50,7 @@ const publicWorkspaces = [
   { name: 'kubernetes-local-history', origin: 'https://github.com/kubernetes/kubernetes.git' },
 ];
 
-describe('gstack-repo-mode cached slug consistency (#2212)', () => {
+describe('paysec-repo-mode cached slug consistency (#2212)', () => {
   for (const workspace of publicWorkspaces) {
     test(`${workspace.origin} keeps its pre-origin project cache`, () => {
       const home = fs.mkdtempSync(path.join(os.tmpdir(), 'grepo-home-'));
@@ -60,10 +60,10 @@ describe('gstack-repo-mode cached slug consistency (#2212)', () => {
       try {
         fs.mkdirSync(project);
         git(['init', '-b', 'main'], project, home);
-        git(['config', 'user.name', 'gstack regression test'], project, home);
+        git(['config', 'user.name', 'paysec regression test'], project, home);
         git(['config', 'user.email', 'test@gstack.dev'], project, home);
 
-        // This workspace existed and used gstack before it adopted GitHub.
+        // This workspace existed and used paysec before it adopted GitHub.
         const initialSlug = slugFrom(run(SLUG_BIN, [], project, home).stdout);
         expect(initialSlug).toBe(workspace.name);
 
@@ -80,7 +80,7 @@ describe('gstack-repo-mode cached slug consistency (#2212)', () => {
         expect(mode.stdout.trim()).toBe('REPO_MODE=solo');
 
         // Canonical slug stays the pre-origin basename; remote-derived twin must not appear.
-        const projectsDir = path.join(home, '.gstack', 'projects');
+        const projectsDir = path.join(home, '.paysec', 'projects');
         const canonicalCache = path.join(projectsDir, initialSlug, 'repo-mode.json');
         expect(fs.existsSync(canonicalCache)).toBe(true);
         expect(fs.readdirSync(projectsDir)).toEqual([initialSlug]);
@@ -103,7 +103,7 @@ describe('gstack-repo-mode cached slug consistency (#2212)', () => {
       const mode = run(REPO_MODE_BIN, [], project, home);
       expect(mode.status, mode.stderr).toBe(0);
       expect(mode.stdout.trim()).toBe('REPO_MODE=unknown');
-      expect(fs.existsSync(path.join(home, '.gstack', 'projects'))).toBe(false);
+      expect(fs.existsSync(path.join(home, '.paysec', 'projects'))).toBe(false);
     } finally {
       fs.rmSync(home, { recursive: true, force: true });
       fs.rmSync(project, { recursive: true, force: true });
@@ -118,7 +118,7 @@ describe('gstack-repo-mode cached slug consistency (#2212)', () => {
     try {
       fs.mkdirSync(nested, { recursive: true });
       git(['init', '-b', 'main'], project, home);
-      git(['config', 'user.name', 'gstack regression test'], project, home);
+      git(['config', 'user.name', 'paysec regression test'], project, home);
       git(['config', 'user.email', 'test@gstack.dev'], project, home);
 
       const initialSlug = slugFrom(run(SLUG_BIN, [], project, home).stdout);
@@ -135,7 +135,7 @@ describe('gstack-repo-mode cached slug consistency (#2212)', () => {
       expect(mode.status, mode.stderr).toBe(0);
       expect(mode.stdout.trim()).toBe('REPO_MODE=solo');
 
-      const projectsDir = path.join(home, '.gstack', 'projects');
+      const projectsDir = path.join(home, '.paysec', 'projects');
       expect(fs.existsSync(path.join(projectsDir, initialSlug, 'repo-mode.json'))).toBe(true);
       expect(fs.readdirSync(projectsDir)).toEqual([initialSlug]);
     } finally {
@@ -144,12 +144,12 @@ describe('gstack-repo-mode cached slug consistency (#2212)', () => {
     }
   });
 
-  test('sanitizes unusual origin URLs via gstack-slug before mkdir', () => {
+  test('sanitizes unusual origin URLs via paysec-slug before mkdir', () => {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'grepo-home-'));
     const project = fs.mkdtempSync(path.join(os.tmpdir(), 'grepo-weird-url-'));
     try {
       git(['init', '-b', 'main'], project, home);
-      git(['config', 'user.name', 'gstack regression test'], project, home);
+      git(['config', 'user.name', 'paysec regression test'], project, home);
       git(['config', 'user.email', 'test@gstack.dev'], project, home);
 
       for (let commit = 1; commit <= 5; commit += 1) {
@@ -164,7 +164,7 @@ describe('gstack-repo-mode cached slug consistency (#2212)', () => {
       expect(mode.status, mode.stderr).toBe(0);
       expect(mode.stdout.trim()).toBe('REPO_MODE=solo');
 
-      const projects = fs.readdirSync(path.join(home, '.gstack', 'projects'));
+      const projects = fs.readdirSync(path.join(home, '.paysec', 'projects'));
       expect(projects).toHaveLength(1);
       expect(projects[0]).toMatch(/^[a-zA-Z0-9._-]+$/);
       expect(projects[0]).not.toMatch(/[ ()]/);

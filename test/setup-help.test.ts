@@ -48,7 +48,7 @@ describe('setup: --help flag (#1133)', () => {
     });
     expect(res.status).toBe(0);
     expect(res.stdout).toContain('Usage:');
-    expect(res.stdout).toContain('gstack setup');
+    expect(res.stdout).toContain('paysec setup');
     // Hard guarantee it short-circuited — none of the install-side output appears.
     expect(res.stdout).not.toMatch(/Installing|bun install|Building|gen:skill-docs/);
   });

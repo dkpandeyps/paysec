@@ -1,11 +1,11 @@
 /**
- * gstack browse — sender authorization for privileged extension messages
+ * paysec browse — sender authorization for privileged extension messages
  *
  * Single decision point for which chrome.runtime.onMessage senders may read
  * or spend the browse server's auth token and port. Loaded into the
  * background service worker via importScripts() (classic worker — see
  * manifest.json) and require()-able from bun tests
- * (browse/test/extension-sender-auth.test.ts).
+ * (browser/test/extension-sender-auth.test.ts).
  *
  * Policy: privileged types are for this extension's own pages only
  * (sidepanel / popup — sender.url is chrome-extension://<own id>/...).
@@ -61,5 +61,5 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api; // bun test (CommonJS require)
   }
-  root.gstackSenderAuth = api; // importScripts() in the service worker
+  root.paysecSenderAuth = api; // importScripts() in the service worker
 })(typeof self !== 'undefined' ? self : globalThis);

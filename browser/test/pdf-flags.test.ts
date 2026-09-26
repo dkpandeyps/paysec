@@ -2,7 +2,7 @@
  * $B pdf flag contract tests.
  *
  * Pure unit tests of the parsing/validation logic. These do NOT spin up
- * Chromium — that's covered by make-pdf's integration tests.
+ * Chromium — that's covered by md-to-pdf's integration tests.
  */
 
 import { describe, expect, test } from "bun:test";

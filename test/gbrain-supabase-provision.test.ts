@@ -1,5 +1,5 @@
 /**
- * gstack-gbrain-supabase-provision — Supabase Management API wrapper.
+ * paysec-gbrain-supabase-provision — Supabase Management API wrapper.
  *
  * All tests run against a per-test local mock HTTP server (Bun.serve)
  * that returns fixture responses. Never hits the real Supabase API, never
@@ -29,7 +29,7 @@ import * as path from 'path';
 import { runProvision } from '../lib/gbrain-supabase-provision';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const BIN = path.join(ROOT, 'bin', 'gstack-gbrain-supabase-provision');
+const BIN = path.join(ROOT, 'bin', 'paysec-gbrain-supabase-provision');
 
 // Minimal PATH that finds standard tools but excludes user bins. The smoke
 // test prepends the running bun's own directory so the shebang resolves.
@@ -71,8 +71,8 @@ function startMock(routes: Record<string, Handler>): MockServer {
   };
 }
 
-// Per-test GSTACK_HOME so egress receipts land in a throwaway ledger, never
-// the operator's real ~/.gstack/security/egress.jsonl.
+// Per-test PAYSEC_HOME so egress receipts land in a throwaway ledger, never
+// the operator's real ~/.paysec/security/egress.jsonl.
 let egressHome: string;
 
 /**
@@ -89,7 +89,7 @@ async function runCmd(
   let stderr = '';
   const status = await runProvision(args, {
     fetch: globalThis.fetch,
-    env: { GSTACK_HOME: egressHome, ...env },
+    env: { PAYSEC_HOME: egressHome, ...env },
     stdout: (chunk) => { stdout += chunk; },
     stderr: (chunk) => { stderr += chunk; },
     sleep: async () => {},
@@ -516,7 +516,7 @@ describe('pooler-url', () => {
     expect(r.stderr).not.toContain('rewriting');
   });
 
-  test('GSTACK_SUPABASE_TRUST_API_PORT=1 disables the rewrite', async () => {
+  test('PAYSEC_SUPABASE_TRUST_API_PORT=1 disables the rewrite', async () => {
     mock = startMock({
       [`GET /v1/projects/${REF}/config/database/pooler`]: () =>
         jsonResp({ ...POOLER_OK, pool_mode: 'transaction', db_port: 6543 }),
@@ -525,7 +525,7 @@ describe('pooler-url', () => {
       SUPABASE_ACCESS_TOKEN: 'sbp_test',
       DB_PASS: 'pw',
       SUPABASE_API_BASE: mock.url,
-      GSTACK_SUPABASE_TRUST_API_PORT: '1',
+      PAYSEC_SUPABASE_TRUST_API_PORT: '1',
     });
     expect(r.status).toBe(0);
     expect(JSON.parse(r.stdout).pooler_url).toContain(':6543/postgres');
@@ -697,7 +697,7 @@ describe('general', () => {
     const r = await runCmd(['--help']);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain(
-      'gstack-gbrain-supabase-provision — Supabase Management API wrapper'
+      'paysec-gbrain-supabase-provision — Supabase Management API wrapper'
     );
     expect(r.stdout).toContain('Exit codes:');
   });
@@ -724,7 +724,7 @@ describe('bin smoke test (spawned)', () => {
         PATH: `${path.dirname(process.execPath)}:${SAFE_PATH}`,
         SUPABASE_ACCESS_TOKEN: 'sbp_smoke_pat',
         SUPABASE_API_BASE: mock.url,
-        GSTACK_HOME: egressHome,
+        PAYSEC_HOME: egressHome,
       },
       stdout: 'pipe',
       stderr: 'pipe',

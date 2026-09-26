@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Token hygiene for /pair-agent (#2335): the ngrok authtoken must never walk
+// Token hygiene for /pair-remote-agent (#2335): the ngrok authtoken must never walk
 // through the chat transcript or a Bash tool call. The skill may INSTRUCT the
 // user to run `ngrok config add-authtoken` in their own terminal, but no
 // agent-executed bash fence may contain the command — an agent-run
@@ -35,8 +35,8 @@ function fencedBashBlocks(markdown: string): string[] {
   return blocks;
 }
 
-describe('pair-agent ngrok token hygiene (#2335)', () => {
-  const files = ['pair-agent/SKILL.md', 'pair-agent/SKILL.md.tmpl'];
+describe('pair-remote-agent ngrok token hygiene (#2335)', () => {
+  const files = ['pair-remote-agent/SKILL.md', 'pair-remote-agent/SKILL.md.tmpl'];
 
   test.each(files)('%s: no agent-run bash fence contains add-authtoken', (rel) => {
     const content = fs.readFileSync(path.join(ROOT, rel), 'utf-8');

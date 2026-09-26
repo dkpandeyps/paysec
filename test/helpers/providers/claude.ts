@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { resolveClaudeCommand } from '../../../browse/src/claude-bin';
+import { resolveClaudeCommand } from '../../../browser/src/claude-bin';
 
 /**
  * Claude adapter — wraps the `claude` CLI via claude -p.
@@ -19,11 +19,11 @@ export class ClaudeAdapter implements ProviderAdapter {
   readonly family = 'claude' as const;
 
   async available(): Promise<AvailabilityCheck> {
-    // Binary on PATH (or GSTACK_CLAUDE_BIN override). Routes through the shared
+    // Binary on PATH (or PAYSEC_CLAUDE_BIN override). Routes through the shared
     // resolver so Windows + override paths behave the same as production sites.
     const resolved = resolveClaudeCommand();
     if (!resolved) {
-      return { ok: false, reason: 'claude CLI not found on PATH. Install from https://claude.ai/download or npm i -g @anthropic-ai/claude-code (or set GSTACK_CLAUDE_BIN)' };
+      return { ok: false, reason: 'claude CLI not found on PATH. Install from https://claude.ai/download or npm i -g @anthropic-ai/claude-code (or set PAYSEC_CLAUDE_BIN)' };
     }
     // Auth sniff: ~/.claude/.credentials.json OR ANTHROPIC_API_KEY OR (macOS)
     // the Keychain entry subscription installs use instead of the creds file.
@@ -58,7 +58,7 @@ export class ClaudeAdapter implements ProviderAdapter {
     const start = Date.now();
     const resolved = resolveClaudeCommand();
     if (!resolved) {
-      throw new Error('claude CLI not resolvable (set GSTACK_CLAUDE_BIN or install)');
+      throw new Error('claude CLI not resolvable (set PAYSEC_CLAUDE_BIN or install)');
     }
     const args = [...resolved.argsPrefix, '-p', '--output-format', 'json'];
     if (opts.model) args.push('--model', opts.model);
@@ -71,9 +71,9 @@ export class ClaudeAdapter implements ProviderAdapter {
         timeout: opts.timeoutMs,
         encoding: 'utf-8',
         maxBuffer: 32 * 1024 * 1024,
-        // Default GSTACK_HEADLESS=1 so a benchmark run classifies as headless (an
+        // Default PAYSEC_HEADLESS=1 so a benchmark run classifies as headless (an
         // AskUserQuestion failure BLOCKs rather than emitting unanswerable prose).
-        env: { ...process.env, GSTACK_HEADLESS: '1' },
+        env: { ...process.env, PAYSEC_HEADLESS: '1' },
       });
       const parsed = this.parseOutput(out);
       return {

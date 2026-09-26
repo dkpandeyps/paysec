@@ -5,12 +5,12 @@
  *
  *  1. applyImageDirectives — runs inside render() right after marked, before
  *     the sanitizer. Translates the markdown-adjacent directive suffix
- *     `![alt](x.png){width=50%}` / `{page=landscape}` into data-gstack-*
+ *     `![alt](x.png){width=50%}` / `{page=landscape}` into data-paysec-*
  *     attributes (the sanitizer keeps data- attributes; the brace text is
  *     consumed so it never reaches smartypants or the page).
  *
  *  2. applyImagePolicy — runs in the orchestrator after image inlining (which
- *     annotates data-gstack-px-width/-height from real bytes). Applies the
+ *     annotates data-paysec-px-width/-height from real bytes). Applies the
  *     width rule and decides landscape promotion:
  *
  *     WIDTH RULE: render at intrinsic CSS-px width, capped at the content box,
@@ -79,8 +79,8 @@ export function applyImageDirectives(html: string): string {
     const parsed = parseDirectives(body);
     if (!parsed) return full;
     let tag = imgTag;
-    if (parsed.width) tag = addAttr(tag, "data-gstack-width", parsed.width);
-    if (parsed.page) tag = addAttr(tag, "data-gstack-page", parsed.page);
+    if (parsed.width) tag = addAttr(tag, "data-paysec-width", parsed.width);
+    if (parsed.page) tag = addAttr(tag, "data-paysec-page", parsed.page);
     return tag;
   });
 }
@@ -120,7 +120,7 @@ export function applyImagePolicy(html: string, opts: ImagePolicyOptions): ImageP
 
   // 2a. width directives → inline styles on the img.
   let out = html.replace(/<img\b[^>]*>/gi, (tag) => {
-    const width = attrValue(tag, "data-gstack-width");
+    const width = attrValue(tag, "data-paysec-width");
     if (!width) return tag;
     const css = width === "full" ? "100%" : width;
     return mergeStyle(tag, `width: ${css}; height: auto;`);
@@ -133,8 +133,8 @@ export function applyImagePolicy(html: string, opts: ImagePolicyOptions): ImageP
     if (!decision.promote) return full;
     hasLandscape = true;
     opts.warn(`promoting image to a landscape page (${decision.reason})`);
-    const w = num(attrValue(tag, "data-gstack-px-width"));
-    const h = num(attrValue(tag, "data-gstack-px-height"));
+    const w = num(attrValue(tag, "data-paysec-px-width"));
+    const h = num(attrValue(tag, "data-paysec-px-height"));
     return wrapPageWide(tag, w && h ? h / w : null, opts.landscape);
   });
 
@@ -180,12 +180,12 @@ interface PromotionDecision {
 }
 
 function decideImagePromotion(tag: string, widthThresholdPx: number): PromotionDecision {
-  const page = attrValue(tag, "data-gstack-page");
+  const page = attrValue(tag, "data-paysec-page");
   if (page === "portrait") return { promote: false, reason: "page=portrait veto" };
   if (page === "landscape") return { promote: true, reason: "page=landscape directive" };
 
-  const w = num(attrValue(tag, "data-gstack-px-width"));
-  const h = num(attrValue(tag, "data-gstack-px-height"));
+  const w = num(attrValue(tag, "data-paysec-px-width"));
+  const h = num(attrValue(tag, "data-paysec-px-height"));
   if (!w || !h) return { promote: false, reason: "no intrinsic dimensions" };
   if (w / h < MIN_ASPECT) return { promote: false, reason: "aspect below floor" };
   if (w <= widthThresholdPx) return { promote: false, reason: "fits portrait readably" };
@@ -198,7 +198,7 @@ function decideImagePromotion(tag: string, widthThresholdPx: number): PromotionD
 }
 
 function decideDiagramPromotion(figure: string, widthThresholdPx: number): PromotionDecision {
-  const page = attrValue(figure, "data-gstack-page");
+  const page = attrValue(figure, "data-paysec-page");
   if (page === "portrait") return { promote: false, reason: "page=portrait veto" };
   if (page === "landscape") return { promote: true, reason: "page=landscape fence directive" };
 

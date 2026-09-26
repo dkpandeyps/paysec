@@ -5,7 +5,7 @@
  *     chrome-extension:// Origin (the two pre-v1.62 carve-outs). IRON-RULE
  *     regression tests.
  *   - POST /extension-token releases the token ONLY to the pinned extension
- *     Origin (chrome-extension://GSTACK_EXTENSION_ID) with a loopback Host.
+ *     Origin (chrome-extension://PAYSEC_EXTENSION_ID) with a loopback Host.
  *   - Host arrives with a port ('127.0.0.1:34567') and must be parsed to a
  *     hostname, not compared literally (amendment C9). 'localhost:34567'
  *     is accepted too.
@@ -20,14 +20,14 @@ import { describe, test, expect, beforeEach } from 'bun:test';
 import * as crypto from 'crypto';
 import {
   buildFetchHandler,
-  GSTACK_EXTENSION_ID,
+  PAYSEC_EXTENSION_ID,
   type ServerConfig,
 } from '../src/server';
 import { __resetRegistry } from '../src/token-registry';
 import { BrowserManager } from '../src/browser-manager';
 import { resolveConfig } from '../src/config';
 
-const PINNED_ORIGIN = `chrome-extension://${GSTACK_EXTENSION_ID}`;
+const PINNED_ORIGIN = `chrome-extension://${PAYSEC_EXTENSION_ID}`;
 
 function makeConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
   const token = 'ext-token-test-' + crypto.randomBytes(16).toString('hex');

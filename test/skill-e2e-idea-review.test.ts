@@ -1,12 +1,12 @@
 /**
- * E2E tests for /office-hours mode-posture regression (V1.1 gate).
+ * E2E tests for /idea-review mode-posture regression (V1.1 gate).
  *
  * Exercises startup mode Q3 (forcing energy) and builder mode (generative wildness).
  * Both cases detect whether preamble Writing Style rules have flattened the
  * skill's distinctive posture at runtime.
  *
  * Judge: Sonnet via judgePosture() — cheap per-call.
- * Generator: whatever the skill runs with (Sonnet for office-hours).
+ * Generator: whatever the skill runs with (Sonnet for idea-review).
  */
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
@@ -48,12 +48,12 @@ describeIfSelected('Office Hours Forcing Energy E2E', ['office-hours-forcing-ene
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'add pitch']);
 
-    fs.mkdirSync(path.join(workDir, 'office-hours'), { recursive: true });
+    fs.mkdirSync(path.join(workDir, 'idea-review'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'office-hours', 'SKILL.md'),
-      path.join(workDir, 'office-hours', 'SKILL.md'),
+      path.join(ROOT, 'idea-review', 'SKILL.md'),
+      path.join(workDir, 'idea-review', 'SKILL.md'),
     );
-    { const _sec = path.join(ROOT, 'office-hours', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(workDir, 'office-hours', 'sections'), { recursive: true }); }
+    { const _sec = path.join(ROOT, 'idea-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(workDir, 'idea-review', 'sections'), { recursive: true }); }
   });
 
   afterAll(() => {
@@ -62,7 +62,7 @@ describeIfSelected('Office Hours Forcing Energy E2E', ['office-hours-forcing-ene
 
   testConcurrentIfSelected('office-hours-forcing-energy', async () => {
     const result = await runSkillTest({
-      prompt: `Read office-hours/SKILL.md for the workflow.
+      prompt: `Read idea-review/SKILL.md for the workflow.
 
 Read pitch.md — that's the founder pitch the user is bringing to office hours. Select Startup Mode. Skip any AskUserQuestion — this is non-interactive.
 
@@ -77,7 +77,7 @@ Write Q3 output — the forcing question you would ask this founder — to ${wor
       model: 'claude-sonnet-4-6',
     });
 
-    logCost('/office-hours (FORCING)', result);
+    logCost('/idea-review (FORCING)', result);
     recordE2E(evalCollector, '/office-hours-forcing-energy', 'Office Hours Forcing Energy E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason),
     });
@@ -120,12 +120,12 @@ describeIfSelected('Office Hours Builder Wildness E2E', ['office-hours-builder-w
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'add idea']);
 
-    fs.mkdirSync(path.join(workDir, 'office-hours'), { recursive: true });
+    fs.mkdirSync(path.join(workDir, 'idea-review'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'office-hours', 'SKILL.md'),
-      path.join(workDir, 'office-hours', 'SKILL.md'),
+      path.join(ROOT, 'idea-review', 'SKILL.md'),
+      path.join(workDir, 'idea-review', 'SKILL.md'),
     );
-    { const _sec = path.join(ROOT, 'office-hours', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(workDir, 'office-hours', 'sections'), { recursive: true }); }
+    { const _sec = path.join(ROOT, 'idea-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(workDir, 'idea-review', 'sections'), { recursive: true }); }
   });
 
   afterAll(() => {
@@ -134,7 +134,7 @@ describeIfSelected('Office Hours Builder Wildness E2E', ['office-hours-builder-w
 
   testConcurrentIfSelected('office-hours-builder-wildness', async () => {
     const result = await runSkillTest({
-      prompt: `Read office-hours/SKILL.md for the workflow.
+      prompt: `Read idea-review/SKILL.md for the workflow.
 
 Read idea.md — that's the user's weekend project idea. Select Builder Mode (Phase 2B). Skip any AskUserQuestion — this is non-interactive.
 
@@ -149,7 +149,7 @@ Write your response — the three adjacent unlocks — to ${workDir}/unlocks.md.
       model: 'claude-sonnet-4-6',
     });
 
-    logCost('/office-hours (BUILDER)', result);
+    logCost('/idea-review (BUILDER)', result);
     recordE2E(evalCollector, '/office-hours-builder-wildness', 'Office Hours Builder Wildness E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason),
     });

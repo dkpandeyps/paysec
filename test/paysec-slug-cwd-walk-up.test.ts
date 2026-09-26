@@ -1,10 +1,10 @@
 /**
- * Regression test — bin/gstack-slug must resolve to the OUTERMOST project root
+ * Regression test — bin/paysec-slug must resolve to the OUTERMOST project root
  * along the cwd ancestor chain, not to a subdirectory that happens to contain
  * a build/deploy marker.
  *
  * The bug this prevents (2026-05-25):
- * `bin/gstack-slug` derived its slug from the literal `pwd` with no walk-up.
+ * `bin/paysec-slug` derived its slug from the literal `pwd` with no walk-up.
  * When a session's cwd landed inside a subdir that had its own project-like
  * marker (e.g. `.vercel/` dropped by `vercel --prod`, or a vendored `package.json`),
  * the slug resolved to the subdir's basename — silently misfiling checkpoints,
@@ -19,7 +19,7 @@
  *
  * Caching is self-healing: a stale cache entry for the literal pwd gets
  * overwritten with the freshly-computed correct slug on the next invocation
- * (no manual `rm -rf ~/.gstack/slug-cache/` required).
+ * (no manual `rm -rf ~/.paysec/slug-cache/` required).
  *
  * Test pattern mirrors `test/migration-checkpoint-ownership.test.ts`:
  * per-test `tmpHome`, `spawnSync` against the real bash script with the
@@ -32,21 +32,21 @@ import * as path from 'path';
 import * as os from 'os';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const SCRIPT = path.join(ROOT, 'bin', 'gstack-slug');
+const SCRIPT = path.join(ROOT, 'bin', 'paysec-slug');
 
 function runSlug(
   cwd: string,
   tmpHome: string,
   extraEnv: Record<string, string> = {},
 ): SpawnSyncReturns<string> {
-  // GSTACK_HOME must be pinned to the temp home too: the cache dir is
-  // GSTACK_HOME-aware (matching lib/bin-context.ts's native port), and a
-  // sibling test file leaking process.env.GSTACK_HOME in a shared-process
+  // PAYSEC_HOME must be pinned to the temp home too: the cache dir is
+  // PAYSEC_HOME-aware (matching lib/bin-context.ts's native port), and a
+  // sibling test file leaking process.env.PAYSEC_HOME in a shared-process
   // shard would otherwise point the bin at a different cache than the one
   // these tests seed and assert on.
   // Scrub PATH so we always use system bash + system git; pass HOME so the
-  // script's cache writes land in tmpHome, never AJ's real ~/.gstack.
-  const env = { ...process.env, HOME: tmpHome, GSTACK_HOME: path.join(tmpHome, '.gstack'), ...extraEnv };
+  // script's cache writes land in tmpHome, never AJ's real ~/.paysec.
+  const env = { ...process.env, HOME: tmpHome, PAYSEC_HOME: path.join(tmpHome, '.paysec'), ...extraEnv };
   return spawnSync('bash', [SCRIPT], {
     cwd,
     env,
@@ -68,7 +68,7 @@ function encodedCacheKey(absPath: string): string {
   return absPath.replace(/\//g, '_');
 }
 
-describe('gstack-slug — outermost project-root resolution', () => {
+describe('paysec-slug — outermost project-root resolution', () => {
   let tmpHome: string;
   let projectsRoot: string;
 
@@ -77,8 +77,8 @@ describe('gstack-slug — outermost project-root resolution', () => {
     // macOS so that the cache key our test computes matches the cache key the
     // bash script computes from `$(pwd)`. Without this the script writes to
     // _private_var_folders_... and the test sees _var_folders_... (silent mismatch).
-    tmpHome = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-slug-test-')));
-    projectsRoot = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-slug-projects-')));
+    tmpHome = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-slug-test-')));
+    projectsRoot = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-slug-projects-')));
   });
 
   afterEach(() => {
@@ -124,7 +124,7 @@ describe('gstack-slug — outermost project-root resolution', () => {
     fs.writeFileSync(path.join(siteSubdir, '.vercel', 'project.json'), '{}\n');
 
     // Pre-seed the cache with the WRONG value (simulating pre-fix poisoning).
-    const cacheDir = path.join(tmpHome, '.gstack', 'slug-cache');
+    const cacheDir = path.join(tmpHome, '.paysec', 'slug-cache');
     fs.mkdirSync(cacheDir, { recursive: true });
     const cacheKey = encodedCacheKey(siteSubdir);
     const cacheFile = path.join(cacheDir, cacheKey);
@@ -196,7 +196,7 @@ describe('gstack-slug — outermost project-root resolution', () => {
     fs.mkdirSync(path.join(siteSubdir, '.vercel'), { recursive: true });
     fs.writeFileSync(path.join(siteSubdir, '.vercel', 'project.json'), '{}\n');
 
-    const cacheDir = path.join(tmpHome, '.gstack', 'slug-cache');
+    const cacheDir = path.join(tmpHome, '.paysec', 'slug-cache');
     fs.mkdirSync(cacheDir, { recursive: true });
 
     // Seed the literal pwd key with the wrong value (will be evicted).
@@ -280,15 +280,15 @@ describe('gstack-slug — outermost project-root resolution', () => {
     expect(slug).toBe('loadout');
   });
 
-  // Edge case: GSTACK_PROJECT_SLUG env override wins over walk-up (documented escape hatch).
-  test('GSTACK_PROJECT_SLUG env override beats every other resolution path', () => {
+  // Edge case: PAYSEC_PROJECT_SLUG env override wins over walk-up (documented escape hatch).
+  test('PAYSEC_PROJECT_SLUG env override beats every other resolution path', () => {
     const projectRoot = path.join(projectsRoot, 'loadout');
     const siteSubdir = path.join(projectRoot, 'site');
     fs.mkdirSync(path.join(projectRoot, '.git'), { recursive: true });
     fs.mkdirSync(path.join(siteSubdir, '.vercel'), { recursive: true });
     fs.writeFileSync(path.join(siteSubdir, '.vercel', 'project.json'), '{}\n');
 
-    const result = runSlug(siteSubdir, tmpHome, { GSTACK_PROJECT_SLUG: 'custom-override' });
+    const result = runSlug(siteSubdir, tmpHome, { PAYSEC_PROJECT_SLUG: 'custom-override' });
     expect(result.status).toBe(0);
     const { slug } = parseSlug(result.stdout);
     expect(slug).toBe('custom-override');
@@ -300,7 +300,7 @@ describe('_outermost_project_root termination (windows-free-tests regression)', 
   // forever: dirname's fixed point there is never "/". The loop must break on
   // the fixed point itself. Extract the function and drive it with hostile
   // path forms under a hard timeout — a hang fails the spawn, not the suite.
-  const script = fs.readFileSync(path.join(ROOT, 'bin', 'gstack-slug'), 'utf-8');
+  const script = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-slug'), 'utf-8');
   const fnMatch = script.match(/_outermost_project_root\(\) \{[\s\S]*?\n\}/);
 
   test.each(['C:/Users/nobody/project', '.', '//server/share/dir'])(

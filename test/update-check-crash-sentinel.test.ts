@@ -4,14 +4,14 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-// #1974: gstack-update-check runs under set -e, and its "up to date" signal
+// #1974: paysec-update-check runs under set -e, and its "up to date" signal
 // is SILENCE — so any unguarded crash used to exit quietly and read as
 // up-to-date (a real 45-release silent-staleness incident). The ERR trap must
 // convert a crash into a visible CHECK_FAILED line, and the healthy path must
 // stay silent.
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const SCRIPT = path.join(ROOT, 'bin', 'gstack-update-check');
+const SCRIPT = path.join(ROOT, 'bin', 'paysec-update-check');
 
 function run(env: Record<string, string>) {
   return spawnSync('bash', [SCRIPT], {
@@ -21,15 +21,15 @@ function run(env: Record<string, string>) {
   });
 }
 
-describe('gstack-update-check crash sentinel (#1974)', () => {
+describe('paysec-update-check crash sentinel (#1974)', () => {
   test('a mid-script crash emits CHECK_FAILED instead of silent up-to-date', () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-upd-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-upd-'));
     try {
       // STATE_DIR pointing at a FILE makes the state mkdir fail — an
       // unguarded failure representative of any mid-script crash.
       const asFile = path.join(dir, 'statefile');
       fs.writeFileSync(asFile, '');
-      const r = run({ GSTACK_STATE_DIR: asFile, GSTACK_REMOTE_URL: 'file:///dev/null' });
+      const r = run({ PAYSEC_STATE_DIR: asFile, PAYSEC_REMOTE_URL: 'file:///dev/null' });
       expect(r.status).toBe(0);
       expect(r.stdout).toContain('CHECK_FAILED');
       expect(r.stdout).toContain('UNKNOWN');
@@ -39,9 +39,9 @@ describe('gstack-update-check crash sentinel (#1974)', () => {
   });
 
   test('healthy up-to-date path stays silent (no sentinel noise)', () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-upd-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-upd-'));
     try {
-      const r = run({ GSTACK_STATE_DIR: path.join(dir, 'state'), GSTACK_REMOTE_URL: 'file:///dev/null' });
+      const r = run({ PAYSEC_STATE_DIR: path.join(dir, 'state'), PAYSEC_REMOTE_URL: 'file:///dev/null' });
       expect(r.status).toBe(0);
       expect(r.stdout).not.toContain('CHECK_FAILED');
     } finally {

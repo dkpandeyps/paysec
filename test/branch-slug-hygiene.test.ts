@@ -1,8 +1,8 @@
 /**
  * Branch-name slug hygiene in file-path positions (#2550, #1851/#1127).
  *
- * gstack-review-log WRITES `<canonical-branch>-reviews.jsonl` where the
- * canonical form comes from bin/gstack-slug (tr '/' '-' then
+ * paysec-review-log WRITES `<canonical-branch>-reviews.jsonl` where the
+ * canonical form comes from bin/paysec-slug (tr '/' '-' then
  * tr -cd 'a-zA-Z0-9._-'). Context Recovery used to PROBE the same file with
  * raw $_BRANCH (`git branch --show-current`) — so for any branch containing
  * a `/` (most feature branches) the REVIEWS line never fired. Same class:
@@ -11,7 +11,7 @@
  *
  * Discipline pinned here:
  *   - FILE-PATH positions interpolate the slug-canonical $BRANCH (set by the
- *     gstack-slug eval that opens Context Recovery).
+ *     paysec-slug eval that opens Context Recovery).
  *   - Raw $_BRANCH stays for display (BRANCH: echo) and for timeline.jsonl
  *     content greps — the timeline writer stores the RAW branch, so slugging
  *     the reader would break that pairing.
@@ -65,8 +65,8 @@ describe('branch slug hygiene (#2550, #1851)', () => {
     const out = generateContextRecovery(ctx);
     expect(out).toContain('${BRANCH:-unknown}-reviews.jsonl');
     expect(out).not.toContain('${_BRANCH}-reviews.jsonl');
-    // The gstack-slug eval that defines $BRANCH must render BEFORE the probe.
-    const evalIdx = out.indexOf('gstack-slug');
+    // The paysec-slug eval that defines $BRANCH must render BEFORE the probe.
+    const evalIdx = out.indexOf('paysec-slug');
     const probeIdx = out.indexOf('${BRANCH:-unknown}-reviews.jsonl');
     expect(evalIdx).toBeGreaterThan(-1);
     expect(evalIdx).toBeLessThan(probeIdx);
@@ -74,9 +74,9 @@ describe('branch slug hygiene (#2550, #1851)', () => {
     expect(out).toContain('"branch\\":\\"${_BRANCH}');
   });
 
-  test('plan content-search BRANCH uses the full gstack-slug canonical pipeline', () => {
+  test('plan content-search BRANCH uses the full paysec-slug canonical pipeline', () => {
     const rendered = fs.readFileSync(
-      path.join(ROOT, 'ship', 'sections', 'plan-completion.md'),
+      path.join(ROOT, 'ship-pr', 'sections', 'plan-completion.md'),
       'utf-8',
     );
     expect(rendered).toContain(
@@ -84,24 +84,24 @@ describe('branch slug hygiene (#2550, #1851)', () => {
     );
   });
 
-  test('live round-trip: gstack-review-log writes, Context Recovery probe finds it (slash branch)', () => {
-    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-home-'));
-    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-repo-'));
+  test('live round-trip: paysec-review-log writes, Context Recovery probe finds it (slash branch)', () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-home-'));
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-repo-'));
     try {
-      const env = { ...process.env, GSTACK_HOME: home };
+      const env = { ...process.env, PAYSEC_HOME: home };
       execSync(
         'git init -q && git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init && git checkout -q -b feat/slug-hygiene',
         { cwd: repo, encoding: 'utf-8' },
       );
 
-      // Writer: the real gstack-review-log (canonicalizes via gstack-slug).
+      // Writer: the real paysec-review-log (canonicalizes via paysec-slug).
       execSync(
-        `"${path.join(ROOT, 'bin', 'gstack-review-log')}" '{"skill":"ship","status":"ok"}'`,
+        `"${path.join(ROOT, 'bin', 'paysec-review-log')}" '{"skill":"ship","status":"ok"}'`,
         { cwd: repo, env, encoding: 'utf-8' },
       );
 
       // The slug-canonical filename must exist; the raw form must not.
-      const slugVars = execSync(`"${path.join(ROOT, 'bin', 'gstack-slug')}"`, {
+      const slugVars = execSync(`"${path.join(ROOT, 'bin', 'paysec-slug')}"`, {
         cwd: repo, env, encoding: 'utf-8',
       });
       const slug = slugVars.match(/^SLUG=(.*)$/m)![1];
@@ -110,7 +110,7 @@ describe('branch slug hygiene (#2550, #1851)', () => {
       const proj = path.join(home, 'projects', slug);
       expect(fs.existsSync(path.join(proj, 'feat-slug-hygiene-reviews.jsonl'))).toBe(true);
 
-      // Reader: execute the rendered probe line with $BRANCH from gstack-slug.
+      // Reader: execute the rendered probe line with $BRANCH from paysec-slug.
       const ctx: TemplateContext = {
         skillName: 'test-skill', tmplPath: 'test.tmpl', host: 'claude',
         paths: HOST_PATHS.claude, preambleTier: 2,

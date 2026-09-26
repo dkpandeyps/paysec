@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gstack-gbrain-source-wireup — register the gstack brain repo as a gbrain
+# paysec-gbrain-source-wireup — register the paysec brain repo as a gbrain
 # federated source via `git worktree`, run an initial sync, hook into
 # subsequent skill-end syncs.
 #
@@ -7,12 +7,12 @@
 # wireup which depended on a gbrain HTTP endpoint that never shipped.
 #
 # Usage:
-#   gstack-gbrain-source-wireup [--strict] [--source-id <id>] [--no-pull]
+#   paysec-gbrain-source-wireup [--strict] [--source-id <id>] [--no-pull]
 #                               [--database-url <url>]
-#   gstack-gbrain-source-wireup --uninstall [--source-id <id>]
+#   paysec-gbrain-source-wireup --uninstall [--source-id <id>]
 #                               [--database-url <url>]
-#   gstack-gbrain-source-wireup --probe
-#   gstack-gbrain-source-wireup --help
+#   paysec-gbrain-source-wireup --probe
+#   paysec-gbrain-source-wireup --help
 #
 # Exit codes:
 #   0 — success, OR benign skip without --strict
@@ -21,10 +21,10 @@
 #   3 — source-id derivation failed in --uninstall, no fallback worked
 #
 # Env:
-#   GSTACK_HOME — override ~/.gstack (test harness)
-#   GSTACK_BRAIN_WORKTREE — override worktree path (default ~/.gstack-brain-worktree)
-#   GSTACK_BRAIN_SOURCE_ID — id override; --source-id flag takes precedence
-#   GSTACK_BRAIN_NO_SYNC — skip the gbrain sync step (tests; helper still
+#   PAYSEC_HOME — override ~/.paysec (test harness)
+#   PAYSEC_BRAIN_WORKTREE — override worktree path (default ~/.paysec-brain-worktree)
+#   PAYSEC_BRAIN_SOURCE_ID — id override; --source-id flag takes precedence
+#   PAYSEC_BRAIN_NO_SYNC — skip the gbrain sync step (tests; helper still
 #                          ensures source registration)
 #
 # Defense against external rewrites of ~/.gbrain/config.json:
@@ -35,22 +35,22 @@
 # at src/core/config.ts:53), so a process that flips config.json mid-sync
 # can't redirect us at a different brain mid-stream.
 #
-# Depends on: jq (transitive via gstack-gbrain-detect).
+# Depends on: jq (transitive via paysec-gbrain-detect).
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONFIG_BIN="$SCRIPT_DIR/gstack-config"
+CONFIG_BIN="$SCRIPT_DIR/paysec-config"
 
-GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
-WORKTREE="${GSTACK_BRAIN_WORKTREE:-$HOME/.gstack-brain-worktree}"
+PAYSEC_HOME="${PAYSEC_HOME:-$HOME/.paysec}"
+WORKTREE="${PAYSEC_BRAIN_WORKTREE:-$HOME/.paysec-brain-worktree}"
 # v1.27.0.0+ canonical name; brain-remote is the legacy fallback during migration.
-if [ -f "$HOME/.gstack-artifacts-remote.txt" ]; then
-  REMOTE_FILE="$HOME/.gstack-artifacts-remote.txt"
+if [ -f "$HOME/.paysec-artifacts-remote.txt" ]; then
+  REMOTE_FILE="$HOME/.paysec-artifacts-remote.txt"
 else
-  REMOTE_FILE="$HOME/.gstack-brain-remote.txt"
+  REMOTE_FILE="$HOME/.paysec-brain-remote.txt"
 fi
-PLIST_PATH="$HOME/Library/LaunchAgents/com.gstack.brain-sync.plist"
+PLIST_PATH="$HOME/Library/LaunchAgents/com.paysec.brain-sync.plist"
 GBRAIN_CONFIG="$HOME/.gbrain/config.json"
 
 # ---- arg parse ----
@@ -107,12 +107,12 @@ if [ -n "$_locked_url" ]; then
   export GBRAIN_DATABASE_URL="$_locked_url"
 fi
 
-prefix() { sed 's/^/gstack-gbrain-source-wireup: /' >&2; }
+prefix() { sed 's/^/paysec-gbrain-source-wireup: /' >&2; }
 warn()   { echo "$*" | prefix; }
 # die <message> [exit_code]: warn with just the message, exit with code (default 1).
 die()    { warn "$1"; exit "${2:-1}"; }
 
-# Refuse to rm anything outside $HOME/. Defends against GSTACK_BRAIN_WORKTREE=/
+# Refuse to rm anything outside $HOME/. Defends against PAYSEC_BRAIN_WORKTREE=/
 # or empty-string overrides that would otherwise have line 169 / 161 nuke the
 # user's home or root.
 safe_rm_worktree() {
@@ -132,11 +132,11 @@ derive_source_id() {
   if [ -n "$SOURCE_ID" ]; then
     echo "$SOURCE_ID"; return 0
   fi
-  if [ -n "${GSTACK_BRAIN_SOURCE_ID:-}" ]; then
-    echo "$GSTACK_BRAIN_SOURCE_ID"; return 0
+  if [ -n "${PAYSEC_BRAIN_SOURCE_ID:-}" ]; then
+    echo "$PAYSEC_BRAIN_SOURCE_ID"; return 0
   fi
   local remote_url=""
-  remote_url=$(git -C "$GSTACK_HOME" remote get-url origin 2>/dev/null) || true
+  remote_url=$(git -C "$PAYSEC_HOME" remote get-url origin 2>/dev/null) || true
   if [ -z "$remote_url" ] && [ -f "$REMOTE_FILE" ]; then
     remote_url=$(head -1 "$REMOTE_FILE" 2>/dev/null | tr -d '[:space:]')
   fi
@@ -162,33 +162,33 @@ gbrain_version_ok() {
 }
 
 # ---- worktree management ----
-# A worktree is always created `--detach`ed at $GSTACK_HOME's HEAD. Detached
+# A worktree is always created `--detach`ed at $PAYSEC_HOME's HEAD. Detached
 # because a branch (main) can only be checked out in ONE worktree, and the
-# parent at $GSTACK_HOME already has it. To advance, we re-checkout the
+# parent at $PAYSEC_HOME already has it. To advance, we re-checkout the
 # parent's current HEAD into the detached worktree.
 _worktree_add_detached() {
   local sha
-  sha=$(git -C "$GSTACK_HOME" rev-parse HEAD 2>/dev/null) || return 1
-  git -C "$GSTACK_HOME" worktree prune 2>/dev/null || true
+  sha=$(git -C "$PAYSEC_HOME" rev-parse HEAD 2>/dev/null) || return 1
+  git -C "$PAYSEC_HOME" worktree prune 2>/dev/null || true
   # Surface git errors via prefix so users see WHY the add failed (disk, perms, etc).
-  git -C "$GSTACK_HOME" worktree add --detach "$WORKTREE" "$sha" 2>&1 | prefix
+  git -C "$PAYSEC_HOME" worktree add --detach "$WORKTREE" "$sha" 2>&1 | prefix
   return "${PIPESTATUS[0]}"
 }
 
 ensure_worktree() {
-  if [ ! -d "$GSTACK_HOME/.git" ]; then
+  if [ ! -d "$PAYSEC_HOME/.git" ]; then
     return 2
   fi
   if [ -d "$WORKTREE/.git" ] || [ -f "$WORKTREE/.git" ]; then
     # already exists; advance the detached HEAD to parent's current HEAD
     if [ "$NO_PULL" = "0" ]; then
       local sha
-      sha=$(git -C "$GSTACK_HOME" rev-parse HEAD 2>/dev/null) || return 1
+      sha=$(git -C "$PAYSEC_HOME" rev-parse HEAD 2>/dev/null) || return 1
       # Surface checkout errors via prefix so users see WHY the advance failed
       # (uncommitted changes in the detached worktree, ref ambiguity, etc).
       ( cd "$WORKTREE" && git checkout --detach "$sha" 2>&1 | prefix; exit "${PIPESTATUS[0]}" ) || {
         warn "worktree at $WORKTREE could not advance to $sha; resetting via remove + re-add"
-        git -C "$GSTACK_HOME" worktree remove --force "$WORKTREE" 2>/dev/null || safe_rm_worktree "$WORKTREE"
+        git -C "$PAYSEC_HOME" worktree remove --force "$WORKTREE" 2>/dev/null || safe_rm_worktree "$WORKTREE"
         _worktree_add_detached || return 1
       }
     fi
@@ -203,7 +203,7 @@ ensure_worktree() {
 # Returns 0 if source with id exists at expected path. 1 if exists but path differs. 2 if absent.
 # Hard-fails (exits non-zero via die) if jq is missing — without jq we cannot
 # distinguish "absent" from "missing-tool" and would falsely re-add an existing
-# source. jq is documented as a dependency of gstack-gbrain-detect (transitive)
+# source. jq is documented as a dependency of paysec-gbrain-detect (transitive)
 # but adversarial review flagged the silent-fall-through path; this probe makes
 # the failure mode loud.
 check_source_state() {
@@ -275,8 +275,8 @@ do_wireup() {
   case "$ew_rc" in
     0) : ;;  # success
     2)
-      [ "$STRICT" = "1" ] && die "no $GSTACK_HOME/.git; run /setup-gbrain Step 7 (gstack-brain-init) first" 2
-      warn "no $GSTACK_HOME/.git; skipping (benign skip)"
+      [ "$STRICT" = "1" ] && die "no $PAYSEC_HOME/.git; run /brain-setup Step 7 (paysec-brain-init) first" 2
+      warn "no $PAYSEC_HOME/.git; skipping (benign skip)"
       exit 0
       ;;
     *) die "git worktree creation failed at $WORKTREE" 1 ;;
@@ -314,7 +314,7 @@ do_wireup() {
       ;;
   esac
 
-  if [ "${GSTACK_BRAIN_NO_SYNC:-0}" = "1" ]; then
+  if [ "${PAYSEC_BRAIN_NO_SYNC:-0}" = "1" ]; then
     echo "source_id=$id"
     echo "worktree=$WORKTREE"
     echo "pages_synced=skipped"
@@ -345,7 +345,7 @@ do_uninstall() {
   fi
 
   if [ -d "$WORKTREE/.git" ] || [ -f "$WORKTREE/.git" ]; then
-    git -C "$GSTACK_HOME" worktree remove --force "$WORKTREE" 2>/dev/null \
+    git -C "$PAYSEC_HOME" worktree remove --force "$WORKTREE" 2>/dev/null \
       || safe_rm_worktree "$WORKTREE"
   fi
 

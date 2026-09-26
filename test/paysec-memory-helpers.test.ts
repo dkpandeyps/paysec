@@ -1,5 +1,5 @@
 /**
- * Unit tests for lib/gstack-memory-helpers.ts (Lane 0 foundation).
+ * Unit tests for lib/paysec-memory-helpers.ts (Lane 0 foundation).
  *
  * Covers the public surface used by Lanes A, B, C:
  *   - canonicalizeRemote: 8 cases across https/ssh/git@/.git/empty
@@ -23,7 +23,7 @@ import {
   withErrorContext,
   detectEngineTier,
   _resetGitleaksAvailabilityCache,
-} from "../lib/gstack-memory-helpers";
+} from "../lib/paysec-memory-helpers";
 
 // ── canonicalizeRemote ─────────────────────────────────────────────────────
 
@@ -109,7 +109,7 @@ describe("secretScanFile", () => {
 
   it("returns scanner=missing or runs gitleaks (env-dependent)", () => {
     // We can't assume gitleaks is installed in CI; we just verify the shape.
-    const dir = mkdtempSync(join(tmpdir(), "gstack-test-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-test-"));
     const file = join(dir, "clean.txt");
     writeFileSync(file, "no secrets here\n");
     const result = secretScanFile(file);
@@ -122,7 +122,7 @@ describe("secretScanFile", () => {
   });
 
   it("probes the gitleaks executable directly before scanning", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-test-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-test-"));
     const binDir = join(dir, "bin");
     const log = join(dir, "gitleaks-calls.log");
     const file = join(dir, "clean.txt");
@@ -171,7 +171,7 @@ describe("parseSkillManifest", () => {
   });
 
   it("returns null for file without frontmatter", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-test-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-test-"));
     const file = join(dir, "no-fm.md");
     writeFileSync(file, "# Just a heading\n\nbody text\n");
     expect(parseSkillManifest(file)).toBeNull();
@@ -179,7 +179,7 @@ describe("parseSkillManifest", () => {
   });
 
   it("returns null when frontmatter has no gbrain: key", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-test-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-test-"));
     const file = join(dir, "no-gbrain.md");
     writeFileSync(file, `---\nname: foo\ndescription: bar\n---\n\nbody\n`);
     expect(parseSkillManifest(file)).toBeNull();
@@ -187,24 +187,24 @@ describe("parseSkillManifest", () => {
   });
 
   it("parses a multi-kind manifest correctly", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-test-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-test-"));
     const file = join(dir, "multi.md");
     writeFileSync(
       file,
       `---
-name: office-hours
+name: idea-review
 description: YC Office Hours
 gbrain:
   schema: 1
   context_queries:
     - id: prior-sessions
       kind: vector
-      query: "office-hours sessions for {repo_slug}"
+      query: "idea-review sessions for {repo_slug}"
       limit: 5
-      render_as: "## Prior office-hours sessions in this repo"
+      render_as: "## Prior idea-review sessions in this repo"
     - id: builder-profile
       kind: filesystem
-      glob: "~/.gstack/builder-profile.jsonl"
+      glob: "~/.paysec/builder-profile.jsonl"
       tail: 1
       render_as: "## Your builder profile snapshot"
     - id: prior-assignments
@@ -213,7 +213,7 @@ gbrain:
       limit: 5
       render_as: "## Open assignments from past sessions"
 triggers:
-  - office-hours
+  - idea-review
 ---
 
 body
@@ -231,9 +231,9 @@ body
     const kinds = m!.context_queries.map((q) => q.kind);
     expect(kinds).toEqual(["vector", "filesystem", "list"]);
 
-    expect(m!.context_queries[0].query).toBe("office-hours sessions for {repo_slug}");
+    expect(m!.context_queries[0].query).toBe("idea-review sessions for {repo_slug}");
     expect(m!.context_queries[0].limit).toBe(5);
-    expect(m!.context_queries[1].glob).toBe("~/.gstack/builder-profile.jsonl");
+    expect(m!.context_queries[1].glob).toBe("~/.paysec/builder-profile.jsonl");
     expect(m!.context_queries[1].tail).toBe(1);
     expect(m!.context_queries[2].sort).toBe("created_at_desc");
 
@@ -241,7 +241,7 @@ body
   });
 
   it("ignores incomplete query items (missing kind)", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-test-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-test-"));
     const file = join(dir, "incomplete.md");
     writeFileSync(
       file,
@@ -270,12 +270,12 @@ body
   });
 
   it("parses a nested filter: block on a list query", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-test-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-test-"));
     const file = join(dir, "filtered.md");
     writeFileSync(
       file,
       `---
-name: investigate
+name: debug-root-cause
 gbrain:
   schema: 1
   context_queries:
@@ -333,18 +333,18 @@ describe("withErrorContext", () => {
   let testHome: string;
 
   beforeEach(() => {
-    savedHome = process.env.GSTACK_HOME;
-    testHome = mkdtempSync(join(tmpdir(), "gstack-test-home-"));
-    process.env.GSTACK_HOME = testHome;
+    savedHome = process.env.PAYSEC_HOME;
+    testHome = mkdtempSync(join(tmpdir(), "paysec-test-home-"));
+    process.env.PAYSEC_HOME = testHome;
   });
 
   // afterEach, not afterAll: the save happens in beforeEach, so an afterAll
   // restore would put back the PREVIOUS test's temp dir (the last beforeEach
-  // overwrote savedHome) and leak a gstack-test-home-* dir into every test
+  // overwrote savedHome) and leak a paysec-test-home-* dir into every test
   // file that runs after this one in the same bun process.
   afterEach(() => {
-    if (savedHome === undefined) delete process.env.GSTACK_HOME;
-    else process.env.GSTACK_HOME = savedHome;
+    if (savedHome === undefined) delete process.env.PAYSEC_HOME;
+    else process.env.PAYSEC_HOME = savedHome;
   });
 
   it("returns the value on success and writes an ok entry", async () => {
@@ -404,13 +404,13 @@ describe("detectEngineTier", () => {
   let testGbrainHome: string;
 
   beforeEach(() => {
-    savedHome = process.env.GSTACK_HOME;
+    savedHome = process.env.PAYSEC_HOME;
     savedGbrainHome = process.env.GBRAIN_HOME;
     savedRealHome = process.env.HOME;
     savedPath = process.env.PATH;
-    testHome = mkdtempSync(join(tmpdir(), "gstack-test-engine-"));
-    testGbrainHome = mkdtempSync(join(tmpdir(), "gstack-test-gbrain-"));
-    process.env.GSTACK_HOME = testHome;
+    testHome = mkdtempSync(join(tmpdir(), "paysec-test-engine-"));
+    testGbrainHome = mkdtempSync(join(tmpdir(), "paysec-test-gbrain-"));
+    process.env.PAYSEC_HOME = testHome;
     process.env.GBRAIN_HOME = testGbrainHome;
     // Isolate HOME too — even though gbrainConfigPath() prefers GBRAIN_HOME
     // when set, defense-in-depth against future code reading ~/.gbrain
@@ -419,14 +419,14 @@ describe("detectEngineTier", () => {
   });
 
   // afterEach, not afterAll: the save happens in beforeEach, so an afterAll
-  // restore would put back the PREVIOUS test's gstack-test-engine-* temp dir
+  // restore would put back the PREVIOUS test's paysec-test-engine-* temp dir
   // (the last beforeEach overwrote the saved values). That leaked
-  // HOME/GSTACK_HOME/PATH into every test file that ran after this one in the
+  // HOME/PAYSEC_HOME/PATH into every test file that ran after this one in the
   // same bun process — child processes then looked for Playwright's Chromium
-  // cache and ~/.gstack config under a throwaway temp HOME.
+  // cache and ~/.paysec config under a throwaway temp HOME.
   afterEach(() => {
-    if (savedHome === undefined) delete process.env.GSTACK_HOME;
-    else process.env.GSTACK_HOME = savedHome;
+    if (savedHome === undefined) delete process.env.PAYSEC_HOME;
+    else process.env.PAYSEC_HOME = savedHome;
     if (savedGbrainHome === undefined) delete process.env.GBRAIN_HOME;
     else process.env.GBRAIN_HOME = savedGbrainHome;
     if (savedRealHome === undefined) delete process.env.HOME;
@@ -443,13 +443,13 @@ describe("detectEngineTier", () => {
     expect(result.detected_at).toBeGreaterThan(0);
   });
 
-  it("writes a cache file at ~/.gstack/.gbrain-engine-cache.json", () => {
+  it("writes a cache file at ~/.paysec/.gbrain-engine-cache.json", () => {
     detectEngineTier();
     const cachePath = join(testHome, ".gbrain-engine-cache.json");
     expect(existsSync(cachePath)).toBe(true);
     const cached = JSON.parse(readFileSync(cachePath, "utf-8"));
     expect(cached.schema_version).toBe(1);
-    expect(cached.last_writer).toBe("gstack-memory-helpers.detectEngineTier");
+    expect(cached.last_writer).toBe("paysec-memory-helpers.detectEngineTier");
   });
 
   it("returns the cached value on second call within TTL", () => {
@@ -483,7 +483,7 @@ describe("detectEngineTier", () => {
     // shape — schema_version: 2, status: "warnings", no top-level `engine`.
     // The parser must still produce a usable EngineDetect by falling back
     // to GBRAIN_HOME/config.json when `engine` is absent from doctor output.
-    const binDir = mkdtempSync(join(tmpdir(), "gstack-gbrain-shim-"));
+    const binDir = mkdtempSync(join(tmpdir(), "paysec-gbrain-shim-"));
     const shim = join(binDir, "gbrain");
     writeFileSync(
       shim,

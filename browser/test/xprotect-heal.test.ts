@@ -22,7 +22,7 @@ import {
   isXProtectKillSignature,
   findPlaywrightRevisionDir,
   expectedChromiumRevision,
-  findGstackInstallRoot,
+  findPaysecInstallRoot,
   clearQuarantineOnPlaywrightCache,
   maybeHealXProtectKill,
   launchWithXProtectHeal,
@@ -146,7 +146,7 @@ describe('findPlaywrightRevisionDir', () => {
   });
 
   it('returns null outside the Playwright cache layout', () => {
-    expect(findPlaywrightRevisionDir('/Applications/GStack Browser.app/Contents/MacOS/Chromium')).toBe(null);
+    expect(findPlaywrightRevisionDir('/Applications/PaySec Browser.app/Contents/MacOS/Chromium')).toBe(null);
   });
 });
 
@@ -164,7 +164,7 @@ describe('expectedChromiumRevision — registry-derived expectation (F9/ENG-OV3)
   });
 });
 
-describe('findGstackInstallRoot (ENG-OV3: revision-matched roots only)', () => {
+describe('findPaysecInstallRoot (ENG-OV3: revision-matched roots only)', () => {
   let tmpRoot: string;
 
   beforeEach(() => {
@@ -181,17 +181,17 @@ describe('findGstackInstallRoot (ENG-OV3: revision-matched roots only)', () => {
   });
 
   it('accepts a root whose pinned playwright-core expects the same revision', () => {
-    expect(findGstackInstallRoot('1234', [tmpRoot])).toBe(tmpRoot);
+    expect(findPaysecInstallRoot('1234', [tmpRoot])).toBe(tmpRoot);
   });
 
   it('rejects a root pinning a DIFFERENT revision (wrong-revision heal guard)', () => {
-    expect(findGstackInstallRoot('9999', [tmpRoot])).toBe(null);
+    expect(findPaysecInstallRoot('9999', [tmpRoot])).toBe(null);
   });
 
   it('rejects roots without node_modules/playwright-core', () => {
     const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'xprotect-bare-'));
     try {
-      expect(findGstackInstallRoot('1234', [bare])).toBe(null);
+      expect(findPaysecInstallRoot('1234', [bare])).toBe(null);
     } finally {
       fs.rmSync(bare, { recursive: true, force: true });
     }
@@ -202,7 +202,7 @@ describe('findGstackInstallRoot (ENG-OV3: revision-matched roots only)', () => {
       path.join(REPO_ROOT, 'node_modules', 'playwright-core', 'browsers.json'), 'utf-8',
     ));
     const registryRevision = browsersJson.browsers.find((b: { name: string }) => b.name === 'chromium').revision;
-    const root = findGstackInstallRoot(registryRevision);
+    const root = findPaysecInstallRoot(registryRevision);
     expect(root).not.toBe(null);
     expect(fs.existsSync(path.join(root!, 'node_modules', 'playwright-core', 'browsers.json'))).toBe(true);
   });
@@ -213,7 +213,7 @@ describe('findGstackInstallRoot (ENG-OV3: revision-matched roots only)', () => {
 describe('clearQuarantineOnPlaywrightCache', () => {
   let tmpCache: string;
   let execPath: string;
-  const savedCustomPath = process.env.GSTACK_CHROMIUM_PATH;
+  const savedCustomPath = process.env.PAYSEC_CHROMIUM_PATH;
 
   beforeEach(() => {
     tmpCache = fs.mkdtempSync(path.join(os.tmpdir(), 'xprotect-cache-'));
@@ -221,13 +221,13 @@ describe('clearQuarantineOnPlaywrightCache', () => {
       fs.mkdirSync(path.join(tmpCache, dir), { recursive: true });
     }
     execPath = path.join(tmpCache, 'chromium-1234', 'chrome-mac-arm64', 'App.app', 'Contents', 'MacOS', 'chromium');
-    delete process.env.GSTACK_CHROMIUM_PATH;
+    delete process.env.PAYSEC_CHROMIUM_PATH;
   });
 
   afterEach(() => {
     fs.rmSync(tmpCache, { recursive: true, force: true });
-    if (savedCustomPath === undefined) delete process.env.GSTACK_CHROMIUM_PATH;
-    else process.env.GSTACK_CHROMIUM_PATH = savedCustomPath;
+    if (savedCustomPath === undefined) delete process.env.PAYSEC_CHROMIUM_PATH;
+    else process.env.PAYSEC_CHROMIUM_PATH = savedCustomPath;
   });
 
   it('clears every chromium* revision dir, never firefox/webkit', () => {
@@ -240,8 +240,8 @@ describe('clearQuarantineOnPlaywrightCache', () => {
     expect(cleared.sort()).toEqual(['chromium-1234', 'chromium_headless_shell-1234']);
   });
 
-  it('NEVER touches a GSTACK_CHROMIUM_PATH bundle (embedder scope contract)', () => {
-    process.env.GSTACK_CHROMIUM_PATH = execPath;
+  it('NEVER touches a PAYSEC_CHROMIUM_PATH bundle (embedder scope contract)', () => {
+    process.env.PAYSEC_CHROMIUM_PATH = execPath;
     const cleared: string[] = [];
     const ok = clearQuarantineOnPlaywrightCache(execPath, (target) => {
       cleared.push(target);
@@ -269,7 +269,7 @@ function makeDeps(counters: { installs: number; quarantines: number }, overrides
     platform: 'darwin' as NodeJS.Platform,
     executablePath: () => '/tmp/ms-playwright/chromium-1234/chrome-mac-arm64/App.app/Contents/MacOS/chromium',
     clearQuarantine: () => { counters.quarantines++; return true; },
-    installRoot: () => '/tmp/fake-gstack-root',
+    installRoot: () => '/tmp/fake-paysec-root',
     runReinstall: async () => { counters.installs++; return { ok: true }; },
     verifyInstalled: () => true,
     ...overrides,
@@ -310,7 +310,7 @@ describe('maybeHealXProtectKill', () => {
     expect(await maybeHealXProtectKill(new Error(SIGKILL_BROWSER_CLOSED), {}, makeDeps(counters))).toBe(true);
   });
 
-  it('never heals over a custom executable (GSTACK_CHROMIUM_PATH scope)', async () => {
+  it('never heals over a custom executable (PAYSEC_CHROMIUM_PATH scope)', async () => {
     const counters = { installs: 0, quarantines: 0 };
     const healed = await maybeHealXProtectKill(
       new Error(SIGKILL_BROWSER_CLOSED),

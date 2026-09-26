@@ -1,43 +1,43 @@
 #!/usr/bin/env bash
-# gstack-settings-hook — manage Claude Code hooks in ~/.claude/settings.json
+# paysec-settings-hook — manage Claude Code hooks in ~/.claude/settings.json
 #
 # Two shapes:
 #
-#   1. Legacy (SessionStart only — used by setup --team and gstack-uninstall):
-#        gstack-settings-hook add <cmd>            # adds SessionStart hook
-#        gstack-settings-hook remove <cmd>         # removes matching SessionStart hook
+#   1. Legacy (SessionStart only — used by setup --team and paysec-uninstall):
+#        paysec-settings-hook add <cmd>            # adds SessionStart hook
+#        paysec-settings-hook remove <cmd>         # removes matching SessionStart hook
 #
-#   2. Schema-aware (plan-tune cathedral T3 — supports PreToolUse + PostToolUse):
-#        gstack-settings-hook add-event --event <SessionStart|PreToolUse|PostToolUse> \
+#   2. Schema-aware (tune-questions cathedral T3 — supports PreToolUse + PostToolUse):
+#        paysec-settings-hook add-event --event <SessionStart|PreToolUse|PostToolUse> \
 #          --command <cmd> --source <tag> [--matcher <regex>] [--timeout <s>]
-#        gstack-settings-hook remove-source --source <tag>
-#        gstack-settings-hook diff-event   --event ... --command ... --source ... [--matcher ...]
-#        gstack-settings-hook rollback     # restore latest backup
-#        gstack-settings-hook list-sources # show all gstack-tagged hook entries
+#        paysec-settings-hook remove-source --source <tag>
+#        paysec-settings-hook diff-event   --event ... --command ... --source ... [--matcher ...]
+#        paysec-settings-hook rollback     # restore latest backup
+#        paysec-settings-hook list-sources # show all paysec-tagged hook entries
 #
 # Every add-event/remove-source writes a backup to ~/.claude/settings.json.bak.<ts>
 # before mutating (Codex correction — silent settings.json mutation is wrong).
 #
-# Dedup: legacy `add`/`remove` dedupe by the historical `gstack-session-update`
-# substring. Schema-aware `add-event` dedupes by (event, matcher, _gstack_source) so
-# multiple gstack registrations (plan-tune, ...) don't collide.
+# Dedup: legacy `add`/`remove` dedupe by the historical `paysec-session-update`
+# substring. Schema-aware `add-event` dedupes by (event, matcher, _paysec_source) so
+# multiple paysec registrations (tune-questions, ...) don't collide.
 #
 # Writes atomically: .tmp + rename to prevent corruption on crash/disk-full.
 set -euo pipefail
 
 ACTION="${1:-}"
-SETTINGS_FILE="${GSTACK_SETTINGS_FILE:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json}"
+SETTINGS_FILE="${PAYSEC_SETTINGS_FILE:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json}"
 
 if [ -z "$ACTION" ]; then
   cat <<EOF >&2
 Usage:
-  gstack-settings-hook add <hook-command>             # legacy SessionStart add
-  gstack-settings-hook remove <hook-command>          # legacy SessionStart remove
-  gstack-settings-hook add-event --event <name> --command <cmd> --source <tag> [--matcher <re>] [--timeout <s>]
-  gstack-settings-hook remove-source --source <tag>
-  gstack-settings-hook diff-event --event <name> --command <cmd> --source <tag> [--matcher <re>] [--timeout <s>]
-  gstack-settings-hook rollback
-  gstack-settings-hook list-sources
+  paysec-settings-hook add <hook-command>             # legacy SessionStart add
+  paysec-settings-hook remove <hook-command>          # legacy SessionStart remove
+  paysec-settings-hook add-event --event <name> --command <cmd> --source <tag> [--matcher <re>] [--timeout <s>]
+  paysec-settings-hook remove-source --source <tag>
+  paysec-settings-hook diff-event --event <name> --command <cmd> --source <tag> [--matcher <re>] [--timeout <s>]
+  paysec-settings-hook rollback
+  paysec-settings-hook list-sources
 EOF
   exit 1
 fi
@@ -62,20 +62,20 @@ case "$ACTION" in
   add)
     HOOK_CMD="${2:-}"
     if [ -z "$HOOK_CMD" ]; then
-      echo "Usage: gstack-settings-hook add <hook-command>" >&2
+      echo "Usage: paysec-settings-hook add <hook-command>" >&2
       exit 1
     fi
     backup_settings
-    GSTACK_SETTINGS_PATH="$SETTINGS_FILE" GSTACK_HOOK_CMD="$HOOK_CMD" bun -e '
+    PAYSEC_SETTINGS_PATH="$SETTINGS_FILE" PAYSEC_HOOK_CMD="$HOOK_CMD" bun -e '
       const fs = require("fs");
-      const settingsPath = process.env.GSTACK_SETTINGS_PATH;
-      const hookCmd = process.env.GSTACK_HOOK_CMD;
+      const settingsPath = process.env.PAYSEC_SETTINGS_PATH;
+      const hookCmd = process.env.PAYSEC_HOOK_CMD;
       let settings = {};
       try { settings = JSON.parse(fs.readFileSync(settingsPath, "utf8")); } catch {}
       if (!settings.hooks) settings.hooks = {};
       if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
       const exists = settings.hooks.SessionStart.some(entry =>
-        entry.hooks && entry.hooks.some(h => h.command && h.command.includes("gstack-session-update"))
+        entry.hooks && entry.hooks.some(h => h.command && h.command.includes("paysec-session-update"))
       );
       if (!exists) {
         settings.hooks.SessionStart.push({
@@ -91,19 +91,19 @@ case "$ACTION" in
   remove)
     HOOK_CMD="${2:-}"
     if [ -z "$HOOK_CMD" ]; then
-      echo "Usage: gstack-settings-hook remove <hook-command>" >&2
+      echo "Usage: paysec-settings-hook remove <hook-command>" >&2
       exit 1
     fi
     [ -f "$SETTINGS_FILE" ] || exit 1
     backup_settings
-    GSTACK_SETTINGS_PATH="$SETTINGS_FILE" bun -e '
+    PAYSEC_SETTINGS_PATH="$SETTINGS_FILE" bun -e '
       const fs = require("fs");
-      const settingsPath = process.env.GSTACK_SETTINGS_PATH;
+      const settingsPath = process.env.PAYSEC_SETTINGS_PATH;
       let settings = {};
       try { settings = JSON.parse(fs.readFileSync(settingsPath, "utf8")); } catch { process.exit(0); }
       if (settings.hooks && settings.hooks.SessionStart) {
         settings.hooks.SessionStart = settings.hooks.SessionStart.filter(entry =>
-          !(entry.hooks && entry.hooks.some(h => h.command && h.command.includes("gstack-session-update")))
+          !(entry.hooks && entry.hooks.some(h => h.command && h.command.includes("paysec-session-update")))
         );
         if (settings.hooks.SessionStart.length === 0) delete settings.hooks.SessionStart;
         if (Object.keys(settings.hooks).length === 0) delete settings.hooks;
@@ -144,22 +144,22 @@ case "$ACTION" in
     fi
     DIFF_ONLY=""
     if [ "$ACTION" = "diff-event" ]; then DIFF_ONLY=1; fi
-    GSTACK_SETTINGS_PATH="$SETTINGS_FILE" \
-    GSTACK_EVENT="$EVENT" \
-    GSTACK_COMMAND="$COMMAND" \
-    GSTACK_SOURCE="$SOURCE" \
-    GSTACK_MATCHER="$MATCHER" \
-    GSTACK_TIMEOUT="$TIMEOUT" \
-    GSTACK_DIFF_ONLY="$DIFF_ONLY" \
+    PAYSEC_SETTINGS_PATH="$SETTINGS_FILE" \
+    PAYSEC_EVENT="$EVENT" \
+    PAYSEC_COMMAND="$COMMAND" \
+    PAYSEC_SOURCE="$SOURCE" \
+    PAYSEC_MATCHER="$MATCHER" \
+    PAYSEC_TIMEOUT="$TIMEOUT" \
+    PAYSEC_DIFF_ONLY="$DIFF_ONLY" \
     bun -e '
       const fs = require("fs");
-      const settingsPath = process.env.GSTACK_SETTINGS_PATH;
-      const event = process.env.GSTACK_EVENT;
-      const cmd = process.env.GSTACK_COMMAND;
-      const source = process.env.GSTACK_SOURCE;
-      const matcher = process.env.GSTACK_MATCHER || "";
-      const timeoutRaw = process.env.GSTACK_TIMEOUT || "";
-      const diffOnly = process.env.GSTACK_DIFF_ONLY === "1";
+      const settingsPath = process.env.PAYSEC_SETTINGS_PATH;
+      const event = process.env.PAYSEC_EVENT;
+      const cmd = process.env.PAYSEC_COMMAND;
+      const source = process.env.PAYSEC_SOURCE;
+      const matcher = process.env.PAYSEC_MATCHER || "";
+      const timeoutRaw = process.env.PAYSEC_TIMEOUT || "";
+      const diffOnly = process.env.PAYSEC_DIFF_ONLY === "1";
 
       let settings = {};
       try { settings = JSON.parse(fs.readFileSync(settingsPath, "utf8")); } catch {}
@@ -172,7 +172,7 @@ case "$ACTION" in
       const matchesEntry = (entry) => {
         const sameMatcher = (entry.matcher || "") === matcher;
         const sameCommand = entry.hooks && entry.hooks[0] && entry.hooks[0].command === cmd;
-        const sameSource = entry._gstack_source === source;
+        const sameSource = entry._paysec_source === source;
         return sameMatcher && (sameSource || sameCommand);
       };
 
@@ -185,9 +185,9 @@ case "$ACTION" in
 
       if (existing) {
         existing.hooks = [hookEntry];
-        existing._gstack_source = source;
+        existing._paysec_source = source;
       } else {
-        const newEntry = { _gstack_source: source, hooks: [hookEntry] };
+        const newEntry = { _paysec_source: source, hooks: [hookEntry] };
         if (matcher) newEntry.matcher = matcher;
         settings.hooks[event].push(newEntry);
       }
@@ -224,17 +224,17 @@ case "$ACTION" in
     fi
     [ -f "$SETTINGS_FILE" ] || exit 0
     backup_settings
-    GSTACK_SETTINGS_PATH="$SETTINGS_FILE" GSTACK_SOURCE="$SOURCE" bun -e '
+    PAYSEC_SETTINGS_PATH="$SETTINGS_FILE" PAYSEC_SOURCE="$SOURCE" bun -e '
       const fs = require("fs");
-      const settingsPath = process.env.GSTACK_SETTINGS_PATH;
-      const source = process.env.GSTACK_SOURCE;
+      const settingsPath = process.env.PAYSEC_SETTINGS_PATH;
+      const source = process.env.PAYSEC_SOURCE;
       let settings = {};
       try { settings = JSON.parse(fs.readFileSync(settingsPath, "utf8")); } catch { process.exit(0); }
       if (!settings.hooks) { process.exit(0); }
       let removed = 0;
       for (const event of Object.keys(settings.hooks)) {
         const before = settings.hooks[event].length;
-        settings.hooks[event] = settings.hooks[event].filter(entry => entry._gstack_source !== source);
+        settings.hooks[event] = settings.hooks[event].filter(entry => entry._paysec_source !== source);
         removed += before - settings.hooks[event].length;
         if (settings.hooks[event].length === 0) delete settings.hooks[event];
       }
@@ -262,21 +262,21 @@ case "$ACTION" in
 
   list-sources)
     [ -f "$SETTINGS_FILE" ] || { echo "(no settings file)"; exit 0; }
-    GSTACK_SETTINGS_PATH="$SETTINGS_FILE" bun -e '
+    PAYSEC_SETTINGS_PATH="$SETTINGS_FILE" bun -e '
       const fs = require("fs");
       let settings = {};
-      try { settings = JSON.parse(fs.readFileSync(process.env.GSTACK_SETTINGS_PATH, "utf8")); } catch { process.exit(0); }
+      try { settings = JSON.parse(fs.readFileSync(process.env.PAYSEC_SETTINGS_PATH, "utf8")); } catch { process.exit(0); }
       const hooks = settings.hooks || {};
       let any = false;
       for (const event of Object.keys(hooks)) {
         for (const entry of hooks[event]) {
-          if (entry._gstack_source) {
+          if (entry._paysec_source) {
             any = true;
-            console.log(event + "\t" + entry._gstack_source + "\t" + (entry.matcher || "(no matcher)"));
+            console.log(event + "\t" + entry._paysec_source + "\t" + (entry.matcher || "(no matcher)"));
           }
         }
       }
-      if (!any) console.log("(no gstack-tagged hooks)");
+      if (!any) console.log("(no paysec-tagged hooks)");
     '
     ;;
 

@@ -97,7 +97,7 @@ export function describeIfSelected(name: string, testNames: string[], fn: () => 
 // Unique run ID for this E2E session — used for heartbeat + per-run log directory
 export const runId = new Date().toISOString().replace(/[:.]/g, '').replace('T', '-').slice(0, 15);
 
-export const browseBin = path.resolve(ROOT, 'browse', 'dist', 'browse');
+export const browseBin = path.resolve(ROOT, 'browser', 'dist', 'browse');
 
 // Check if Anthropic API key is available (needed for outcome evals)
 export const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
@@ -123,14 +123,14 @@ export function copyDirSync(src: string, dest: string) {
  */
 export function setupBrowseShims(dir: string) {
   // Symlink browse binary
-  const binDir = path.join(dir, 'browse', 'dist');
+  const binDir = path.join(dir, 'browser', 'dist');
   fs.mkdirSync(binDir, { recursive: true });
   if (fs.existsSync(browseBin)) {
     fs.symlinkSync(browseBin, path.join(binDir, 'browse'));
   }
 
   // find-browse shim
-  const findBrowseDir = path.join(dir, 'browse', 'bin');
+  const findBrowseDir = path.join(dir, 'browser', 'bin');
   fs.mkdirSync(findBrowseDir, { recursive: true });
   fs.writeFileSync(
     path.join(findBrowseDir, 'find-browse'),
@@ -160,7 +160,7 @@ export function logCost(label: string, result: { costEstimate: { turnsUsed: numb
  */
 export function dumpOutcomeDiagnostic(dir: string, label: string, report: string, judgeResult: any) {
   try {
-    const transcriptDir = path.join(dir, '.gstack', 'test-transcripts');
+    const transcriptDir = path.join(dir, '.paysec', 'test-transcripts');
     fs.mkdirSync(transcriptDir, { recursive: true });
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     fs.writeFileSync(
@@ -268,10 +268,10 @@ export async function finalizeEvalCollector(evalCollector: EvalCollector | null)
 // Pre-seed preamble state files so E2E tests don't waste turns on lake intro + telemetry prompts.
 // These are one-time interactive prompts that burn 3-7 turns per test if not pre-seeded.
 if (evalsEnabled) {
-  const gstackDir = path.join(os.homedir(), '.gstack');
-  fs.mkdirSync(gstackDir, { recursive: true });
+  const paysecDir = path.join(os.homedir(), '.paysec');
+  fs.mkdirSync(paysecDir, { recursive: true });
   for (const f of ['.completeness-intro-seen', '.telemetry-prompted', '.proactive-prompted']) {
-    const p = path.join(gstackDir, f);
+    const p = path.join(paysecDir, f);
     if (!fs.existsSync(p)) fs.writeFileSync(p, '');
   }
 }

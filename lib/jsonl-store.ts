@@ -1,6 +1,6 @@
 /**
- * jsonl-store — shared plumbing for gstack's append-only JSONL stores in
- * lib/ and bin/. (browse/src keeps its own appenders by design — the
+ * jsonl-store — shared plumbing for paysec's append-only JSONL stores in
+ * lib/ and bin/. (browser/src keeps its own appenders by design — the
  * compiled-binary surface has different logging semantics and its own
  * secure-append helper.)
  *
@@ -8,13 +8,13 @@
  *   1. Injection screening — SEE THE CONTRACT BELOW: appendJsonl does NOT
  *      screen; callers that store free text MUST pre-check with
  *      hasInjection()/firstInjectionMatch() and reject. Enforcing callers
- *      today: bin/gstack-learnings-log, bin/gstack-decision-log (via
- *      lib/gstack-decision.ts), bin/gstack-question-log.
+ *      today: bin/paysec-learnings-log, bin/paysec-decision-log (via
+ *      lib/paysec-decision.ts), bin/paysec-question-log.
  *   2. Atomic single-line append (concurrent agents must not corrupt the file).
  *   3. Tolerant read (a partially-written tail or one corrupt line must not
  *      take down the whole read).
  *
- * Extracted from `bin/gstack-learnings-log` (D2A) so the learnings/decision/
+ * Extracted from `bin/paysec-learnings-log` (D2A) so the learnings/decision/
  * question stores share ONE audited path — a new injection pattern or a
  * write-atomicity fix lands in all at once.
  */

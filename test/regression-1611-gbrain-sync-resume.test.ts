@@ -1,11 +1,11 @@
 /**
- * Regression tests for #1611 — /sync-gbrain --full SIGTERM at hardcoded 35min,
+ * Regression tests for #1611 — /brain-sync --full SIGTERM at hardcoded 35min,
  * no resume from gbrain's import-checkpoint.
  *
  * Tests cover three surfaces:
- *   - resolveStageTimeoutMs (gstack-gbrain-sync.ts) — env parsing + bounds
- *   - decideResume          (gstack-gbrain-sync.ts) — checkpoint+staging detection
- *   - SIGTERM staging preservation invariants in gstack-memory-ingest.ts
+ *   - resolveStageTimeoutMs (paysec-gbrain-sync.ts) — env parsing + bounds
+ *   - decideResume          (paysec-gbrain-sync.ts) — checkpoint+staging detection
+ *   - SIGTERM staging preservation invariants in paysec-memory-ingest.ts
  *
  * The resolveStageTimeoutMs + decideResume helpers are exported from the
  * source file so we can call them directly. The SIGTERM behavior is pinned
@@ -34,9 +34,9 @@ import {
   resolveStageTimeoutMs,
   readGbrainCheckpoint,
   decideResume,
-} from "../bin/gstack-gbrain-sync";
+} from "../bin/paysec-gbrain-sync";
 import { checkOwnedStagingDir, STAGING_MARKER } from "../lib/staging-guard";
-import { stagedRelPath, readNewFailures } from "../bin/gstack-memory-ingest";
+import { stagedRelPath, readNewFailures } from "../bin/paysec-memory-ingest";
 
 const ROOT = path.resolve(import.meta.dir, "..");
 const DEFAULT_MS = 35 * 60 * 1000;
@@ -45,45 +45,45 @@ const MAX_MS = 86_400_000;
 
 describe("#1611 resolveStageTimeoutMs — env parsing + bounds", () => {
   test("undefined env → default 2_100_000ms (unchanged from prior behavior)", () => {
-    expect(resolveStageTimeoutMs(undefined, "GSTACK_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
+    expect(resolveStageTimeoutMs(undefined, "PAYSEC_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
   });
 
   test("empty string env → default", () => {
-    expect(resolveStageTimeoutMs("", "GSTACK_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
+    expect(resolveStageTimeoutMs("", "PAYSEC_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
   });
 
   test("non-numeric env → warn + default", () => {
-    expect(resolveStageTimeoutMs("not-a-number", "GSTACK_SYNC_CODE_TIMEOUT_MS")).toBe(DEFAULT_MS);
+    expect(resolveStageTimeoutMs("not-a-number", "PAYSEC_SYNC_CODE_TIMEOUT_MS")).toBe(DEFAULT_MS);
   });
 
   test("zero env → warn + default (not positive)", () => {
-    expect(resolveStageTimeoutMs("0", "GSTACK_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
+    expect(resolveStageTimeoutMs("0", "PAYSEC_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
   });
 
   test("negative env → warn + default", () => {
-    expect(resolveStageTimeoutMs("-1000", "GSTACK_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
+    expect(resolveStageTimeoutMs("-1000", "PAYSEC_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
   });
 
   test("below 60_000ms floor (1min) → warn + default", () => {
-    expect(resolveStageTimeoutMs("30000", "GSTACK_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
-    expect(resolveStageTimeoutMs(`${MIN_MS - 1}`, "GSTACK_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
+    expect(resolveStageTimeoutMs("30000", "PAYSEC_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
+    expect(resolveStageTimeoutMs(`${MIN_MS - 1}`, "PAYSEC_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
   });
 
   test("above 86_400_000ms ceiling (24h) → warn + default", () => {
-    expect(resolveStageTimeoutMs(`${MAX_MS + 1}`, "GSTACK_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
-    expect(resolveStageTimeoutMs("999999999999", "GSTACK_SYNC_CODE_TIMEOUT_MS")).toBe(DEFAULT_MS);
+    expect(resolveStageTimeoutMs(`${MAX_MS + 1}`, "PAYSEC_SYNC_MEMORY_TIMEOUT_MS")).toBe(DEFAULT_MS);
+    expect(resolveStageTimeoutMs("999999999999", "PAYSEC_SYNC_CODE_TIMEOUT_MS")).toBe(DEFAULT_MS);
   });
 
   test("at floor (60_000ms exactly) → accepted", () => {
-    expect(resolveStageTimeoutMs(`${MIN_MS}`, "GSTACK_SYNC_MEMORY_TIMEOUT_MS")).toBe(MIN_MS);
+    expect(resolveStageTimeoutMs(`${MIN_MS}`, "PAYSEC_SYNC_MEMORY_TIMEOUT_MS")).toBe(MIN_MS);
   });
 
   test("at ceiling (86_400_000ms exactly) → accepted", () => {
-    expect(resolveStageTimeoutMs(`${MAX_MS}`, "GSTACK_SYNC_MEMORY_TIMEOUT_MS")).toBe(MAX_MS);
+    expect(resolveStageTimeoutMs(`${MAX_MS}`, "PAYSEC_SYNC_MEMORY_TIMEOUT_MS")).toBe(MAX_MS);
   });
 
   test("valid mid-range (2h = 7_200_000ms) → returns value", () => {
-    expect(resolveStageTimeoutMs("7200000", "GSTACK_SYNC_MEMORY_TIMEOUT_MS")).toBe(7_200_000);
+    expect(resolveStageTimeoutMs("7200000", "PAYSEC_SYNC_MEMORY_TIMEOUT_MS")).toBe(7_200_000);
   });
 });
 
@@ -99,7 +99,7 @@ describe("#1611 decideResume — checkpoint + staging detection", () => {
   let stagingDir: string;
 
   beforeEach(() => {
-    tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "gstack-1611-"));
+    tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "paysec-1611-"));
     origHome = process.env.HOME;
     process.env.HOME = tmpHome;
     cpDir = path.join(tmpHome, ".gbrain");
@@ -147,7 +147,7 @@ describe("#1611 decideResume — checkpoint + staging detection", () => {
       timestamp: "2026-05-19T19:30:05.008Z",
     }), "utf-8");
 
-    // gstackHome is injected so the ownership check anchors on the test home.
+    // paysecHome is injected so the ownership check anchors on the test home.
     const v = decideResume(tmpHome);
     expect(v.kind).toBe("resume");
     if (v.kind === "resume") {
@@ -221,7 +221,7 @@ describe("#1611 decideResume — checkpoint + staging detection", () => {
 describe("#1611 SIGTERM staging preservation — static invariants", () => {
   test("memory-ingest signal handler checks stagingDirIsCheckpointed before cleanup", () => {
     const body = fs.readFileSync(
-      path.join(ROOT, "bin", "gstack-memory-ingest.ts"),
+      path.join(ROOT, "bin", "paysec-memory-ingest.ts"),
       "utf-8",
     );
     // The forward handler must read the checkpoint before deciding whether
@@ -239,21 +239,21 @@ describe("#1611 SIGTERM staging preservation — static invariants", () => {
     expect(preserveAt).toBeLessThan(cleanupAt);
   });
 
-  test("memory-ingest reads GSTACK_INGEST_RESUME_DIR env to reuse staging dir", () => {
+  test("memory-ingest reads PAYSEC_INGEST_RESUME_DIR env to reuse staging dir", () => {
     const body = fs.readFileSync(
-      path.join(ROOT, "bin", "gstack-memory-ingest.ts"),
+      path.join(ROOT, "bin", "paysec-memory-ingest.ts"),
       "utf-8",
     );
-    expect(body).toMatch(/process\.env\.GSTACK_INGEST_RESUME_DIR/);
+    expect(body).toMatch(/process\.env\.PAYSEC_INGEST_RESUME_DIR/);
     expect(body).toMatch(/skipping prepare phase/);
   });
 
-  test("gbrain-sync orchestrator passes GSTACK_INGEST_RESUME_DIR to grandchild on resume", () => {
+  test("gbrain-sync orchestrator passes PAYSEC_INGEST_RESUME_DIR to grandchild on resume", () => {
     const body = fs.readFileSync(
-      path.join(ROOT, "bin", "gstack-gbrain-sync.ts"),
+      path.join(ROOT, "bin", "paysec-gbrain-sync.ts"),
       "utf-8",
     );
-    expect(body).toMatch(/GSTACK_INGEST_RESUME_DIR/);
+    expect(body).toMatch(/PAYSEC_INGEST_RESUME_DIR/);
     expect(body).toMatch(/resuming from gbrain checkpoint/);
     expect(body).toMatch(/previous checkpoint stale/);
     expect(body).toMatch(/restaging from scratch/);
@@ -270,7 +270,7 @@ describe("#1802 checkOwnedStagingDir — ownership matrix", () => {
   let home: string;
 
   beforeEach(() => {
-    home = fs.mkdtempSync(path.join(os.tmpdir(), "gstack-1802-"));
+    home = fs.mkdtempSync(path.join(os.tmpdir(), "paysec-1802-"));
   });
   afterEach(() => {
     try { fs.rmSync(home, { recursive: true, force: true }); } catch { /* best-effort */ }
@@ -352,24 +352,24 @@ describe("#1802 checkOwnedStagingDir — ownership matrix", () => {
   });
 
   test("cleanupStagingDir + decideResume both call the guard (static invariant)", () => {
-    const ingest = fs.readFileSync(path.join(ROOT, "bin", "gstack-memory-ingest.ts"), "utf-8");
-    const sync = fs.readFileSync(path.join(ROOT, "bin", "gstack-gbrain-sync.ts"), "utf-8");
-    expect(ingest).toMatch(/checkOwnedStagingDir\(dir, GSTACK_HOME\)/);
+    const ingest = fs.readFileSync(path.join(ROOT, "bin", "paysec-memory-ingest.ts"), "utf-8");
+    const sync = fs.readFileSync(path.join(ROOT, "bin", "paysec-gbrain-sync.ts"), "utf-8");
+    expect(ingest).toMatch(/checkOwnedStagingDir\(dir, PAYSEC_HOME\)/);
     expect(ingest).toMatch(/staging cleanup REFUSED/);
-    expect(sync).toMatch(/checkOwnedStagingDir\(stagingDir, gstackHome\)/);
+    expect(sync).toMatch(/checkOwnedStagingDir\(stagingDir, paysecHome\)/);
   });
 });
 
 // ── #1802 D1: remote-http persistent dir must never hit cleanupStagingDir ───
 // In remote-http mode `stagingDir` is the PERSISTENT transcript dir
-// (makePersistentTranscriptDir, under ~/.gstack/transcripts/) that
-// gstack-brain-sync push consumes. The finally runs on the remote-http `return`,
+// (makePersistentTranscriptDir, under ~/.paysec/transcripts/) that
+// paysec-brain-sync push consumes. The finally runs on the remote-http `return`,
 // so the cleanup call there must be gated on `!remoteHttpMode` — otherwise the
 // guard refuses it on every sync (false "prevent data loss" warning) and, pre-
 // gate, the dir was deleted outright (broken artifacts handoff).
 describe("#1802 D1 — remote-http finally gate (static invariant)", () => {
   const ingest = fs.readFileSync(
-    path.join(ROOT, "bin", "gstack-memory-ingest.ts"),
+    path.join(ROOT, "bin", "paysec-memory-ingest.ts"),
     "utf-8",
   );
 
@@ -396,7 +396,7 @@ describe("#1802 D1 — remote-http finally gate (static invariant)", () => {
 // must honor that — otherwise "checkpoint preserved" is a lie and resume breaks.
 describe("#1802 C3 — import-timeout preserve (static invariant)", () => {
   const ingest = fs.readFileSync(
-    path.join(ROOT, "bin", "gstack-memory-ingest.ts"),
+    path.join(ROOT, "bin", "paysec-memory-ingest.ts"),
     "utf-8",
   );
 
@@ -420,7 +420,7 @@ describe("#1802 C3 — import-timeout preserve (static invariant)", () => {
 // ── #1802 C5: hardening (static invariant) ─────────────────────────────────
 describe("#1802 C5 — hardening (static invariant)", () => {
   const ingest = fs.readFileSync(
-    path.join(ROOT, "bin", "gstack-memory-ingest.ts"),
+    path.join(ROOT, "bin", "paysec-memory-ingest.ts"),
     "utf-8",
   );
 
@@ -449,8 +449,8 @@ describe("#1802 C4 — resume failure mapping (behavioral)", () => {
   let cpHome: string;
 
   beforeEach(() => {
-    dir = fs.mkdtempSync(path.join(os.tmpdir(), "gstack-1802c4-"));
-    cpHome = fs.mkdtempSync(path.join(os.tmpdir(), "gstack-1802c4-fail-"));
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "paysec-1802c4-"));
+    cpHome = fs.mkdtempSync(path.join(os.tmpdir(), "paysec-1802c4-fail-"));
   });
   afterEach(() => {
     for (const d of [dir, cpHome]) {

@@ -1,5 +1,5 @@
 /**
- * Coverage-audit E2E — /review and /plan-eng-review coverage-diagram flows.
+ * Coverage-audit E2E — /pr-review and /plan-tech-review coverage-diagram flows.
  *
  * Rehomed VERBATIM from the pre-split monolith (test/skill-e2e.test.ts,
  * deleted on this branch): the monolith's filename never matched the paid
@@ -8,8 +8,8 @@
  * silently never executed after the v1.56 split.
  *
  * DRIFT WARNING (attribution for the first paid run after rehoming): the
- * prompts reference "Step 4.75 (Test Coverage Diagram)" in review/SKILL.md
- * and a "Test Coverage Audit" section in plan-eng-review/SKILL.md. NEITHER
+ * prompts reference "Step 4.75 (Test Coverage Diagram)" in pr-review/SKILL.md
+ * and a "Test Coverage Audit" section in plan-tech-review/SKILL.md. NEITHER
  * section exists in the current generated skills — the skills drifted while
  * these tests were zombies. Test bodies are copied faithfully (no behavioral
  * edits), so a failure here indicts the ~8 releases of drift, not the move.
@@ -45,10 +45,10 @@ describeIfSelected('Review Coverage Audit E2E', ['review-coverage-audit'], () =>
     // Copy review skill files, then replace the SKILL.md with the extracted
     // skill body (extract, don't copy — the checklists/specialists in the
     // dir are small hand-written files and stay whole).
-    copyDirSync(path.join(ROOT, 'review'), path.join(reviewCoverageDir, 'review'));
+    copyDirSync(path.join(ROOT, 'pr-review'), path.join(reviewCoverageDir, 'review'));
     fs.writeFileSync(
-      path.join(reviewCoverageDir, 'review', 'SKILL.md'),
-      extractSkillBody(path.join(ROOT, 'review')),
+      path.join(reviewCoverageDir, 'pr-review', 'SKILL.md'),
+      extractSkillBody(path.join(ROOT, 'pr-review')),
     );
 
     // Use shared fixture for billing project with coverage gaps
@@ -60,9 +60,9 @@ describeIfSelected('Review Coverage Audit E2E', ['review-coverage-audit'], () =>
     try { fs.rmSync(reviewCoverageDir, { recursive: true, force: true }); } catch {}
   });
 
-  test('/review Step 4.75 produces coverage diagram', async () => {
+  test('/pr-review Step 4.75 produces coverage diagram', async () => {
     const result = await runSkillTest({
-      prompt: `Read the file review/SKILL.md for the review workflow instructions.
+      prompt: `Read the file pr-review/SKILL.md for the review workflow instructions.
 
 You are on the feature/billing branch. The base branch is main.
 This is a test project — there is no remote, no PR to create.
@@ -83,8 +83,8 @@ Output the diagram directly.`,
       runId,
     });
 
-    logCost('/review coverage audit', result);
-    recordE2E(evalCollector, '/review Step 4.75 coverage audit', 'Review Coverage Audit E2E', result, {
+    logCost('/pr-review coverage audit', result);
+    recordE2E(evalCollector, '/pr-review Step 4.75 coverage audit', 'Review Coverage Audit E2E', result, {
       passed: result.exitReason === 'success',
     });
 
@@ -118,12 +118,12 @@ describeIfSelected('Plan Eng Review Coverage Audit E2E', ['plan-eng-coverage-aud
   beforeAll(() => {
     planCoverageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-plan-coverage-'));
 
-    // Copy plan-eng-review skill files, then replace the SKILL.md with the
+    // Copy plan-tech-review skill files, then replace the SKILL.md with the
     // extracted skill body (extract, don't copy).
-    copyDirSync(path.join(ROOT, 'plan-eng-review'), path.join(planCoverageDir, 'plan-eng-review'));
+    copyDirSync(path.join(ROOT, 'plan-tech-review'), path.join(planCoverageDir, 'plan-tech-review'));
     fs.writeFileSync(
-      path.join(planCoverageDir, 'plan-eng-review', 'SKILL.md'),
-      extractSkillBody(path.join(ROOT, 'plan-eng-review')),
+      path.join(planCoverageDir, 'plan-tech-review', 'SKILL.md'),
+      extractSkillBody(path.join(ROOT, 'plan-tech-review')),
     );
 
     // Use shared fixture for billing project with coverage gaps
@@ -135,9 +135,9 @@ describeIfSelected('Plan Eng Review Coverage Audit E2E', ['plan-eng-coverage-aud
     try { fs.rmSync(planCoverageDir, { recursive: true, force: true }); } catch {}
   });
 
-  test('/plan-eng-review coverage audit traces plan codepaths', async () => {
+  test('/plan-tech-review coverage audit traces plan codepaths', async () => {
     const result = await runSkillTest({
-      prompt: `Read the file plan-eng-review/SKILL.md for the plan review workflow instructions.
+      prompt: `Read the file plan-tech-review/SKILL.md for the plan review workflow instructions.
 
 You are on the feature/billing branch. The base branch is main.
 This is a test project — there is no remote, no PR to create.
@@ -158,8 +158,8 @@ Output the diagram directly.`,
       runId,
     });
 
-    logCost('/plan-eng-review coverage audit', result);
-    recordE2E(evalCollector, '/plan-eng-review coverage audit', 'Plan Eng Review Coverage Audit E2E', result, {
+    logCost('/plan-tech-review coverage audit', result);
+    recordE2E(evalCollector, '/plan-tech-review coverage audit', 'Plan Eng Review Coverage Audit E2E', result, {
       passed: result.exitReason === 'success',
     });
 

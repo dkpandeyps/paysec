@@ -1,10 +1,10 @@
 /**
- * /office-hours Phase 4 alternatives gate regression (periodic, paid, SDK-based).
+ * /idea-review Phase 4 alternatives gate regression (periodic, paid, SDK-based).
  *
  * Reproduces the bug seen in production: agent in builder mode reaches Phase 4,
  * presents 3 architectural alternatives (A/B/C), writes "Recommendation: C" in
  * chat prose, and starts editing the design doc immediately — never calls
- * AskUserQuestion. The fix is the STOP gate added to office-hours/SKILL.md.tmpl
+ * AskUserQuestion. The fix is the STOP gate added to idea-review/SKILL.md.tmpl
  * Phase 4 footer.
  *
  * Test approach: SDK + captureInstruction (same proven pattern as
@@ -63,33 +63,33 @@ function setupOfficeHoursDir(): string {
 
 We're building a retrieval surface for gbrain so cross-skill memory works
 end-to-end. There are three architectural shapes worth considering: server-side
-(gbrain ships the smarts), client-side (gstack ships the smarts), and a hybrid
+(gbrain ships the smarts), client-side (paysec ships the smarts), and a hybrid
 that ships V1 client-side and promotes to gbrain in V1.5.
 `);
   run('git', ['add', '.']);
   run('git', ['commit', '-m', 'seed']);
 
   // Extract only the AskUserQuestion Format spec + Phase 4 section from
-  // office-hours/SKILL.md per CLAUDE.md "extract, don't copy" rule. Copying
+  // idea-review/SKILL.md per CLAUDE.md "extract, don't copy" rule. Copying
   // the full ~2000-line SKILL.md burns Opus tokens on irrelevant phases and
   // risks turn-limit timeouts. The format spec teaches the agent the
   // Recommendation/because/options shape; Phase 4 is what we're testing.
-  fs.mkdirSync(path.join(dir, 'office-hours'), { recursive: true });
-  const fullSkill = fs.readFileSync(path.join(ROOT, 'office-hours', 'SKILL.md'), 'utf-8');
+  fs.mkdirSync(path.join(dir, 'idea-review'), { recursive: true });
+  const fullSkill = fs.readFileSync(path.join(ROOT, 'idea-review', 'SKILL.md'), 'utf-8');
   const fmtStart = fullSkill.indexOf('## AskUserQuestion Format');
   const fmtEnd = fullSkill.indexOf('\n## ', fmtStart + 1);
   const phase4Start = fullSkill.indexOf('## Phase 4: Alternatives Generation');
   const phase4End = fullSkill.indexOf('\n## Phase 4.5', phase4Start);
   if (fmtStart < 0 || phase4Start < 0 || phase4End < 0) {
-    throw new Error('skill-e2e-office-hours-phase4: failed to slice SKILL.md — section markers not found.');
+    throw new Error('skill-e2e-idea-review-phase4: failed to slice SKILL.md — section markers not found.');
   }
   const slice = [
-    '# office-hours (Phase 4 slice for E2E test)\n',
+    '# idea-review (Phase 4 slice for E2E test)\n',
     fullSkill.slice(fmtStart, fmtEnd > fmtStart ? fmtEnd : fmtStart + 4000),
     '\n',
     fullSkill.slice(phase4Start, phase4End),
   ].join('\n');
-  fs.writeFileSync(path.join(dir, 'office-hours', 'SKILL.md'), slice);
+  fs.writeFileSync(path.join(dir, 'idea-review', 'SKILL.md'), slice);
 
   return dir;
 }
@@ -117,14 +117,14 @@ describeIfSelected('Office Hours Phase 4 — Architectural fork must surface Ask
 
   testConcurrentIfSelected('office-hours-phase4-fork', async () => {
     const result = await runSkillTest({
-      prompt: `Read office-hours/SKILL.md for the workflow.
+      prompt: `Read idea-review/SKILL.md for the workflow.
 
 Context: this is BUILDER MODE (Path B). The project is gbrain-retrieval — see README.md. I have a fully-formed plan and have already accepted all your Phase 3 premises. Skip Phase 1, Phase 2, and Phase 3 entirely.
 
 Proceed directly to Phase 4 (Alternatives Generation). Generate 2-3 distinct architectural approaches that differ in KIND (not in coverage). Realistic shapes for this project:
   A) Server-side: gbrain ships the retrieval smarts as new MCP tools (e.g. get_recent_salience, find_anomalies).
-  B) Client-side: gstack ships a helper (bin/gstack-brain-context-load) that composes salience client-side from existing MCP tools.
-  C) Hybrid: V1 client-side in gstack; V1.5 promotes to gbrain server-side once the salience signal is validated.
+  B) Client-side: paysec ships a helper (bin/paysec-brain-context-load) that composes salience client-side from existing MCP tools.
+  C) Hybrid: V1 client-side in paysec; V1.5 promotes to gbrain server-side once the salience signal is validated.
 
 Do not skip Phase 4 — the test depends on you reaching it.
 
@@ -139,7 +139,7 @@ After writing the file with that ONE Phase 4 question, stop. Do not continue to 
       model: 'claude-opus-4-7',
     });
 
-    logCost('/office-hours Phase 4 fork', result);
+    logCost('/idea-review Phase 4 fork', result);
     expect(['success', 'error_max_turns']).toContain(result.exitReason);
 
     expect(fs.existsSync(outFile)).toBe(true);

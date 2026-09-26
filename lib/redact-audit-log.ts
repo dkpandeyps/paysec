@@ -4,7 +4,7 @@
  * WHICH categories fired — never the body content. A body_sha256 lets a later
  * investigation confirm "the pass saw this exact draft and called it clean."
  *
- * The file (`~/.gstack/security/semantic-reviews.jsonl`) is sensitive metadata,
+ * The file (`~/.paysec/security/semantic-reviews.jsonl`) is sensitive metadata,
  * not "safe": it leaks repo names, timing, and a membership oracle via the hash.
  * Written 0600. Local-only — no third-party egress.
  *
@@ -30,7 +30,7 @@ export interface SemanticReviewEntry {
 }
 
 function securityDir(): string {
-  const home = process.env.GSTACK_HOME || path.join(os.homedir(), ".gstack");
+  const home = process.env.PAYSEC_HOME || path.join(os.homedir(), ".paysec");
   return path.join(home, "security");
 }
 

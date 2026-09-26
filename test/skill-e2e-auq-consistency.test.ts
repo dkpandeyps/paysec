@@ -3,7 +3,7 @@
  *
  * The user's core anxiety: AUQ is fine one run and broken the next — sometimes
  * no ELI10, sometimes no recommendation, sometimes minimal context. A single
- * snapshot can't see drift. This drives the carved /plan-ceo-review mode-selection
+ * snapshot can't see drift. This drives the carved /plan-business-review mode-selection
  * AUQ N times via the SDK capture path (clean text, no TTY mangling) and asserts
  * the decision-brief format holds EVERY time and substance never craters.
  *
@@ -32,7 +32,7 @@ const runId = `auq-consistency-${process.env.EVALS_RUN_ID ?? 'local'}`;
 
 describeE2E('AUQ consistency across runs (periodic)', () => {
   test(
-    `carved /plan-ceo-review AUQ format + substance stable across ${N_RUNS} runs`,
+    `carved /plan-business-review AUQ format + substance stable across ${N_RUNS} runs`,
     async () => {
       const runs: Array<{ i: number; present: Set<string>; substance: number; empty: boolean }> = [];
 

@@ -22,8 +22,8 @@ import { join } from "path";
 
 const ROOT = join(import.meta.dir, "..");
 const COPIES = [
-  "ios-qa/templates/StateServer.swift.template",
-  "test/fixtures/ios-qa/FixtureApp/Sources/DebugBridgeCore/StateServer.swift",
+  "ios-device-qa/templates/StateServer.swift.template",
+  "test/fixtures/ios-device-qa/FixtureApp/Sources/DebugBridgeCore/StateServer.swift",
 ];
 
 describe.each(COPIES)("StateServer hardening — %s", (rel) => {
@@ -35,8 +35,8 @@ describe.each(COPIES)("StateServer hardening — %s", (rel) => {
       expect(line).not.toContain("bootToken");
     }
     // The bootstrap announce survives (diagnostics), token-free.
-    expect(src).toContain('gstack-ios-qa-bootstrap port=');
-    expect(src).not.toContain("gstack-ios-qa-bootstrap token=");
+    expect(src).toContain('paysec-ios-qa-bootstrap port=');
+    expect(src).not.toContain("paysec-ios-qa-bootstrap token=");
   });
 
   test("IPv4 listener binds loopback at the socket level (B5)", () => {

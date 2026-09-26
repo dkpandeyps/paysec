@@ -18,7 +18,7 @@
  *      be referenced as `"$VAR"` (shell-quoted), never inlined.
  *
  * This tripwire reads the workflow file directly and fails CI if either pattern
- * reappears. Mirrors the static-grep invariant tests in browse/test
+ * reappears. Mirrors the static-grep invariant tests in browser/test
  * (terminal-agent-pid-identity, server-sanitize-surrogates).
  *
  * Note: `gh api ... -q '.head.sha'` inside a run block is SAFE (reading PR

@@ -3,12 +3,12 @@
  * and re-fetch a clean one, gating .done on a VERIFIED end state.
  *
  * Exercises the migration in a hermetic temp HOME + temp Playwright cache
- * (HOME / GSTACK_HOME / PLAYWRIGHT_BROWSERS_PATH all redirected) with a
+ * (HOME / PAYSEC_HOME / PLAYWRIGHT_BROWSERS_PATH all redirected) with a
  * stubbed bunx on PATH — nothing touches the real cache. Covers:
  *   - whole-revision-dir removal (INSTALLATION_COMPLETE marker included, so
  *     `playwright install` can't no-op with "is already downloaded")
  *   - clean bundles untouched
- *   - re-fetch runs from the gstack install root (repo-pinned playwright)
+ *   - re-fetch runs from the paysec install root (repo-pinned playwright)
  *   - .done only written once a Chromium executable verifiably exists
  *   - failed re-fetch → warning + retry on next run (needs-refetch sentinel)
  *   - stranded revision dir (markers without .app) re-triggers the re-fetch
@@ -23,14 +23,14 @@ import * as path from 'path';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const MIGRATION = path.join(ROOT, 'gstack-upgrade', 'migrations', 'v1.65.0.0.sh');
+const MIGRATION = path.join(ROOT, 'paysec-upgrade', 'migrations', 'v1.65.0.0.sh');
 
 let tmpHome: string;
 let fakeBinDir: string;
 let pwCache: string;
 
 const POISONED_PLIST =
-  '<plist><dict><key>CFBundleName</key><string>GStack Browser</string></dict></plist>';
+  '<plist><dict><key>CFBundleName</key><string>PaySec Browser</string></dict></plist>';
 const CLEAN_PLIST =
   '<plist><dict><key>CFBundleName</key><string>Google Chrome for Testing</string></dict></plist>';
 
@@ -91,7 +91,7 @@ function run(extraEnv: Record<string, string> = {}): {
     env: {
       PATH: `${fakeBinDir}:/usr/bin:/bin`,
       HOME: tmpHome,
-      GSTACK_HOME: path.join(tmpHome, '.gstack'),
+      PAYSEC_HOME: path.join(tmpHome, '.paysec'),
       PLAYWRIGHT_BROWSERS_PATH: pwCache,
       ...extraEnv,
     },
@@ -101,14 +101,14 @@ function run(extraEnv: Record<string, string> = {}): {
   return { code: r.status ?? -1, stdout: r.stdout || '', stderr: r.stderr || '' };
 }
 
-const doneFile = () => path.join(tmpHome, '.gstack', '.migrations', 'v1.65.0.0.done');
+const doneFile = () => path.join(tmpHome, '.paysec', '.migrations', 'v1.65.0.0.done');
 
 beforeEach(() => {
   tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'mig-v1.65-'));
   fakeBinDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mig-v1.65-fake-'));
   pwCache = path.join(tmpHome, 'pw-cache', 'ms-playwright');
   fs.mkdirSync(pwCache, { recursive: true });
-  fs.mkdirSync(path.join(tmpHome, '.gstack'), { recursive: true });
+  fs.mkdirSync(path.join(tmpHome, '.paysec'), { recursive: true });
   // The migration gates on `uname -s` = Darwin; on the Linux CI runner the
   // real uname made every test early-exit with empty output. Shim Darwin so
   // the Darwin-path tests run everywhere; the non-Darwin test overwrites
@@ -147,7 +147,7 @@ describe('v1.65.0.0 migration — poisoned bundle removal', () => {
     // Re-fetch invoked...
     const calls = fs.readFileSync(log, 'utf-8');
     expect(calls).toContain('playwright install chromium');
-    // ...from the gstack install root (repo-pinned playwright version), not
+    // ...from the paysec install root (repo-pinned playwright version), not
     // from the arbitrary cwd the migration runner happened to use.
     const realRoot = fs.realpathSync(ROOT);
     expect(calls.includes(`pwd=${ROOT}`) || calls.includes(`pwd=${realRoot}`)).toBe(true);

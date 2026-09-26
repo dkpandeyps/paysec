@@ -14,7 +14,7 @@
  *
  * Shares the registry implementation with sse-session-cookie.ts via
  * createSessionCookieStore. Two INSTANCES instead of one because the cookie
- * names are different (`gstack_sse` vs `gstack_pty`) and the token spaces
+ * names are different (`paysec_sse` vs `paysec_pty`) and the token spaces
  * must not overlap — an SSE-read cookie must never grant PTY access, and
  * vice versa.
  */
@@ -22,7 +22,7 @@ import { createSessionCookieStore } from './session-cookie-store';
 
 const TTL_MS = 30 * 60 * 1000; // 30 minutes — matches SSE cookie
 
-export const PTY_COOKIE_NAME = 'gstack_pty';
+export const PTY_COOKIE_NAME = 'paysec_pty';
 
 const store = createSessionCookieStore({ cookieName: PTY_COOKIE_NAME, ttlMs: TTL_MS });
 

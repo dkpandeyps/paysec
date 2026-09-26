@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const SHIP_DIR = path.join(__dirname, '..', 'ship');
+const SHIP_DIR = path.join(__dirname, '..', 'ship-pr');
 
 // Carved (v2 plan T9): the Plan Completion gate moved into sections/plan-completion.md.
 // Read the skeleton + sections union so these invariants follow the content.
@@ -17,7 +17,7 @@ function readShipUnion(): string {
   return t;
 }
 
-describe('ship/SKILL.md — Plan Completion gate invariants (VAS-449 remediation)', () => {
+describe('ship-pr/SKILL.md — Plan Completion gate invariants (VAS-449 remediation)', () => {
   const skill = readShipUnion();
 
   test('Path concreteness rule: filesystem-pathed items must be test -f checked', () => {
@@ -39,7 +39,7 @@ describe('ship/SKILL.md — Plan Completion gate invariants (VAS-449 remediation
   });
 
   test('Subagent failure: fail-closed, not silent fail-open', () => {
-    expect(skill).not.toMatch(/Never block \/ship on subagent failure\.\s*$/m);
+    expect(skill).not.toMatch(/Never block \/ship-pr on subagent failure\.\s*$/m);
     expect(skill).toMatch(/Silent fail-open is the failure shape that VAS-449 surfaced/);
     expect(skill).toMatch(/Stop and fix the audit/);
   });

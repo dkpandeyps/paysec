@@ -3,7 +3,7 @@
  * behalf of the compiled browse server.
  *
  * Why a sidecar:
- *   - browse/src/security-classifier.ts depends on @huggingface/transformers
+ *   - browser/src/security-classifier.ts depends on @huggingface/transformers
  *     which loads onnxruntime-node, a native module that fails to `dlopen`
  *     from Bun's compile-binary temp extraction dir (CLAUDE.md "Sidebar
  *     security stack" section). Importing the classifier into server.ts

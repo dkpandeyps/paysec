@@ -1,5 +1,5 @@
 #!/bin/bash
-# gstack-extension — helper to install the Chrome extension
+# paysec-extension — helper to install the Chrome extension
 #
 # When using $B connect, the extension auto-loads. This script is for
 # installing it in your regular Chrome (not the Playwright-controlled one).
@@ -13,13 +13,13 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 EXT_DIR=""
 if [ -f "$REPO_ROOT/extension/manifest.json" ]; then
   EXT_DIR="$REPO_ROOT/extension"
-elif [ -f "$HOME/.claude/skills/gstack/extension/manifest.json" ]; then
-  EXT_DIR="$HOME/.claude/skills/gstack/extension"
+elif [ -f "$HOME/.claude/skills/paysec/extension/manifest.json" ]; then
+  EXT_DIR="$HOME/.claude/skills/paysec/extension"
 fi
 
 if [ -z "$EXT_DIR" ]; then
   echo "Error: extension/ directory not found."
-  echo "Expected at: $REPO_ROOT/extension/ or ~/.claude/skills/gstack/extension/"
+  echo "Expected at: $REPO_ROOT/extension/ or ~/.claude/skills/paysec/extension/"
   exit 1
 fi
 
@@ -28,12 +28,12 @@ echo -n "$EXT_DIR" | pbcopy 2>/dev/null
 
 # Get browse server port
 PORT=""
-STATE_FILE="$REPO_ROOT/.gstack/browse.json"
+STATE_FILE="$REPO_ROOT/.paysec/browse.json"
 if [ -f "$STATE_FILE" ]; then
   PORT=$(grep -o '"port":[0-9]*' "$STATE_FILE" | grep -o '[0-9]*')
 fi
 
-echo "gstack Chrome Extension Setup"
+echo "paysec Chrome Extension Setup"
 echo "=============================="
 echo ""
 echo "Extension path (copied to clipboard):"
@@ -61,5 +61,5 @@ osascript -e 'tell application "Google Chrome" to open location "chrome://extens
 echo "  2. Toggle 'Developer mode' ON (top-right)"
 echo "  3. Click 'Load unpacked'"
 echo "  4. In the file picker: Cmd+Shift+G → paste (path is in your clipboard) → Enter → Select"
-echo "  5. Click the gstack puzzle icon in toolbar → enter port: ${PORT:-<check \$B status>}"
+echo "  5. Click the paysec puzzle icon in toolbar → enter port: ${PORT:-<check \$B status>}"
 echo "  6. Click 'Open Side Panel'"

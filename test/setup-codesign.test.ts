@@ -25,10 +25,10 @@ describe("setup: Apple Silicon codesign", () => {
     expect(forMatch).toBeTruthy();
     const binaries = forMatch![1].trim().split(/\s+/);
     // All four compiled binaries from `bun run build` must be covered
-    expect(binaries).toContain("browse/dist/browse");
-    expect(binaries).toContain("browse/dist/find-browse");
+    expect(binaries).toContain("browser/dist/browse");
+    expect(binaries).toContain("browser/dist/find-browse");
     expect(binaries).toContain("design/dist/design");
-    expect(binaries).toContain("bin/gstack-global-discover");
+    expect(binaries).toContain("bin/paysec-global-discover");
   });
 
   test("codesign block is inside the NEEDS_BUILD=1 branch", () => {
@@ -41,7 +41,7 @@ describe("setup: Apple Silicon codesign", () => {
     const buildIdx = content.indexOf("bun_cmd run build");
     const codesignIdx = content.indexOf("codesign --remove-signature");
     const browseCheckIdx = content.indexOf(
-      "gstack setup failed: browse binary missing",
+      "paysec setup failed: browse binary missing",
     );
     expect(buildIdx).toBeGreaterThan(-1);
     expect(codesignIdx).toBeGreaterThan(buildIdx);

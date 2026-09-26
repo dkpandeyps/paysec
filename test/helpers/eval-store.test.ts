@@ -182,30 +182,30 @@ describe('EvalCollector', () => {
   });
 });
 
-// --- GSTACK_EVAL_DIR + shard slug tests ---
+// --- PAYSEC_EVAL_DIR + shard slug tests ---
 
 describe('EvalCollector eval-dir resolution', () => {
-  const savedEnv = process.env.GSTACK_EVAL_DIR;
+  const savedEnv = process.env.PAYSEC_EVAL_DIR;
 
   afterEach(() => {
-    if (savedEnv === undefined) delete process.env.GSTACK_EVAL_DIR;
-    else process.env.GSTACK_EVAL_DIR = savedEnv;
+    if (savedEnv === undefined) delete process.env.PAYSEC_EVAL_DIR;
+    else process.env.PAYSEC_EVAL_DIR = savedEnv;
   });
 
-  test('honors GSTACK_EVAL_DIR set after import — no --preload needed', async () => {
+  test('honors PAYSEC_EVAL_DIR set after import — no --preload needed', async () => {
     // The default eval dir must resolve lazily at construction, not at module
-    // load: the sharded runner sets GSTACK_EVAL_DIR in each shard child's env
+    // load: the sharded runner sets PAYSEC_EVAL_DIR in each shard child's env
     // and shard tests import this module long before any collector exists.
     const envDir = path.join(tmpDir, 'env-dir');
-    process.env.GSTACK_EVAL_DIR = envDir;
+    process.env.PAYSEC_EVAL_DIR = envDir;
     const collector = new EvalCollector('e2e');
     collector.addTest(makeEntry());
     await captureStderr(async () => { await collector.finalize(); });
     expect(fs.readdirSync(envDir).filter(f => !f.startsWith('_partial'))).toHaveLength(1);
   });
 
-  test('explicit constructor arg beats GSTACK_EVAL_DIR', async () => {
-    process.env.GSTACK_EVAL_DIR = path.join(tmpDir, 'env-dir');
+  test('explicit constructor arg beats PAYSEC_EVAL_DIR', async () => {
+    process.env.PAYSEC_EVAL_DIR = path.join(tmpDir, 'env-dir');
     const explicit = path.join(tmpDir, 'explicit');
     const collector = new EvalCollector('e2e', explicit);
     collector.addTest(makeEntry());

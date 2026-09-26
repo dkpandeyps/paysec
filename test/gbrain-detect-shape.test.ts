@@ -1,9 +1,9 @@
 /**
- * Shape regression test for bin/gstack-gbrain-detect.
+ * Shape regression test for bin/paysec-gbrain-detect.
  *
  * After the bash→TS rewrite (codex #5), the TS output must stay
  * key/type/semantics backward-compatible with the bash version. Downstream
- * callers across most gstack skill preambles shell out to this script and
+ * callers across most paysec skill preambles shell out to this script and
  * pipe through jq. Key order may differ between bash+jq and JSON.stringify;
  * key NAMES and TYPES must not.
  *
@@ -27,7 +27,7 @@ import {
 import { tmpdir } from "os";
 import { join } from "path";
 
-const DETECT_BIN = join(import.meta.dir, "..", "bin", "gstack-gbrain-detect");
+const DETECT_BIN = join(import.meta.dir, "..", "bin", "paysec-gbrain-detect");
 
 /** Absolute bun path resolved once at module load (uses the test runner's PATH). */
 const BUN_BIN = execFileSync("sh", ["-c", "command -v bun"], { encoding: "utf-8" }).trim();
@@ -67,20 +67,20 @@ interface DetectShape {
   gbrain_engine: string | null;
   gbrain_doctor_ok: boolean;
   gbrain_mcp_mode: string;
-  gstack_brain_sync_mode: string;
-  gstack_brain_git: boolean;
-  gstack_artifacts_remote: string;
+  paysec_brain_sync_mode: string;
+  paysec_brain_git: boolean;
+  paysec_artifacts_remote: string;
   gbrain_local_status: string;
 }
 
-describe("bin/gstack-gbrain-detect — shape regression", () => {
+describe("bin/paysec-gbrain-detect — shape regression", () => {
   it("emits valid JSON", () => {
     const tmp = mkdtempSync(join(tmpdir(), "detect-shape-"));
     try {
       const out = runDetect({
         HOME: tmp,
         PATH: "/usr/bin:/bin",
-        GSTACK_HOME: tmp,
+        PAYSEC_HOME: tmp,
       });
       expect(() => JSON.parse(out)).not.toThrow();
     } finally {
@@ -94,7 +94,7 @@ describe("bin/gstack-gbrain-detect — shape regression", () => {
       const out = runDetect({
         HOME: tmp,
         PATH: "/usr/bin:/bin",
-        GSTACK_HOME: tmp,
+        PAYSEC_HOME: tmp,
       });
       const parsed = JSON.parse(out) as DetectShape;
 
@@ -105,9 +105,9 @@ describe("bin/gstack-gbrain-detect — shape regression", () => {
       expect(parsed).toHaveProperty("gbrain_engine");
       expect(parsed).toHaveProperty("gbrain_doctor_ok");
       expect(parsed).toHaveProperty("gbrain_mcp_mode");
-      expect(parsed).toHaveProperty("gstack_brain_sync_mode");
-      expect(parsed).toHaveProperty("gstack_brain_git");
-      expect(parsed).toHaveProperty("gstack_artifacts_remote");
+      expect(parsed).toHaveProperty("paysec_brain_sync_mode");
+      expect(parsed).toHaveProperty("paysec_brain_git");
+      expect(parsed).toHaveProperty("paysec_artifacts_remote");
 
       // 1 new key (added by this fix):
       expect(parsed).toHaveProperty("gbrain_local_status");
@@ -122,7 +122,7 @@ describe("bin/gstack-gbrain-detect — shape regression", () => {
       const out = runDetect({
         HOME: tmp,
         PATH: "/usr/bin:/bin",
-        GSTACK_HOME: tmp,
+        PAYSEC_HOME: tmp,
       });
       const parsed = JSON.parse(out) as Record<string, unknown>;
 
@@ -130,7 +130,7 @@ describe("bin/gstack-gbrain-detect — shape regression", () => {
       expect(typeof parsed.gbrain_on_path).toBe("boolean");
       expect(typeof parsed.gbrain_config_exists).toBe("boolean");
       expect(typeof parsed.gbrain_doctor_ok).toBe("boolean");
-      expect(typeof parsed.gstack_brain_git).toBe("boolean");
+      expect(typeof parsed.paysec_brain_git).toBe("boolean");
 
       // String | null unions (bash: `null` when absent; TS: null when absent)
       const versionType = parsed.gbrain_version === null ? "null" : typeof parsed.gbrain_version;
@@ -140,8 +140,8 @@ describe("bin/gstack-gbrain-detect — shape regression", () => {
 
       // Strings (bash: always emits a string, never null)
       expect(typeof parsed.gbrain_mcp_mode).toBe("string");
-      expect(typeof parsed.gstack_brain_sync_mode).toBe("string");
-      expect(typeof parsed.gstack_artifacts_remote).toBe("string");
+      expect(typeof parsed.paysec_brain_sync_mode).toBe("string");
+      expect(typeof parsed.paysec_artifacts_remote).toBe("string");
 
       // New field: string enum
       expect(typeof parsed.gbrain_local_status).toBe("string");
@@ -156,7 +156,7 @@ describe("bin/gstack-gbrain-detect — shape regression", () => {
       const out = runDetect({
         HOME: tmp,
         PATH: "/usr/bin:/bin",
-        GSTACK_HOME: tmp,
+        PAYSEC_HOME: tmp,
       });
       const parsed = JSON.parse(out) as DetectShape;
       expect(["local-stdio", "remote-http", "none"]).toContain(parsed.gbrain_mcp_mode);
@@ -165,16 +165,16 @@ describe("bin/gstack-gbrain-detect — shape regression", () => {
     }
   });
 
-  it("gstack_brain_sync_mode is one of the three documented values", () => {
+  it("paysec_brain_sync_mode is one of the three documented values", () => {
     const tmp = mkdtempSync(join(tmpdir(), "detect-shape-"));
     try {
       const out = runDetect({
         HOME: tmp,
         PATH: "/usr/bin:/bin",
-        GSTACK_HOME: tmp,
+        PAYSEC_HOME: tmp,
       });
       const parsed = JSON.parse(out) as DetectShape;
-      expect(["off", "artifacts-only", "full"]).toContain(parsed.gstack_brain_sync_mode);
+      expect(["off", "artifacts-only", "full"]).toContain(parsed.paysec_brain_sync_mode);
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }
@@ -186,7 +186,7 @@ describe("bin/gstack-gbrain-detect — shape regression", () => {
       const out = runDetect({
         HOME: tmp,
         PATH: "/usr/bin:/bin",
-        GSTACK_HOME: tmp,
+        PAYSEC_HOME: tmp,
       });
       const parsed = JSON.parse(out) as DetectShape;
       expect(["ok", "no-cli", "missing-config", "broken-config", "broken-db"]).toContain(
@@ -203,8 +203,8 @@ describe("bin/gstack-gbrain-detect — shape regression", () => {
       const out = runDetect({
         HOME: tmp,
         PATH: "/usr/bin:/bin", // no gbrain on this PATH
-        GSTACK_HOME: tmp,
-        GSTACK_DETECT_NO_CACHE: "1",
+        PAYSEC_HOME: tmp,
+        PAYSEC_DETECT_NO_CACHE: "1",
       });
       const parsed = JSON.parse(out) as DetectShape;
       expect(parsed.gbrain_on_path).toBe(false);
@@ -243,8 +243,8 @@ exit 0
       const out = runDetect({
         HOME: home,
         PATH: `${bindir}:/usr/bin:/bin`,
-        GSTACK_HOME: tmp,
-        GSTACK_DETECT_NO_CACHE: "1",
+        PAYSEC_HOME: tmp,
+        PAYSEC_DETECT_NO_CACHE: "1",
       });
       const parsed = JSON.parse(out) as DetectShape;
       expect(parsed.gbrain_on_path).toBe(true);
@@ -258,15 +258,15 @@ exit 0
   });
 });
 
-describe("bin/gstack-gbrain-detect --is-ok — live gate", () => {
+describe("bin/paysec-gbrain-detect --is-ok — live gate", () => {
   it("exits non-zero when gbrain is not on PATH (no-cli)", () => {
     const tmp = mkdtempSync(join(tmpdir(), "detect-isok-"));
     try {
       const code = runIsOk({
         HOME: tmp,
         PATH: "/usr/bin:/bin", // no gbrain
-        GSTACK_HOME: tmp,
-        GSTACK_DETECT_NO_CACHE: "1",
+        PAYSEC_HOME: tmp,
+        PAYSEC_DETECT_NO_CACHE: "1",
       });
       expect(code).not.toBe(0);
     } finally {
@@ -298,8 +298,8 @@ exit 0
       const code = runIsOk({
         HOME: home,
         PATH: `${bindir}:/usr/bin:/bin`,
-        GSTACK_HOME: tmp,
-        GSTACK_DETECT_NO_CACHE: "1",
+        PAYSEC_HOME: tmp,
+        PAYSEC_DETECT_NO_CACHE: "1",
       });
       expect(code).toBe(0);
     } finally {
@@ -311,7 +311,7 @@ exit 0
     // Run both surfaces against the same env and assert they never disagree.
     const tmp = mkdtempSync(join(tmpdir(), "detect-isok-"));
     try {
-      const env = { HOME: tmp, PATH: "/usr/bin:/bin", GSTACK_HOME: tmp, GSTACK_DETECT_NO_CACHE: "1" };
+      const env = { HOME: tmp, PATH: "/usr/bin:/bin", PAYSEC_HOME: tmp, PAYSEC_DETECT_NO_CACHE: "1" };
       const status = (JSON.parse(runDetect(env)) as DetectShape).gbrain_local_status;
       const code = runIsOk(env);
       expect(code === 0).toBe(status === "ok");

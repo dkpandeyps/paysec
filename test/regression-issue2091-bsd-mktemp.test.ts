@@ -3,22 +3,22 @@
  * (BSD mktemp) and Alpine (busybox mktemp) when the X placeholder run is not
  * the LAST thing in the template.
  *
- * Two compounding bugs, both in gstack:
+ * Two compounding bugs, both in paysec:
  *
  *   1. Suffix after the placeholder. Skills used templates like
  *      `mktemp "$TMP_ROOT/codex-err-XXXXXX.txt"`. GNU mktemp tolerates a suffix
  *      after the X run; BSD mktemp (macOS) does NOT — it does not substitute the
  *      X's at all, so call #1 creates a LITERAL `codex-err-XXXXXX.txt` (exit 0)
- *      and a later call (a second /codex run, a stale leftover, or a concurrent
+ *      and a later call (a second /codex-second-opinion run, a stale leftover, or a concurrent
  *      worktree) fails with `mkstemp failed: File exists` and aborts the review.
  *      busybox mktemp (Alpine) rejects the template outright on the FIRST run.
  *      Fixed by moving the placeholder to the END of every mktemp template.
  *
- *   2. Trailing slash in TMP_ROOT. `bin/gstack-paths` emitted TMP_ROOT straight
+ *   2. Trailing slash in TMP_ROOT. `bin/paysec-paths` emitted TMP_ROOT straight
  *      from $TMPDIR, which on macOS ends in `/` (e.g. /var/folders/.../T/),
  *      producing a double-slash path (`…/T//codex-err-…`). Fixed by stripping
  *      the trailing slash at the source so every consumer benefits, not just
- *      /codex.
+ *      /codex-second-opinion.
  *
  * Bug 1's tripwire is repo-wide: it sweeps EVERY .tmpl, every SKILL.md, and
  * every scripts/resolvers/*.ts (the sources that feed generated skills), so a
@@ -30,14 +30,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const PATHS_BIN = path.join(ROOT, 'bin', 'gstack-paths');
+const PATHS_BIN = path.join(ROOT, 'bin', 'paysec-paths');
 
 // ── Bug 1: BSD mktemp requires the X placeholder at the END of the template ──
 // Swept across all skills (templates AND generated output) plus the resolver
 // modules that feed generated sections, so neither a hand-edit nor a regen
 // drift can reopen the bug.
 
-/** Directories that are not gstack-authored skill/template sources. */
+/** Directories that are not paysec-authored skill/template sources. */
 const SKIP_DIRS = new Set([
   'node_modules',
   '.git',
@@ -52,7 +52,7 @@ function collectScannedFiles(dir: string, out: string[]): void {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (SKIP_DIRS.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
-    // Symlinks (e.g. connect-chrome → open-gstack-browser) would double-count
+    // Symlinks (e.g. connect-chrome → open-paysec-browser) would double-count
     // or escape the tree; the link target is scanned via its real path.
     if (entry.isSymbolicLink()) continue;
     if (entry.isDirectory()) {
@@ -94,8 +94,8 @@ describe('#2091/#2370 bug 1: every mktemp template is BSD-safe (X placeholder at
     // Guards against the walker silently matching nothing after a refactor.
     const withMktemp = files.filter((f) => fs.readFileSync(f, 'utf-8').includes('mktemp'));
     expect(withMktemp.length).toBeGreaterThanOrEqual(5);
-    expect(withMktemp).toContain(path.join(ROOT, 'codex', 'SKILL.md.tmpl'));
-    expect(withMktemp).toContain(path.join(ROOT, 'codex', 'SKILL.md'));
+    expect(withMktemp).toContain(path.join(ROOT, 'codex-second-opinion', 'SKILL.md.tmpl'));
+    expect(withMktemp).toContain(path.join(ROOT, 'codex-second-opinion', 'SKILL.md'));
     expect(withMktemp).toContain(path.join(ROOT, 'scripts', 'resolvers', 'review.ts'));
   });
 
@@ -118,10 +118,10 @@ describe('#2091/#2370 bug 1: every mktemp template is BSD-safe (X placeholder at
       '$TMP_ROOT/codex-err-XXXXXX.txt',
     ]);
     expect(
-      offendingTemplatesOnLine('TMPOUT=$(mktemp "$GSTACK_HOME/developer-profile.json.XXXXXX.tmp")'),
-    ).toEqual(['$GSTACK_HOME/developer-profile.json.XXXXXX.tmp']);
-    expect(offendingTemplatesOnLine('RESP_FILE=$(mktemp /tmp/gstack-claude-response-XXXXXX.json)')).toEqual([
-      '/tmp/gstack-claude-response-XXXXXX.json',
+      offendingTemplatesOnLine('TMPOUT=$(mktemp "$PAYSEC_HOME/developer-profile.json.XXXXXX.tmp")'),
+    ).toEqual(['$PAYSEC_HOME/developer-profile.json.XXXXXX.tmp']);
+    expect(offendingTemplatesOnLine('RESP_FILE=$(mktemp /tmp/paysec-claude-response-XXXXXX.json)')).toEqual([
+      '/tmp/paysec-claude-response-XXXXXX.json',
     ]);
     // Fixed shapes pass.
     expect(offendingTemplatesOnLine('TMPERR=$(mktemp "$TMP_ROOT/codex-err-XXXXXX")')).toEqual([]);
@@ -129,8 +129,8 @@ describe('#2091/#2370 bug 1: every mktemp template is BSD-safe (X placeholder at
   });
 });
 
-// ── Bug 2: gstack-paths normalizes TMP_ROOT (no trailing slash) ──────────────
-// Mirrors the invocation contract used by test/gstack-paths.test.ts: the helper
+// ── Bug 2: paysec-paths normalizes TMP_ROOT (no trailing slash) ──────────────
+// Mirrors the invocation contract used by test/paysec-paths.test.ts: the helper
 // is always sourced from a bash block, so we run it via `bash`.
 function tmpRoot(env: Record<string, string | undefined>): string {
   const result = spawnSync('bash', [PATHS_BIN], {
@@ -138,15 +138,15 @@ function tmpRoot(env: Record<string, string | undefined>): string {
     encoding: 'utf-8',
   });
   if (result.status !== 0) {
-    throw new Error(`gstack-paths failed (status ${result.status}): ${result.stderr}`);
+    throw new Error(`paysec-paths failed (status ${result.status}): ${result.stderr}`);
   }
   for (const line of result.stdout.split('\n')) {
     if (line.startsWith('TMP_ROOT=')) return line.slice('TMP_ROOT='.length);
   }
-  throw new Error('gstack-paths did not emit TMP_ROOT');
+  throw new Error('paysec-paths did not emit TMP_ROOT');
 }
 
-describe('#2091 bug 2: gstack-paths strips the trailing slash from TMP_ROOT', () => {
+describe('#2091 bug 2: paysec-paths strips the trailing slash from TMP_ROOT', () => {
   test('macOS-style TMPDIR with trailing slash → trailing slash stripped', () => {
     expect(tmpRoot({ TMPDIR: '/var/folders/ab/T/', HOME: '/tmp/h' })).toBe('/var/folders/ab/T');
   });

@@ -63,10 +63,10 @@ export interface RecommendationScore {
 // rubrics, and every >=4 threshold in skill-llm-eval was calibrated against
 // months of Sonnet baselines). Per D1a's pin-on-regressors protocol the
 // default stays Sonnet; recalibrating the 25 rubrics for Haiku is separately
-// scoped work. Override per run with GSTACK_EVAL_MODEL_JUDGE; Haiku remains
+// scoped work. Override per run with PAYSEC_EVAL_MODEL_JUDGE; Haiku remains
 // the right default for classifier-grade duties (pty hung/working, warmup,
 // distill — see lib/eval-model.ts).
-export async function callJudge<T>(prompt: string, model: string = process.env.GSTACK_EVAL_MODEL_JUDGE || 'claude-sonnet-4-6'): Promise<T> {
+export async function callJudge<T>(prompt: string, model: string = process.env.PAYSEC_EVAL_MODEL_JUDGE || 'claude-sonnet-4-6'): Promise<T> {
   const client = new Anthropic();
 
   const makeRequest = () => client.messages.create({
@@ -174,22 +174,22 @@ Rules:
  * modes. See docs/designs/PLAN_TUNING_V1.md and the V1.1 mode-posture fix.
  *
  * The generator model is whatever the skill runs with (often Opus for
- * plan-ceo-review). The judge is always Sonnet via callJudge() for cost.
+ * plan-business-review). The judge is always Sonnet via callJudge() for cost.
  */
 export async function judgePosture(mode: PostureMode, text: string): Promise<PostureScore> {
   const rubrics: Record<PostureMode, { axis_a: string; axis_b: string; context: string }> = {
     expansion: {
-      context: 'This text is expansion proposals emitted by /plan-ceo-review in SCOPE EXPANSION or SELECTIVE EXPANSION mode. The skill is supposed to lead with felt-experience vision, then close with concrete effort and impact.',
+      context: 'This text is expansion proposals emitted by /plan-business-review in SCOPE EXPANSION or SELECTIVE EXPANSION mode. The skill is supposed to lead with felt-experience vision, then close with concrete effort and impact.',
       axis_a: 'surface_framing (1-5): Does each proposal lead with felt-experience framing ("imagine", "when the user sees", "the moment X happens", or equivalent) BEFORE closing with concrete metrics? Penalize pure feature bullets ("Add X. Improves Y by Z%").',
       axis_b: 'decision_preservation (1-5): Does each proposal contain the elements a scope-expansion decision needs — what to build (concrete shape), effort (ideally both human and CC scales), risk or integration note? Penalize pure prose with no actionable content.',
     },
     forcing: {
-      context: 'This text is the Q3 Desperate Specificity question emitted by /office-hours startup mode. The skill is supposed to force the founder to name a specific person and consequence, stacking multiple pressures.',
+      context: 'This text is the Q3 Desperate Specificity question emitted by /idea-review startup mode. The skill is supposed to force the founder to name a specific person and consequence, stacking multiple pressures.',
       axis_a: 'stacking_preserved (1-5): Does the question include at least 3 distinct sub-pressures (e.g., title? promoted? fired? up at night? OR career? day? weekend?) rather than a single neutral ask? Penalize "Who is your target user?" style collapses.',
       axis_b: 'domain_matched_consequence (1-5): Does the named consequence match the domain context in the input (B2B → career impact, consumer → daily pain, hobby/open-source → weekend project)? Penalize one-size-fits-all B2B career framing for non-B2B ideas.',
     },
     builder: {
-      context: 'This text is builder-mode response from /office-hours. The skill is supposed to riff creatively — "what if you also..." adjacent unlocks, cross-domain combinations, the "whoa" moment — not emit a structured product roadmap.',
+      context: 'This text is builder-mode response from /idea-review. The skill is supposed to riff creatively — "what if you also..." adjacent unlocks, cross-domain combinations, the "whoa" moment — not emit a structured product roadmap.',
       axis_a: 'unexpected_combinations (1-5): Does the output include at least 2 cross-domain or surprising adjacent unlocks ("what if you also...", "pipe it into X", etc.)? Penalize structured feature lists with no creative leaps.',
       axis_b: 'excitement_over_optimization (1-5): Does the output read as a creative riff (enthusiastic, opinionated, evocative) or as a PRD / product roadmap (structured, metric-driven, conservative)? Penalize PRD-voice language like "improve retention", "enable virality", "consider adding".',
     },
@@ -284,7 +284,7 @@ export async function judgeRecommendation(askUserText: string): Promise<Recommen
   const prompt = `You are scoring the quality of one specific line in an AskUserQuestion: the "Recommendation: <choice> because <reason>" line. Score the because-clause substance on a 1-5 scale.
 
 Rubric:
-- 5: Reason names a SPECIFIC TRADEOFF that distinguishes the chosen option from at least one alternative (e.g. "because hybrid ships V1 in gstack-only without blocking on cross-repo gbrain coordination", "because Postgres preserves ACID guarantees the workflow already depends on").
+- 5: Reason names a SPECIFIC TRADEOFF that distinguishes the chosen option from at least one alternative (e.g. "because hybrid ships V1 in paysec-only without blocking on cross-repo gbrain coordination", "because Postgres preserves ACID guarantees the workflow already depends on").
 - 4: Reason is concrete and option-specific but does NOT explicitly compare against an alternative (e.g. "because Redis gives sub-millisecond reads under load", "because the new schema removes the JOIN we were paying for").
 - 3: Reason is real but generic — could apply to many options ("because it's faster", "because it's simpler", "because it ships sooner").
 - 2: Reason restates the option label or is near-tautological ("because it's the hybrid one", "because that's the recommended approach").

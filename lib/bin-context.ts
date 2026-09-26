@@ -1,7 +1,7 @@
 /**
- * bin-context — tiny shared helpers for non-interactive gstack bins that need the
+ * bin-context — tiny shared helpers for non-interactive paysec bins that need the
  * project slug, current branch, and argv flags. Extracted from the decision bins
- * (gstack-decision-log / gstack-decision-search) so the slug/branch/flag plumbing
+ * (paysec-decision-log / paysec-decision-search) so the slug/branch/flag plumbing
  * lives in one audited place instead of being copy-pasted per bin.
  */
 
@@ -10,16 +10,16 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "
 import { homedir } from "os";
 import { basename, join } from "path";
 
-/** Keep the slug inside the [a-zA-Z0-9._-] alphabet gstack-slug promises (`tr -cd`). */
+/** Keep the slug inside the [a-zA-Z0-9._-] alphabet paysec-slug promises (`tr -cd`). */
 function sanitizeSlug(s: string): string {
   return s.replace(/[^a-zA-Z0-9._-]/g, "");
 }
 
 /**
  * A Windows path in the MSYS form git-bash's `pwd` reports:
- * `C:\Users\j\foo` → `/c/Users/j/foo`. gstack-slug keys its cache on THAT form
+ * `C:\Users\j\foo` → `/c/Users/j/foo`. paysec-slug keys its cache on THAT form
  * (`tr '/' '_'`), so a native lookup must reproduce it exactly or it misses the very
- * entry gstack-slug wrote and silently re-derives instead of staying consistent.
+ * entry paysec-slug wrote and silently re-derives instead of staying consistent.
  * Exported for the cache-key test; non-Windows paths pass through unchanged.
  */
 export function toMsysPath(p: string): string {
@@ -29,13 +29,13 @@ export function toMsysPath(p: string): string {
 }
 
 /**
- * Native port of bin/gstack-slug's resolution order, used when that script cannot be
+ * Native port of bin/paysec-slug's resolution order, used when that script cannot be
  * spawned (see resolveSlug). Same three steps, same alphabet, same cache file — so
  * this and the shell path always agree. They must: the bins WRITE using this, while
  * the Context Recovery preamble READS using the script.
  */
-export function slugFromEnvironment(gstackHome?: string, cwd: string = process.cwd()): string {
-  const home = gstackHome || process.env.GSTACK_HOME || join(homedir(), ".gstack");
+export function slugFromEnvironment(paysecHome?: string, cwd: string = process.cwd()): string {
+  const home = paysecHome || process.env.PAYSEC_HOME || join(homedir(), ".paysec");
   const cacheDir = join(home, "slug-cache");
   const cacheFile = join(cacheDir, toMsysPath(cwd).replace(/\//g, "_"));
 
@@ -58,7 +58,7 @@ export function slugFromEnvironment(gstackHome?: string, cwd: string = process.c
   if (!slug) slug = sanitizeSlug(basename(cwd));
   if (!slug) return "unknown";
 
-  // 4. cache it, as gstack-slug does — atomic, and failures stay silent (`|| true`)
+  // 4. cache it, as paysec-slug does — atomic, and failures stay silent (`|| true`)
   try {
     mkdirSync(cacheDir, { recursive: true });
     const tmp = `${cacheFile}.tmp.${process.pid}`;
@@ -71,16 +71,16 @@ export function slugFromEnvironment(gstackHome?: string, cwd: string = process.c
 }
 
 /** Windows cannot exec an extensionless `#!/usr/bin/env bash` script (no shebang, no
- *  PATHEXT match for an explicit path), so gstack-slug spawns ENOENT there. */
+ *  PATHEXT match for an explicit path), so paysec-slug spawns ENOENT there. */
 export const NEEDS_NATIVE_SLUG_ON_WINDOWS = process.platform === "win32";
 
 /**
- * Resolve the project slug via the `gstack-slug` helper (parses `SLUG=...`).
+ * Resolve the project slug via the `paysec-slug` helper (parses `SLUG=...`).
  *
  * On Windows that spawn fails ENOENT (see NEEDS_NATIVE_SLUG_ON_WINDOWS) and `r.stdout`
  * is undefined — the same class of hazard as the gbrain shim spawns in lib/gbrain-exec.ts
  * (#1731). Returning the literal "unknown" filed every decision under
- * ~/.gstack/projects/unknown/ — one bucket shared by every project on the machine —
+ * ~/.paysec/projects/unknown/ — one bucket shared by every project on the machine —
  * while the bash-side Context Recovery preamble resolved the real slug, found no
  * decisions.active.json there, and skipped through a bare `if [ -f … ]` with no else.
  *

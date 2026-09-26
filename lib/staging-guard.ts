@@ -1,8 +1,8 @@
 /**
- * staging-guard — fail-closed ownership proof for gstack ingest staging dirs.
+ * staging-guard — fail-closed ownership proof for paysec ingest staging dirs.
  *
- * Fixes #1802. The /sync-gbrain memory stage stages prepared pages to a
- * throwaway dir under ~/.gstack and `rm -rf`s it when done. The resume path
+ * Fixes #1802. The /brain-sync memory stage stages prepared pages to a
+ * throwaway dir under ~/.paysec and `rm -rf`s it when done. The resume path
  * (#1611) reused gbrain's `import-checkpoint.json` `dir` field as that staging
  * dir WITHOUT proving it was one. A poisoned checkpoint — `dir` = the repo
  * root, written when an autopilot `gbrain import` was SIGTERM'd while CWD was
@@ -10,19 +10,19 @@
  * destroying the user's working tree.
  *
  * Root cause is a TRUST failure, not path math: code deleted a path it never
- * proved it owned. This module is the single definition of "a path gstack is
+ * proved it owned. This module is the single definition of "a path paysec is
  * allowed to recurse-delete or resume into", shared by the resume gate
  * (decideResume) and the deletion chokepoint (cleanupStagingDir).
  *
  * Ownership requires ALL of the following (fail-closed — any failure ⇒ refuse):
  *   1. Resolvable    — realpathSync succeeds (resolves symlinks and `..` to a
  *                      real location before any structural reasoning).
- *   2. Structural    — canonical path is a DIRECT child of $GSTACK_HOME named
+ *   2. Structural    — canonical path is a DIRECT child of $PAYSEC_HOME named
  *                      `.staging-ingest-*` (makeStagingDir's contract).
  *   3. Not a repo    — no `.git` entry inside. A screaming last-line tripwire:
  *                      even a logic error elsewhere can never recurse-delete a
  *                      git working tree.
- *   4. Minted by us  — a `.gstack-staging` marker file (written by
+ *   4. Minted by us  — a `.paysec-staging` marker file (written by
  *                      makeStagingDir) is present. Turns "looks like ours"
  *                      into "was created by us this lineage".
  *
@@ -35,7 +35,7 @@
  *
  * The deeper, "inevitable" fix lives upstream in gbrain: checkpoint.dir should
  * always be a gbrain-minted staging dir, never CWD. This guard is the
- * mitigation at gstack's own rm -rf boundary; see the companion gbrain issue.
+ * mitigation at paysec's own rm -rf boundary; see the companion gbrain issue.
  */
 import { realpathSync, existsSync, statSync, lstatSync } from "fs";
 import { join, dirname, basename } from "path";
@@ -44,7 +44,7 @@ import { join, dirname, basename } from "path";
 export const STAGING_PREFIX = ".staging-ingest-";
 
 /** Marker file minted inside each staging dir at creation. */
-export const STAGING_MARKER = ".gstack-staging";
+export const STAGING_MARKER = ".paysec-staging";
 
 export interface StagingVerdict {
   ok: boolean;
@@ -60,14 +60,14 @@ export interface StagingVerdict {
 }
 
 /**
- * Prove (fail-closed) that `dir` is a gstack-owned ingest staging directory
+ * Prove (fail-closed) that `dir` is a paysec-owned ingest staging directory
  * that is safe to recurse-delete or resume into. Returns a structured verdict
  * so callers can log exactly why a path was rejected.
  *
  * @param dir         Candidate path (e.g. gbrain checkpoint.dir, or the active staging dir).
- * @param gstackHome  Resolved $GSTACK_HOME (injected for testability).
+ * @param paysecHome  Resolved $PAYSEC_HOME (injected for testability).
  */
-export function checkOwnedStagingDir(dir: string, gstackHome: string): StagingVerdict {
+export function checkOwnedStagingDir(dir: string, paysecHome: string): StagingVerdict {
   if (!dir || typeof dir !== "string") {
     return { ok: false, reason: "empty or non-string path" };
   }
@@ -75,7 +75,7 @@ export function checkOwnedStagingDir(dir: string, gstackHome: string): StagingVe
   let home: string;
   try {
     canon = realpathSync(dir);
-    home = realpathSync(gstackHome);
+    home = realpathSync(paysecHome);
   } catch {
     // Missing path or broken symlink ⇒ cannot prove ownership ⇒ refuse.
     return { ok: false, reason: "unresolvable path (missing dir or broken symlink)" };
@@ -89,7 +89,7 @@ export function checkOwnedStagingDir(dir: string, gstackHome: string): StagingVe
     return { ok: false, reason: "unstattable target" };
   }
   if (dirname(canon) !== home) {
-    return { ok: false, reason: `not a direct child of GSTACK_HOME (${home})` };
+    return { ok: false, reason: `not a direct child of PAYSEC_HOME (${home})` };
   }
   if (!basename(canon).startsWith(STAGING_PREFIX)) {
     return { ok: false, reason: `basename does not start with "${STAGING_PREFIX}"` };
@@ -111,6 +111,6 @@ export function checkOwnedStagingDir(dir: string, gstackHome: string): StagingVe
 }
 
 /** Boolean convenience wrapper around {@link checkOwnedStagingDir}. */
-export function isOwnedStagingDir(dir: string, gstackHome: string): boolean {
-  return checkOwnedStagingDir(dir, gstackHome).ok;
+export function isOwnedStagingDir(dir: string, paysecHome: string): boolean {
+  return checkOwnedStagingDir(dir, paysecHome).ok;
 }

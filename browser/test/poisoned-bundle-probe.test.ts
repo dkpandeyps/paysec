@@ -2,7 +2,7 @@
  * Unit tests for the extracted poisoned-bundle self-heal probe (#2242).
  *
  * probePoisonedChromiumBundle() detects a Chromium bundle mutated by the
- * pre-v1.64 in-place rebrand (Info.plist contains "GStack Browser"),
+ * pre-v1.64 in-place rebrand (Info.plist contains "PaySec Browser"),
  * removes it so `playwright install chromium` actually re-downloads, and
  * throws a typed PoisonedBundleError with the remediation command.
  *
@@ -13,7 +13,7 @@
  *   - non-cache layout: the .app + sibling install markers are removed,
  *     nothing else
  *   - clean bundle: untouched, no throw
- *   - GSTACK_CHROMIUM_PATH bundles (custom/embedder) are NEVER deleted:
+ *   - PAYSEC_CHROMIUM_PATH bundles (custom/embedder) are NEVER deleted:
  *     the probe refuses to act on that executable, and both call sites
  *     (launchHeaded + handoff) only pass chromium.executablePath()
  *   - the rethrow guard at the call sites is typed (instanceof), not a
@@ -32,7 +32,7 @@ const SRC = fs.readFileSync(
 );
 
 const POISONED_PLIST =
-  '<plist><dict><key>CFBundleName</key><string>GStack Browser</string></dict></plist>';
+  '<plist><dict><key>CFBundleName</key><string>PaySec Browser</string></dict></plist>';
 const CLEAN_PLIST =
   '<plist><dict><key>CFBundleName</key><string>Google Chrome for Testing</string></dict></plist>';
 
@@ -52,14 +52,14 @@ function makeApp(parentDir: string, plist: string): { appDir: string; exe: strin
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'poison-probe-'));
-  savedCustomPath = process.env.GSTACK_CHROMIUM_PATH;
-  delete process.env.GSTACK_CHROMIUM_PATH;
+  savedCustomPath = process.env.PAYSEC_CHROMIUM_PATH;
+  delete process.env.PAYSEC_CHROMIUM_PATH;
 });
 
 afterEach(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
-  if (savedCustomPath === undefined) delete process.env.GSTACK_CHROMIUM_PATH;
-  else process.env.GSTACK_CHROMIUM_PATH = savedCustomPath;
+  if (savedCustomPath === undefined) delete process.env.PAYSEC_CHROMIUM_PATH;
+  else process.env.PAYSEC_CHROMIUM_PATH = savedCustomPath;
 });
 
 describe('probePoisonedChromiumBundle — poisoned cache bundle', () => {
@@ -118,13 +118,13 @@ describe('probePoisonedChromiumBundle — clean and missing bundles', () => {
   });
 });
 
-describe('probePoisonedChromiumBundle — GSTACK_CHROMIUM_PATH is never deleted', () => {
-  test('probe refuses to act on the GSTACK_CHROMIUM_PATH executable, even when poisoned', () => {
-    // A custom/embedder bundle (GStack Browser.app wrapper) legitimately
-    // contains "GStack Browser" in its plist — that is its branding, not
+describe('probePoisonedChromiumBundle — PAYSEC_CHROMIUM_PATH is never deleted', () => {
+  test('probe refuses to act on the PAYSEC_CHROMIUM_PATH executable, even when poisoned', () => {
+    // A custom/embedder bundle (PaySec Browser.app wrapper) legitimately
+    // contains "PaySec Browser" in its plist — that is its branding, not
     // cache poison. Deleting it would destroy the embedder's product.
-    const { appDir, exe } = makeApp(path.join(tmpDir, 'GStack Browser.app-parent'), POISONED_PLIST);
-    process.env.GSTACK_CHROMIUM_PATH = exe;
+    const { appDir, exe } = makeApp(path.join(tmpDir, 'PaySec Browser.app-parent'), POISONED_PLIST);
+    process.env.PAYSEC_CHROMIUM_PATH = exe;
 
     expect(() => probePoisonedChromiumBundle(exe)).not.toThrow();
     expect(fs.existsSync(path.join(appDir, 'Contents', 'Info.plist'))).toBe(true);
@@ -136,7 +136,7 @@ describe('probePoisonedChromiumBundle — GSTACK_CHROMIUM_PATH is never deleted'
     // path. No call site may ever pass the custom-bundle env var.
     const calls = SRC.match(/probePoisonedChromiumBundle\(chromium\.executablePath\(\)\)/g) || [];
     expect(calls.length).toBeGreaterThanOrEqual(2);
-    expect(SRC).not.toMatch(/probePoisonedChromiumBundle\([^)]*GSTACK_CHROMIUM_PATH/);
+    expect(SRC).not.toMatch(/probePoisonedChromiumBundle\([^)]*PAYSEC_CHROMIUM_PATH/);
   });
 });
 

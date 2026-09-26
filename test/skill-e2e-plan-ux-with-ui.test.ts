@@ -1,8 +1,8 @@
 /**
- * /plan-design-review with UI scope (gate, paid, real-PTY).
+ * /plan-ux-review with UI scope (gate, paid, real-PTY).
  *
  * Counterpart to the existing no-UI early-exit test. When the input plan
- * DOES describe UI changes, /plan-design-review must NOT early-exit and
+ * DOES describe UI changes, /plan-ux-review must NOT early-exit and
  * must reach a real skill numbered-option AskUserQuestion (its first design-rating
  * question), with the captured evidence NOT echoing the early-exit phrase.
  *
@@ -11,8 +11,8 @@
  * exit — would pass the no-UI test (vacuously) and ship undetected. This
  * test is the positive coverage.
  *
- * How: launch claude in plan mode in the gstack repo cwd (so the skill
- * registry is loaded). Send /plan-design-review with the fixture path
+ * How: launch claude in plan mode in the paysec repo cwd (so the skill
+ * registry is loaded). Send /plan-ux-review with the fixture path
  * inline so the skill reviews the UI-heavy plan rather than git diff or
  * .claude/plans/. Drive past permission dialogs. Wait for a numbered-
  * option list that is NOT a permission dialog. Assert evidence does NOT
@@ -35,7 +35,7 @@ const describeE2E = describeE2ETier('gate');
 const ROOT = path.resolve(import.meta.dir, '..');
 const FIXTURE = path.join(ROOT, 'test', 'fixtures', 'plans', 'ui-heavy-feature.md');
 
-describeE2E('/plan-design-review with UI scope (gate)', () => {
+describeE2E('/plan-ux-review with UI scope (gate)', () => {
   test(
     'reaches a real skill AskUserQuestion (or plan_ready) without echoing the no-UI early-exit phrase',
     async () => {
@@ -58,7 +58,7 @@ describeE2E('/plan-design-review with UI scope (gate)', () => {
         // Send the slash command alone first; then provide the UI-heavy
         // plan content as a follow-up message. Claude Code rejects slash
         // commands with trailing arguments unless the skill defines them.
-        session.send('/plan-design-review\r');
+        session.send('/plan-ux-review\r');
         await Bun.sleep(3000);
         session.send(
           `Please review this plan for UI scope:\n\n` +
@@ -89,7 +89,7 @@ describeE2E('/plan-design-review with UI scope (gate)', () => {
 
           // Classify the recent tail only — old permission text persists
           // in visibleSince(since) and would otherwise re-trigger forever.
-          // 5KB window: plan-design-review Step 0 renders a numbered AUQ with
+          // 5KB window: plan-ux-review Step 0 renders a numbered AUQ with
           // box dividers + per-option descriptions + footer prompt. The full
           // rendering frequently exceeds 2.5KB, especially after TTY cursor-
           // positioning escapes resolve through stripAnsi. A 2.5KB tail can
@@ -138,14 +138,14 @@ describeE2E('/plan-design-review with UI scope (gate)', () => {
       // early-exit phrase.
       if (outcome === 'exited' || outcome === 'timeout') {
         throw new Error(
-          `plan-design-review with UI scope FAILED: outcome=${outcome}\n` +
+          `plan-ux-review with UI scope FAILED: outcome=${outcome}\n` +
             `--- buffer at timeout (last 4KB) ---\n${debugBuffer || evidence}`,
         );
       }
       const NO_UI_PHRASE = /no\s+UI\s+scope|isn'?t\s+applicable/i;
       if (NO_UI_PHRASE.test(evidence)) {
         throw new Error(
-          `plan-design-review early-exited despite UI-heavy fixture.\n` +
+          `plan-ux-review early-exited despite UI-heavy fixture.\n` +
             `--- evidence (last 3KB) ---\n${evidence}`,
         );
       }

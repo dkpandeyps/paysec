@@ -3,8 +3,8 @@
  * generateGBrainContextLoad (compressed in v1.50.0.0).
  *
  * Two coverage stories:
- *   1. **Wiring symmetry**: all 5 planning skills (office-hours, plan-ceo-review,
- *      plan-eng-review, plan-design-review, plan-devex-review) get the correct
+ *   1. **Wiring symmetry**: all 5 planning skills (idea-review, plan-business-review,
+ *      plan-tech-review, plan-ux-review, plan-dx-review) get the correct
  *      slug prefix + tag in the emitted save instructions.
  *   2. **Token-budget pin**: post-compression, each block stays under a chars
  *      ceiling so a future "let me just add one more line" refactor doesn't
@@ -35,11 +35,11 @@ function buildCtx(skillName: string): TemplateContext {
 // add it here AND in scripts/resolvers/gbrain.ts skillSaveMap. If you rename
 // one, this test will fail loudly — that's the regression pin working.
 const PLANNING_SKILLS: Array<{ skill: string; slugPrefix: string; tag: string; title: string }> = [
-  { skill: 'office-hours',       slugPrefix: 'office-hours/',    tag: 'design-doc',    title: 'Office Hours' },
-  { skill: 'plan-ceo-review',    slugPrefix: 'ceo-plans/',       tag: 'ceo-plan',      title: 'CEO Plan' },
-  { skill: 'plan-eng-review',    slugPrefix: 'eng-reviews/',     tag: 'eng-review',    title: 'Eng Review' },
-  { skill: 'plan-design-review', slugPrefix: 'design-reviews/',  tag: 'design-review', title: 'Design Review' },
-  { skill: 'plan-devex-review',  slugPrefix: 'devex-reviews/',   tag: 'devex-review',  title: 'Devex Review' },
+  { skill: 'idea-review',       slugPrefix: 'idea-review/',    tag: 'design-doc',    title: 'Office Hours' },
+  { skill: 'plan-business-review',    slugPrefix: 'ceo-plans/',       tag: 'ceo-plan',      title: 'CEO Plan' },
+  { skill: 'plan-tech-review',    slugPrefix: 'eng-reviews/',     tag: 'eng-review',    title: 'Eng Review' },
+  { skill: 'plan-ux-review', slugPrefix: 'design-reviews/',  tag: 'design-qa', title: 'Design Review' },
+  { skill: 'plan-dx-review',  slugPrefix: 'devex-reviews/',   tag: 'dx-audit',  title: 'Devex Review' },
 ];
 
 describe('generateGBrainSaveResults — wiring + compression pin', () => {
@@ -109,7 +109,7 @@ describe('generateGBrainContextLoad — compression pin', () => {
     // Same compression discipline as SAVE_RESULTS. Context load was ~350-450
     // tokens before compression; target ~80 tokens (~320 chars). Ceiling
     // generous at 500 chars to leave room for skill-specific suffixes.
-    const out = generateGBrainContextLoad(buildCtx('plan-ceo-review'));
+    const out = generateGBrainContextLoad(buildCtx('plan-business-review'));
     expect(out).toContain('Skip this entire section if `gbrain` is not on PATH');
     expect(out).toContain('docs/gbrain-write-surfaces.md');
     expect(out).toContain('gbrain search');
@@ -123,8 +123,8 @@ describe('generateGBrainContextLoad — compression pin', () => {
     }
   });
 
-  test('/investigate gets the data-research routing suffix', () => {
-    const out = generateGBrainContextLoad(buildCtx('investigate'));
+  test('/debug-root-cause gets the data-research routing suffix', () => {
+    const out = generateGBrainContextLoad(buildCtx('debug-root-cause'));
     expect(out).toContain('data-research');
   });
 

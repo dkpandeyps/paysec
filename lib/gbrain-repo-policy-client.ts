@@ -1,10 +1,10 @@
 /**
  * gbrain-repo-policy-client — the ONE TypeScript client for the per-remote
- * trust store (bin/gstack-gbrain-repo-policy, a bash CLI that owns URL
+ * trust store (bin/paysec-gbrain-repo-policy, a bash CLI that owns URL
  * normalization and schema migration — do not reimplement either here).
  *
  * Extracted because two call sites (lib/code-intelligence/selection.ts consent
- * veto; bin/gstack-gbrain-sync.ts code-import gate) each spawnSync'd the script
+ * veto; bin/paysec-gbrain-sync.ts code-import gate) each spawnSync'd the script
  * themselves and had started to drift. On win32, spawning a
  * `#!/usr/bin/env bash` script directly fails ENOENT, which both sites'
  * fail-closed paths then reported as "store could not be read" for EVERY repo
@@ -37,9 +37,9 @@ export interface RepoPolicyResult {
   error?: "unreadable" | "spawn-failed";
 }
 
-/** Absolute path of the policy store for this env (GSTACK_HOME-aware). */
+/** Absolute path of the policy store for this env (PAYSEC_HOME-aware). */
 export function repoPolicyStorePath(env: NodeJS.ProcessEnv = process.env): string {
-  const home = env.GSTACK_HOME || join(env.HOME || homedir(), ".gstack");
+  const home = env.PAYSEC_HOME || join(env.HOME || homedir(), ".paysec");
   return join(home, "gbrain-repo-policy.json");
 }
 
@@ -49,10 +49,10 @@ export function hasRepoPolicyStore(env: NodeJS.ProcessEnv = process.env): boolea
 }
 
 /** The bash script that owns the store — resolved relative to this file (lib/ → bin/), never cwd. */
-const POLICY_SCRIPT = join(import.meta.dir, "..", "bin", "gstack-gbrain-repo-policy");
+const POLICY_SCRIPT = join(import.meta.dir, "..", "bin", "paysec-gbrain-repo-policy");
 
 /**
- * Trust tier for a remote URL, via `gstack-gbrain-repo-policy get <url>`.
+ * Trust tier for a remote URL, via `paysec-gbrain-repo-policy get <url>`.
  *
  * Fast paths (no subprocess): no store on disk → `none`; no remote URL →
  * `none` (policy is keyed by origin remote, so nothing can be set for the
@@ -69,7 +69,7 @@ export function repoPolicyTier(url: string | null, env: NodeJS.ProcessEnv = proc
     encoding: "utf-8",
     timeout: 10_000,
     // Explicit env: Bun's spawnSync default env snapshot misses runtime
-    // process.env mutations (e.g. tests redirecting GSTACK_HOME).
+    // process.env mutations (e.g. tests redirecting PAYSEC_HOME).
     env: { ...env } as NodeJS.ProcessEnv,
   });
   if (res.error) {

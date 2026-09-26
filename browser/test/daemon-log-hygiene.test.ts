@@ -58,7 +58,7 @@ describe('#2461 daemon log wiring', () => {
   test('rotation behavior: oversized rotates to a single .1 generation, small/missing are no-ops', () => {
     const os = require('os');
     const { rotateDaemonLogIfOversized } = require('../src/cli');
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-daemon-log-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-daemon-log-'));
     try {
       const p = path.join(tmp, 'browse-daemon.log');
       // Missing log: no throw (first launch).

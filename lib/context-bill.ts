@@ -1,5 +1,5 @@
 /**
- * gstack context-bill — token bill-of-materials for an installed gstack skills tree.
+ * paysec context-bill — token bill-of-materials for an installed paysec skills tree.
  *
  * Read-only, offline, deterministic. Ledgers over pure file reads:
  *   ALWAYS-ON  per-skill YAML frontmatter bytes (what every session's skill
@@ -49,7 +49,7 @@ const FOREIGN_SKILL_FILE = /^(skill\.(ya?ml|json)|agents?\.md|\.cursorrules|\.wi
  *
  * Calibration corpus: 219 `.md` skill files plus their frontmatter blocks,
  * measured 2026-08-01 against `claude-opus-4-5` with the per-request message
- * envelope subtracted. Regenerate with `gstack-context-bill <tree> --exact
+ * envelope subtracted. Regenerate with `paysec-context-bill <tree> --exact
  * --json` and read the `calibration` block, which grades this estimate
  * against measured counts file by file.
  *
@@ -222,7 +222,7 @@ function totalMd(dir: string, tokensOf: TokensOf): { bytes: number; tokens: numb
   let bytes = 0;
   let tokens = 0;
   for (const p of walkMd(dir)) {
-    // A skill dir that CONTAINS other skill dirs (the gstack root skill wraps
+    // A skill dir that CONTAINS other skill dirs (the paysec root skill wraps
     // the whole tree) must not swallow its children's files: each nested
     // skill reports its own totalMd, and the grand total sums per-skill
     // figures — counting them here again double-counted every nested skill
@@ -329,8 +329,8 @@ export function parseSkill(skillDir: string, name: string, tokensOf: TokensOf = 
  * fixtures) is never another skill.
  *
  * Repo-checkout subdirs are skipped (upstream install layout fix): an
- * installed ~/.claude/skills tree contains flat skill dirs PLUS a full gstack
- * repo checkout (`gstack/`, with .git). Its nested SKILL.md files are the
+ * installed ~/.claude/skills tree contains flat skill dirs PLUS a full paysec
+ * repo checkout (`paysec/`, with .git). Its nested SKILL.md files are the
  * repo's sources, not installed skills of the tree being billed.
  *
  * Directory symlinks are followed (setup's shell glob follows them, so a
@@ -862,16 +862,16 @@ function detectDefaultTree(cwd: string, homeDir: string): string | null {
 
 const USAGE =
   "Usage:\n" +
-  "  gstack-context-bill [TREE] [--json] [--skill <name>]\n" +
-  "  gstack-context-bill --diff <treeA> <treeB> [--json]\n" +
-  "  gstack-context-bill [TREE] --budget <budget.json> [--json]\n" +
+  "  paysec-context-bill [TREE] [--json] [--skill <name>]\n" +
+  "  paysec-context-bill --diff <treeA> <treeB> [--json]\n" +
+  "  paysec-context-bill [TREE] --budget <budget.json> [--json]\n" +
   "\n" +
   "  --exact              measure tokens with Anthropic's count_tokens instead of\n" +
   "                       estimating. Off by default: it sends the content of every\n" +
   "                       .md file in the tree to api.anthropic.com. Needs\n" +
   "                       ANTHROPIC_API_KEY; passing --exact is the consent. An\n" +
   "                       egress receipt is written before the send (see\n" +
-  "                       gstack-egress); if it cannot be written, the run falls\n" +
+  "                       paysec-egress); if it cannot be written, the run falls\n" +
   "                       back to the offline estimate.\n" +
   "                       --exact also recalibrates: the --json output's\n" +
   "                       `calibration` block grades the offline divisors\n" +

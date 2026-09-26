@@ -1,5 +1,5 @@
 /**
- * /ship test-failure ownership triage E2E.
+ * /ship-pr test-failure ownership triage E2E.
  *
  * Rehomed VERBATIM from the pre-split monolith (test/skill-e2e.test.ts,
  * deleted on this branch): the monolith's filename never matched the paid
@@ -9,10 +9,10 @@
  *
  * DRIFT WARNING (attribution for the first paid run after rehoming): the
  * prompt references "Test Failure Ownership Triage (Steps T1-T4)" — no
- * such section exists in the current generated ship/SKILL.md (the skill
+ * such section exists in the current generated ship-pr/SKILL.md (the skill
  * drifted while this test was a zombie). The body is copied faithfully
  * (no behavioral edits), so a failure here indicts the drift, not the
- * move. The only change vs the monolith body: the staged ship/SKILL.md is
+ * move. The only change vs the monolith body: the staged ship-pr/SKILL.md is
  * extracted via test/helpers/skill-fixture.ts (extractSkillBody — full
  * skill-specific body, shared preamble dropped) per CLAUDE.md
  * "E2E test fixtures: extract, don't copy".
@@ -44,10 +44,10 @@ describeIfSelected('Test Failure Triage E2E', ['ship-triage'], () => {
 
     // Copy ship skill files, then replace the SKILL.md with the extracted
     // skill body (extract, don't copy).
-    copyDirSync(path.join(ROOT, 'ship'), path.join(triageDir, 'ship'));
+    copyDirSync(path.join(ROOT, 'ship-pr'), path.join(triageDir, 'ship'));
     fs.writeFileSync(
-      path.join(triageDir, 'ship', 'SKILL.md'),
-      extractSkillBody(path.join(ROOT, 'ship')),
+      path.join(triageDir, 'ship-pr', 'SKILL.md'),
+      extractSkillBody(path.join(ROOT, 'ship-pr')),
     );
 
     const run = (cmd: string, args: string[]) =>
@@ -152,9 +152,9 @@ try {
     try { fs.rmSync(triageDir, { recursive: true, force: true }); } catch {}
   });
 
-  test('/ship triage correctly classifies in-branch vs pre-existing failures', async () => {
+  test('/ship-pr triage correctly classifies in-branch vs pre-existing failures', async () => {
     const result = await runSkillTest({
-      prompt: `Read the file ship/SKILL.md for the ship workflow instructions.
+      prompt: `Read the file ship-pr/SKILL.md for the ship workflow instructions.
 
 You are on the feature/string-utils branch. The base branch is main.
 This is a test project — there is no remote, no PR to create.
@@ -183,7 +183,7 @@ This is a solo repo (REPO_MODE=solo). For pre-existing failures, recommend fixin
       runId,
     });
 
-    logCost('/ship triage', result);
+    logCost('/ship-pr triage', result);
 
     const output = result.output || '';
     const outputLower = output.toLowerCase();
@@ -210,7 +210,7 @@ This is a solo repo (REPO_MODE=solo). For pre-existing failures, recommend fixin
     console.log(`Ran math test file (pre-existing failure): ${ranMathTest}`);
     console.log(`Ran string test file (in-branch failure): ${ranStringTest}`);
 
-    recordE2E(evalCollector, '/ship triage', 'Test Failure Triage E2E', result, {
+    recordE2E(evalCollector, '/ship-pr triage', 'Test Failure Triage E2E', result, {
       passed: result.exitReason === 'success' && hasInBranch && hasPreExisting,
       has_in_branch_classification: hasInBranch,
       has_pre_existing_classification: hasPreExisting,

@@ -1,6 +1,6 @@
 {
   "$schema": "https://gstack.dev/schemas/section-manifest.json",
-  "skill": "plan-eng-review",
+  "skill": "plan-tech-review",
   "version": 1,
   "note": "PASSIVE registry (v2 plan T9 / CM2). id/file/title/trigger text ONLY. The skeleton's decision-tree prose decides WHEN to read. No machine predicate here — see docs/designs/v2_PLAN.md.",
   "sections": [

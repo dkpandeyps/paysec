@@ -1,5 +1,5 @@
 /**
- * /plan-ceo-review split-overflow regression (periodic, paid, real-PTY).
+ * /plan-business-review split-overflow regression (periodic, paid, real-PTY).
  *
  * Catches the original failure mode the user complained about: when the
  * agent has 5+ options for ONE conceptual decision, it must split into N
@@ -19,8 +19,8 @@
  * finding-count tests, which accounts for one expected scope-reduction
  * call before the per-option chain begins).
  *
- * Why a separate test from skill-e2e-plan-ceo-finding-count and
- * skill-e2e-plan-eng-multi-finding-batching:
+ * Why a separate test from skill-e2e-plan-business-finding-count and
+ * skill-e2e-plan-tech-multi-finding-batching:
  *   - finding-count tests fire one AUQ per finding (Architecture, Code
  *     Quality, etc) — they exercise the "one issue per call" rule, not
  *     the "5+ options for ONE decision" split rule.
@@ -46,9 +46,9 @@ const describeE2E = describeE2ETier('periodic');
 const N = 5;
 const FLOOR = N - 1; // 4 — must fire at least one AUQ per non-dropped option
 
-const PLAN_PATH = '/tmp/gstack-test-plan-ceo-split-overflow.md';
+const PLAN_PATH = '/tmp/paysec-test-plan-ceo-split-overflow.md';
 
-describeE2E('/plan-ceo-review split-overflow regression (periodic)', () => {
+describeE2E('/plan-business-review split-overflow regression (periodic)', () => {
   test(
     `5-option scope decision emits >= ${FLOOR} review-phase AskUserQuestions (no dropping)`,
     async () => {
@@ -59,8 +59,8 @@ describeE2E('/plan-ceo-review split-overflow regression (periodic)', () => {
       }
 
       const obs = await runPlanSkillCounting({
-        skillName: 'plan-ceo-review',
-        slashCommand: '/plan-ceo-review',
+        skillName: 'plan-business-review',
+        slashCommand: '/plan-business-review',
         followUpPrompt: FORCING_SPLIT_OVERFLOW_CEO,
         isLastStep0AUQ: ceoStep0Boundary,
         reviewCountCeiling: N + 3, // hard cap above floor + tolerance

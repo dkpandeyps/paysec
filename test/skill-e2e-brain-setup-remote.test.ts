@@ -1,4 +1,4 @@
-// E2E: /setup-gbrain Path 4 (Remote MCP) happy path via Agent SDK.
+// E2E: /brain-setup Path 4 (Remote MCP) happy path via Agent SDK.
 //
 // Drives the skill against a stub HTTP MCP server and a stubbed `claude`
 // binary that records `claude mcp add` calls. Asserts:
@@ -9,7 +9,7 @@
 //
 // Cost: ~$0.30-$0.50 per run. Gate-tier (EVALS=1 EVALS_TIER=gate).
 //
-// See setup-gbrain/SKILL.md.tmpl Step 4 (Path 4) for the contract under test.
+// See brain-setup/SKILL.md.tmpl Step 4 (Path 4) for the contract under test.
 
 import { test, expect } from 'bun:test';
 import { describeE2ETier } from './helpers/e2e-gate';
@@ -115,16 +115,16 @@ exit 0
   return callLog;
 }
 
-describeE2E('/setup-gbrain Path 4 (Remote MCP) — happy path', () => {
+describeE2E('/brain-setup Path 4 (Remote MCP) — happy path', () => {
   test('verifies, registers HTTP MCP, never writes token to CLAUDE.md', async () => {
     const stubServer = await startStubMcpServer();
-    const gstackHome = fs.mkdtempSync(path.join(os.tmpdir(), 'setup-gbrain-remote-'));
+    const paysecHome = fs.mkdtempSync(path.join(os.tmpdir(), 'setup-gbrain-remote-'));
     const fakeBinDir = fs.mkdtempSync(path.join(os.tmpdir(), 'setup-gbrain-remote-bin-'));
     const callLog = makeFakeClaude(fakeBinDir);
 
-    // The skill writes CLAUDE.md in cwd. Use gstackHome as cwd so we
+    // The skill writes CLAUDE.md in cwd. Use paysecHome as cwd so we
     // can inspect it after the run.
-    fs.writeFileSync(path.join(gstackHome, 'CLAUDE.md'), '# Test project\n');
+    fs.writeFileSync(path.join(paysecHome, 'CLAUDE.md'), '# Test project\n');
 
     const SECRET_TOKEN = 'gbrain_TEST_TOKEN_THAT_MUST_NEVER_LEAK_84613';
     const askUserQuestions: Array<{ input: Record<string, unknown> }> = [];
@@ -132,11 +132,11 @@ describeE2E('/setup-gbrain Path 4 (Remote MCP) — happy path', () => {
 
     // Per-test child env, passed via opts.env (merges last over the complete
     // hermetic env). Ambient process.env mutations DO NOT reach children:
-    // hermetic-env scrubs GBRAIN_*/GSTACK_* by allowlist — this test's token
+    // hermetic-env scrubs GBRAIN_*/PAYSEC_* by allowlist — this test's token
     // silently never arrived from the day hermetic env landed, and the child
     // correctly stopped at Step 4c with NEEDS_CONTEXT.
     const childEnv = {
-      GSTACK_HOME: gstackHome,
+      PAYSEC_HOME: paysecHome,
       GBRAIN_MCP_TOKEN: SECRET_TOKEN,
       PATH: `${fakeBinDir}:${path.join(path.resolve(import.meta.dir, '..'), 'bin')}:${process.env.PATH ?? '/usr/bin:/bin:/opt/homebrew/bin'}`,
     };
@@ -144,7 +144,7 @@ describeE2E('/setup-gbrain Path 4 (Remote MCP) — happy path', () => {
     let modelTextOutput = '';
 
     try {
-      const skillPath = path.resolve(import.meta.dir, '..', 'setup-gbrain', 'SKILL.md');
+      const skillPath = path.resolve(import.meta.dir, '..', 'brain-setup', 'SKILL.md');
       const result = await runAgentSdkTest({
         systemPrompt: { type: 'preset', preset: 'claude_code' },
         env: childEnv,
@@ -156,7 +156,7 @@ describeE2E('/setup-gbrain Path 4 (Remote MCP) — happy path', () => {
           `Skip the artifacts-repo provisioning step (Step 7) — answer "No thanks". ` +
           `Skip per-remote policy (Step 6) — answer "skip-for-now". ` +
           `Walk through Steps 4a, 4b, 4c, 5a, 8, 10 ONLY.`,
-        workingDirectory: gstackHome,
+        workingDirectory: paysecHome,
         maxTurns: 25,
         allowedTools: ['Read', 'Grep', 'Glob', 'Bash', 'Write', 'Edit'],
         ...(binary ? { pathToClaudeCodeExecutable: binary } : {}),
@@ -213,7 +213,7 @@ describeE2E('/setup-gbrain Path 4 (Remote MCP) — happy path', () => {
       expect(calls).toMatch(/mcp add.*--transport http/);
 
       // Assertion 3: the secret token NEVER appears in the final CLAUDE.md.
-      const claudeMd = fs.readFileSync(path.join(gstackHome, 'CLAUDE.md'), 'utf-8');
+      const claudeMd = fs.readFileSync(path.join(paysecHome, 'CLAUDE.md'), 'utf-8');
       expect(claudeMd).not.toContain(SECRET_TOKEN);
 
       // Assertion 4: CLAUDE.md got the remote-http block.
@@ -224,16 +224,16 @@ describeE2E('/setup-gbrain Path 4 (Remote MCP) — happy path', () => {
       // skipped, that's the wrote_findings_before_asking pattern.
       // Scan the ASSISTANT's text only: modelTextOutput serializes every
       // event including the child's Read of the skill file, whose generated
-      // footer contains the literal "GSTACK REVIEW REPORT" — a guaranteed
+      // footer contains the literal "PAYSEC REVIEW REPORT" — a guaranteed
       // false positive on both trees.
-      const wroteBefore = /## GSTACK REVIEW REPORT|critical_gaps/i.test(result.output);
+      const wroteBefore = /## PAYSEC REVIEW REPORT|critical_gaps/i.test(result.output);
       // Setup-gbrain doesn't have a review report contract, so this is
       // a structural shape check, not a hard failure mode.
       expect(wroteBefore).toBe(false);
     } finally {
       // (no ambient process.env mutations to restore — env goes via opts.env)
       await stubServer.close();
-      fs.rmSync(gstackHome, { recursive: true, force: true });
+      fs.rmSync(paysecHome, { recursive: true, force: true });
       fs.rmSync(fakeBinDir, { recursive: true, force: true });
     }
   }, 240_000);

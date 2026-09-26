@@ -7,7 +7,7 @@
  *    the TEST process env, spawns a child through the real runner, and
  *    asserts from the Bash tool_result in the stream-json transcript (never
  *    the model's prose — prose can hallucinate) that the child saw a temp
- *    `/.claude` config dir, a temp GSTACK_HOME, and none of the planted
+ *    `/.claude` config dir, a temp PAYSEC_HOME, and none of the planted
  *    contamination. Auth hermeticity: hard-fails when ANTHROPIC_API_KEY is
  *    absent (a skip here would be a silent hole), and asserts
  *    total_cost_usd > 0 — subscription/keychain OAuth reports cost 0, so
@@ -89,7 +89,7 @@ describeIfSelected('hermetic isolation canaries', ['hermetic-canary', 'hermetic-
         // shell snapshot) a bare expansion of an unset var errors the whole
         // command — making the canary fail exactly when isolation succeeds.
         prompt: 'Run exactly this bash command and then stop: ' +
-          'echo "CFG=${CLAUDE_CONFIG_DIR:-}"; echo "GH=${GSTACK_HOME:-}"; ' +
+          'echo "CFG=${CLAUDE_CONFIG_DIR:-}"; echo "GH=${PAYSEC_HOME:-}"; ' +
           'echo "CW=${CONDUCTOR_WORKSPACE_PATH:-}"; echo "GP=${GBRAIN_POISON_PROBE:-}"',
         workingDirectory: workDir,
         maxTurns: 3,
@@ -107,8 +107,8 @@ describeIfSelected('hermetic isolation canaries', ['hermetic-canary', 'hermetic-
       // Deterministic: assert the Bash tool OUTPUT, not the model's prose.
       const bashOut = toolResultText(result.transcript);
       const cfg = bashOut.match(/CFG=(\S*)/)?.[1] ?? '';
-      expect(cfg).toMatch(/gstack-hermetic-.*\/\.claude$/);
-      expect(bashOut).toMatch(/GH=\S*gstack-home/);
+      expect(cfg).toMatch(/paysec-hermetic-.*\/\.claude$/);
+      expect(bashOut).toMatch(/GH=\S*paysec-home/);
       // Planted contamination must not reach the child. CLAUDECODE is NOT
       // probed here: the child claude CLI sets CLAUDECODE=1 for its own tool
       // subprocesses (verified empirically — CI behaves identically), so the
@@ -172,7 +172,7 @@ describeIfSelected('hermetic isolation canaries', ['hermetic-canary', 'hermetic-
       const cfg = bashOut.match(/CFG=(\S*)/)?.[1] ?? '';
       // The redirect must beat the poisoned operator value...
       expect(cfg).not.toBe(poisonCfg);
-      expect(cfg).toMatch(/gstack-hermetic-.*\/\.claude$/);
+      expect(cfg).toMatch(/paysec-hermetic-.*\/\.claude$/);
       // ...and the active config dir must not carry the poisoned user memory.
       expect(bashOut).toContain('USER_MD=absent');
 

@@ -48,7 +48,7 @@ describe('validateNavigationUrl', () => {
   });
 
   // The daemon opens its own first tab on about:blank, so blocking it meant a restarted
-  // daemon could never initialise — and `make-pdf setup`, whose Chromium smoke test is
+  // daemon could never initialise — and `md-to-pdf setup`, whose Chromium smoke test is
   // `browse newtab about:blank`, reported "Chromium failed to launch" on a healthy browser.
   it('allows about:blank — the daemon opens its own first tab there', async () => {
     await expect(validateNavigationUrl('about:blank')).resolves.toBe('about:blank');

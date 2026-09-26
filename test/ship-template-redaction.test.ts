@@ -1,5 +1,5 @@
 /**
- * /ship redaction wiring (T5/T11). The PR body + title are scanned at-sink before
+ * /ship-pr redaction wiring (T5/T11). The PR body + title are scanned at-sink before
  * create AND edit; tool output goes in attributed fences so example credentials
  * WARN-degrade instead of blocking; create/edit file from the scanned temp file.
  */
@@ -13,8 +13,8 @@ const ROOT = path.resolve(import.meta.dir, "..");
 // PR-body redaction wiring moved into sections/pr-body.md.tmpl, so assert against
 // the union of the skeleton template and its section templates.
 function readShipTemplateUnion(): string {
-  let t = fs.readFileSync(path.join(ROOT, "ship", "SKILL.md.tmpl"), "utf-8");
-  const secDir = path.join(ROOT, "ship", "sections");
+  let t = fs.readFileSync(path.join(ROOT, "ship-pr", "SKILL.md.tmpl"), "utf-8");
+  const secDir = path.join(ROOT, "ship-pr", "sections");
   if (fs.existsSync(secDir)) {
     for (const f of fs.readdirSync(secDir).sort()) {
       if (f.endsWith(".md.tmpl")) t += "\n" + fs.readFileSync(path.join(secDir, f), "utf-8");
@@ -24,9 +24,9 @@ function readShipTemplateUnion(): string {
 }
 const TMPL = readShipTemplateUnion();
 
-describe("/ship redaction wiring", () => {
+describe("/ship-pr redaction wiring", () => {
   test("scans the PR body via the shared bin before create", () => {
-    expect(TMPL).toContain("gstack-redact --from-file");
+    expect(TMPL).toContain("paysec-redact --from-file");
     expect(TMPL).toMatch(/Redaction scan \(PR body \+ title\)/);
   });
   test("creates from the scanned temp file (exact bytes)", () => {
@@ -49,7 +49,7 @@ describe("/ship redaction wiring", () => {
   });
 });
 
-describe("tool-attributed fence behavior (engine contract /ship relies on)", () => {
+describe("tool-attributed fence behavior (engine contract /ship-pr relies on)", () => {
   test("a doc-example credential inside a tool fence WARN-degrades, does not block", () => {
     const body = "## Codex review\n```codex-review\nflagged your_aws_key AKIAIOSFODNN7EXAMPLE\n```";
     const r = scan(body, { repoVisibility: "public" });

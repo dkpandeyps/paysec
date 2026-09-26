@@ -9,8 +9,8 @@ const ROOT = path.resolve(import.meta.dir, '..');
 let tmpHome: string;
 
 beforeEach(() => {
-  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-eval-list-'));
-  const evalDir = path.join(tmpHome, '.gstack-dev', 'evals');
+  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-eval-list-'));
+  const evalDir = path.join(tmpHome, '.paysec-dev', 'evals');
   fs.mkdirSync(evalDir, { recursive: true });
   writeEvalRun(evalDir, '2026-a.json', '2026-05-24T01:00:00Z', 2);
   writeEvalRun(evalDir, '2026-b.json', '2026-05-24T02:00:00Z', 3);
@@ -52,9 +52,9 @@ function writeEvalRun(evalDir: string, filename: string, timestamp: string, turn
 
 function runEvalList(...args: string[]): { stdout: string; stderr: string; status: number } {
   // cwd is the temp HOME, NOT the repo root: getProjectEvalDir() probes the
-  // cwd-relative .claude/skills/gstack/bin/gstack-slug, and on dev machines
+  // cwd-relative .claude/skills/paysec/bin/paysec-slug, and on dev machines
   // with the self-symlink that probe succeeds, routing reads to an (empty)
-  // project-scoped dir instead of the legacy ~/.gstack-dev/evals this test
+  // project-scoped dir instead of the legacy ~/.paysec-dev/evals this test
   // seeds. A neutral cwd makes both slug probes fail deterministically, so
   // the CLI always uses the seeded legacy dir — same behavior as CI.
   const result = spawnSync('bun', ['run', path.join(ROOT, 'scripts', 'eval-list.ts'), ...args], {
@@ -62,7 +62,7 @@ function runEvalList(...args: string[]): { stdout: string; stderr: string; statu
     env: {
       ...process.env,
       HOME: tmpHome,
-      GSTACK_HOME: path.join(tmpHome, '.gstack'),
+      PAYSEC_HOME: path.join(tmpHome, '.paysec'),
     },
     encoding: 'utf-8',
   });

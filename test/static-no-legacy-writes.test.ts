@@ -1,9 +1,9 @@
 /**
  * Static invariant test for #1671: nothing in production code should
- * append directly to ~/.gstack/builder-profile.jsonl. All session writes
- * must go through `gstack-developer-profile --log-session`. The legacy
+ * append directly to ~/.paysec/builder-profile.jsonl. All session writes
+ * must go through `paysec-developer-profile --log-session`. The legacy
  * file is now read-only — populated only by the pre-existing migration
- * and reconcile paths in bin/gstack-developer-profile.
+ * and reconcile paths in bin/paysec-developer-profile.
  *
  * Prevents future regressions onto the legacy file that would re-create
  * the original bug (writer and reader disagreeing on storage location).
@@ -22,21 +22,21 @@ const ROOT = path.resolve(import.meta.dir, '..');
 // or document its existence — they do not write to it.
 const ALLOWED_FILES = new Set<string>([
   // The binary that reads + reconciles the legacy file.
-  'bin/gstack-developer-profile',
+  'bin/paysec-developer-profile',
   // The legacy-shim binary that delegates reads.
-  'bin/gstack-builder-profile',
+  'bin/paysec-builder-profile',
   // Memory-ingest reads the legacy file during reconcile period.
-  'bin/gstack-memory-ingest.ts',
+  'bin/paysec-memory-ingest.ts',
   // The artifacts-init template registers the legacy file in
   // .brain-allowlist/.brain-privacy-map for users with pre-existing data.
-  'bin/gstack-artifacts-init',
+  'bin/paysec-artifacts-init',
   // Documentation files mention the path.
   'CHANGELOG.md',
   'TODOS.md',
   'README.md',
-  'office-hours/SKILL.md.tmpl',
-  'office-hours/SKILL.md',
-  'setup-gbrain/memory.md',
+  'idea-review/SKILL.md.tmpl',
+  'idea-review/SKILL.md',
+  'brain-setup/memory.md',
   'docs/designs/FIX_1671_PROFILE_MIGRATION.md',
   'docs/designs/PLAN_TUNING_V0.md',
   'docs/designs/PLAN_TUNING_V1.md',
@@ -45,11 +45,11 @@ const ALLOWED_FILES = new Set<string>([
 // Directories to skip when walking the repo. Everything else is in scope —
 // any skill dir, migration script, resolver, or new top-level dir gets
 // covered automatically as the repo grows. Catches the "future contributor
-// adds the legacy write in retro/SKILL.md.tmpl" regression class.
+// adds the legacy write in weekly-retro/SKILL.md.tmpl" regression class.
 const SKIP_DIRS = new Set<string>([
   'node_modules', '.git', '.github', 'dist', 'test', 'docs',
   // Vendored binaries / build outputs.
-  'browse/dist', 'design/dist', 'extension/node_modules',
+  'browser/dist', 'design/dist', 'extension/node_modules',
   // The plan file's directory was already in ALLOWED_FILES; skip docs/ entirely.
 ]);
 
@@ -122,23 +122,23 @@ describe('#1671 invariant: no production code writes to builder-profile.jsonl', 
       throw new Error(
         `Found production writes to builder-profile.jsonl outside the allowlist.\n` +
           `These would re-create #1671 (writer/reader file mismatch).\n` +
-          `Use \`gstack-developer-profile --log-session\` instead.\n${msg}`,
+          `Use \`paysec-developer-profile --log-session\` instead.\n${msg}`,
       );
     }
     expect(offending).toEqual([]);
   });
 
-  test('office-hours/SKILL.md uses --log-session, not raw echo append', () => {
-    const skill = fs.readFileSync(path.join(ROOT, 'office-hours/SKILL.md'), 'utf-8');
+  test('idea-review/SKILL.md uses --log-session, not raw echo append', () => {
+    const skill = fs.readFileSync(path.join(ROOT, 'idea-review/SKILL.md'), 'utf-8');
     // The two known writer call-sites must use the new subcommand.
-    expect(skill).toContain('gstack-developer-profile --log-session');
+    expect(skill).toContain('paysec-developer-profile --log-session');
     // And must NOT contain the old echo-append pattern.
     expect(skill).not.toMatch(/echo\s+['"][^'"]*['"]?\s*>>\s*["'][^"']*builder-profile\.jsonl/);
   });
 
-  test('office-hours/SKILL.md.tmpl uses --log-session, not raw echo append', () => {
-    const tmpl = fs.readFileSync(path.join(ROOT, 'office-hours/SKILL.md.tmpl'), 'utf-8');
-    expect(tmpl).toContain('gstack-developer-profile --log-session');
+  test('idea-review/SKILL.md.tmpl uses --log-session, not raw echo append', () => {
+    const tmpl = fs.readFileSync(path.join(ROOT, 'idea-review/SKILL.md.tmpl'), 'utf-8');
+    expect(tmpl).toContain('paysec-developer-profile --log-session');
     expect(tmpl).not.toMatch(/echo\s+['"][^'"]*['"]?\s*>>\s*["'][^"']*builder-profile\.jsonl/);
   });
 });

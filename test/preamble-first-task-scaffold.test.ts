@@ -5,11 +5,11 @@ import os from 'node:os';
 import path from 'node:path';
 
 // P4 first-run scaffold (activation lift). Two surfaces under test:
-//   1. bin/gstack-first-task-detect — classifies a repo into ONE enum bucket.
+//   1. bin/paysec-first-task-detect — classifies a repo into ONE enum bucket.
 //   2. The unified first-run-guidance preamble wiring (generated into SKILL.md).
 
 const ROOT = path.join(import.meta.dir, '..');
-const DETECT = path.join(ROOT, 'bin', 'gstack-first-task-detect');
+const DETECT = path.join(ROOT, 'bin', 'paysec-first-task-detect');
 
 // The complete, closed set the detector is ever allowed to emit. The eval-safety
 // guarantee is that nothing outside this set ever reaches the preamble.
@@ -42,7 +42,7 @@ function freshRepo(name: string): string {
   return d;
 }
 
-describe('gstack-first-task-detect — bucket classification', () => {
+describe('paysec-first-task-detect — bucket classification', () => {
   test('non-git directory → nongit', () => {
     const d = path.join(tmp, 'plain'); fs.mkdirSync(d, { recursive: true });
     expect(detect(d)).toBe('nongit');
@@ -136,7 +136,7 @@ describe('gstack-first-task-detect — bucket classification', () => {
   });
 });
 
-describe('gstack-first-task-detect — contract', () => {
+describe('paysec-first-task-detect — contract', () => {
   test('output is always a whitelisted enum token or empty (eval-safe)', () => {
     for (const name of ['plain', 'green', 'node', 'py', 'clone', 'dirty', 'clean']) {
       const out = detect(path.join(tmp, name));
@@ -150,11 +150,11 @@ describe('gstack-first-task-detect — contract', () => {
 });
 
 describe('first-run-guidance preamble wiring (generated)', () => {
-  const md = fs.readFileSync(path.join(ROOT, 'ship', 'SKILL.md'), 'utf-8');
+  const md = fs.readFileSync(path.join(ROOT, 'ship-pr', 'SKILL.md'), 'utf-8');
 
   test('detection is gated to the first-ever run only (ACTIVATED=no, not headless)', () => {
     expect(md).toContain('if [ "$_ACTIVATED" = "no" ] && [ "$_SESSION_KIND" != "headless" ]');
-    expect(md).toContain('gstack-first-task-detect');
+    expect(md).toContain('paysec-first-task-detect');
   });
 
   test('emits the unified first-run guidance section branching on ACTIVATED', () => {
@@ -165,7 +165,7 @@ describe('first-run-guidance preamble wiring (generated)', () => {
 
   test('marks activated + logs the scaffold telemetry only on the shown path', () => {
     expect(md).toContain('first_task_scaffold_shown');
-    expect(md).toContain('touch ~/.gstack/.activated');
-    expect(md).toContain('touch ~/.gstack/.first-loop-tip-shown');
+    expect(md).toContain('touch ~/.paysec/.activated');
+    expect(md).toContain('touch ~/.paysec/.first-loop-tip-shown');
   });
 });

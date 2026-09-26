@@ -22,8 +22,8 @@
  * - True cadence eval (3 findings → 3 distinct asks across turns). Current
  *   $OUT_FILE harness captures ONE would-be question per session. Multi-turn
  *   cadence needs new harness support. Filed in TODOs.
- * - Expanded coverage for /ship /office-hours /investigate /qa /review
- *   /design-review /document-release. Touchfiles entries already exist; eval
+ * - Expanded coverage for /ship-pr /idea-review /debug-root-cause /qa-fix /pr-review
+ *   /design-qa /docs-release-update. Touchfiles entries already exist; eval
  *   cases will land as follow-up PRs per skill.
  */
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
@@ -142,7 +142,7 @@ describeIfSelected('Plan Prosons — Format Positive', ['plan-review-prosons-for
   let outFile: string;
 
   beforeAll(() => {
-    planDir = setupPlanDir('skill-e2e-plan-prosons-format-', TRADEOFF_PLAN, 'plan-ceo-review');
+    planDir = setupPlanDir('skill-e2e-plan-prosons-format-', TRADEOFF_PLAN, 'plan-business-review');
     outFile = path.join(planDir, 'ask-capture.md');
   });
 
@@ -152,7 +152,7 @@ describeIfSelected('Plan Prosons — Format Positive', ['plan-review-prosons-for
 
   testConcurrentIfSelected('plan-review-prosons-format', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-ceo-review/SKILL.md for the review workflow.
+      prompt: `Read plan-business-review/SKILL.md for the review workflow.
 
 Read plan.md — two cache approaches with real tradeoffs. Pick the architectural approach via AskUserQuestion (Step 0C-bis / Implementation Alternatives). These options differ in coverage.
 
@@ -201,7 +201,7 @@ describeIfSelected('Plan Prosons — Hard-stop Negative', ['plan-review-prosons-
   let outFile: string;
 
   beforeAll(() => {
-    planDir = setupPlanDir('skill-e2e-plan-prosons-hardstop-neg-', TRADEOFF_PLAN, 'plan-ceo-review');
+    planDir = setupPlanDir('skill-e2e-plan-prosons-hardstop-neg-', TRADEOFF_PLAN, 'plan-business-review');
     outFile = path.join(planDir, 'ask-capture.md');
   });
 
@@ -211,7 +211,7 @@ describeIfSelected('Plan Prosons — Hard-stop Negative', ['plan-review-prosons-
 
   testConcurrentIfSelected('plan-review-prosons-hardstop-neg', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-ceo-review/SKILL.md.
+      prompt: `Read plan-business-review/SKILL.md.
 
 Read plan.md — this has REAL tradeoffs between Redis and in-memory caching (both have pros and cons). Pick the architectural approach via AskUserQuestion.
 
@@ -251,7 +251,7 @@ describeIfSelected('Plan Prosons — Neutral-posture Negative', ['plan-review-pr
   let outFile: string;
 
   beforeAll(() => {
-    planDir = setupPlanDir('skill-e2e-plan-prosons-neutral-neg-', DOMINANT_PLAN, 'plan-ceo-review');
+    planDir = setupPlanDir('skill-e2e-plan-prosons-neutral-neg-', DOMINANT_PLAN, 'plan-business-review');
     outFile = path.join(planDir, 'ask-capture.md');
   });
 
@@ -261,7 +261,7 @@ describeIfSelected('Plan Prosons — Neutral-posture Negative', ['plan-review-pr
 
   testConcurrentIfSelected('plan-review-prosons-neutral-neg', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-ceo-review/SKILL.md.
+      prompt: `Read plan-business-review/SKILL.md.
 
 Read plan.md — Option A dominates Option B on coverage. This is NOT a taste call. Pick the approach via AskUserQuestion (Step 0C-bis / Implementation Alternatives — coverage-differentiated, so Completeness: N/10 applies).
 
@@ -302,7 +302,7 @@ describeIfSelected('Plan Prosons — Hard-stop Positive', ['plan-ceo-review-pros
   let outFile: string;
 
   beforeAll(() => {
-    planDir = setupPlanDir('skill-e2e-plan-prosons-hardstop-pos-', HARDSTOP_PLAN, 'plan-ceo-review');
+    planDir = setupPlanDir('skill-e2e-plan-prosons-hardstop-pos-', HARDSTOP_PLAN, 'plan-business-review');
     outFile = path.join(planDir, 'ask-capture.md');
   });
 
@@ -312,7 +312,7 @@ describeIfSelected('Plan Prosons — Hard-stop Positive', ['plan-ceo-review-pros
 
   testConcurrentIfSelected('plan-ceo-review-prosons-cadence', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-ceo-review/SKILL.md.
+      prompt: `Read plan-business-review/SKILL.md.
 
 Read plan.md — this is a destructive one-way action (terminate all sessions). Ask the user to confirm via AskUserQuestion. This is a legitimate hard-stop choice — the hard-stop escape (\`✅ No cons — this is a hard-stop choice\`) is allowed here because there is no meaningful alternative besides doing or not doing the action.
 

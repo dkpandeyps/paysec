@@ -1,15 +1,15 @@
 /**
  * Centralized gbrain CLI invocation.
  *
- * Every `gbrain ...` spawn from `bin/gstack-gbrain-sync.ts` and
- * `bin/gstack-memory-ingest.ts` MUST go through `spawnGbrain` (or
+ * Every `gbrain ...` spawn from `bin/paysec-gbrain-sync.ts` and
+ * `bin/paysec-memory-ingest.ts` MUST go through `spawnGbrain` (or
  * `execGbrainJson`), and the invariant test
  * `test/gbrain-exec-invariant.test.ts` enforces this with a static-source
  * grep. The helper layer guarantees three properties:
  *
  *   1. **DATABASE_URL is seeded from gbrain's own config**, not from the
  *      caller's `.env.local`. gbrain auto-loads `.env.local` via dotenv on
- *      startup. When `/sync-gbrain` runs inside a Next.js / Prisma / Rails
+ *      startup. When `/brain-sync` runs inside a Next.js / Prisma / Rails
  *      project with its own `DATABASE_URL`, gbrain reads that one and not
  *      its own `${GBRAIN_HOME:-$HOME/.gbrain}/config.json`. Auth fails;
  *      code + memory stages crash; only brain-sync's git push survives.
@@ -24,11 +24,11 @@
  *   3. **`GBRAIN_HOME` honored consistently — with gbrain's own semantics
  *      (#2521).** gbrain's configDir() treats `GBRAIN_HOME` as a PARENT
  *      directory and always appends `.gbrain` itself (GBRAIN_HOME=/tmp/x
- *      → /tmp/x/.gbrain/config.json). Every gstack-side read goes through
- *      `gbrainConfigDir()` below so gstack and gbrain agree on which
+ *      → /tmp/x/.gbrain/config.json). Every paysec-side read goes through
+ *      `gbrainConfigDir()` below so paysec and gbrain agree on which
  *      config file matters.
  *
- * **Escape hatch:** `GSTACK_RESPECT_ENV_DATABASE_URL=1` returns the
+ * **Escape hatch:** `PAYSEC_RESPECT_ENV_DATABASE_URL=1` returns the
  * caller's env unchanged. Use only when the brain intentionally lives in
  * the project's local DB (rare).
  */
@@ -80,8 +80,8 @@ export function isTransactionModePooler(url: string): boolean {
  * gbrain's config directory, matching gbrain's own configDir() contract
  * (#2521): `GBRAIN_HOME` is a PARENT directory — gbrain always appends
  * `.gbrain` itself, so GBRAIN_HOME=/tmp/x reads /tmp/x/.gbrain/config.json.
- * Unset → ~/.gbrain. Every gstack-side gbrain-config read MUST resolve
- * through this helper, or gstack classifies engine status from a file
+ * Unset → ~/.gbrain. Every paysec-side gbrain-config read MUST resolve
+ * through this helper, or paysec classifies engine status from a file
  * gbrain never reads.
  */
 export function gbrainConfigDir(env: NodeJS.ProcessEnv = process.env): string {
@@ -93,7 +93,7 @@ export function gbrainConfigDir(env: NodeJS.ProcessEnv = process.env): string {
  * Build an env dict with DATABASE_URL seeded from gbrain's config.json
  * (resolved via `gbrainConfigDir`). Returns the base env
  * unchanged when:
- *   - `GSTACK_RESPECT_ENV_DATABASE_URL=1` (intentional opt-out),
+ *   - `PAYSEC_RESPECT_ENV_DATABASE_URL=1` (intentional opt-out),
  *   - the config file is missing or unparseable,
  *   - the config has no `database_url`,
  *   - the caller already set DATABASE_URL to the same value.
@@ -111,7 +111,7 @@ export function gbrainConfigDir(env: NodeJS.ProcessEnv = process.env): string {
 export function buildGbrainEnv(opts: BuildGbrainEnvOptions = {}): NodeJS.ProcessEnv {
   const baseEnv = opts.baseEnv || process.env;
   const out: NodeJS.ProcessEnv = { ...baseEnv };
-  if (baseEnv.GSTACK_RESPECT_ENV_DATABASE_URL === "1") return out;
+  if (baseEnv.PAYSEC_RESPECT_ENV_DATABASE_URL === "1") return out;
 
   const configPath = join(gbrainConfigDir(baseEnv), "config.json");
   if (!existsSync(configPath)) return out;
@@ -139,7 +139,7 @@ export function buildGbrainEnv(opts: BuildGbrainEnvOptions = {}): NodeJS.Process
 
 /**
  * Windows can't directly spawn the `gbrain` launcher (bun/npm install it as a
- * `gbrain.cmd`/`.ps1` shim) or a shebang script like the bash `gstack-brain-sync`
+ * `gbrain.cmd`/`.ps1` shim) or a shebang script like the bash `paysec-brain-sync`
  * — `spawnSync`/`spawn` resolve those only through a shell's PATHEXT + interpreter
  * lookup. Without `shell: true` the child spawn fails ENOENT, which on the sync
  * orchestrator surfaced as "brain-sync exited undefined" (#1731). Gate on platform
@@ -164,7 +164,7 @@ export interface ScriptInvocation {
 }
 
 /**
- * How to invoke a **bash shebang script** (`gstack-brain-sync`) on this platform.
+ * How to invoke a **bash shebang script** (`paysec-brain-sync`) on this platform.
  *
  * POSIX execs it directly — the shebang does the work. Windows cannot, and
  * `shell: true` does NOT rescue it: that routes through cmd.exe, which resolves
@@ -177,13 +177,13 @@ export interface ScriptInvocation {
  *
  * The consequence was quiet rather than loud. `artifacts_sync_mode` defaults to
  * pushing curated artifacts to git, so a Windows user's learnings accumulated in
- * `~/.gstack` and were never committed, while `/sync-gbrain` printed one red
+ * `~/.paysec` and were never committed, while `/brain-sync` printed one red
  * line among four green ones.
  *
  * Git for Windows' bash is preferred over a bare `bash` on PATH because
  * WindowsApps ships a `bash.exe` that is the WSL launcher; if it wins PATH
  * order it interprets `C:\...` as a Linux path and the script never sees the
- * repo. `GSTACK_BASH` overrides everything for unusual installs.
+ * repo. `PAYSEC_BASH` overrides everything for unusual installs.
  *
  * Returns `null` when no bash can be found, so the caller can say so plainly
  * instead of surfacing a spawn error nobody can act on.
@@ -199,7 +199,7 @@ export function bashScriptInvocation(
   const exists = opts.exists ?? existsSync;
   const env = opts.env ?? process.env;
 
-  const override = env.GSTACK_BASH?.trim();
+  const override = env.PAYSEC_BASH?.trim();
   const candidates = [...(override ? [override] : []), ...WINDOWS_BASH_CANDIDATES];
   const bash = candidates.find((p) => exists(p));
   if (!bash) return null;
@@ -287,7 +287,7 @@ export function execGbrainJson<T = unknown>(args: string[], opts: SpawnGbrainOpt
 
 /**
  * Async streaming variant for callers that need to attach stdout/stderr
- * listeners (e.g., `gbrain import` in `gstack-memory-ingest.ts`). Always
+ * listeners (e.g., `gbrain import` in `paysec-memory-ingest.ts`). Always
  * injects the seeded env. Returns the raw `ChildProcess` so the caller
  * can wire up its own promise around exit/timeout/signal handling.
  */

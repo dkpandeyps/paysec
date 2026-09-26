@@ -73,9 +73,9 @@ exit ${exitCode}
       // Absolute-path override satisfies resolveClaudeCommand() without a real
       // claude install — available() never spawns it, only resolves it. The
       // bare-PATH case clears it to exercise the not-found branch.
-      GSTACK_CLAUDE_BIN: opts.bareShimPath ? undefined : path.join(shimDir, "claude"),
+      PAYSEC_CLAUDE_BIN: opts.bareShimPath ? undefined : path.join(shimDir, "claude"),
       CLAUDE_BIN: undefined,
-      GSTACK_CLAUDE_BIN_ARGS: undefined,
+      PAYSEC_CLAUDE_BIN_ARGS: undefined,
       CLAUDE_BIN_ARGS: undefined,
       ANTHROPIC_API_KEY: opts.anthropicKey,
     };

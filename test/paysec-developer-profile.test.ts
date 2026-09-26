@@ -1,8 +1,8 @@
 /**
- * bin/gstack-developer-profile — subcommand behavior tests.
+ * bin/paysec-developer-profile — subcommand behavior tests.
  *
  * Covers:
- * - --read (legacy /office-hours KEY: VALUE format, with defaults when no profile)
+ * - --read (legacy /idea-review KEY: VALUE format, with defaults when no profile)
  * - --migrate (idempotent; preserves sessions + signals_accumulated)
  * - --derive (recomputes inferred from question-log events)
  * - --trace <dim> (shows contributing events)
@@ -18,13 +18,13 @@ import * as os from 'os';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const BIN_DEV = path.join(ROOT, 'bin', 'gstack-developer-profile');
-const BIN_LOG = path.join(ROOT, 'bin', 'gstack-question-log');
+const BIN_DEV = path.join(ROOT, 'bin', 'paysec-developer-profile');
+const BIN_LOG = path.join(ROOT, 'bin', 'paysec-question-log');
 
 let tmpHome: string;
 
 beforeEach(() => {
-  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-test-'));
+  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-test-'));
 });
 
 afterEach(() => {
@@ -33,7 +33,7 @@ afterEach(() => {
 
 function runDev(...args: string[]): { stdout: string; stderr: string; status: number } {
   const res = spawnSync(BIN_DEV, args, {
-    env: { ...process.env, GSTACK_HOME: tmpHome },
+    env: { ...process.env, PAYSEC_HOME: tmpHome },
     encoding: 'utf-8',
     cwd: ROOT,
   });
@@ -46,7 +46,7 @@ function runDev(...args: string[]): { stdout: string; stderr: string; status: nu
 
 function logQuestion(payload: Record<string, unknown>): number {
   const res = spawnSync(BIN_LOG, [JSON.stringify(payload)], {
-    env: { ...process.env, GSTACK_HOME: tmpHome },
+    env: { ...process.env, PAYSEC_HOME: tmpHome },
     encoding: 'utf-8',
     cwd: ROOT,
   });
@@ -67,7 +67,7 @@ function readProfile(): Record<string, unknown> {
 // --read (defaults + compat)
 // -----------------------------------------------------------------------
 
-describe('gstack-developer-profile --read', () => {
+describe('paysec-developer-profile --read', () => {
   test('emits defaults when no profile exists (creates stub)', () => {
     const r = runDev('--read');
     expect(r.status).toBe(0);
@@ -95,7 +95,7 @@ describe('gstack-developer-profile --read', () => {
 // --migrate (legacy jsonl → unified profile)
 // -----------------------------------------------------------------------
 
-describe('gstack-developer-profile --migrate', () => {
+describe('paysec-developer-profile --migrate', () => {
   test('migrates 3 sessions with signals, resources, topics', () => {
     writeLegacyProfile([
       {
@@ -184,7 +184,7 @@ describe('gstack-developer-profile --migrate', () => {
 // --read tier calculation
 // -----------------------------------------------------------------------
 
-describe('gstack-developer-profile tier calculation', () => {
+describe('paysec-developer-profile tier calculation', () => {
   test('1-3 sessions → welcome_back', () => {
     writeLegacyProfile([
       { date: 'x', mode: 'builder', project_slug: 'a', signals: [] },
@@ -227,7 +227,7 @@ describe('gstack-developer-profile tier calculation', () => {
 // --derive: inferred dimensions from question-log events
 // -----------------------------------------------------------------------
 
-describe('gstack-developer-profile --derive', () => {
+describe('paysec-developer-profile --derive', () => {
   test('derive with no events yields neutral (0.5) dimensions', () => {
     runDev('--derive');
     const p = readProfile() as {
@@ -241,7 +241,7 @@ describe('gstack-developer-profile --derive', () => {
     for (let i = 0; i < 5; i++) {
       expect(
         logQuestion({
-          skill: 'plan-ceo-review',
+          skill: 'plan-business-review',
           question_id: 'plan-ceo-review-mode',
           question_summary: 'mode?',
           user_choice: 'expand',
@@ -263,7 +263,7 @@ describe('gstack-developer-profile --derive', () => {
   test('derive nudges scope_appetite downward after reduce choices', () => {
     for (let i = 0; i < 3; i++) {
       logQuestion({
-        skill: 'plan-ceo-review',
+        skill: 'plan-business-review',
         question_id: 'plan-ceo-review-mode',
         question_summary: 'mode?',
         user_choice: 'reduce',
@@ -278,7 +278,7 @@ describe('gstack-developer-profile --derive', () => {
   test('derive is recomputable — same input, same output', () => {
     for (let i = 0; i < 3; i++) {
       logQuestion({
-        skill: 'plan-ceo-review',
+        skill: 'plan-business-review',
         question_id: 'plan-ceo-review-mode',
         question_summary: 'mode?',
         user_choice: 'expand',
@@ -294,7 +294,7 @@ describe('gstack-developer-profile --derive', () => {
 
   test('derive ignores events for questions not in registry (ad-hoc ids)', () => {
     logQuestion({
-      skill: 'plan-ceo-review',
+      skill: 'plan-business-review',
       question_id: 'adhoc-unregistered-question',
       question_summary: 'mystery',
       user_choice: 'anything',
@@ -312,11 +312,11 @@ describe('gstack-developer-profile --derive', () => {
 // --trace
 // -----------------------------------------------------------------------
 
-describe('gstack-developer-profile --trace <dim>', () => {
+describe('paysec-developer-profile --trace <dim>', () => {
   test('shows contributing events with delta values', () => {
     for (let i = 0; i < 3; i++) {
       logQuestion({
-        skill: 'plan-ceo-review',
+        skill: 'plan-business-review',
         question_id: 'plan-ceo-review-mode',
         question_summary: 'mode?',
         user_choice: 'expand',
@@ -331,7 +331,7 @@ describe('gstack-developer-profile --trace <dim>', () => {
 
   test('reports no contributions for untouched dimension', () => {
     logQuestion({
-      skill: 'plan-ceo-review',
+      skill: 'plan-business-review',
       question_id: 'plan-ceo-review-mode',
       question_summary: 'x',
       user_choice: 'expand',
@@ -352,7 +352,7 @@ describe('gstack-developer-profile --trace <dim>', () => {
 // --gap
 // -----------------------------------------------------------------------
 
-describe('gstack-developer-profile --gap', () => {
+describe('paysec-developer-profile --gap', () => {
   test('gap is empty when nothing is declared', () => {
     runDev('--read');
     const r = runDev('--gap');
@@ -378,7 +378,7 @@ describe('gstack-developer-profile --gap', () => {
 // --vibe (archetype match)
 // -----------------------------------------------------------------------
 
-describe('gstack-developer-profile --vibe', () => {
+describe('paysec-developer-profile --vibe', () => {
   test('returns archetype name and description', () => {
     runDev('--read');
     const r = runDev('--vibe');
@@ -394,7 +394,7 @@ describe('gstack-developer-profile --vibe', () => {
 // --check-mismatch
 // -----------------------------------------------------------------------
 
-describe('gstack-developer-profile --check-mismatch', () => {
+describe('paysec-developer-profile --check-mismatch', () => {
   test('reports insufficient data when < 10 events', () => {
     runDev('--read');
     const r = runDev('--check-mismatch');
@@ -432,7 +432,7 @@ describe('gstack-developer-profile --check-mismatch', () => {
 // Error handling
 // -----------------------------------------------------------------------
 
-describe('gstack-developer-profile errors', () => {
+describe('paysec-developer-profile errors', () => {
   test('unknown subcommand exits non-zero', () => {
     const r = runDev('--not-a-real-subcommand');
     expect(r.status).not.toBe(0);
@@ -444,7 +444,7 @@ describe('gstack-developer-profile errors', () => {
 // --log-session — the #1671 fix: writer that matches the reader.
 // -----------------------------------------------------------------------
 
-describe('gstack-developer-profile --log-session (#1671 fix)', () => {
+describe('paysec-developer-profile --log-session (#1671 fix)', () => {
   test('regression: read-write-read sequence on fresh $HOME promotes to welcome_back', () => {
     // First --read creates an empty stub (this is the bug-shape on current main).
     const r1 = runDev('--read');
@@ -495,7 +495,7 @@ describe('gstack-developer-profile --log-session (#1671 fix)', () => {
     expect(p.topics.sort()).toEqual(['ai', 'eng']);
   });
 
-  test('silently skips invalid JSON input (matches gstack-timeline-log pattern)', () => {
+  test('silently skips invalid JSON input (matches paysec-timeline-log pattern)', () => {
     const r = runDev('--log-session', 'not-json');
     expect(r.status).toBe(0); // silent skip, not error
     const file = path.join(tmpHome, 'developer-profile.json');
@@ -528,7 +528,7 @@ describe('gstack-developer-profile --log-session (#1671 fix)', () => {
 
   test('do_read picks LAST_* from real sessions, not from a trailing mode:resources entry', () => {
     // The Phase 6 resources auto-append happens AFTER the real session in the
-    // same /office-hours invocation. Without the mode filter, that resources
+    // same /idea-review invocation. Without the mode filter, that resources
     // entry would clobber LAST_PROJECT/LAST_ASSIGNMENT/LAST_DESIGN_TITLE for
     // the next session.
     runDev('--log-session', JSON.stringify({
@@ -559,7 +559,7 @@ describe('gstack-developer-profile --log-session (#1671 fix)', () => {
 // -----------------------------------------------------------------------
 // SESSION_COUNT / TIER / NUDGE_ELIGIBLE must ignore mode:resources entries.
 //
-// Phase 6 of /office-hours auto-appends one (or more) mode:resources bookkeeping
+// Phase 6 of /idea-review auto-appends one (or more) mode:resources bookkeeping
 // entries every run, to dedupe which founder-resource links the user has seen.
 // Those are not sessions. Counting them inflated SESSION_COUNT (and therefore
 // TIER) and pushed NUDGE_ELIGIBLE over its threshold from bookkeeping alone —
@@ -567,7 +567,7 @@ describe('gstack-developer-profile --log-session (#1671 fix)', () => {
 // with the builder->founder nudge armed.
 // -----------------------------------------------------------------------
 
-describe('gstack-developer-profile resources entries do not inflate count/tier/nudge', () => {
+describe('paysec-developer-profile resources entries do not inflate count/tier/nudge', () => {
   function logStartup(extra: Record<string, unknown> = {}) {
     return runDev('--log-session', JSON.stringify({
       date: '2026-05-20T00:00:00Z', mode: 'startup', project_slug: 'p',

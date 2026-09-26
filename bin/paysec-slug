@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# gstack-slug — output project slug and sanitized branch name
-# Usage: eval "$(gstack-slug)"  → sets SLUG and BRANCH variables
-# Or:    gstack-slug            → prints SLUG=... and BRANCH=... lines
+# paysec-slug — output project slug and sanitized branch name
+# Usage: eval "$(paysec-slug)"  → sets SLUG and BRANCH variables
+# Or:    paysec-slug            → prints SLUG=... and BRANCH=... lines
 #
 # Resolution order (highest precedence first):
-#   0. $GSTACK_PROJECT_SLUG env override (documented escape hatch)
+#   0. $PAYSEC_PROJECT_SLUG env override (documented escape hatch)
 #   1. Walk UP from $(pwd) to the OUTERMOST ancestor containing a canonical
 #      project-identity marker (.git, .project.yaml, package.json, pyproject.toml,
 #      Cargo.toml, Gemfile, go.mod). Use that ancestor as the "project root".
 #      Build/deploy artifacts (.vercel, .next, dist, node_modules, etc.) are
 #      DELIBERATELY NOT markers — they're tooling output, not project identity.
-#      Without this walk-up, running gstack-slug from a subdir whose only
+#      Without this walk-up, running paysec-slug from a subdir whose only
 #      "marker" is a deploy artifact silently resolves to the subdir's basename,
 #      misfiling all session state under a phantom slug. (2026-05-25 bug fix.)
 #   2. If the resolved project root has a git remote, derive the slug from it.
@@ -21,17 +21,17 @@
 # Caching is self-healing: a cache entry for the literal pwd that differs from
 # the freshly-computed slug gets opportunistically rewritten (single-shot, key-
 # local — never sweeps other entries). This lets pre-existing poisoned caches
-# clean themselves up without a manual `rm -rf ~/.gstack/slug-cache/`.
+# clean themselves up without a manual `rm -rf ~/.paysec/slug-cache/`.
 #
 # Security: output is sanitized to [a-zA-Z0-9._-] only, preventing shell
 # injection when consumed via source or eval.
 set -euo pipefail
 
-# GSTACK_HOME-aware, matching lib/bin-context.ts's native port (#2561): the
+# PAYSEC_HOME-aware, matching lib/bin-context.ts's native port (#2561): the
 # bash writer and the TS reader must key the SAME cache, and a test running
-# with GSTACK_HOME=<temp> must write its cache junk there, not into the real
-# home (observed: 2,528 stale temp-cwd entries accumulated in ~/.gstack).
-CACHE_DIR="${GSTACK_HOME:-$HOME/.gstack}/slug-cache"
+# with PAYSEC_HOME=<temp> must write its cache junk there, not into the real
+# home (observed: 2,528 stale temp-cwd entries accumulated in ~/.paysec).
+CACHE_DIR="${PAYSEC_HOME:-$HOME/.paysec}/slug-cache"
 PROJECT_DIR="$(pwd)"
 # Encode absolute path as cache key: /Users/j/foo → _Users_j_foo
 CACHE_KEY=$(printf '%s' "$PROJECT_DIR" | tr '/' '_')
@@ -42,11 +42,11 @@ SLUG=""
 # 0. Explicit env override — wins over everything. Escape hatch for vendored
 #    sub-repos and other genuine "subdir IS its own project" edge cases.
 SLUG_FROM_ENV=0
-if [[ -n "${GSTACK_PROJECT_SLUG:-}" ]]; then
-  SLUG=$(printf '%s' "$GSTACK_PROJECT_SLUG" | tr -cd 'a-zA-Z0-9._-')
+if [[ -n "${PAYSEC_PROJECT_SLUG:-}" ]]; then
+  SLUG=$(printf '%s' "$PAYSEC_PROJECT_SLUG" | tr -cd 'a-zA-Z0-9._-')
   # Per-invocation escape hatch, never a durable identity: persisting it
   # would rebind THIS cwd's slug for every later env-less run (observed: a
-  # test exporting GSTACK_PROJECT_SLUG from the repo root rebound the whole
+  # test exporting PAYSEC_PROJECT_SLUG from the repo root rebound the whole
   # repo's session state to the test's slug).
   SLUG_FROM_ENV=1
 fi
@@ -81,7 +81,7 @@ _outermost_project_root() {
   local parent="" depth=0
   # Terminate on dirname's FIXED POINT, not on a literal "/": under git-bash
   # on Windows a mixed-form path walks C:/Users -> C: -> . -> . forever, which
-  # hung every bin that evals gstack-slug (caught by windows-free-tests CI).
+  # hung every bin that evals paysec-slug (caught by windows-free-tests CI).
   # The depth cap is belt-and-braces for exotic path forms (UNC, //server).
   while [[ -n "$dir" && "$dir" != "/" && $depth -lt 64 ]]; do
     if [[ -e "$dir/.git" \
@@ -119,10 +119,10 @@ if [[ -z "$SLUG" ]]; then
   PROJECT_ROOT=$(_outermost_project_root "$PROJECT_DIR")
 fi
 
-# 1b. Cached identity is STICKY (#2212): a project that used gstack before it
+# 1b. Cached identity is STICKY (#2212): a project that used paysec before it
 #     adopted a git remote keeps its pre-origin slug — recomputing from the
 #     remote here would rename the project mid-life and orphan everything
-#     under ~/.gstack/projects/<slug>/. The ONE exception is the provable
+#     under ~/.paysec/projects/<slug>/. The ONE exception is the provable
 #     old-bug shape (#1125): the pre-walk-up resolver cached basename(pwd)
 #     for a SUBDIRECTORY of the real project — if the cached value equals this
 #     pwd's basename while the walk-up says pwd is NOT the project root, the

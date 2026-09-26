@@ -5,32 +5,32 @@
  * (scripts/resolvers/preamble/generate-ask-user-format.ts) tells the model
  * to prefer mcp__*__AskUserQuestion variants and fall back to plan-file
  * decisions when neither is callable. This must NOT break the legitimate
- * `/plan-tune` AUTO_DECIDE path: when the user has explicitly opted into
- * auto-deciding a specific question via `gstack-question-preference --write
+ * `/tune-questions` AUTO_DECIDE path: when the user has explicitly opted into
+ * auto-deciding a specific question via `paysec-question-preference --write
  * never-ask`, the model is supposed to honor that — it should still
  * auto-pick the recommended option and emit the AUTO_DECIDE annotation
  * ("Auto-decided <summary> → <option> (your preference). Change with
- * /plan-tune.") instead of opening a question prompt.
+ * /tune-questions.") instead of opening a question prompt.
  *
  * Periodic tier: AUTO_DECIDE behavior depends on the model adhering to
  * the QUESTION_TUNING preamble injection. Non-deterministic; runs weekly
  * or manually rather than gating CI.
  *
  * Set up:
- *   - tmpDir as GSTACK_HOME (isolated state, doesn't touch the user's
- *     real ~/.gstack)
+ *   - tmpDir as PAYSEC_HOME (isolated state, doesn't touch the user's
+ *     real ~/.paysec)
  *   - question_tuning=true in the tmp config
- *   - preference for plan-ceo-review-mode → never-ask (source: plan-tune)
+ *   - preference for plan-ceo-review-mode → never-ask (source: tune-questions)
  *
  * Spawn:
  *   claude --permission-mode plan --disallowedTools AskUserQuestion
- *   /plan-ceo-review
+ *   /plan-business-review
  *
  * Expected:
  *   - outcome === 'auto_decided' (the AUTO_DECIDE preamble fired and the
  *     "Auto-decided ... (your preference)" text rendered)
  *
- * If outcome is 'asked', the model ignored the user's `/plan-tune`
+ * If outcome is 'asked', the model ignored the user's `/tune-questions`
  * preference — that's a regression against the opt-in feature. If outcome
  * is 'plan_ready' with no AUTO_DECIDE text, the model auto-decided BUT
  * skipped the annotation (acceptable; AUTO_DECIDE annotation is good
@@ -51,46 +51,46 @@ const ROOT = path.resolve(import.meta.dir, '..');
 
 describeE2E('AUTO_DECIDE opt-in preserved under Conductor flags (periodic)', () => {
   test('user-opted-in question still auto-decides when AskUserQuestion is --disallowedTools', async () => {
-    const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-auto-decide-'));
+    const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-auto-decide-'));
     try {
-      // 1. Bootstrap the tmp GSTACK_HOME with question_tuning=true.
-      const configBin = path.join(ROOT, 'bin', 'gstack-config');
+      // 1. Bootstrap the tmp PAYSEC_HOME with question_tuning=true.
+      const configBin = path.join(ROOT, 'bin', 'paysec-config');
       const setRes = spawnSync(configBin, ['set', 'question_tuning', 'true'], {
-        env: { ...process.env, GSTACK_HOME: tmpHome },
+        env: { ...process.env, PAYSEC_HOME: tmpHome },
         encoding: 'utf-8',
       });
       if (setRes.status !== 0) {
-        throw new Error(`gstack-config set failed: ${setRes.stderr || setRes.stdout}`);
+        throw new Error(`paysec-config set failed: ${setRes.stderr || setRes.stdout}`);
       }
 
       // 2. Resolve slug for the project (uses git remote — same as the spawned
       //    claude would resolve). The preference file path keys on this slug.
-      const slugBin = path.join(ROOT, 'bin', 'gstack-slug');
+      const slugBin = path.join(ROOT, 'bin', 'paysec-slug');
       const slugRes = spawnSync(slugBin, [], {
         cwd: ROOT,
-        env: { ...process.env, GSTACK_HOME: tmpHome },
+        env: { ...process.env, PAYSEC_HOME: tmpHome },
         encoding: 'utf-8',
       });
-      // gstack-slug emits `eval`-able shell exports like `SLUG=garrytan-gstack`.
+      // paysec-slug emits `eval`-able shell exports like `SLUG=garrytan-paysec`.
       const slug = (slugRes.stdout.match(/SLUG=([^\s;]+)/)?.[1] ?? 'unknown').replace(/['"]/g, '');
 
       // 3. Write the preference: plan-ceo-review-mode → never-ask. The
-      //    'plan-tune' source bypasses the inline-user origin gate.
-      const prefBin = path.join(ROOT, 'bin', 'gstack-question-preference');
+      //    'tune-questions' source bypasses the inline-user origin gate.
+      const prefBin = path.join(ROOT, 'bin', 'paysec-question-preference');
       const writeRes = spawnSync(
         prefBin,
         ['--write', JSON.stringify({
           question_id: 'plan-ceo-review-mode',
           preference: 'never-ask',
-          source: 'plan-tune',
+          source: 'tune-questions',
         })],
         {
-          env: { ...process.env, GSTACK_HOME: tmpHome },
+          env: { ...process.env, PAYSEC_HOME: tmpHome },
           encoding: 'utf-8',
         },
       );
       if (writeRes.status !== 0) {
-        throw new Error(`gstack-question-preference --write failed: ${writeRes.stderr || writeRes.stdout}`);
+        throw new Error(`paysec-question-preference --write failed: ${writeRes.stderr || writeRes.stdout}`);
       }
 
       // Sanity: the preference file landed where we expect.
@@ -99,20 +99,20 @@ describeE2E('AUTO_DECIDE opt-in preserved under Conductor flags (periodic)', () 
         throw new Error(`expected preference file at ${prefFile}; not found. slug=${slug}`);
       }
 
-      // 4. Run /plan-ceo-review with the Conductor flag set + isolated state.
-      //    GSTACK_HOME=tmpHome is REQUIRED: the preference + question_tuning were
-      //    seeded there. Without it the spawned claude reads the real ~/.gstack,
+      // 4. Run /plan-business-review with the Conductor flag set + isolated state.
+      //    PAYSEC_HOME=tmpHome is REQUIRED: the preference + question_tuning were
+      //    seeded there. Without it the spawned claude reads the real ~/.paysec,
       //    never sees the never-ask preference, and the test silently exercises
       //    the wrong state root (pre-existing bug, Codex #9 / Issue 13).
       //    CONDUCTOR_WORKSPACE_PATH additionally proves auto-decide still WINS
       //    over the Conductor prose redirect (precedence: settled preference
       //    beats transport-avoidance).
       const obs = await runPlanSkillObservation({
-        skillName: 'plan-ceo-review',
+        skillName: 'plan-business-review',
         inPlanMode: true,
         extraArgs: ['--disallowedTools', 'AskUserQuestion'],
         timeoutMs: 540_000,
-        env: { GSTACK_HOME: tmpHome, CONDUCTOR_WORKSPACE_PATH: tmpHome },
+        env: { PAYSEC_HOME: tmpHome, CONDUCTOR_WORKSPACE_PATH: tmpHome },
       });
 
       // 5. Pass: 'auto_decided' (the strongest signal) or 'plan_ready' with

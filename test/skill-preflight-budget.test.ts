@@ -54,8 +54,8 @@ describe('per-skill preflight token budget', () => {
     }
   });
 
-  test('autoplan: sum across 4 plan-* skills stays under AUTOPLAN_PREFLIGHT_BUDGET_BYTES × 3 (instructions)', () => {
-    const autoplanSkills = ['plan-ceo-review', 'plan-eng-review', 'plan-design-review', 'plan-devex-review'];
+  test('auto-plan-review: sum across 4 plan-* skills stays under AUTOPLAN_PREFLIGHT_BUDGET_BYTES × 3 (instructions)', () => {
+    const autoplanSkills = ['plan-business-review', 'plan-tech-review', 'plan-ux-review', 'plan-dx-review'];
     const total = autoplanSkills.reduce((sum, s) => sum + totalBrainBytes(s), 0);
     // Same 3x rationale: AUTOPLAN budget governs runtime data, instructions
     // get more headroom.
@@ -63,7 +63,7 @@ describe('per-skill preflight token budget', () => {
   });
 
   test('non-preflight skills emit zero brain bytes', () => {
-    const nonPlanning = ['ship', 'qa', 'investigate', 'retro', 'design-review'];
+    const nonPlanning = ['ship-pr', 'qa-fix', 'debug-root-cause', 'weekly-retro', 'design-qa'];
     for (const skill of nonPlanning) {
       expect(totalBrainBytes(skill)).toBe(0);
     }
@@ -76,11 +76,11 @@ describe('per-skill preflight token budget', () => {
   });
 });
 
-describe('autoplan total preflight budget (T21 / D7)', () => {
-  test('autoplan total under 25 KB instruction cap × 3 (75 KB instruction budget)', () => {
-    const autoplanSkills = ['plan-ceo-review', 'plan-eng-review', 'plan-design-review', 'plan-devex-review'];
+describe('auto-plan-review total preflight budget (T21 / D7)', () => {
+  test('auto-plan-review total under 25 KB instruction cap × 3 (75 KB instruction budget)', () => {
+    const autoplanSkills = ['plan-business-review', 'plan-tech-review', 'plan-ux-review', 'plan-dx-review'];
     const total = autoplanSkills.reduce((sum, s) => sum + totalBrainBytes(s), 0);
-    // The 75 KB cap on instructions across the 4-skill autoplan; runtime
+    // The 75 KB cap on instructions across the 4-skill auto-plan-review; runtime
     // digest budget is the lower 25 KB cap, separately tested above.
     expect(total).toBeLessThan(75 * 1024);
   });
@@ -89,7 +89,7 @@ describe('autoplan total preflight budget (T21 / D7)', () => {
     for (const [skill, subset] of Object.entries(SKILL_DIGEST_SUBSETS)) {
       const preflight = generateBrainPreflight(buildCtx(skill));
       for (const entity of subset) {
-        expect(preflight).toContain(`gstack-brain-cache get ${entity}`);
+        expect(preflight).toContain(`paysec-brain-cache get ${entity}`);
       }
     }
   });

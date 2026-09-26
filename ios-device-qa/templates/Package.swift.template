@@ -1,5 +1,5 @@
 // swift-tools-version:5.9
-// AUTO-GENERATED from gstack/ios-qa/templates/Package.swift.template
+// AUTO-GENERATED from paysec/ios-device-qa/templates/Package.swift.template
 //
 // Drop-in SPM package definition for the DebugBridge stack. Three targets:
 //

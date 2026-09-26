@@ -1,33 +1,33 @@
 #!/usr/bin/env bash
-# gstack-telemetry-sync — sync local JSONL events to Supabase
+# paysec-telemetry-sync — sync local JSONL events to Supabase
 #
 # Fire-and-forget, backgrounded, rate-limited to once per 5 minutes.
 # Strips local-only fields before sending. Respects privacy tiers.
 # Posts to the telemetry-ingest edge function (not PostgREST directly).
 #
 # Env overrides (for testing):
-#   GSTACK_STATE_DIR           — override ~/.gstack state directory
-#   GSTACK_DIR                 — override auto-detected gstack root
-#   GSTACK_SUPABASE_URL        — override Supabase project URL
+#   PAYSEC_STATE_DIR           — override ~/.paysec state directory
+#   PAYSEC_DIR                 — override auto-detected paysec root
+#   PAYSEC_SUPABASE_URL        — override Supabase project URL
 set -uo pipefail
 
-GSTACK_DIR="${GSTACK_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
-STATE_DIR="${GSTACK_STATE_DIR:-$HOME/.gstack}"
+PAYSEC_DIR="${PAYSEC_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+STATE_DIR="${PAYSEC_STATE_DIR:-$HOME/.paysec}"
 
 # Egress receipt helpers (_receipted_curl): receipt-before-send, fail-closed.
-. "$GSTACK_DIR/bin/gstack-egress-lib.sh"
+. "$PAYSEC_DIR/bin/paysec-egress-lib.sh"
 ANALYTICS_DIR="$STATE_DIR/analytics"
 JSONL_FILE="$ANALYTICS_DIR/skill-usage.jsonl"
 CURSOR_FILE="$ANALYTICS_DIR/.last-sync-line"
 RATE_FILE="$ANALYTICS_DIR/.last-sync-time"
-CONFIG_CMD="$GSTACK_DIR/bin/gstack-config"
+CONFIG_CMD="$PAYSEC_DIR/bin/paysec-config"
 
 # Source Supabase config if not overridden by env
-if [ -z "${GSTACK_SUPABASE_URL:-}" ] && [ -f "$GSTACK_DIR/supabase/config.sh" ]; then
-  . "$GSTACK_DIR/supabase/config.sh"
+if [ -z "${PAYSEC_SUPABASE_URL:-}" ] && [ -f "$PAYSEC_DIR/supabase/config.sh" ]; then
+  . "$PAYSEC_DIR/supabase/config.sh"
 fi
-SUPABASE_URL="${GSTACK_SUPABASE_URL:-}"
-ANON_KEY="${GSTACK_SUPABASE_ANON_KEY:-}"
+SUPABASE_URL="${PAYSEC_SUPABASE_URL:-}"
+ANON_KEY="${PAYSEC_SUPABASE_ANON_KEY:-}"
 
 # ─── Pre-checks ──────────────────────────────────────────────
 # No Supabase URL configured yet → exit silently
@@ -124,8 +124,8 @@ BATCH="$BATCH]"
 # ─── POST to edge function ───────────────────────────────────
 # Create response file atomically. If mktemp fails, refuse to continue rather
 # than fall back to a predictable $$-based path (race + overwrite footgun).
-RESP_FILE="$(mktemp "${TMPDIR:-/tmp}/gstack-sync-XXXXXX")" || {
-  echo "gstack-telemetry-sync: mktemp failed — skipping this run" >&2
+RESP_FILE="$(mktemp "${TMPDIR:-/tmp}/paysec-sync-XXXXXX")" || {
+  echo "paysec-telemetry-sync: mktemp failed — skipping this run" >&2
   exit 0
 }
 trap 'rm -f "$RESP_FILE"' EXIT
@@ -135,14 +135,14 @@ trap 'rm -f "$RESP_FILE"' EXIT
 # file. On refusal nothing is sent and the cursor does not advance, so the
 # batch stays buffered and the next run retries. The helper consumes the
 # payload file.
-PAYLOAD_FILE="$(mktemp "${TMPDIR:-/tmp}/gstack-sync-payload-XXXXXX")" || {
-  echo "gstack-telemetry-sync: mktemp failed — skipping this run" >&2
+PAYLOAD_FILE="$(mktemp "${TMPDIR:-/tmp}/paysec-sync-payload-XXXXXX")" || {
+  echo "paysec-telemetry-sync: mktemp failed — skipping this run" >&2
   exit 0
 }
 printf '%s' "$BATCH" > "$PAYLOAD_FILE"
 DEST_HOST="${SUPABASE_URL#*://}"
 DEST_HOST="${DEST_HOST%%/*}"
-HTTP_CODE="$(GSTACK_HOME="$STATE_DIR" _receipted_curl closed telemetry-sync "$DEST_HOST" telemetry-events "telemetry=$TIER" "$PAYLOAD_FILE" \
+HTTP_CODE="$(PAYSEC_HOME="$STATE_DIR" _receipted_curl closed telemetry-sync "$DEST_HOST" telemetry-events "telemetry=$TIER" "$PAYLOAD_FILE" \
   curl -s -w '%{http_code}' --max-time 10 \
   -X POST "${SUPABASE_URL}/functions/v1/telemetry-ingest" \
   -H "Content-Type: application/json" \
@@ -151,8 +151,8 @@ HTTP_CODE="$(GSTACK_HOME="$STATE_DIR" _receipted_curl closed telemetry-sync "$DE
 
 # Best-effort response-status record for the receipt above (overrides the
 # helper's generic exit-code outcome with the HTTP status).
-if [ -n "${_GSTACK_EGRESS_LAST_RECEIPT:-}" ]; then
-  GSTACK_HOME="$STATE_DIR" "$GSTACK_DIR/bin/gstack-egress-receipt" outcome "$_GSTACK_EGRESS_LAST_RECEIPT" "$HTTP_CODE" 2>/dev/null || true
+if [ -n "${_PAYSEC_EGRESS_LAST_RECEIPT:-}" ]; then
+  PAYSEC_HOME="$STATE_DIR" "$PAYSEC_DIR/bin/paysec-egress-receipt" outcome "$_PAYSEC_EGRESS_LAST_RECEIPT" "$HTTP_CODE" 2>/dev/null || true
 fi
 
 # ─── Update cursor on success (2xx) ─────────────────────────
@@ -165,7 +165,7 @@ case "$HTTP_CODE" in
     # Check for upsert errors (installation tracking failures) — log but don't block cursor advance
     UPSERT_ERRORS="$(grep -o '"upsertErrors"' "$RESP_FILE" 2>/dev/null || true)"
     if [ -n "$UPSERT_ERRORS" ]; then
-      echo "[gstack-telemetry-sync] Warning: installation upsert errors in response" >&2
+      echo "[paysec-telemetry-sync] Warning: installation upsert errors in response" >&2
     fi
     if [ "${INSERTED:-0}" -gt 0 ] 2>/dev/null; then
       NEW_CURSOR=$(( CURSOR + COUNT ))

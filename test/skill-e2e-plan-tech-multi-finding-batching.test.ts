@@ -1,12 +1,12 @@
 /**
- * /plan-eng-review multi-finding batching regression (periodic, paid, real-PTY).
+ * /plan-tech-review multi-finding batching regression (periodic, paid, real-PTY).
  *
  * Catches the specific shape of the May 2026 transcript bug that the
  * single-finding gate-tier floor test cannot detect: a model that fires
  * one AskUserQuestion and then batches the remaining findings into a
  * single "## Decisions to confirm" plan write + ExitPlanMode.
  *
- * Why a separate test from skill-e2e-plan-eng-finding-floor:
+ * Why a separate test from skill-e2e-plan-tech-finding-floor:
  *   - The gate-tier floor (runPlanSkillFloorCheck) exits on the first AUQ
  *     render and returns success. A model that fires once-then-batches
  *     would pass that test trivially.
@@ -14,7 +14,7 @@
  *     N-AUQ tracking, ceiling-bounded retries) to actually count distinct
  *     review-phase AUQs and assert the model fires one per finding.
  *
- * Why a separate test from skill-e2e-plan-eng-finding-count (the existing
+ * Why a separate test from skill-e2e-plan-tech-finding-count (the existing
  * 5-finding count test):
  *   - The fixture here mirrors the D1-D4 transcript shape (4 findings) and
  *     the floor matches that exact threshold (3, the [N-1] tolerance band).
@@ -38,9 +38,9 @@ const describeE2E = describeE2ETier('periodic');
 const N = 4;
 const FLOOR = N - 1; // 3 — agent must fire at least one AUQ per non-batched finding
 
-const PLAN_PATH = '/tmp/gstack-test-plan-eng-batching.md';
+const PLAN_PATH = '/tmp/paysec-test-plan-eng-batching.md';
 
-describeE2E('/plan-eng-review multi-finding batching regression (periodic)', () => {
+describeE2E('/plan-tech-review multi-finding batching regression (periodic)', () => {
   test(
     `4-finding plan emits >= ${FLOOR} review-phase AskUserQuestions (no batching)`,
     async () => {
@@ -51,8 +51,8 @@ describeE2E('/plan-eng-review multi-finding batching regression (periodic)', () 
       }
 
       const obs = await runPlanSkillCounting({
-        skillName: 'plan-eng-review',
-        slashCommand: '/plan-eng-review',
+        skillName: 'plan-tech-review',
+        slashCommand: '/plan-tech-review',
         followUpPrompt: FORCING_BATCHING_ENG,
         isLastStep0AUQ: engStep0Boundary,
         reviewCountCeiling: N + 3, // hard cap above floor + tolerance

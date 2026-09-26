@@ -1,5 +1,5 @@
 /**
- * gstack-egress-lib.sh — shared shell receipt helpers, tested end-to-end
+ * paysec-egress-lib.sh — shared shell receipt helpers, tested end-to-end
  * against a local listener. Free tier, loopback only.
  *
  * Pins the shell-sink contract:
@@ -18,7 +18,7 @@ import * as path from 'path';
 import { listReceipts, sha256Hex } from '../lib/egress-receipt';
 
 const ROOT = path.resolve(import.meta.path, '..', '..');
-const LIB = path.join(ROOT, 'bin', 'gstack-egress-lib.sh');
+const LIB = path.join(ROOT, 'bin', 'paysec-egress-lib.sh');
 
 const received: string[] = [];
 const server = Bun.serve({
@@ -37,7 +37,7 @@ afterAll(() => {
 let home: string;
 
 beforeEach(() => {
-  home = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-egress-lib-'));
+  home = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-egress-lib-'));
   received.length = 0;
 });
 
@@ -50,7 +50,7 @@ afterEach(() => {
 // in-process listener the script curls against.
 async function runBash(script: string) {
   const proc = Bun.spawn(['bash', '-c', script], {
-    env: { ...process.env, GSTACK_HOME: home },
+    env: { ...process.env, PAYSEC_HOME: home },
     stdout: 'pipe',
     stderr: 'pipe',
   });
@@ -114,7 +114,7 @@ describe('_receipted_curl', () => {
     expect(result.stderr).toContain('Fix: chmod -R u+w');
     // What this is: the ledger explained.
     expect(result.stderr).toContain('ATTEMPTS to send off-machine');
-    expect(result.stderr).toContain('gstack-egress');
+    expect(result.stderr).toContain('paysec-egress');
   });
 
   test('fail-open warns and proceeds when the receipt cannot be written', async () => {
@@ -170,7 +170,7 @@ describe('_receipted_git', () => {
   test('fail-closed git refusal returns 3 without running the command', async () => {
     if (process.platform === 'win32' || process.getuid?.() === 0) return;
     fs.mkdirSync(path.join(home, 'security'), { recursive: true, mode: 0o500 });
-    const marker = path.join(os.tmpdir(), `gstack-egress-git-${process.pid}`);
+    const marker = path.join(os.tmpdir(), `paysec-egress-git-${process.pid}`);
     fs.rmSync(marker, { force: true });
     const result = await runBash(`
       set -uo pipefail

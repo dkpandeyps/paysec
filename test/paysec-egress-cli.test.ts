@@ -1,7 +1,7 @@
 /**
- * gstack-egress CLI — list | verify | grants smoke tests. Free tier.
+ * paysec-egress CLI — list | verify | grants smoke tests. Free tier.
  *
- * Spawns the real bin against a temp GSTACK_HOME: list filters, verify
+ * Spawns the real bin against a temp PAYSEC_HOME: list filters, verify
  * exit-3-on-tamper (naming the first broken line), sizeWarning surfacing,
  * and grants against the upstream config keys (telemetry,
  * artifacts_sync_mode, redact_repo_visibility, redact_prepush_hook).
@@ -20,12 +20,12 @@ import {
 } from '../lib/egress-receipt';
 
 const ROOT = path.resolve(import.meta.path, '..', '..');
-const BIN = path.join(ROOT, 'bin', 'gstack-egress');
+const BIN = path.join(ROOT, 'bin', 'paysec-egress');
 
 let home: string;
 
 beforeEach(() => {
-  home = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-egress-cli-'));
+  home = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-egress-cli-'));
 });
 
 afterEach(() => {
@@ -35,12 +35,12 @@ afterEach(() => {
 function run(args: string[]) {
   const result = spawnSync(BIN, args, {
     encoding: 'utf-8',
-    env: { ...process.env, GSTACK_HOME: home },
+    env: { ...process.env, PAYSEC_HOME: home },
   });
   return { code: result.status ?? -1, stdout: result.stdout || '', stderr: result.stderr || '' };
 }
 
-describe('gstack-egress list', () => {
+describe('paysec-egress list', () => {
   test('fresh home prints "no receipts" and the ledger path, exit 0', () => {
     const r = run(['list']);
     expect(r.code).toBe(0);
@@ -70,7 +70,7 @@ describe('gstack-egress list', () => {
   });
 });
 
-describe('gstack-egress verify', () => {
+describe('paysec-egress verify', () => {
   test('exits 0 on an intact chain and 3 naming the first broken line on tamper', () => {
     writeReceipt({ home, sink: 'a', host: 'h', payloadClass: 'c', consent: 'telemetry=community' });
     writeReceipt({ home, sink: 'b', host: 'h', payloadClass: 'c', consent: 'telemetry=community' });
@@ -100,13 +100,13 @@ describe('gstack-egress verify', () => {
     expect(r.code).toBe(3); // filler breaks the chain — expected
     const parsed = JSON.parse(r.stdout);
     expect(parsed.sizeWarning).toContain('egress ledger is large');
-    expect(parsed.sizeWarning).toContain('gstack-egress list');
+    expect(parsed.sizeWarning).toContain('paysec-egress list');
     const human = run(['verify']);
     expect(human.stdout).toContain('egress ledger is large');
   });
 });
 
-describe('gstack-egress grants', () => {
+describe('paysec-egress grants', () => {
   test('fresh home shows the four upstream grants off, each naming file and revoke command', () => {
     const r = run(['grants']);
     expect(r.code).toBe(0);
@@ -119,14 +119,14 @@ describe('gstack-egress grants', () => {
   });
 
   test('--json flips granted=true when telemetry and sync mode are enabled', () => {
-    const config = spawnSync(path.join(ROOT, 'bin', 'gstack-config'), ['set', 'telemetry', 'community'], {
+    const config = spawnSync(path.join(ROOT, 'bin', 'paysec-config'), ['set', 'telemetry', 'community'], {
       encoding: 'utf-8',
-      env: { ...process.env, GSTACK_HOME: home },
+      env: { ...process.env, PAYSEC_HOME: home },
     });
     expect(config.status).toBe(0);
-    spawnSync(path.join(ROOT, 'bin', 'gstack-config'), ['set', 'artifacts_sync_mode', 'full'], {
+    spawnSync(path.join(ROOT, 'bin', 'paysec-config'), ['set', 'artifacts_sync_mode', 'full'], {
       encoding: 'utf-8',
-      env: { ...process.env, GSTACK_HOME: home },
+      env: { ...process.env, PAYSEC_HOME: home },
     });
     const r = run(['grants', '--json']);
     expect(r.code).toBe(0);
@@ -142,7 +142,7 @@ describe('gstack-egress grants', () => {
   });
 });
 
-describe('gstack-egress usage', () => {
+describe('paysec-egress usage', () => {
   test('no subcommand exits 2 with usage', () => {
     const r = run([]);
     expect(r.code).toBe(2);

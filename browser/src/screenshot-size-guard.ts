@@ -8,7 +8,7 @@
  * stderr surfacing on the browse side.
  *
  * This module centralizes the "after page.screenshot, check dimensions and
- * downscale if too big" path so every full-page caller in browse/src can
+ * downscale if too big" path so every full-page caller in browser/src can
  * share the same enforcement. The cap is image-pixels, not CSS pixels,
  * matching the Anthropic API's own threshold.
  *

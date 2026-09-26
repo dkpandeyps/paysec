@@ -1,7 +1,7 @@
 /**
  * User-slug identity resolution chain (T16 / D4 A3).
  *
- * Verifies the gstack-config resolve-user-slug subcommand walks the
+ * Verifies the paysec-config resolve-user-slug subcommand walks the
  * documented fallback chain:
  *   1. mcp__gbrain__whoami.client_name (skipped when gbrain not on PATH)
  *   2. $USER env var
@@ -9,7 +9,7 @@
  *   4. anonymous-<sha8(hostname)>
  *
  * Result is persisted under user_slug_at_<endpoint-id> for stability.
- * Test isolation via GSTACK_HOME and HOME env overrides.
+ * Test isolation via PAYSEC_HOME and HOME env overrides.
  *
  * Gate-tier, free, ~50ms.
  */
@@ -21,12 +21,12 @@ import { tmpdir } from 'os';
 import { spawnSync } from 'child_process';
 
 const REPO_ROOT = process.cwd();
-const CONFIG_BIN = join(REPO_ROOT, 'bin', 'gstack-config');
+const CONFIG_BIN = join(REPO_ROOT, 'bin', 'paysec-config');
 
 let TMP_HOME: string;
 const ORIGINAL = {
   HOME: process.env.HOME,
-  GSTACK_HOME: process.env.GSTACK_HOME,
+  PAYSEC_HOME: process.env.PAYSEC_HOME,
   USER: process.env.USER,
 };
 
@@ -49,8 +49,8 @@ function runConfig(args: string[], extraEnv: Record<string, string> = {}): { std
 }
 
 beforeEach(() => {
-  TMP_HOME = mkdtempSync(join(tmpdir(), 'gstack-user-slug-test-'));
-  process.env.GSTACK_HOME = TMP_HOME;
+  TMP_HOME = mkdtempSync(join(tmpdir(), 'paysec-user-slug-test-'));
+  process.env.PAYSEC_HOME = TMP_HOME;
 });
 
 afterEach(() => {
@@ -63,7 +63,7 @@ afterEach(() => {
 
 describe('endpoint-hash subcommand', () => {
   test('returns deterministic 8-char hex or literal "local"', () => {
-    const result = runConfig(['endpoint-hash'], { GSTACK_HOME: TMP_HOME });
+    const result = runConfig(['endpoint-hash'], { PAYSEC_HOME: TMP_HOME });
     expect(result.status).toBe(0);
     const out = result.stdout.trim();
     expect(out === 'local' || /^[a-f0-9]{8}$/.test(out) || /^[a-f0-9]{16}$/.test(out)).toBe(true);
@@ -72,20 +72,20 @@ describe('endpoint-hash subcommand', () => {
 
 describe('resolve-user-slug fallback chain', () => {
   test('uses $USER when set (layer 2)', () => {
-    const result = runConfig(['resolve-user-slug'], { GSTACK_HOME: TMP_HOME, USER: 'alice-test' });
+    const result = runConfig(['resolve-user-slug'], { PAYSEC_HOME: TMP_HOME, USER: 'alice-test' });
     expect(result.status).toBe(0);
     expect(result.stdout.trim()).toBe('alice-test');
   });
 
   test('lowercases + dash-normalizes $USER', () => {
-    const result = runConfig(['resolve-user-slug'], { GSTACK_HOME: TMP_HOME, USER: 'Alice Test' });
+    const result = runConfig(['resolve-user-slug'], { PAYSEC_HOME: TMP_HOME, USER: 'Alice Test' });
     expect(result.status).toBe(0);
     // Spaces become dashes, uppercase becomes lowercase
     expect(result.stdout.trim()).toMatch(/^alice-test$/i);
   });
 
   test('falls through past empty $USER to git email or anonymous', () => {
-    const result = runConfig(['resolve-user-slug'], { GSTACK_HOME: TMP_HOME, USER: '' });
+    const result = runConfig(['resolve-user-slug'], { PAYSEC_HOME: TMP_HOME, USER: '' });
     expect(result.status).toBe(0);
     const slug = result.stdout.trim();
     expect(slug.length).toBeGreaterThan(0);
@@ -94,7 +94,7 @@ describe('resolve-user-slug fallback chain', () => {
   });
 
   test('persists resolution to user_slug_at_<endpoint-id> on first call', () => {
-    runConfig(['resolve-user-slug'], { GSTACK_HOME: TMP_HOME, USER: 'persisttest' });
+    runConfig(['resolve-user-slug'], { PAYSEC_HOME: TMP_HOME, USER: 'persisttest' });
     const configFile = join(TMP_HOME, 'config.yaml');
     expect(existsSync(configFile)).toBe(true);
     const content = readFileSync(configFile, 'utf-8');
@@ -104,8 +104,8 @@ describe('resolve-user-slug fallback chain', () => {
   });
 
   test('subsequent calls return same slug (stable across sessions)', () => {
-    const first = runConfig(['resolve-user-slug'], { GSTACK_HOME: TMP_HOME, USER: 'stabletest' });
-    const second = runConfig(['resolve-user-slug'], { GSTACK_HOME: TMP_HOME, USER: 'changed-after' });
+    const first = runConfig(['resolve-user-slug'], { PAYSEC_HOME: TMP_HOME, USER: 'stabletest' });
+    const second = runConfig(['resolve-user-slug'], { PAYSEC_HOME: TMP_HOME, USER: 'changed-after' });
     // Second call ignores new $USER because the slug was already persisted.
     expect(first.stdout.trim()).toBe('stabletest');
     expect(second.stdout.trim()).toBe('stabletest');
@@ -114,37 +114,37 @@ describe('resolve-user-slug fallback chain', () => {
 
 describe('brain_trust_policy@<endpoint-id> namespace', () => {
   test('default value is "unset"', () => {
-    const result = runConfig(['get', 'brain_trust_policy@deadbeef'], { GSTACK_HOME: TMP_HOME });
+    const result = runConfig(['get', 'brain_trust_policy@deadbeef'], { PAYSEC_HOME: TMP_HOME });
     expect(result.status).toBe(0);
     expect(result.stdout).toBe('unset');
   });
 
   test('set + get roundtrip works', () => {
-    const setResult = runConfig(['set', 'brain_trust_policy@deadbeef', 'personal'], { GSTACK_HOME: TMP_HOME });
+    const setResult = runConfig(['set', 'brain_trust_policy@deadbeef', 'personal'], { PAYSEC_HOME: TMP_HOME });
     expect(setResult.status).toBe(0);
-    const getResult = runConfig(['get', 'brain_trust_policy@deadbeef'], { GSTACK_HOME: TMP_HOME });
+    const getResult = runConfig(['get', 'brain_trust_policy@deadbeef'], { PAYSEC_HOME: TMP_HOME });
     expect(getResult.stdout).toBe('personal');
   });
 
   test('invalid value falls back to unset with warning', () => {
-    const result = runConfig(['set', 'brain_trust_policy@deadbeef', 'invalid-value'], { GSTACK_HOME: TMP_HOME });
+    const result = runConfig(['set', 'brain_trust_policy@deadbeef', 'invalid-value'], { PAYSEC_HOME: TMP_HOME });
     expect(result.status).toBe(0);
     expect(result.stderr).toContain('not recognized');
-    const getResult = runConfig(['get', 'brain_trust_policy@deadbeef'], { GSTACK_HOME: TMP_HOME });
+    const getResult = runConfig(['get', 'brain_trust_policy@deadbeef'], { PAYSEC_HOME: TMP_HOME });
     expect(getResult.stdout).toBe('unset');
   });
 
   test('shared value accepted', () => {
-    runConfig(['set', 'brain_trust_policy@deadbeef', 'shared'], { GSTACK_HOME: TMP_HOME });
-    const getResult = runConfig(['get', 'brain_trust_policy@deadbeef'], { GSTACK_HOME: TMP_HOME });
+    runConfig(['set', 'brain_trust_policy@deadbeef', 'shared'], { PAYSEC_HOME: TMP_HOME });
+    const getResult = runConfig(['get', 'brain_trust_policy@deadbeef'], { PAYSEC_HOME: TMP_HOME });
     expect(getResult.stdout).toBe('shared');
   });
 
   test('per-endpoint policies dont collide', () => {
-    runConfig(['set', 'brain_trust_policy@aaaaaaaa', 'personal'], { GSTACK_HOME: TMP_HOME });
-    runConfig(['set', 'brain_trust_policy@bbbbbbbb', 'shared'], { GSTACK_HOME: TMP_HOME });
-    const a = runConfig(['get', 'brain_trust_policy@aaaaaaaa'], { GSTACK_HOME: TMP_HOME });
-    const b = runConfig(['get', 'brain_trust_policy@bbbbbbbb'], { GSTACK_HOME: TMP_HOME });
+    runConfig(['set', 'brain_trust_policy@aaaaaaaa', 'personal'], { PAYSEC_HOME: TMP_HOME });
+    runConfig(['set', 'brain_trust_policy@bbbbbbbb', 'shared'], { PAYSEC_HOME: TMP_HOME });
+    const a = runConfig(['get', 'brain_trust_policy@aaaaaaaa'], { PAYSEC_HOME: TMP_HOME });
+    const b = runConfig(['get', 'brain_trust_policy@bbbbbbbb'], { PAYSEC_HOME: TMP_HOME });
     expect(a.stdout).toBe('personal');
     expect(b.stdout).toBe('shared');
   });
@@ -152,23 +152,23 @@ describe('brain_trust_policy@<endpoint-id> namespace', () => {
 
 describe('key validation', () => {
   test('rejects keys with disallowed characters', () => {
-    const result = runConfig(['get', 'bad-key'], { GSTACK_HOME: TMP_HOME });
+    const result = runConfig(['get', 'bad-key'], { PAYSEC_HOME: TMP_HOME });
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('alphanumeric');
   });
 
   test('accepts plain alphanumeric/underscore keys', () => {
-    const result = runConfig(['get', 'proactive'], { GSTACK_HOME: TMP_HOME });
+    const result = runConfig(['get', 'proactive'], { PAYSEC_HOME: TMP_HOME });
     expect(result.status).toBe(0);
   });
 
   test('accepts @<hex-hash> suffix on key', () => {
-    const result = runConfig(['get', 'brain_trust_policy@abc123ff'], { GSTACK_HOME: TMP_HOME });
+    const result = runConfig(['get', 'brain_trust_policy@abc123ff'], { PAYSEC_HOME: TMP_HOME });
     expect(result.status).toBe(0);
   });
 
   test('accepts @local suffix on key', () => {
-    const result = runConfig(['get', 'brain_trust_policy@local'], { GSTACK_HOME: TMP_HOME });
+    const result = runConfig(['get', 'brain_trust_policy@local'], { PAYSEC_HOME: TMP_HOME });
     expect(result.status).toBe(0);
     expect(result.stdout).toBe('unset');
   });

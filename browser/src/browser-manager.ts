@@ -27,20 +27,20 @@ import { withCdpSession } from './cdp-bridge';
 import type { MemorySnapshot, MemoryStructureStats, MemoryTabSnapshot, MemoryProcess } from './memory-snapshot';
 
 /**
- * Detect whether GSTACK_CHROMIUM_PATH points at a custom Chromium build that
- * already bakes the gstack extension in as a component extension (e.g.,
- * GStack Browser.app / GBrowser). Passing --load-extension against such a
+ * Detect whether PAYSEC_CHROMIUM_PATH points at a custom Chromium build that
+ * already bakes the paysec extension in as a component extension (e.g.,
+ * PaySec Browser.app / GBrowser). Passing --load-extension against such a
  * binary triggers a ServiceWorkerState::SetWorkerId DCHECK because two
  * copies of the same service worker try to register.
  *
  * Resolution:
- *   1. GSTACK_CHROMIUM_KIND === 'custom-extension-baked' (preferred, explicit)
- *   2. GSTACK_CHROMIUM_PATH path substring contains 'GBrowser' or 'gbrowser'
+ *   1. PAYSEC_CHROMIUM_KIND === 'custom-extension-baked' (preferred, explicit)
+ *   2. PAYSEC_CHROMIUM_PATH path substring contains 'GBrowser' or 'gbrowser'
  *      (fallback for callers that only set the path)
  */
 export function isCustomChromium(): boolean {
-  if (process.env.GSTACK_CHROMIUM_KIND === 'custom-extension-baked') return true;
-  const p = process.env.GSTACK_CHROMIUM_PATH || '';
+  if (process.env.PAYSEC_CHROMIUM_KIND === 'custom-extension-baked') return true;
+  const p = process.env.PAYSEC_CHROMIUM_PATH || '';
   return p.includes('GBrowser') || p.includes('gbrowser');
 }
 
@@ -66,10 +66,10 @@ export function shouldEnableChromiumSandbox(): boolean {
   // Explicit user override for Ubuntu/AppArmor and similar environments where
   // unprivileged Chromium sandboxing is blocked even for normal users (the
   // sandbox needs unprivileged user namespaces that the host policy denies,
-  // so /qa hangs without --no-sandbox). Setting GSTACK_CHROMIUM_NO_SANDBOX=1
+  // so /qa-fix hangs without --no-sandbox). Setting PAYSEC_CHROMIUM_NO_SANDBOX=1
   // forces the sandbox off without changing the default for everyone else.
   // See #1562.
-  if (process.env.GSTACK_CHROMIUM_NO_SANDBOX === '1') return false;
+  if (process.env.PAYSEC_CHROMIUM_NO_SANDBOX === '1') return false;
   const isRoot = typeof process.getuid === 'function' && process.getuid() === 0;
   return !(process.env.CI || process.env.CONTAINER || isRoot);
 }
@@ -106,11 +106,11 @@ export class PoisonedBundleError extends Error {
  * DEPENDENCIES_VALIDATED markers are removed.
  *
  * Caller contract: pass ONLY Playwright-cache executables
- * (chromium.executablePath()). A bundle supplied via GSTACK_CHROMIUM_PATH
- * belongs to the wrapper/embedder — its plist legitimately says "GStack
+ * (chromium.executablePath()). A bundle supplied via PAYSEC_CHROMIUM_PATH
+ * belongs to the wrapper/embedder — its plist legitimately says "PaySec
  * Browser" — and must never be deleted. Both call sites (launchHeaded and
  * handoff) honor this, and as a second belt the probe refuses to act on the
- * GSTACK_CHROMIUM_PATH executable itself.
+ * PAYSEC_CHROMIUM_PATH executable itself.
  *
  * @param chromiumExecutablePath the Chromium binary inside the .app
  *   (…/<name>.app/Contents/MacOS/<name>), as returned by
@@ -123,7 +123,7 @@ export function probePoisonedChromiumBundle(chromiumExecutablePath: string): voi
   const path = require('path');
 
   // Belt to the caller contract: never act on the custom/embedder bundle.
-  const customPath = process.env.GSTACK_CHROMIUM_PATH;
+  const customPath = process.env.PAYSEC_CHROMIUM_PATH;
   if (customPath && path.resolve(chromiumExecutablePath) === path.resolve(customPath)) {
     return;
   }
@@ -131,7 +131,7 @@ export function probePoisonedChromiumBundle(chromiumExecutablePath: string): voi
   const chromeContentsDir = path.resolve(path.dirname(chromiumExecutablePath), '..');
   const chromePlist = path.join(chromeContentsDir, 'Info.plist');
   if (!fs.existsSync(chromePlist)) return;
-  if (!fs.readFileSync(chromePlist, 'utf-8').includes('GStack Browser')) return;
+  if (!fs.readFileSync(chromePlist, 'utf-8').includes('PaySec Browser')) return;
 
   const appDir = path.resolve(chromeContentsDir, '..');
   const revisionDir = path.resolve(appDir, '..', '..');
@@ -144,7 +144,7 @@ export function probePoisonedChromiumBundle(chromiumExecutablePath: string): voi
     }
   }
   throw new PoisonedBundleError(
-    'Chromium bundle was mutated by a previous gstack version (broken codesign seal — ' +
+    'Chromium bundle was mutated by a previous paysec version (broken codesign seal — ' +
     'GPU exit_code=5 on macOS 26). The poisoned bundle has been removed. ' +
     'Re-fetch a clean one with: bunx playwright install chromium — then retry.',
   );
@@ -197,7 +197,7 @@ export async function handleChromiumDisconnect(browser: Browser | null): Promise
     process.exit(0);
   }
   console.error('[browse] FATAL: Chromium process crashed or was killed. Server exiting (1).');
-  console.error('[browse] Console/network logs flushed to .gstack/browse-*.log');
+  console.error('[browse] Console/network logs flushed to .paysec/browse-*.log');
   process.exit(1);
 }
 
@@ -371,25 +371,25 @@ export class BrowserManager {
   }
 
   /**
-   * Find the gstack Chrome extension directory.
+   * Find the paysec Chrome extension directory.
    * Checks: repo root /extension, global install, dev install.
    */
   private findExtensionPath(): string | null {
     const fs = require('fs');
     const path = require('path');
     const candidates = [
-      // Explicit override via env var (used by GStack Browser.app bundle)
+      // Explicit override via env var (used by PaySec Browser.app bundle)
       process.env.BROWSE_EXTENSIONS_DIR || '',
-      // Relative to this source file (dev mode: browse/src/ -> ../../extension)
+      // Relative to this source file (dev mode: browser/src/ -> ../../extension)
       path.resolve(__dirname, '..', '..', 'extension'),
-      // Global gstack install
-      path.join(process.env.HOME || '', '.claude', 'skills', 'gstack', 'extension'),
+      // Global paysec install
+      path.join(process.env.HOME || '', '.claude', 'skills', 'paysec', 'extension'),
       // Git repo root (detected via BROWSE_STATE_FILE location)
       (() => {
         const stateFile = process.env.BROWSE_STATE_FILE || '';
         if (stateFile) {
           const repoRoot = path.resolve(path.dirname(stateFile), '..');
-          return path.join(repoRoot, '.claude', 'skills', 'gstack', 'extension');
+          return path.join(repoRoot, '.claude', 'skills', 'paysec', 'extension');
         }
         return '';
       })(),
@@ -432,8 +432,8 @@ export class BrowserManager {
     // BROWSE_EXTENSIONS_DIR points to an unpacked Chrome extension directory.
     // Extensions only work in headed mode, so we use an off-screen window.
     const extensionsDir = process.env.BROWSE_EXTENSIONS_DIR;
-    const { STEALTH_LAUNCH_ARGS, buildGStackLaunchArgs } = await import('./stealth');
-    const launchArgs: string[] = [...STEALTH_LAUNCH_ARGS, ...buildGStackLaunchArgs()];
+    const { STEALTH_LAUNCH_ARGS, buildPaySecLaunchArgs } = await import('./stealth');
+    const launchArgs: string[] = [...STEALTH_LAUNCH_ARGS, ...buildPaySecLaunchArgs()];
     let useHeadless = true;
 
     // Docker/CI/root: Chromium sandbox requires unprivileged user namespaces which
@@ -446,7 +446,7 @@ export class BrowserManager {
 
     if (extensionsDir) {
       // Skip --load-extension when running against a custom Chromium build that
-      // already bakes the extension in (e.g., GBrowser / GStack Browser.app).
+      // already bakes the extension in (e.g., GBrowser / PaySec Browser.app).
       // Loading it twice causes a ServiceWorkerState::SetWorkerId DCHECK crash.
       if (!isCustomChromium()) {
         launchArgs.push(
@@ -526,7 +526,7 @@ export class BrowserManager {
 
   // ─── Headed Mode ─────────────────────────────────────────────
   /**
-   * Launch Playwright's bundled Chromium in headed mode with the gstack
+   * Launch Playwright's bundled Chromium in headed mode with the paysec
    * Chrome extension auto-loaded. Uses launchPersistentContext() which
    * is required for extension loading (launch() + newContext() can't
    * load extensions).
@@ -540,42 +540,42 @@ export class BrowserManager {
     this.tabSessions.clear();
     this.nextTabId = 1;
 
-    // Find the gstack extension directory for auto-loading
+    // Find the paysec extension directory for auto-loading
     const extensionPath = this.findExtensionPath();
-    const { STEALTH_LAUNCH_ARGS, buildGStackLaunchArgs } = await import('./stealth');
+    const { STEALTH_LAUNCH_ARGS, buildPaySecLaunchArgs } = await import('./stealth');
     const launchArgs = [
       '--hide-crash-restore-bubble',
       // Anti-bot-detection: --disable-blink-features=AutomationControlled (and any
       // future blink-level tells) via the shared STEALTH_LAUNCH_ARGS constant — the
       // same flag launch() and handoff() use, kept in one place instead of a literal.
       ...STEALTH_LAUNCH_ARGS,
-      // GStack Pack 1: per-install hardware/GPU/UA-CH overrides for the
+      // PaySec Pack 1: per-install hardware/GPU/UA-CH overrides for the
       // C++ patches in gbrowser's Chromium build. Each switch is a no-op
       // on Chromium builds without the corresponding patch (the patch's
       // empty-fallback returns native), so this is safe on stock Playwright
       // Chromium too.
-      ...buildGStackLaunchArgs(),
+      ...buildPaySecLaunchArgs(),
     ];
     if (extensionPath) {
       // Skip --load-extension when running against a custom Chromium build
       // that already bakes the extension in as a component extension
-      // (gbrowser / GStack Browser.app). Loading it twice causes a
+      // (gbrowser / PaySec Browser.app). Loading it twice causes a
       // ServiceWorkerState::SetWorkerId DCHECK crash.
       if (!isCustomChromium()) {
         launchArgs.push(`--disable-extensions-except=${extensionPath}`);
         launchArgs.push(`--load-extension=${extensionPath}`);
       }
       // Write auth token for extension bootstrap (still required even when
-      // the extension is component-baked — it reads ~/.gstack/.auth.json at
+      // the extension is component-baked — it reads ~/.paysec/.auth.json at
       // startup to learn how to call the daemon).
-      // Write to ~/.gstack/.auth.json (not the extension dir, which may be read-only
+      // Write to ~/.paysec/.auth.json (not the extension dir, which may be read-only
       // in .app bundles and breaks codesigning).
       if (authToken) {
         const fs = require('fs');
         const path = require('path');
-        const gstackDir = path.join(process.env.HOME || '/tmp', '.gstack');
-        mkdirSecure(gstackDir);
-        const authFile = path.join(gstackDir, '.auth.json');
+        const paysecDir = path.join(process.env.HOME || '/tmp', '.paysec');
+        mkdirSecure(paysecDir);
+        const authFile = path.join(paysecDir, '.auth.json');
         try {
           writeSecureFile(authFile, JSON.stringify({ token: authToken, port: this.serverPort || 34567 }));
         } catch (err: any) {
@@ -598,30 +598,30 @@ export class BrowserManager {
     // (SIGKILL, hard crash) — the lockfiles point at a PID that may no longer
     // exist. Shutdown cleanup doesn't run on hard crashes, so we clean here
     // too. Safe under external coordination: gbd.lock for gbrowser,
-    // single-instance CLI check for gstack.
+    // single-instance CLI check for paysec.
     cleanSingletonLocks(userDataDir);
 
-    // Support custom Chromium binary via GSTACK_CHROMIUM_PATH env var.
-    // Used by GStack Browser.app to point at the bundled Chromium.
-    const executablePath = process.env.GSTACK_CHROMIUM_PATH || undefined;
+    // Support custom Chromium binary via PAYSEC_CHROMIUM_PATH env var.
+    // Used by PaySec Browser.app to point at the bundled Chromium.
+    const executablePath = process.env.PAYSEC_CHROMIUM_PATH || undefined;
 
     // NOTE (#2242): the in-place "rebrand" that patched the Chromium .app's
-    // Info.plist (global "Google Chrome for Testing" → "GStack Browser"
+    // Info.plist (global "Google Chrome for Testing" → "PaySec Browser"
     // replace) and overwrote its Resources/*.icns is deliberately GONE.
     // Chrome for Testing is a code-signed bundle: the global replace renamed
     // CFBundleExecutable to a binary that doesn't exist and the plist/icon
     // writes broke the codesign seal — GPU process exit_code=5, headed mode
     // dead on macOS 26 (#2242, #2138, #2139). Branding belongs in the
-    // GStack Browser.app wrapper (GSTACK_CHROMIUM_PATH), never in a mutation
+    // PaySec Browser.app wrapper (PAYSEC_CHROMIUM_PATH), never in a mutation
     // of the signed bundle. Do not reintroduce writes into the Chromium
-    // bundle here — browse/test/rebrand-signed-bundle.test.ts fails CI if
+    // bundle here — browser/test/rebrand-signed-bundle.test.ts fails CI if
     // you do.
     //
     // Self-heal for bundles the OLD code already poisoned: probe the
     // Playwright-cache bundle and remove it when the mutated plist is
     // present (see probePoisonedChromiumBundle for the removal-scope
     // rationale). Scoped to the Playwright cache copy — a
-    // GSTACK_CHROMIUM_PATH bundle belongs to the wrapper/embedder and is
+    // PAYSEC_CHROMIUM_PATH bundle belongs to the wrapper/embedder and is
     // never probed.
     if (!executablePath) {
       try {
@@ -635,12 +635,12 @@ export class BrowserManager {
 
     // Build custom user agent: report as stock Chrome with the version
     // matching the underlying Chromium binary. D6 (codex #18 correction):
-    // the previous "GStackBrowser" branding suffix was itself a high-entropy
+    // the previous "PaySecBrowser" branding suffix was itself a high-entropy
     // classifier — sites grepping UA for known browser strings caught us
     // immediately. Branding still lives in the wrapper .app name + Dock icon
     // + tray; it does NOT need to be in the UA string for the product to be
     // "GBrowser." Removing it resolves the "looks like Chrome but identifies
-    // as GStackBrowser" contradiction codex flagged.
+    // as PaySecBrowser" contradiction codex flagged.
     let customUA: string | undefined;
     if (!this.customUserAgent) {
       // Detect Chrome version from the Chromium binary
@@ -668,7 +668,7 @@ export class BrowserManager {
     // --disable-default-apps — each a documented automation tell per Patchright).
     const { STEALTH_IGNORE_DEFAULT_ARGS } = await import('./stealth');
     // XProtect self-heal wrapper (P0 #2554). usesCustomExecutable scopes the
-    // heal out when GSTACK_CHROMIUM_PATH supplies the bundle — that bundle
+    // heal out when PAYSEC_CHROMIUM_PATH supplies the bundle — that bundle
     // belongs to the wrapper/embedder and is never quarantine-cleared or
     // reinstalled over (probePoisonedChromiumBundle's scope contract).
     this.context = await launchWithXProtectHeal(() => chromium.launchPersistentContext(userDataDir, {
@@ -708,27 +708,27 @@ export class BrowserManager {
     // Extension's content script handles the floating pill
     const indicatorScript = () => {
       const injectIndicator = () => {
-        if (document.getElementById('gstack-ctrl')) return;
+        if (document.getElementById('paysec-ctrl')) return;
 
         const topLine = document.createElement('div');
-        topLine.id = 'gstack-ctrl';
+        topLine.id = 'paysec-ctrl';
         topLine.style.cssText = `
           position: fixed; top: 0; left: 0; right: 0; height: 2px;
           background: linear-gradient(90deg, #F59E0B, #FBBF24, #F59E0B);
           background-size: 200% 100%;
-          animation: gstack-shimmer 3s linear infinite;
+          animation: paysec-shimmer 3s linear infinite;
           pointer-events: none; z-index: 2147483647;
           opacity: 0.8;
         `;
 
         const style = document.createElement('style');
         style.textContent = `
-          @keyframes gstack-shimmer {
+          @keyframes paysec-shimmer {
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
           }
           @media (prefers-reduced-motion: reduce) {
-            #gstack-ctrl { animation: none !important; }
+            #paysec-ctrl { animation: none !important; }
           }
         `;
 
@@ -1022,7 +1022,7 @@ export class BrowserManager {
    *
    * Two policies, distinguished by `options.ownOnly`:
    *
-   *   - **own-only (pair-agent over tunnel):** the strict mode. Token must own
+   *   - **own-only (pair-remote-agent over tunnel):** the strict mode. Token must own
    *     the target tab for any access (reads or writes). Unowned user tabs
    *     and tabs owned by other clients are off-limits. Remote agents must
    *     `newtab` first to get a tab they can drive.
@@ -1031,7 +1031,7 @@ export class BrowserManager {
    *     tab access. The token can read/write any tab — capability is gated
    *     elsewhere (scope checks at /command, rate limits, the dual-listener
    *     allowlist for tunnel-bound traffic). Tab ownership is not a security
-   *     boundary for shared tokens; it only matters for pair-agent isolation.
+   *     boundary for shared tokens; it only matters for pair-remote-agent isolation.
    *     This matches the contract documented in `skill-token.ts:79`
    *     ("skill scripts may switch tabs as needed").
    *
@@ -1614,7 +1614,7 @@ export class BrowserManager {
       throw new Error(`viewport --scale: value must be a finite number, got ${scale}`);
     }
     if (scale < 1 || scale > 3) {
-      throw new Error(`viewport --scale: value must be between 1 and 3 (gstack policy cap), got ${scale}`);
+      throw new Error(`viewport --scale: value must be between 1 and 3 (paysec policy cap), got ${scale}`);
     }
     if (this.connectionMode === 'headed') {
       throw new Error('viewport --scale is not supported in headed mode — scale is controlled by the real browser window.');
@@ -1685,11 +1685,11 @@ export class BrowserManager {
       const fs = require('fs');
       const path = require('path');
       const extensionPath = this.findExtensionPath();
-      const { STEALTH_LAUNCH_ARGS, buildGStackLaunchArgs } = await import('./stealth');
+      const { STEALTH_LAUNCH_ARGS, buildPaySecLaunchArgs } = await import('./stealth');
       // Same blink-level stealth flags as launch()/launchHeaded(). Without
       // STEALTH_LAUNCH_ARGS the handed-off browser kept the AutomationControlled
       // tell that the other two paths strip.
-      const launchArgs: string[] = ['--hide-crash-restore-bubble', ...STEALTH_LAUNCH_ARGS, ...buildGStackLaunchArgs()];
+      const launchArgs: string[] = ['--hide-crash-restore-bubble', ...STEALTH_LAUNCH_ARGS, ...buildPaySecLaunchArgs()];
       if (extensionPath) {
         launchArgs.push(`--disable-extensions-except=${extensionPath}`);
         launchArgs.push(`--load-extension=${extensionPath}`);
@@ -1701,8 +1701,8 @@ export class BrowserManager {
       }
 
       // Same profile resolution + singleton-lock cleanup as launchHeaded().
-      // This path previously hardcoded ~/.gstack/chromium-profile, silently
-      // ignoring $CHROMIUM_PROFILE / $GSTACK_HOME and skipping the lock
+      // This path previously hardcoded ~/.paysec/chromium-profile, silently
+      // ignoring $CHROMIUM_PROFILE / $PAYSEC_HOME and skipping the lock
       // cleanup — the third shipped drift between the three launch paths.
       const userDataDir = resolveChromiumProfile();
       fs.mkdirSync(userDataDir, { recursive: true });
@@ -1712,7 +1712,7 @@ export class BrowserManager {
       // bundle (this launchPersistentContext call passes no executablePath),
       // so a bundle poisoned by the old in-place rebrand would GPU-crash here
       // exactly like launchHeaded(). Same probe, same contract: a
-      // GSTACK_CHROMIUM_PATH bundle is never passed in. The rethrown typed
+      // PAYSEC_CHROMIUM_PATH bundle is never passed in. The rethrown typed
       // error surfaces through the outer catch as the actionable
       // "Cannot open headed browser" message, headless browser untouched.
       try {

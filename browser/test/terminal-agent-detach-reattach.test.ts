@@ -28,13 +28,13 @@ describe('terminal-agent detach + re-attach (v1.44+ Commit 3)', () => {
 
   test('2. RING_BUFFER_MAX_BYTES default is 1 MB, env-overridable', () => {
     const src = fs.readFileSync(AGENT_TS, 'utf-8');
-    expect(src).toContain('GSTACK_PTY_RING_BUFFER_BYTES');
+    expect(src).toContain('PAYSEC_PTY_RING_BUFFER_BYTES');
     expect(src).toContain('1024 * 1024');
   });
 
   test('3. DETACH_WINDOW_MS default is 60s, env-overridable', () => {
     const src = fs.readFileSync(AGENT_TS, 'utf-8');
-    expect(src).toContain('GSTACK_PTY_DETACH_WINDOW_MS');
+    expect(src).toContain('PAYSEC_PTY_DETACH_WINDOW_MS');
     expect(src).toContain("'60000'");
   });
 

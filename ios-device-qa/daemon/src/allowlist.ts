@@ -1,4 +1,4 @@
-// Allowlist file at ~/.gstack/ios-qa-allowlist.json. The single source of
+// Allowlist file at ~/.paysec/ios-qa-allowlist.json. The single source of
 // truth for who can call what at which capability tier.
 //
 // Self-service mint over tailnet ONLY succeeds for identities present in the
@@ -12,8 +12,8 @@ import type { Allowlist, AllowlistEntry, Capability } from './types';
 import { capabilityCovers } from './types';
 
 export function defaultAllowlistPath(): string {
-  return process.env.GSTACK_IOS_ALLOWLIST_PATH
-    ?? join(homedir(), '.gstack', 'ios-qa-allowlist.json');
+  return process.env.PAYSEC_IOS_ALLOWLIST_PATH
+    ?? join(homedir(), '.paysec', 'ios-qa-allowlist.json');
 }
 
 export async function loadAllowlist(path: string = defaultAllowlistPath()): Promise<Allowlist> {

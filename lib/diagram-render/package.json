@@ -1,5 +1,5 @@
 {
-  "name": "@gstack/diagram-render",
+  "name": "@paysec/diagram-render",
   "private": true,
   "type": "module",
   "description": "Offline diagram-render bundle: mermaid + excalidraw export + mermaid-to-excalidraw, built into a single self-contained HTML page loaded by the browse daemon. Versions are exact-pinned; bump them only via scripts/build.ts (see README.md).",

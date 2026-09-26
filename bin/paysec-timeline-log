@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# gstack-timeline-log — append a timeline event to the project timeline
-# Usage: gstack-timeline-log '{"skill":"review","event":"started","branch":"main"}'
+# paysec-timeline-log — append a timeline event to the project timeline
+# Usage: paysec-timeline-log '{"skill":"review","event":"started","branch":"main"}'
 #
 # Session timeline: local by default. If the user enables `artifacts_sync_mode`
 # with the `full` (not `artifacts-only`) privacy tier — via the first-run
-# stop-gate from `gstack-artifacts-init` or the preamble — timeline events are
+# stop-gate from `paysec-artifacts-init` or the preamble — timeline events are
 # published to the user's private GBrain sync repo. See docs/gbrain-sync.md.
 # Required fields: skill, event (started|completed).
 # Optional: branch, outcome, duration_s, session, ts.
 # Validation failure → skip silently (non-blocking).
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-eval "$("$SCRIPT_DIR/gstack-slug" 2>/dev/null)"
-GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
-mkdir -p "$GSTACK_HOME/projects/$SLUG"
+eval "$("$SCRIPT_DIR/paysec-slug" 2>/dev/null)"
+PAYSEC_HOME="${PAYSEC_HOME:-$HOME/.paysec}"
+mkdir -p "$PAYSEC_HOME/projects/$SLUG"
 
 INPUT="$1"
 
@@ -34,7 +34,7 @@ if ! printf '%s' "$INPUT" | bun -e "const j=JSON.parse(await Bun.stdin.text()); 
   " 2>/dev/null) || true
 fi
 
-echo "$INPUT" >> "$GSTACK_HOME/projects/$SLUG/timeline.jsonl"
+echo "$INPUT" >> "$PAYSEC_HOME/projects/$SLUG/timeline.jsonl"
 
 # gbrain-sync: enqueue for cross-machine sync (no-op if sync is off).
-"$SCRIPT_DIR/gstack-brain-enqueue" "projects/$SLUG/timeline.jsonl" 2>/dev/null &
+"$SCRIPT_DIR/paysec-brain-enqueue" "projects/$SLUG/timeline.jsonl" 2>/dev/null &

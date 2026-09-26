@@ -1,5 +1,5 @@
 /**
- * Command registry for make-pdf — single source of truth.
+ * Command registry for md-to-pdf — single source of truth.
  *
  * Dependency graph:
  *   commands.ts ──▶ cli.ts (runtime dispatch)
@@ -54,7 +54,7 @@ export const COMMANDS = new Map<string, {
     flags: [],
   }],
   ["version", {
-    description: "Print make-pdf version",
+    description: "Print md-to-pdf version",
     usage: "version",
     category: "Setup",
     flags: [],

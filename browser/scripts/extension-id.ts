@@ -8,15 +8,15 @@
  * 0-9a-f to a-p (the "mpdecimal" alphabet). Pinning the public key in the
  * manifest pins the ID, which lets the browse server verify the Origin
  * header on POST /extension-token against a single known extension
- * identity (GSTACK_EXTENSION_ID in browse/src/server.ts).
+ * identity (PAYSEC_EXTENSION_ID in browser/src/server.ts).
  *
  * The private half of the keypair is intentionally NOT in the repo — the
  * extension is loaded unpacked (or baked into Browser.app), so only the
  * public key is needed to pin the ID. Regenerating the keypair changes
  * the ID and requires updating both the manifest "key" and the
- * GSTACK_EXTENSION_ID constant.
+ * PAYSEC_EXTENSION_ID constant.
  *
- * Usage: bun browse/scripts/extension-id.ts [path/to/manifest.json]
+ * Usage: bun browser/scripts/extension-id.ts [path/to/manifest.json]
  */
 
 import { createHash } from 'node:crypto';

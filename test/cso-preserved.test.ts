@@ -1,11 +1,11 @@
 /**
- * cso security-guidance preservation test.
+ * security-audit security-guidance preservation test.
  *
- * cso carries load-bearing security prose: OWASP Top 10 mappings, STRIDE
+ * security-audit carries load-bearing security prose: OWASP Top 10 mappings, STRIDE
  * threat-model phrasing, mode dispatch, and false-positive-filtering exceptions
  * that must NOT be auto-discarded.
  *
- * cso is now carved (skeleton SKILL.md + sections/audit-phases.md). The
+ * security-audit is now carved (skeleton SKILL.md + sections/audit-phases.md). The
  * scope-dependent audit phases (2-11) moved to the section; the mode dispatch
  * (## Arguments, ## Mode Resolution), the always-run phases (0, 1), and the
  * FP-filtering exceptions (Phase 12) stay always-loaded in the skeleton.
@@ -24,7 +24,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const REPO_ROOT = path.resolve(import.meta.dir, '..');
-const CSO_DIR = path.join(REPO_ROOT, 'cso');
+const CSO_DIR = path.join(REPO_ROOT, 'security-audit');
 const CSO_SKELETON = path.join(CSO_DIR, 'SKILL.md');
 
 function readSkeleton(): string {
@@ -46,8 +46,8 @@ function readUnion(): string {
 // Security content that must survive the carve (checked against the UNION).
 const MUST_PRESERVE_PHRASES = ['OWASP', 'STRIDE', 'daily', 'comprehensive', 'confidence', 'verif'];
 
-describe('cso skill preserves load-bearing security guidance', () => {
-  test('cso skeleton exists and is non-trivial', () => {
+describe('security-audit skill preserves load-bearing security guidance', () => {
+  test('security-audit skeleton exists and is non-trivial', () => {
     expect(fs.existsSync(CSO_SKELETON)).toBe(true);
     // Skeleton stays substantial: dispatch + always-run phases + FP filtering +
     // report phases are all always-loaded. Under 30 KB means too much moved out.
@@ -59,7 +59,7 @@ describe('cso skill preserves load-bearing security guidance', () => {
     const missing = MUST_PRESERVE_PHRASES.filter((p) => !union.includes(p.toLowerCase()));
     if (missing.length > 0) {
       throw new Error(
-        `cso union is missing required security phrases: ${missing.join(', ')}. ` +
+        `security-audit union is missing required security phrases: ${missing.join(', ')}. ` +
         `These are load-bearing. A carve relocates them; it must not drop them.`,
       );
     }
@@ -91,17 +91,17 @@ describe('cso skill preserves load-bearing security guidance', () => {
     }
   });
 
-  test('cso catalog trim landed (frontmatter description ≤ 200 chars)', () => {
+  test('security-audit catalog trim landed (frontmatter description ≤ 200 chars)', () => {
     const content = readSkeleton();
     const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
     expect(fmMatch).not.toBeNull();
     const desc = fmMatch![1].match(/^description:\s+(.+)$/m);
     expect(desc).not.toBeNull();
     expect(desc![1].trim().length).toBeLessThanOrEqual(200);
-    expect(desc![1]).toContain('(gstack)');
+    expect(desc![1]).toContain('(paysec)');
   });
 
-  test('cso routing prose moved to "## When to invoke" body section', () => {
+  test('security-audit routing prose moved to "## When to invoke" body section', () => {
     expect(readSkeleton()).toContain('## When to invoke this skill');
   });
 });

@@ -61,7 +61,7 @@ describe('setup: _link_or_copy invariant (D7)', () => {
     const hookEnd = SETUP_SRC.indexOf('\nif [ "$TEAM_MODE" -eq 1 ]', hookStart);
     const hookSection = SETUP_SRC.slice(hookStart, hookEnd);
     expect(hookSection).toContain('IS_WINDOWS');
-    expect(hookSection).toContain('bash $SOURCE_GSTACK_DIR/bin/gstack-session-update');
+    expect(hookSection).toContain('bash $SOURCE_PAYSEC_DIR/bin/paysec-session-update');
   });
 });
 
@@ -78,7 +78,7 @@ describe.skipIf(process.platform === 'win32')('setup: _link_or_copy helper — b
     isWindows: '0' | '1',
     srcKind: 'file' | 'dir',
   ): { ok: boolean; targetIsSymlink: boolean; targetExists: boolean; stderr: string } {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-helper-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-helper-'));
     try {
       const src = path.join(tmp, 'source');
       const dst = path.join(tmp, 'dest');

@@ -51,13 +51,13 @@ describe('deprecated codex web-search flag is gone (#2525)', () => {
   });
 
   test('rendered codex skill actually resolves the token to the live flag', () => {
-    const rendered = fs.readFileSync(path.join(ROOT, 'codex', 'SKILL.md'), 'utf-8');
+    const rendered = fs.readFileSync(path.join(ROOT, 'codex-second-opinion', 'SKILL.md'), 'utf-8');
     expect(rendered).toContain(CODEX_WEB_SEARCH_FLAG);
     expect(rendered).not.toContain('{{CODEX_WEB_SEARCH_FLAG}}');
   });
 
-  test('rendered autoplan skill resolves the token at every inline site', () => {
-    const rendered = fs.readFileSync(path.join(ROOT, 'autoplan', 'SKILL.md'), 'utf-8');
+  test('rendered auto-plan-review skill resolves the token at every inline site', () => {
+    const rendered = fs.readFileSync(path.join(ROOT, 'auto-plan-review', 'SKILL.md'), 'utf-8');
     const count = rendered.split(CODEX_WEB_SEARCH_FLAG).length - 1;
     expect(count).toBeGreaterThanOrEqual(4);
     expect(rendered).not.toContain('{{CODEX_WEB_SEARCH_FLAG}}');

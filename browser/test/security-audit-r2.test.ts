@@ -152,7 +152,7 @@ describe('Task 1: validateOutputPath uses realpathSync', () => {
     let symlinkPath: string;
 
     beforeAll(() => {
-      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-sec-test-'));
+      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-sec-test-'));
       symlinkPath = path.join(tmpDir, 'evil-link');
       try {
         fs.symlinkSync('/etc', symlinkPath);
@@ -201,7 +201,7 @@ describe('Task 1: validateOutputPath uses realpathSync', () => {
       const mod = await import('../src/meta-commands.ts');
       // Use /tmp (which resolves to /private/tmp on macOS) — matches SAFE_DIRECTORIES
       const tmpBase = process.platform === 'darwin' ? '/tmp' : os.tmpdir();
-      const legitimatePath = path.join(tmpBase, 'gstack-screenshot.png');
+      const legitimatePath = path.join(tmpBase, 'paysec-screenshot.png');
       expect(() => mod.validateOutputPath(legitimatePath)).not.toThrow();
     });
 
@@ -296,7 +296,7 @@ describe('Round-2 finding 2: snapshot.ts annotated path uses realpathSync', () =
 // PTY path no longer takes a queue entry — it accepts WebSocket frames
 // gated on Origin + session token, no on-disk queue to traverse. Path
 // traversal in browse-server's tab-state writer is covered by
-// browse/test/terminal-agent.test.ts (handleTabState atomic-write tests).
+// browser/test/terminal-agent.test.ts (handleTabState atomic-write tests).
 
 // ─── Task 5: /health endpoint must not expose sensitive fields ───────────────
 
@@ -462,7 +462,7 @@ describe('Task 11: state load cookie validation', () => {
 // on the now-deleted /sidebar-tabs and /sidebar-command routes. The
 // terminal-agent reads tab URLs from the live tabs.json file (atomic write
 // from background.js), and chrome:// / chrome-extension:// pages are
-// filtered server-side in handleTabState — see browse/test/terminal-agent.test.ts.
+// filtered server-side in handleTabState — see browser/test/terminal-agent.test.ts.
 
 // ─── Task 13: Inbox output wrapped as untrusted ──────────────────────────────
 
@@ -499,7 +499,7 @@ describe('Task 13: inbox output wrapped as untrusted content', () => {
 // Originally tested sidebar-agent's SIDEBAR_AGENT_TIMEOUT block. The chat
 // queue and its watchdog are gone. terminal-agent.ts disposes claude with
 // the same SIGINT-then-SIGKILL-after-3s pattern; that's covered by
-// browse/test/terminal-agent.test.ts ("cleanup escalates SIGINT to SIGKILL
+// browser/test/terminal-agent.test.ts ("cleanup escalates SIGINT to SIGKILL
 // after 3s on close").
 
 // ─── Task 17: viewport and wait bounds clamping ──────────────────────────────

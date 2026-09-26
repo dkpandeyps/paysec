@@ -15,14 +15,14 @@ const evalCollector = createEvalCollector('e2e-workflow');
 
 // --- Document-Release skill E2E ---
 
-describeIfSelected('Document-Release skill E2E', ['document-release'], () => {
+describeIfSelected('Document-Release skill E2E', ['docs-release-update'], () => {
   let docReleaseDir: string;
 
   beforeAll(() => {
     docReleaseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-doc-release-'));
 
-    // Copy document-release skill files
-    copyDirSync(path.join(ROOT, 'document-release'), path.join(docReleaseDir, 'document-release'));
+    // Copy docs-release-update skill files
+    copyDirSync(path.join(ROOT, 'docs-release-update'), path.join(docReleaseDir, 'docs-release-update'));
 
     // Init git repo with initial docs
     const run = (cmd: string, args: string[]) =>
@@ -60,11 +60,11 @@ describeIfSelected('Document-Release skill E2E', ['document-release'], () => {
     try { fs.rmSync(docReleaseDir, { recursive: true, force: true }); } catch {}
   });
 
-  testConcurrentIfSelected('document-release', async () => {
+  testConcurrentIfSelected('docs-release-update', async () => {
     const result = await runSkillTest({
-      prompt: `Read the file document-release/SKILL.md for the document-release workflow instructions.
+      prompt: `Read the file docs-release-update/SKILL.md for the docs-release-update workflow instructions.
 
-Run the /document-release workflow on this repo. The base branch is "main".
+Run the /docs-release-update workflow on this repo. The base branch is "main".
 
 IMPORTANT:
 - Do NOT use AskUserQuestion — auto-approve everything or skip if unsure.
@@ -84,11 +84,11 @@ IMPORTANT:
       // review-dashboard-via and retro-base-branch. Outer bun timeout
       // rises to 360s for headroom.
       timeout: 300_000,
-      testName: 'document-release',
+      testName: 'docs-release-update',
       runId,
     });
 
-    logCost('/document-release', result);
+    logCost('/docs-release-update', result);
 
     // Read CHANGELOG to verify it was NOT clobbered
     const changelog = fs.readFileSync(path.join(docReleaseDir, 'CHANGELOG.md'), 'utf-8');
@@ -104,7 +104,7 @@ IMPORTANT:
     const readmeUpdated = readme.includes('Feature C') || readme.includes('feature-c') || readme.includes('feature C');
 
     const exitOk = ['success', 'error_max_turns'].includes(result.exitReason);
-    recordE2E(evalCollector, '/document-release', 'Document-Release skill E2E', result, {
+    recordE2E(evalCollector, '/docs-release-update', 'Document-Release skill E2E', result, {
       passed: exitOk && hasOriginalEntries,
     });
 
@@ -130,8 +130,8 @@ describeIfSelected('Ship workflow E2E', ['ship-local-workflow'], () => {
   let shipRemoteDir: string;
 
   beforeAll(() => {
-    shipRemoteDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-ship-remote-'));
-    shipWorkDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-ship-work-'));
+    shipRemoteDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-ship-remote-'));
+    shipWorkDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-ship-work-'));
 
     // Create bare remote
     spawnSync('git', ['init', '--bare'], { cwd: shipRemoteDir, stdio: 'pipe' });
@@ -179,7 +179,7 @@ describeIfSelected('Ship workflow E2E', ['ship-local-workflow'], () => {
       runId,
     });
 
-    logCost('/ship local workflow', result);
+    logCost('/ship-pr local workflow', result);
 
     // Check push succeeded — verify the feature branch exists on the bare remote
     const branchCheck = spawnSync('git', ['branch', '--list', 'feature/ship-test'], { cwd: shipRemoteDir, stdio: 'pipe' });
@@ -190,7 +190,7 @@ describeIfSelected('Ship workflow E2E', ['ship-local-workflow'], () => {
       ? fs.readFileSync(path.join(shipWorkDir, 'VERSION'), 'utf-8').trim() : '';
     const versionBumped = versionContent !== '0.1.0.0';
 
-    recordE2E(evalCollector, '/ship local workflow', 'Ship workflow E2E', result, {
+    recordE2E(evalCollector, '/ship-pr local workflow', 'Ship workflow E2E', result, {
       passed: branchExists && versionBumped && ['success', 'error_max_turns'].includes(result.exitReason),
     });
 
@@ -202,19 +202,19 @@ describeIfSelected('Ship workflow E2E', ['ship-local-workflow'], () => {
 });
 
 // setup-cookies-detect REMOVED: The cookie-import-browser module has 30+ thorough
-// unit tests in browse/test/cookie-import-browser.test.ts (decryption, profile
+// unit tests in browser/test/cookie-import-browser.test.ts (decryption, profile
 // detection, error handling, path traversal). The E2E just tested LLM instruction-
 // following ("write a file saying no browsers") on a CI box with no browsers.
 
-// --- gstack-upgrade E2E ---
+// --- paysec-upgrade E2E ---
 
-describeIfSelected('gstack-upgrade E2E', ['gstack-upgrade-happy-path'], () => {
+describeIfSelected('paysec-upgrade E2E', ['paysec-upgrade-happy-path'], () => {
   let upgradeDir: string;
   let remoteDir: string;
 
   beforeAll(() => {
     upgradeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-upgrade-'));
-    remoteDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-remote-'));
+    remoteDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-remote-'));
 
     const run = (cmd: string, args: string[], cwd: string) =>
       spawnSync(cmd, args, { cwd, stdio: 'pipe', timeout: 5000 });
@@ -224,47 +224,47 @@ describeIfSelected('gstack-upgrade E2E', ['gstack-upgrade-happy-path'], () => {
     run('git', ['config', 'user.email', 'test@test.com'], upgradeDir);
     run('git', ['config', 'user.name', 'Test'], upgradeDir);
 
-    // Create mock gstack install directory (local-git type)
-    const mockGstack = path.join(upgradeDir, '.claude', 'skills', 'gstack');
-    fs.mkdirSync(mockGstack, { recursive: true });
+    // Create mock paysec install directory (local-git type)
+    const mockPaysec = path.join(upgradeDir, '.claude', 'skills', 'paysec');
+    fs.mkdirSync(mockPaysec, { recursive: true });
 
     // Init as a git repo
-    run('git', ['init'], mockGstack);
-    run('git', ['config', 'user.email', 'test@test.com'], mockGstack);
-    run('git', ['config', 'user.name', 'Test'], mockGstack);
+    run('git', ['init'], mockPaysec);
+    run('git', ['config', 'user.email', 'test@test.com'], mockPaysec);
+    run('git', ['config', 'user.name', 'Test'], mockPaysec);
 
     // Create bare remote
     run('git', ['init', '--bare'], remoteDir);
-    run('git', ['remote', 'add', 'origin', remoteDir], mockGstack);
+    run('git', ['remote', 'add', 'origin', remoteDir], mockPaysec);
 
     // Write old version files
-    fs.writeFileSync(path.join(mockGstack, 'VERSION'), '0.5.0\n');
-    fs.writeFileSync(path.join(mockGstack, 'CHANGELOG.md'),
+    fs.writeFileSync(path.join(mockPaysec, 'VERSION'), '0.5.0\n');
+    fs.writeFileSync(path.join(mockPaysec, 'CHANGELOG.md'),
       '# Changelog\n\n## 0.5.0 — 2026-03-01\n\n- Initial release\n');
-    fs.writeFileSync(path.join(mockGstack, 'setup'),
+    fs.writeFileSync(path.join(mockPaysec, 'setup'),
       '#!/bin/bash\necho "Setup completed"\n', { mode: 0o755 });
 
     // Initial commit + push
-    run('git', ['add', '.'], mockGstack);
-    run('git', ['commit', '-m', 'initial'], mockGstack);
-    run('git', ['push', '-u', 'origin', 'HEAD:main'], mockGstack);
+    run('git', ['add', '.'], mockPaysec);
+    run('git', ['commit', '-m', 'initial'], mockPaysec);
+    run('git', ['push', '-u', 'origin', 'HEAD:main'], mockPaysec);
 
     // Create new version (simulate upstream release)
-    fs.writeFileSync(path.join(mockGstack, 'VERSION'), '0.6.0\n');
-    fs.writeFileSync(path.join(mockGstack, 'CHANGELOG.md'),
+    fs.writeFileSync(path.join(mockPaysec, 'VERSION'), '0.6.0\n');
+    fs.writeFileSync(path.join(mockPaysec, 'CHANGELOG.md'),
       '# Changelog\n\n## 0.6.0 — 2026-03-15\n\n- New feature: interactive design review\n- Fix: snapshot flag validation\n\n## 0.5.0 — 2026-03-01\n\n- Initial release\n');
-    run('git', ['add', '.'], mockGstack);
-    run('git', ['commit', '-m', 'release 0.6.0'], mockGstack);
-    run('git', ['push', 'origin', 'HEAD:main'], mockGstack);
+    run('git', ['add', '.'], mockPaysec);
+    run('git', ['commit', '-m', 'release 0.6.0'], mockPaysec);
+    run('git', ['push', 'origin', 'HEAD:main'], mockPaysec);
 
     // Reset working copy back to old version
-    run('git', ['reset', '--hard', 'HEAD~1'], mockGstack);
+    run('git', ['reset', '--hard', 'HEAD~1'], mockPaysec);
 
-    // Copy gstack-upgrade skill
-    fs.mkdirSync(path.join(upgradeDir, 'gstack-upgrade'), { recursive: true });
+    // Copy paysec-upgrade skill
+    fs.mkdirSync(path.join(upgradeDir, 'paysec-upgrade'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'gstack-upgrade', 'SKILL.md'),
-      path.join(upgradeDir, 'gstack-upgrade', 'SKILL.md'),
+      path.join(ROOT, 'paysec-upgrade', 'SKILL.md'),
+      path.join(upgradeDir, 'paysec-upgrade', 'SKILL.md'),
     );
 
     // Commit so git repo is clean
@@ -277,12 +277,12 @@ describeIfSelected('gstack-upgrade E2E', ['gstack-upgrade-happy-path'], () => {
     try { fs.rmSync(remoteDir, { recursive: true, force: true }); } catch {}
   });
 
-  testConcurrentIfSelected('gstack-upgrade-happy-path', async () => {
-    const mockGstack = path.join(upgradeDir, '.claude', 'skills', 'gstack');
+  testConcurrentIfSelected('paysec-upgrade-happy-path', async () => {
+    const mockPaysec = path.join(upgradeDir, '.claude', 'skills', 'paysec');
     const result = await runSkillTest({
-      prompt: `Read gstack-upgrade/SKILL.md for the upgrade workflow.
+      prompt: `Read paysec-upgrade/SKILL.md for the upgrade workflow.
 
-You are running /gstack-upgrade standalone. The gstack installation is at ./.claude/skills/gstack (local-git type — it has a .git directory with an origin remote).
+You are running /paysec-upgrade standalone. The paysec installation is at ./.claude/skills/paysec (local-git type — it has a .git directory with an origin remote).
 
 Current version: 0.5.0. A new version 0.6.0 is available on origin/main.
 
@@ -294,24 +294,24 @@ Follow the standalone upgrade flow:
 
 Skip any AskUserQuestion calls — auto-approve the upgrade. Write a summary of what you did to stdout.
 
-IMPORTANT: The install directory is at ./.claude/skills/gstack — use that exact path.`,
+IMPORTANT: The install directory is at ./.claude/skills/paysec — use that exact path.`,
       workingDirectory: upgradeDir,
       maxTurns: 20,
       timeout: 180_000,
-      testName: 'gstack-upgrade-happy-path',
+      testName: 'paysec-upgrade-happy-path',
       runId,
     });
 
-    logCost('/gstack-upgrade happy path', result);
+    logCost('/paysec-upgrade happy path', result);
 
     // Check that the version was updated
-    const versionAfter = fs.readFileSync(path.join(mockGstack, 'VERSION'), 'utf-8').trim();
+    const versionAfter = fs.readFileSync(path.join(mockPaysec, 'VERSION'), 'utf-8').trim();
     const output = result.output || '';
     const mentionsUpgrade = output.toLowerCase().includes('0.6.0') ||
       output.toLowerCase().includes('upgrade') ||
       output.toLowerCase().includes('updated');
 
-    recordE2E(evalCollector, '/gstack-upgrade happy path', 'gstack-upgrade E2E', result, {
+    recordE2E(evalCollector, '/paysec-upgrade happy path', 'paysec-upgrade E2E', result, {
       passed: versionAfter === '0.6.0' && ['success', 'error_max_turns'].includes(result.exitReason),
     });
 
@@ -329,8 +329,8 @@ describeIfSelected('Test Coverage Audit E2E', ['ship-coverage-audit'], () => {
     coverageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-coverage-'));
 
     // Copy ship skill files
-    copyDirSync(path.join(ROOT, 'ship'), path.join(coverageDir, 'ship'));
-    copyDirSync(path.join(ROOT, 'review'), path.join(coverageDir, 'review'));
+    copyDirSync(path.join(ROOT, 'ship-pr'), path.join(coverageDir, 'ship'));
+    copyDirSync(path.join(ROOT, 'pr-review'), path.join(coverageDir, 'review'));
 
     // Create a Node.js project WITH test framework but coverage gaps
     fs.writeFileSync(path.join(coverageDir, 'package.json'), JSON.stringify({
@@ -400,7 +400,7 @@ describe('processPayment', () => {
 
   testConcurrentIfSelected('ship-coverage-audit', async () => {
     const result = await runSkillTest({
-      prompt: `Read the file ship/SKILL.md for the ship workflow instructions.
+      prompt: `Read the file ship-pr/SKILL.md for the ship workflow instructions.
 
 You are on the feature/billing branch. The base branch is main.
 This is a test project — there is no remote, no PR to create.
@@ -423,8 +423,8 @@ Output the diagram directly.`,
       runId,
     });
 
-    logCost('/ship coverage audit', result);
-    recordE2E(evalCollector, '/ship Step 3.4 coverage audit', 'Test Coverage Audit E2E', result, {
+    logCost('/ship-pr coverage audit', result);
+    recordE2E(evalCollector, '/ship-pr Step 3.4 coverage audit', 'Test Coverage Audit E2E', result, {
       passed: result.exitReason === 'success',
     });
 
@@ -475,8 +475,8 @@ describeIfSelected('Codex skill E2E', ['codex-review'], () => {
 
     // Extract only the review-relevant section from codex SKILL.md (~120 lines vs 1075).
     // Full SKILL.md is 55KB / ~14K tokens — takes 8 Read calls to consume, exhausting turns.
-    const full = fs.readFileSync(path.join(ROOT, 'codex', 'SKILL.md'), 'utf-8');
-    const startMarker = '# /codex — Multi-AI Second Opinion';
+    const full = fs.readFileSync(path.join(ROOT, 'codex-second-opinion', 'SKILL.md'), 'utf-8');
+    const startMarker = '# /codex-second-opinion — Multi-AI Second Opinion';
     const endMarker = '## Plan File Review Report';
     const start = full.indexOf(startMarker);
     const end = full.indexOf(endMarker, start);
@@ -501,7 +501,7 @@ describeIfSelected('Codex skill E2E', ['codex-review'], () => {
 
     const result = await runSkillTest({
       prompt: `You are in a git repo on branch feature/add-vuln with changes against main.
-Read codex-SKILL.md for the /codex review instructions (it's short — ~120 lines).
+Read codex-SKILL.md for the /codex-second-opinion review instructions (it's short — ~120 lines).
 Follow those instructions to run codex review against the diff on this branch.
 Write the full output (including the GATE verdict) to ${codexDir}/codex-output.md`,
       workingDirectory: codexDir,
@@ -512,8 +512,8 @@ Write the full output (including the GATE verdict) to ${codexDir}/codex-output.m
       model: 'claude-opus-4-7',
     });
 
-    logCost('/codex review', result);
-    recordE2E(evalCollector, '/codex review', 'Codex skill E2E', result);
+    logCost('/codex-second-opinion review', result);
+    recordE2E(evalCollector, '/codex-second-opinion review', 'Codex skill E2E', result);
     expect(result.exitReason).toBe('success');
 
     // Check that output file was created with review content

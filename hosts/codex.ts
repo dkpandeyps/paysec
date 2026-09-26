@@ -5,7 +5,7 @@ const codex = defineHost({
   displayName: 'OpenAI Codex CLI',
   cliAliases: ['agents'],
 
-  localSkillRoot: '.agents/skills/gstack',
+  localSkillRoot: '.agents/skills/paysec',
   hostSubdir: '.agents',
 
   frontmatter: {
@@ -17,20 +17,20 @@ const codex = defineHost({
 
   // generateMetadata emits agents/openai.yaml (the format is hardcoded in
   // gen-skill-docs.ts). Codex also gets a repo-local sidecar at
-  // .agents/skills/gstack (symlinked runtime assets: bin, browse, review, qa,
+  // .agents/skills/paysec (symlinked runtime assets: bin, browse, review, qa,
   // ETHOS.md) — that behavior lives in setup's create_agents_sidecar, not here.
   generation: {
     generateMetadata: true,
-    skipSkills: ['codex'],  // Codex skill is a Claude wrapper around codex exec
+    skipSkills: ['codex-second-opinion'],  // Codex skill is a Claude wrapper around codex exec
   },
 
-  // Non-mechanical rewrites: the global path becomes $GSTACK_ROOT (resolved by
+  // Non-mechanical rewrites: the global path becomes $PAYSEC_ROOT (resolved by
   // the preamble env vars), plus an extra review-path rewrite the derived trio
   // doesn't cover.
   pathRewrites: [
-    { from: '~/.claude/skills/gstack', to: '$GSTACK_ROOT' },
-    { from: '.claude/skills/gstack', to: '.agents/skills/gstack' },
-    { from: '.claude/skills/review', to: '.agents/skills/gstack/review' },
+    { from: '~/.claude/skills/paysec', to: '$PAYSEC_ROOT' },
+    { from: '.claude/skills/paysec', to: '.agents/skills/paysec' },
+    { from: '.claude/skills/pr-review', to: '.agents/skills/paysec/pr-review' },
     { from: '.claude/skills', to: '.agents/skills' },
     { from: 'CLAUDE.md', to: 'AGENTS.md' },
   ],

@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Static invariants guarding Windows artifact-sync (bin/gstack-brain-sync).
+// Static invariants guarding Windows artifact-sync (bin/paysec-brain-sync).
 //
 // These are deliberately static, not behavioral. The brain-sync integration
 // suite (test/brain-sync.test.ts) spawns the bin/ scripts directly, which
@@ -28,11 +28,11 @@ import * as path from 'path';
 //      or a backslash entry in .brain-skip.txt stops matching and a file the
 //      user explicitly skipped gets synced.
 const ROOT = path.resolve(import.meta.dir, '..');
-const SRC = fs.readFileSync(path.join(ROOT, 'bin', 'gstack-brain-sync'), 'utf-8');
+const SRC = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-brain-sync'), 'utf-8');
 
-describe('gstack-brain-sync — Windows path/exec invariants', () => {
+describe('paysec-brain-sync — Windows path/exec invariants', () => {
   test('discover-new normalizes relpath separators before fnmatch (bug 1)', () => {
-    expect(SRC).toContain('os.path.relpath(full, gstack_home).replace(os.sep, "/")');
+    expect(SRC).toContain('os.path.relpath(full, paysec_home).replace(os.sep, "/")');
   });
 
   test('no python subprocess exec — Windows cannot exec the bash shims (bug 2)', () => {

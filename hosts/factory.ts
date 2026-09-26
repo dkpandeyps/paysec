@@ -18,13 +18,13 @@ const factory = defineHost({
     ],
   },
 
-  // Non-mechanical rewrites: the global path becomes $GSTACK_ROOT (resolved by
+  // Non-mechanical rewrites: the global path becomes $PAYSEC_ROOT (resolved by
   // the preamble env vars), plus an extra review-path rewrite the derived trio
   // doesn't cover.
   pathRewrites: [
-    { from: '~/.claude/skills/gstack', to: '$GSTACK_ROOT' },
-    { from: '.claude/skills/gstack', to: '.factory/skills/gstack' },
-    { from: '.claude/skills/review', to: '.factory/skills/gstack/review' },
+    { from: '~/.claude/skills/paysec', to: '$PAYSEC_ROOT' },
+    { from: '.claude/skills/paysec', to: '.factory/skills/paysec' },
+    { from: '.claude/skills/pr-review', to: '.factory/skills/paysec/pr-review' },
     { from: '.claude/skills', to: '.factory/skills' },
   ],
   toolRewrites: {

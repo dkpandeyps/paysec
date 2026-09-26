@@ -1,35 +1,35 @@
-// High-level E2E for /ios-qa skill flow.
+// High-level E2E for /ios-device-qa skill flow.
 //
 // Two scenarios:
 //   1. NO_DEVICE (gate-tier compatible): runs the gen-accessors codegen
 //      against a SwiftUI fixture, verifies output is correct, no daemon
 //      hardware required. Catches regression in source-read + codegen +
 //      cache + render paths without an iPhone.
-//   2. WITH_DEVICE (periodic-tier, requires GSTACK_HAS_IOS_DEVICE=1): full
+//   2. WITH_DEVICE (periodic-tier, requires PAYSEC_HAS_IOS_DEVICE=1): full
 //      daemon + tailnet + USB tunnel loop. Skipped in CI.
 //
 // Note: The detailed daemon HTTP unit/integration tests live next to the
-// daemon source (ios-qa/daemon/test/*). This file tests the agent-flow
-// boundary — what the /ios-qa skill orchestrates end-to-end.
+// daemon source (ios-device-qa/daemon/test/*). This file tests the agent-flow
+// boundary — what the /ios-device-qa skill orchestrates end-to-end.
 
 import { describe, test, expect, afterAll } from 'bun:test';
 import { createServer, type Server, type IncomingMessage } from 'http';
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync, existsSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { startDaemon, type RunningDaemon } from '../ios-qa/daemon/src/index';
-import type { DeviceTunnel } from '../ios-qa/daemon/src/proxy';
-import { grantIdentity } from '../ios-qa/daemon/src/allowlist';
-import { generate } from '../ios-qa/scripts/gen-accessors';
+import { startDaemon, type RunningDaemon } from '../ios-device-qa/daemon/src/index';
+import type { DeviceTunnel } from '../ios-device-qa/daemon/src/proxy';
+import { grantIdentity } from '../ios-device-qa/daemon/src/allowlist';
+import { generate } from '../ios-device-qa/scripts/gen-accessors';
 
-const HAS_DEVICE = process.env.GSTACK_HAS_IOS_DEVICE === '1';
+const HAS_DEVICE = process.env.PAYSEC_HAS_IOS_DEVICE === '1';
 
 const DEVICE_TOKEN = 'rotated-mock-bearer-token';
 
 // Per-test isolation under `bun test --concurrent`: a single module-level
 // `workDir` reassigned in beforeEach is clobbered by parallel tests, so they
 // collide on the same daemon pidfile (`already_running`) and stomp each
-// other's GSTACK_IOS_* env paths. Each test calls makeWorkDir() for its own
+// other's PAYSEC_IOS_* env paths. Each test calls makeWorkDir() for its own
 // dir instead; afterEach cleans up every dir created during the test.
 const createdWorkDirs: string[] = [];
 function makeWorkDir(): string {
@@ -163,7 +163,7 @@ async function fetchJson(method: string, url: string, init: { headers?: Record<s
   return { status: res.status, body };
 }
 
-describe('ios-qa E2E (no-device path)', () => {
+describe('ios-device-qa E2E (no-device path)', () => {
   test('NO_DEVICE: codegen runs against a SwiftUI fixture and emits valid accessors', () => {
     const workDir = makeWorkDir();
     const srcDir = join(workDir, 'app-src');
@@ -255,7 +255,7 @@ class AppState {
   });
 });
 
-describe('ios-qa E2E (agent-flow simulation)', () => {
+describe('ios-device-qa E2E (agent-flow simulation)', () => {
   test('SCENARIO: acquire → snapshot → restore → tap → release', async () => {
     const workDir = makeWorkDir();
     const initial: StubState = { loggedIn: false, username: '', rawTaps: [] };
@@ -363,9 +363,9 @@ describe('ios-qa E2E (agent-flow simulation)', () => {
       const attemptsPath = join(workDir, 'attempts.jsonl');
       // Pass paths as daemon OPTIONS, not process.env — env is process-global
       // and races across concurrent tests (the cause of the original
-      // intermittent failures). GSTACK_IOS_TAILNET_BIND is read from env but
+      // intermittent failures). PAYSEC_IOS_TAILNET_BIND is read from env but
       // is the same constant for every tailnet test, so it can't diverge.
-      process.env.GSTACK_IOS_TAILNET_BIND = '127.0.0.1';
+      process.env.PAYSEC_IOS_TAILNET_BIND = '127.0.0.1';
 
       const tunnel: DeviceTunnel = {
         udid: 'TAILNET-UDID',
@@ -433,7 +433,7 @@ describe('ios-qa E2E (agent-flow simulation)', () => {
         expect(attempts).toMatch(/"reason":"identity_not_allowed"/);
       } finally {
         await daemon.close();
-        delete process.env.GSTACK_IOS_TAILNET_BIND;
+        delete process.env.PAYSEC_IOS_TAILNET_BIND;
       }
     } finally {
       stub.server.close();
@@ -497,11 +497,11 @@ describe('ios-qa E2E (agent-flow simulation)', () => {
 
 // ───────── WITH_DEVICE — manual smoke tests (skipped in CI) ─────────
 
-(HAS_DEVICE ? describe : describe.skip)('ios-qa E2E (with device)', () => {
+(HAS_DEVICE ? describe : describe.skip)('ios-device-qa E2E (with device)', () => {
   test('WITH_DEVICE: full agent loop against a real iPhone', () => {
     const workDir = makeWorkDir();
     // Stub — real implementation requires `devicectl` + an attached iPhone.
-    // Documented in ios-qa/SKILL.md.tmpl under "Manual smoke test".
+    // Documented in ios-device-qa/SKILL.md.tmpl under "Manual smoke test".
     expect(HAS_DEVICE).toBe(true);
   });
 });

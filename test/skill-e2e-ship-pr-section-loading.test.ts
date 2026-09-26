@@ -1,5 +1,5 @@
 /**
- * /ship section-loading E2E (periodic, paid, SDK capture) — v2 plan T9 mitigation
+ * /ship-pr section-loading E2E (periodic, paid, SDK capture) — v2 plan T9 mitigation
  * layer 5: the behavioral guard that a real agent Reads the carved sections a
  * version-changing ship requires instead of working from the skeleton's memory.
  *
@@ -45,7 +45,7 @@ const FIXTURES: Record<string, string> = {
   'app.test.js': 'test("newThing", () => {});\n',
 };
 
-describeE2E('/ship section-loading E2E (periodic, SDK capture)', () => {
+describeE2E('/ship-pr section-loading E2E (periodic, SDK capture)', () => {
   test(
     'fresh version-changing ship Reads the required sections',
     async () => {
@@ -55,7 +55,7 @@ describeE2E('/ship section-loading E2E (periodic, SDK capture)', () => {
         skillMd,
         sectionsFrom,
         fixtures: FIXTURES,
-        tmpPrefix: 'gstack-ship-secload-',
+        tmpPrefix: 'paysec-ship-secload-',
       });
 
       const { readSections, reportProduced, output } = await captureSectionReads({

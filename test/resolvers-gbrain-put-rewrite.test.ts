@@ -3,7 +3,7 @@
  * (the v0.18+ subcommand), never the renamed `gbrain put_page`. The resolver
  * output ships into every generated SKILL.md file as user-facing
  * copy-paste instructions; using the old subcommand teaches every
- * gstack user to invoke a command that no longer exists.
+ * paysec user to invoke a command that no longer exists.
  *
  * Two checks:
  *   1. Resolver source: scripts/resolvers/gbrain.ts has no `put_page`

@@ -5,12 +5,12 @@ import type { TemplateContext } from './types';
  * another skill's SKILL.md and follow it, skipping preamble sections.
  *
  * Supports optional skip= parameter for additional sections to skip:
- *   {{INVOKE_SKILL:plan-ceo-review:skip=Outside Voice,Design Outside Voices}}
+ *   {{INVOKE_SKILL:plan-business-review:skip=Outside Voice,Design Outside Voices}}
  */
 export function generateInvokeSkill(ctx: TemplateContext, args?: string[]): string {
   const skillName = args?.[0];
   if (!skillName || skillName === '') {
-    throw new Error('{{INVOKE_SKILL}} requires a skill name, e.g. {{INVOKE_SKILL:plan-ceo-review}}');
+    throw new Error('{{INVOKE_SKILL}} requires a skill name, e.g. {{INVOKE_SKILL:plan-business-review}}');
   }
 
   // Parse optional skip= parameter from args[1+]

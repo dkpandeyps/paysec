@@ -40,9 +40,9 @@ const runId = new Date().toISOString().replace(/[:.]/g, '').replace('T', '-').sl
  *  for Claude Code's auto-discovery to treat them as invokable via Skill tool.
  *  Matches the pattern in skill-routing-e2e.test.ts. */
 const INSTALLED_SKILLS = [
-  'qa', 'qa-only', 'ship', 'review', 'plan-ceo-review', 'plan-eng-review',
-  'plan-design-review', 'design-review', 'design-consultation', 'retro',
-  'document-release', 'investigate', 'office-hours', 'browse',
+  'qa', 'qa-report', 'ship', 'review', 'plan-business-review', 'plan-tech-review',
+  'plan-ux-review', 'design-qa', 'design-system', 'retro',
+  'docs-release-update', 'investigate', 'idea-review', 'browse',
 ];
 
 /** Write a scratch root with:
@@ -106,9 +106,9 @@ gates that produce better results than an ad-hoc answer. When in doubt, invoke.
 - Ship, deploy, "send it", create a PR → invoke ship
 - QA, test the site, "does this work" → invoke qa
 - Code review, check my diff → invoke review
-- Product ideas, brainstorming, "is this worth building" → invoke office-hours
-- Architecture, "does this design make sense" → invoke plan-eng-review
-- Design system, visual polish → invoke design-review
+- Product ideas, brainstorming, "is this worth building" → invoke idea-review
+- Architecture, "does this design make sense" → invoke plan-tech-review
+- Design system, visual polish → invoke design-qa
 - Weekly retro, what did we ship → invoke retro`;
 
   const claudeMd = includeOverlay

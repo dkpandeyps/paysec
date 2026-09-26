@@ -49,12 +49,12 @@ function testIfSelected(testName: string, fn: () => Promise<void>, timeout: numb
 
 describeIfSelected('LLM-as-judge quality evals', [
   'command reference table', 'snapshot flags reference',
-  'browse/SKILL.md reference', 'setup block', 'regression vs baseline',
+  'browser/SKILL.md reference', 'setup block', 'regression vs baseline',
 ], () => {
   testIfSelected('command reference table', async () => {
     const t0 = Date.now();
-    // P2 (v1.2.0): the command reference moved from the root router to browse/SKILL.md.
-    const content = fs.readFileSync(path.join(ROOT, 'browse', 'SKILL.md'), 'utf-8');
+    // P2 (v1.2.0): the command reference moved from the root router to browser/SKILL.md.
+    const content = fs.readFileSync(path.join(ROOT, 'browser', 'SKILL.md'), 'utf-8');
     const start = content.indexOf('## Full Command List');
     const section = content.slice(start);
 
@@ -82,8 +82,8 @@ describeIfSelected('LLM-as-judge quality evals', [
 
   testIfSelected('snapshot flags reference', async () => {
     const t0 = Date.now();
-    // P2 (v1.2.0): snapshot flags moved from the root router to browse/SKILL.md.
-    const content = fs.readFileSync(path.join(ROOT, 'browse', 'SKILL.md'), 'utf-8');
+    // P2 (v1.2.0): snapshot flags moved from the root router to browser/SKILL.md.
+    const content = fs.readFileSync(path.join(ROOT, 'browser', 'SKILL.md'), 'utf-8');
     const start = content.indexOf('## Snapshot Flags');
     const end = content.indexOf('## CSS Inspector');
     const section = content.slice(start, end);
@@ -107,9 +107,9 @@ describeIfSelected('LLM-as-judge quality evals', [
     expect(scores.actionability).toBeGreaterThanOrEqual(4);
   }, 30_000);
 
-  testIfSelected('browse/SKILL.md reference', async () => {
+  testIfSelected('browser/SKILL.md reference', async () => {
     const t0 = Date.now();
-    const content = fs.readFileSync(path.join(ROOT, 'browse', 'SKILL.md'), 'utf-8');
+    const content = fs.readFileSync(path.join(ROOT, 'browser', 'SKILL.md'), 'utf-8');
     const start = content.indexOf('## Snapshot Flags');
     const section = content.slice(start);
 
@@ -117,7 +117,7 @@ describeIfSelected('LLM-as-judge quality evals', [
     console.log('Browse SKILL.md scores:', JSON.stringify(scores, null, 2));
 
     evalCollector?.addTest({
-      name: 'browse/SKILL.md reference',
+      name: 'browser/SKILL.md reference',
       suite: 'LLM-as-judge quality evals',
       tier: 'llm-judge',
       passed: scores.clarity >= 4 && scores.completeness >= 4 && scores.actionability >= 4,
@@ -134,8 +134,8 @@ describeIfSelected('LLM-as-judge quality evals', [
 
   testIfSelected('setup block', async () => {
     const t0 = Date.now();
-    // P2 (v1.2.0): the browse setup block moved from the root router to browse/SKILL.md.
-    const content = fs.readFileSync(path.join(ROOT, 'browse', 'SKILL.md'), 'utf-8');
+    // P2 (v1.2.0): the browse setup block moved from the root router to browser/SKILL.md.
+    const content = fs.readFileSync(path.join(ROOT, 'browser', 'SKILL.md'), 'utf-8');
     const setupStart = content.indexOf('## SETUP');
     const setupEnd = content.indexOf('## Core QA Patterns');
     const section = content.slice(setupStart, setupEnd);
@@ -162,8 +162,8 @@ describeIfSelected('LLM-as-judge quality evals', [
 
   testIfSelected('regression vs baseline', async () => {
     const t0 = Date.now();
-    // P2 (v1.2.0): the command reference moved from the root router to browse/SKILL.md.
-    const generated = fs.readFileSync(path.join(ROOT, 'browse', 'SKILL.md'), 'utf-8');
+    // P2 (v1.2.0): the command reference moved from the root router to browser/SKILL.md.
+    const generated = fs.readFileSync(path.join(ROOT, 'browser', 'SKILL.md'), 'utf-8');
     const genStart = generated.indexOf('## Full Command List');
     const genSection = generated.slice(genStart);
 
@@ -249,10 +249,10 @@ Scores are 1-5 overall quality.`,
 
 // --- Part 7: QA skill quality evals (C6) ---
 
-describeIfSelected('QA skill quality evals', ['qa/SKILL.md workflow', 'qa/SKILL.md health rubric', 'qa/SKILL.md anti-refusal'], () => {
-  const qaContent = fs.readFileSync(path.join(ROOT, 'qa', 'SKILL.md'), 'utf-8');
+describeIfSelected('QA skill quality evals', ['qa-fix/SKILL.md workflow', 'qa-fix/SKILL.md health rubric', 'qa-fix/SKILL.md anti-refusal'], () => {
+  const qaContent = fs.readFileSync(path.join(ROOT, 'qa-fix', 'SKILL.md'), 'utf-8');
 
-  testIfSelected('qa/SKILL.md workflow', async () => {
+  testIfSelected('qa-fix/SKILL.md workflow', async () => {
     const t0 = Date.now();
     const start = qaContent.indexOf('## Workflow');
     const end = qaContent.indexOf('## Health Score Rubric');
@@ -278,7 +278,7 @@ ${section}`);
     console.log('QA workflow scores:', JSON.stringify(scores, null, 2));
 
     evalCollector?.addTest({
-      name: 'qa/SKILL.md workflow',
+      name: 'qa-fix/SKILL.md workflow',
       suite: 'QA skill quality evals',
       tier: 'llm-judge',
       passed: scores.clarity >= 4 && scores.completeness >= 3 && scores.actionability >= 4,
@@ -295,7 +295,7 @@ ${section}`);
     expect(scores.actionability).toBeGreaterThanOrEqual(4);
   }, 30_000);
 
-  testIfSelected('qa/SKILL.md health rubric', async () => {
+  testIfSelected('qa-fix/SKILL.md health rubric', async () => {
     const t0 = Date.now();
     const start = qaContent.indexOf('## Health Score Rubric');
     const section = qaContent.slice(start);
@@ -321,7 +321,7 @@ ${section}`);
     console.log('QA health rubric scores:', JSON.stringify(scores, null, 2));
 
     evalCollector?.addTest({
-      name: 'qa/SKILL.md health rubric',
+      name: 'qa-fix/SKILL.md health rubric',
       suite: 'QA skill quality evals',
       tier: 'llm-judge',
       passed: scores.clarity >= 4 && scores.completeness >= 3 && scores.actionability >= 4,
@@ -336,7 +336,7 @@ ${section}`);
     expect(scores.actionability).toBeGreaterThanOrEqual(4);
   }, 30_000);
 
-  testIfSelected('qa/SKILL.md anti-refusal', async () => {
+  testIfSelected('qa-fix/SKILL.md anti-refusal', async () => {
     const t0 = Date.now();
     // Extract both the diff-aware mode section and Important Rules section
     const diffAwareStart = qaContent.indexOf('### Diff-aware');
@@ -349,7 +349,7 @@ ${section}`);
     const result = await callJudge<{ would_browse: boolean; fallback_behavior: string; confidence: number; reasoning: string }>(`You are evaluating whether a QA testing skill document would cause an AI agent to USE THE BROWSER or REFUSE to use the browser in a specific scenario.
 
 SCENARIO:
-A user runs /qa (a browser-based QA testing skill). The branch diff shows ONLY prompt template files and config file changes — no routes, views, controllers, components, or CSS were changed. The changes are "purely backend" with no obvious UI surface.
+A user runs /qa-fix (a browser-based QA testing skill). The branch diff shows ONLY prompt template files and config file changes — no routes, views, controllers, components, or CSS were changed. The changes are "purely backend" with no obvious UI surface.
 
 QUESTION: Based on the document excerpts below, would the agent open the browser and test the application, or would it decline/refuse to browse and suggest running evals or unit tests instead?
 
@@ -375,7 +375,7 @@ Rules:
     console.log('QA anti-refusal result:', JSON.stringify(result, null, 2));
 
     evalCollector?.addTest({
-      name: 'qa/SKILL.md anti-refusal',
+      name: 'qa-fix/SKILL.md anti-refusal',
       suite: 'QA skill quality evals',
       tier: 'llm-judge',
       passed: result.would_browse === true && result.confidence >= 4,
@@ -395,10 +395,10 @@ Rules:
 describeIfSelected('Cross-skill consistency evals', ['cross-skill greptile consistency'], () => {
   testIfSelected('cross-skill greptile consistency', async () => {
     const t0 = Date.now();
-    const reviewContent = fs.readFileSync(path.join(ROOT, 'review', 'SKILL.md'), 'utf-8');
-    const shipContent = fs.readFileSync(path.join(ROOT, 'ship', 'SKILL.md'), 'utf-8');
-    const triageContent = fs.readFileSync(path.join(ROOT, 'review', 'greptile-triage.md'), 'utf-8');
-    const retroContent = fs.readFileSync(path.join(ROOT, 'retro', 'SKILL.md'), 'utf-8');
+    const reviewContent = fs.readFileSync(path.join(ROOT, 'pr-review', 'SKILL.md'), 'utf-8');
+    const shipContent = fs.readFileSync(path.join(ROOT, 'ship-pr', 'SKILL.md'), 'utf-8');
+    const triageContent = fs.readFileSync(path.join(ROOT, 'pr-review', 'greptile-triage.md'), 'utf-8');
+    const retroContent = fs.readFileSync(path.join(ROOT, 'weekly-retro', 'SKILL.md'), 'utf-8');
 
     const extractGrepLines = (content: string, filename: string) => {
       const lines = content.split('\n')
@@ -408,19 +408,19 @@ describeIfSelected('Cross-skill consistency evals', ['cross-skill greptile consi
     };
 
     const collected = [
-      extractGrepLines(reviewContent, 'review/SKILL.md'),
-      extractGrepLines(shipContent, 'ship/SKILL.md'),
-      extractGrepLines(triageContent, 'review/greptile-triage.md'),
-      extractGrepLines(retroContent, 'retro/SKILL.md'),
+      extractGrepLines(reviewContent, 'pr-review/SKILL.md'),
+      extractGrepLines(shipContent, 'ship-pr/SKILL.md'),
+      extractGrepLines(triageContent, 'pr-review/greptile-triage.md'),
+      extractGrepLines(retroContent, 'weekly-retro/SKILL.md'),
     ].join('\n\n');
 
     const result = await callJudge<{ consistent: boolean; issues: string[]; score: number; reasoning: string }>(`You are evaluating whether multiple skill configuration files implement the same data architecture consistently.
 
 INTENDED ARCHITECTURE:
-- greptile-history has TWO paths: per-project (~/.gstack/projects/{slug}/greptile-history.md) and global (~/.gstack/greptile-history.md)
-- /review and /ship WRITE to BOTH paths (per-project for suppressions, global for retro aggregation)
-- /review and /ship delegate write mechanics to greptile-triage.md
-- /retro READS from the GLOBAL path only (it aggregates across all projects)
+- greptile-history has TWO paths: per-project (~/.paysec/projects/{slug}/greptile-history.md) and global (~/.paysec/greptile-history.md)
+- /pr-review and /ship-pr WRITE to BOTH paths (per-project for suppressions, global for retro aggregation)
+- /pr-review and /ship-pr delegate write mechanics to greptile-triage.md
+- /weekly-retro READS from the GLOBAL path only (it aggregates across all projects)
 - REMOTE_SLUG derivation should be consistent across files that use it
 
 Below are greptile-related lines extracted from each skill file:
@@ -470,8 +470,8 @@ describeIfSelected('Baseline score pinning', ['baseline score pinning'], () => {
     const baselines = JSON.parse(fs.readFileSync(baselinesPath, 'utf-8'));
     const regressions: string[] = [];
 
-    // P2 (v1.2.0): the command reference moved from the root router to browse/SKILL.md.
-    const skillContent = fs.readFileSync(path.join(ROOT, 'browse', 'SKILL.md'), 'utf-8');
+    // P2 (v1.2.0): the command reference moved from the root router to browser/SKILL.md.
+    const skillContent = fs.readFileSync(path.join(ROOT, 'browser', 'SKILL.md'), 'utf-8');
     const cmdStart = skillContent.indexOf('## Full Command List');
     const cmdSection = skillContent.slice(cmdStart);
     const cmdScores = await judge('command reference table', cmdSection);
@@ -560,7 +560,7 @@ async function runWorkflowJudge(opts: {
 
   // Two carve shapes exist. plan-eng/plan-design moved the MARKERS into the
   // section files, so the slice above already reaches the carved content.
-  // document-release instead keeps its markers in the skeleton and carves the
+  // docs-release-update instead keeps its markers in the skeleton and carves the
   // workflow BODY (Steps 2-9 → sections/release-body.md) AFTER the endMarker,
   // so the marker slice drops it. Re-append any carved section the window
   // excluded, so the judge always sees the full workflow the agent executes.
@@ -605,12 +605,12 @@ ${section}`);
 }
 
 // Block 1: Ship & Release skills
-describeIfSelected('Ship & Release skill evals', ['ship/SKILL.md workflow', 'document-release/SKILL.md workflow'], () => {
-  testIfSelected('ship/SKILL.md workflow', async () => {
+describeIfSelected('Ship & Release skill evals', ['ship-pr/SKILL.md workflow', 'docs-release-update/SKILL.md workflow'], () => {
+  testIfSelected('ship-pr/SKILL.md workflow', async () => {
     await runWorkflowJudge({
-      testName: 'ship/SKILL.md workflow',
+      testName: 'ship-pr/SKILL.md workflow',
       suite: 'Ship & Release skill evals',
-      skillPath: 'ship/SKILL.md',
+      skillPath: 'ship-pr/SKILL.md',
       startMarker: '# Ship:',
       endMarker: '## Important Rules',
       judgeContext: 'a ship/release workflow document',
@@ -618,11 +618,11 @@ describeIfSelected('Ship & Release skill evals', ['ship/SKILL.md workflow', 'doc
     });
   }, 30_000);
 
-  testIfSelected('document-release/SKILL.md workflow', async () => {
+  testIfSelected('docs-release-update/SKILL.md workflow', async () => {
     await runWorkflowJudge({
-      testName: 'document-release/SKILL.md workflow',
+      testName: 'docs-release-update/SKILL.md workflow',
       suite: 'Ship & Release skill evals',
-      skillPath: 'document-release/SKILL.md',
+      skillPath: 'docs-release-update/SKILL.md',
       startMarker: '# Document Release:',
       endMarker: '## Important Rules',
       judgeContext: 'a post-ship documentation update workflow',
@@ -633,13 +633,13 @@ describeIfSelected('Ship & Release skill evals', ['ship/SKILL.md workflow', 'doc
 
 // Block 2: Plan Review skills
 describeIfSelected('Plan Review skill evals', [
-  'plan-ceo-review/SKILL.md modes', 'plan-eng-review/SKILL.md sections', 'plan-design-review/SKILL.md passes',
+  'plan-business-review/SKILL.md modes', 'plan-tech-review/SKILL.md sections', 'plan-ux-review/SKILL.md passes',
 ], () => {
-  testIfSelected('plan-ceo-review/SKILL.md modes', async () => {
+  testIfSelected('plan-business-review/SKILL.md modes', async () => {
     await runWorkflowJudge({
-      testName: 'plan-ceo-review/SKILL.md modes',
+      testName: 'plan-business-review/SKILL.md modes',
       suite: 'Plan Review skill evals',
-      skillPath: 'plan-ceo-review/SKILL.md',
+      skillPath: 'plan-business-review/SKILL.md',
       startMarker: '## Step 0: Nuclear Scope Challenge',
       endMarker: '## Review Sections',
       judgeContext: 'a CEO/founder plan review framework with 4 scope modes',
@@ -647,11 +647,11 @@ describeIfSelected('Plan Review skill evals', [
     });
   }, 30_000);
 
-  testIfSelected('plan-eng-review/SKILL.md sections', async () => {
+  testIfSelected('plan-tech-review/SKILL.md sections', async () => {
     await runWorkflowJudge({
-      testName: 'plan-eng-review/SKILL.md sections',
+      testName: 'plan-tech-review/SKILL.md sections',
       suite: 'Plan Review skill evals',
-      skillPath: 'plan-eng-review/SKILL.md',
+      skillPath: 'plan-tech-review/SKILL.md',
       startMarker: '## BEFORE YOU START:',
       endMarker: '## CRITICAL RULE',
       judgeContext: 'an engineering plan review framework with 4 review sections',
@@ -659,11 +659,11 @@ describeIfSelected('Plan Review skill evals', [
     });
   }, 30_000);
 
-  testIfSelected('plan-design-review/SKILL.md passes', async () => {
+  testIfSelected('plan-ux-review/SKILL.md passes', async () => {
     await runWorkflowJudge({
-      testName: 'plan-design-review/SKILL.md passes',
+      testName: 'plan-ux-review/SKILL.md passes',
       suite: 'Plan Review skill evals',
-      skillPath: 'plan-design-review/SKILL.md',
+      skillPath: 'plan-ux-review/SKILL.md',
       startMarker: '## Review Sections',
       endMarker: '## CRITICAL RULE',
       judgeContext: 'a design plan review framework with 7 review passes',
@@ -673,12 +673,12 @@ describeIfSelected('Plan Review skill evals', [
 });
 
 // Block 3: Design skills
-describeIfSelected('Design skill evals', ['design-review/SKILL.md fix loop', 'design-consultation/SKILL.md research'], () => {
-  testIfSelected('design-review/SKILL.md fix loop', async () => {
+describeIfSelected('Design skill evals', ['design-qa/SKILL.md fix loop', 'design-system/SKILL.md research'], () => {
+  testIfSelected('design-qa/SKILL.md fix loop', async () => {
     await runWorkflowJudge({
-      testName: 'design-review/SKILL.md fix loop',
+      testName: 'design-qa/SKILL.md fix loop',
       suite: 'Design skill evals',
-      skillPath: 'design-review/SKILL.md',
+      skillPath: 'design-qa/SKILL.md',
       startMarker: '## Phase 7:',
       endMarker: '## Additional Rules',
       judgeContext: 'a design audit triage and fix loop workflow',
@@ -686,11 +686,11 @@ describeIfSelected('Design skill evals', ['design-review/SKILL.md fix loop', 'de
     });
   }, 30_000);
 
-  testIfSelected('design-consultation/SKILL.md research', async () => {
+  testIfSelected('design-system/SKILL.md research', async () => {
     await runWorkflowJudge({
-      testName: 'design-consultation/SKILL.md research',
+      testName: 'design-system/SKILL.md research',
       suite: 'Design skill evals',
-      skillPath: 'design-consultation/SKILL.md',
+      skillPath: 'design-system/SKILL.md',
       startMarker: '## Phase 1:',
       endMarker: '## Phase 4:',
       judgeContext: 'a design consultation research and proposal workflow',
@@ -701,14 +701,14 @@ describeIfSelected('Design skill evals', ['design-review/SKILL.md fix loop', 'de
 
 // Block 4: Deploy skills
 describeIfSelected('Deploy skill evals', [
-  'land-and-deploy/SKILL.md workflow', 'canary/SKILL.md monitoring loop',
-  'benchmark/SKILL.md perf collection', 'setup-deploy/SKILL.md platform setup',
+  'merge-and-deploy/SKILL.md workflow', 'post-deploy-monitor/SKILL.md monitoring loop',
+  'perf-check/SKILL.md perf collection', 'deploy-setup/SKILL.md platform setup',
 ], () => {
-  testIfSelected('land-and-deploy/SKILL.md workflow', async () => {
+  testIfSelected('merge-and-deploy/SKILL.md workflow', async () => {
     await runWorkflowJudge({
-      testName: 'land-and-deploy/SKILL.md workflow',
+      testName: 'merge-and-deploy/SKILL.md workflow',
       suite: 'Deploy skill evals',
-      skillPath: 'land-and-deploy/SKILL.md',
+      skillPath: 'merge-and-deploy/SKILL.md',
       startMarker: '## Step 1: Pre-flight',
       endMarker: '## Important Rules',
       judgeContext: 'a merge-deploy-verify workflow for landing PRs to production',
@@ -716,11 +716,11 @@ describeIfSelected('Deploy skill evals', [
     });
   }, 30_000);
 
-  testIfSelected('canary/SKILL.md monitoring loop', async () => {
+  testIfSelected('post-deploy-monitor/SKILL.md monitoring loop', async () => {
     await runWorkflowJudge({
-      testName: 'canary/SKILL.md monitoring loop',
+      testName: 'post-deploy-monitor/SKILL.md monitoring loop',
       suite: 'Deploy skill evals',
-      skillPath: 'canary/SKILL.md',
+      skillPath: 'post-deploy-monitor/SKILL.md',
       startMarker: '### Phase 2: Baseline Capture',
       endMarker: '## Important Rules',
       judgeContext: 'a post-deploy canary monitoring workflow using a headless browser daemon',
@@ -728,11 +728,11 @@ describeIfSelected('Deploy skill evals', [
     });
   }, 30_000);
 
-  testIfSelected('benchmark/SKILL.md perf collection', async () => {
+  testIfSelected('perf-check/SKILL.md perf collection', async () => {
     await runWorkflowJudge({
-      testName: 'benchmark/SKILL.md perf collection',
+      testName: 'perf-check/SKILL.md perf collection',
       suite: 'Deploy skill evals',
-      skillPath: 'benchmark/SKILL.md',
+      skillPath: 'perf-check/SKILL.md',
       startMarker: '### Phase 3: Performance Data Collection',
       endMarker: '## Important Rules',
       judgeContext: 'a performance regression detection workflow using browser-based Web Vitals measurement',
@@ -740,11 +740,11 @@ describeIfSelected('Deploy skill evals', [
     });
   }, 30_000);
 
-  testIfSelected('setup-deploy/SKILL.md platform setup', async () => {
+  testIfSelected('deploy-setup/SKILL.md platform setup', async () => {
     await runWorkflowJudge({
-      testName: 'setup-deploy/SKILL.md platform setup',
+      testName: 'deploy-setup/SKILL.md platform setup',
       suite: 'Deploy skill evals',
-      skillPath: 'setup-deploy/SKILL.md',
+      skillPath: 'deploy-setup/SKILL.md',
       startMarker: '### Step 2: Detect platform',
       endMarker: '## Important Rules',
       judgeContext: 'a deployment configuration setup workflow that detects deploy platforms and writes config to CLAUDE.md',
@@ -755,13 +755,13 @@ describeIfSelected('Deploy skill evals', [
 
 // Block 5: Other skills
 describeIfSelected('Other skill evals', [
-  'retro/SKILL.md instructions', 'qa-only/SKILL.md workflow', 'gstack-upgrade/SKILL.md upgrade flow',
+  'weekly-retro/SKILL.md instructions', 'qa-report/SKILL.md workflow', 'paysec-upgrade/SKILL.md upgrade flow',
 ], () => {
-  testIfSelected('retro/SKILL.md instructions', async () => {
+  testIfSelected('weekly-retro/SKILL.md instructions', async () => {
     await runWorkflowJudge({
-      testName: 'retro/SKILL.md instructions',
+      testName: 'weekly-retro/SKILL.md instructions',
       suite: 'Other skill evals',
-      skillPath: 'retro/SKILL.md',
+      skillPath: 'weekly-retro/SKILL.md',
       startMarker: '## Instructions',
       endMarker: '## Compare Mode',
       judgeContext: 'an engineering retrospective data gathering and analysis workflow',
@@ -769,11 +769,11 @@ describeIfSelected('Other skill evals', [
     });
   }, 30_000);
 
-  testIfSelected('qa-only/SKILL.md workflow', async () => {
+  testIfSelected('qa-report/SKILL.md workflow', async () => {
     await runWorkflowJudge({
-      testName: 'qa-only/SKILL.md workflow',
+      testName: 'qa-report/SKILL.md workflow',
       suite: 'Other skill evals',
-      skillPath: 'qa-only/SKILL.md',
+      skillPath: 'qa-report/SKILL.md',
       startMarker: '## Workflow',
       endMarker: '## Important Rules',
       judgeContext: 'a report-only QA testing workflow',
@@ -781,11 +781,11 @@ describeIfSelected('Other skill evals', [
     });
   }, 30_000);
 
-  testIfSelected('gstack-upgrade/SKILL.md upgrade flow', async () => {
+  testIfSelected('paysec-upgrade/SKILL.md upgrade flow', async () => {
     await runWorkflowJudge({
-      testName: 'gstack-upgrade/SKILL.md upgrade flow',
+      testName: 'paysec-upgrade/SKILL.md upgrade flow',
       suite: 'Other skill evals',
-      skillPath: 'gstack-upgrade/SKILL.md',
+      skillPath: 'paysec-upgrade/SKILL.md',
       startMarker: '## Inline upgrade flow',
       endMarker: '## Standalone usage',
       judgeContext: 'a version upgrade detection and execution workflow',
@@ -799,10 +799,10 @@ describeIfSelected('Voice directive eval', ['voice directive tone'], () => {
   testIfSelected('voice directive tone', async () => {
     const t0 = Date.now();
     // Read a tier 2+ skill to get the full voice directive in context
-    const content = fs.readFileSync(path.join(ROOT, 'review', 'SKILL.md'), 'utf-8');
+    const content = fs.readFileSync(path.join(ROOT, 'pr-review', 'SKILL.md'), 'utf-8');
     const voiceStart = content.indexOf('## Voice');
     if (voiceStart === -1) {
-      throw new Error('Voice section not found in review/SKILL.md. Was preamble.ts regenerated?');
+      throw new Error('Voice section not found in pr-review/SKILL.md. Was preamble.ts regenerated?');
     }
     const voiceEnd = content.indexOf('\n## ', voiceStart + 1);
     const voiceSection = content.slice(voiceStart, voiceEnd > 0 ? voiceEnd : voiceStart + 3000);
@@ -814,7 +814,7 @@ describeIfSelected('Voice directive eval', ['voice directive tone'], () => {
       avoids_ai_vocabulary: number;
       connects_user_outcomes: number;
       reasoning: string;
-    }>(`You are evaluating a voice directive for an AI coding assistant framework called GStack.
+    }>(`You are evaluating a voice directive for an AI coding assistant framework called PaySec.
 Score each dimension 1-5 where 5 is excellent:
 
 1. directness: Does it instruct the agent to be direct, lead with the point, take positions?

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# gstack-diff-scope — categorize what changed in the diff against a base branch
-# Usage: source <(gstack-diff-scope main)  → sets SCOPE_FRONTEND=true SCOPE_BACKEND=false ...
-# Or:    gstack-diff-scope main           → prints SCOPE_*=... lines
+# paysec-diff-scope — categorize what changed in the diff against a base branch
+# Usage: source <(paysec-diff-scope main)  → sets SCOPE_FRONTEND=true SCOPE_BACKEND=false ...
+# Or:    paysec-diff-scope main           → prints SCOPE_*=... lines
 #
 # Output contract (#2526 — all-false must be distinguishable from "we could
 # not look" and from "nothing matched"):
@@ -17,7 +17,7 @@
 # `#`-comments only.
 #
 # The changed-file set is the UNION of committed diff + working tree +
-# untracked files (#2299): /ship detects scope in Step 9, BEFORE it commits in
+# untracked files (#2299): /ship-pr detects scope in Step 9, BEFORE it commits in
 # Step 15, so uncommitted work must be visible or every scope-gated reviewer
 # is skipped on the common start-work-then-ship flow.
 set -euo pipefail
@@ -79,7 +79,7 @@ _collect < <(git diff -z "${BASE}...HEAD" --name-only 2>/dev/null || git diff -z
 # with no commits; tolerated.
 _collect < <(git diff -z HEAD --name-only 2>/dev/null || true)
 # Untracked files: a brand-new component/migration/test is exactly what a
-# reviewer should see, and /ship commits it in Step 15 regardless.
+# reviewer should see, and /ship-pr commits it in Step 15 regardless.
 _collect < <(git ls-files -z --others --exclude-standard 2>/dev/null || true)
 
 if [ "${#FILES_LIST[@]}" -eq 0 ]; then

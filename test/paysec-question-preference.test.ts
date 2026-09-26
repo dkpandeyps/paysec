@@ -1,5 +1,5 @@
 /**
- * bin/gstack-question-preference — preference storage + user-origin gate.
+ * bin/paysec-question-preference — preference storage + user-origin gate.
  *
  * The user-origin gate (profile-poisoning defense from
  * docs/designs/PLAN_TUNING_V0.md §Security model) is THE critical safety
@@ -14,12 +14,12 @@ import * as os from 'os';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const BIN = path.join(ROOT, 'bin', 'gstack-question-preference');
+const BIN = path.join(ROOT, 'bin', 'paysec-question-preference');
 
 let tmpHome: string;
 
 beforeEach(() => {
-  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-test-'));
+  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-test-'));
 });
 
 afterEach(() => {
@@ -28,7 +28,7 @@ afterEach(() => {
 
 function run(...args: string[]): { stdout: string; stderr: string; status: number } {
   const res = spawnSync(BIN, args, {
-    env: { ...process.env, GSTACK_HOME: tmpHome },
+    env: { ...process.env, PAYSEC_HOME: tmpHome },
     encoding: 'utf-8',
     cwd: ROOT,
   });
@@ -41,7 +41,7 @@ function run(...args: string[]): { stdout: string; stderr: string; status: numbe
 
 function runWithStdin(input: string, ...args: string[]): { stdout: string; stderr: string; status: number } {
   const res = spawnSync(BIN, args, {
-    env: { ...process.env, GSTACK_HOME: tmpHome },
+    env: { ...process.env, PAYSEC_HOME: tmpHome },
     encoding: 'utf-8',
     cwd: ROOT,
     input,
@@ -82,7 +82,7 @@ describe('--check (no preference set)', () => {
 
 describe('--check with preferences set', () => {
   function setPref(id: string, pref: string) {
-    return run('--write', JSON.stringify({ question_id: id, preference: pref, source: 'plan-tune' }));
+    return run('--write', JSON.stringify({ question_id: id, preference: pref, source: 'tune-questions' }));
   }
 
   test('two-way + never-ask → AUTO_DECIDE', () => {
@@ -123,7 +123,7 @@ describe('--check with preferences set', () => {
 // id with never-ask auto-decides even for destructive phrasings.
 describe('--check --summary-stdin (#2024 keyword net plumb-through)', () => {
   function setPref(id: string, pref: string) {
-    return run('--write', JSON.stringify({ question_id: id, preference: pref, source: 'plan-tune' }));
+    return run('--write', JSON.stringify({ question_id: id, preference: pref, source: 'tune-questions' }));
   }
 
   test('destructive summary on unregistered never-ask id → ASK_NORMALLY (keyword net fires)', () => {
@@ -166,7 +166,7 @@ describe('--check --summary-stdin (#2024 keyword net plumb-through)', () => {
 // "Handling 5+ options — split, never drop" for the surrounding mechanism.
 describe('--check split-chain carve-out (*-split-* always ASK_NORMALLY)', () => {
   function setPref(id: string, pref: string) {
-    return run('--write', JSON.stringify({ question_id: id, preference: pref, source: 'plan-tune' }));
+    return run('--write', JSON.stringify({ question_id: id, preference: pref, source: 'tune-questions' }));
   }
 
   test('split-id without preference → ASK_NORMALLY', () => {
@@ -233,17 +233,17 @@ describe('--write valid payloads', () => {
     expect(r.stdout).toContain('OK');
   });
 
-  test('plan-tune source is accepted', () => {
+  test('tune-questions source is accepted', () => {
     const r = run(
       '--write',
-      JSON.stringify({ question_id: 'ship-x', preference: 'always-ask', source: 'plan-tune' }),
+      JSON.stringify({ question_id: 'ship-x', preference: 'always-ask', source: 'tune-questions' }),
     );
     expect(r.status).toBe(0);
   });
 
   test('persists to preferences file', () => {
-    run('--write', JSON.stringify({ question_id: 'q1', preference: 'never-ask', source: 'plan-tune' }));
-    run('--write', JSON.stringify({ question_id: 'q2', preference: 'always-ask', source: 'plan-tune' }));
+    run('--write', JSON.stringify({ question_id: 'q1', preference: 'never-ask', source: 'tune-questions' }));
+    run('--write', JSON.stringify({ question_id: 'q2', preference: 'always-ask', source: 'tune-questions' }));
     const projects = fs.readdirSync(path.join(tmpHome, 'projects'));
     const file = path.join(tmpHome, 'projects', projects[0], 'question-preferences.json');
     const prefs = JSON.parse(fs.readFileSync(file, 'utf-8'));
@@ -360,7 +360,7 @@ describe('--write schema validation', () => {
   test('invalid question_id rejected', () => {
     const r = run(
       '--write',
-      JSON.stringify({ question_id: 'BAD_CAPS', preference: 'never-ask', source: 'plan-tune' }),
+      JSON.stringify({ question_id: 'BAD_CAPS', preference: 'never-ask', source: 'tune-questions' }),
     );
     expect(r.status).not.toBe(0);
   });
@@ -368,7 +368,7 @@ describe('--write schema validation', () => {
   test('invalid preference rejected', () => {
     const r = run(
       '--write',
-      JSON.stringify({ question_id: 'q1', preference: 'maybe-ask-idk', source: 'plan-tune' }),
+      JSON.stringify({ question_id: 'q1', preference: 'maybe-ask-idk', source: 'tune-questions' }),
     );
     expect(r.status).not.toBe(0);
     expect(r.stderr).toContain('preference');
@@ -401,8 +401,8 @@ describe('--read', () => {
   });
 
   test('returns written preferences', () => {
-    run('--write', JSON.stringify({ question_id: 'a', preference: 'never-ask', source: 'plan-tune' }));
-    run('--write', JSON.stringify({ question_id: 'b', preference: 'always-ask', source: 'plan-tune' }));
+    run('--write', JSON.stringify({ question_id: 'a', preference: 'never-ask', source: 'tune-questions' }));
+    run('--write', JSON.stringify({ question_id: 'b', preference: 'always-ask', source: 'tune-questions' }));
     const r = run('--read');
     expect(JSON.parse(r.stdout)).toEqual({ a: 'never-ask', b: 'always-ask' });
   });
@@ -410,8 +410,8 @@ describe('--read', () => {
 
 describe('--clear', () => {
   test('clear specific id removes only that entry', () => {
-    run('--write', JSON.stringify({ question_id: 'a', preference: 'never-ask', source: 'plan-tune' }));
-    run('--write', JSON.stringify({ question_id: 'b', preference: 'always-ask', source: 'plan-tune' }));
+    run('--write', JSON.stringify({ question_id: 'a', preference: 'never-ask', source: 'tune-questions' }));
+    run('--write', JSON.stringify({ question_id: 'b', preference: 'always-ask', source: 'tune-questions' }));
     const r = run('--clear', 'a');
     expect(r.status).toBe(0);
     expect(r.stdout).toContain('cleared');
@@ -420,8 +420,8 @@ describe('--clear', () => {
   });
 
   test('clear without id wipes all', () => {
-    run('--write', JSON.stringify({ question_id: 'a', preference: 'never-ask', source: 'plan-tune' }));
-    run('--write', JSON.stringify({ question_id: 'b', preference: 'always-ask', source: 'plan-tune' }));
+    run('--write', JSON.stringify({ question_id: 'a', preference: 'never-ask', source: 'tune-questions' }));
+    run('--write', JSON.stringify({ question_id: 'b', preference: 'always-ask', source: 'tune-questions' }));
     run('--clear');
     const prefs = JSON.parse(run('--read').stdout);
     expect(prefs).toEqual({});
@@ -441,9 +441,9 @@ describe('--stats', () => {
   });
 
   test('stats tally by preference type', () => {
-    run('--write', JSON.stringify({ question_id: 'a', preference: 'never-ask', source: 'plan-tune' }));
-    run('--write', JSON.stringify({ question_id: 'b', preference: 'never-ask', source: 'plan-tune' }));
-    run('--write', JSON.stringify({ question_id: 'c', preference: 'always-ask', source: 'plan-tune' }));
+    run('--write', JSON.stringify({ question_id: 'a', preference: 'never-ask', source: 'tune-questions' }));
+    run('--write', JSON.stringify({ question_id: 'b', preference: 'never-ask', source: 'tune-questions' }));
+    run('--write', JSON.stringify({ question_id: 'c', preference: 'always-ask', source: 'tune-questions' }));
     const r = run('--stats');
     expect(r.stdout).toContain('TOTAL: 3');
     expect(r.stdout).toContain('NEVER_ASK: 2');

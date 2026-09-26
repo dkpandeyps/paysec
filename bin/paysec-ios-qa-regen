@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# gstack-ios-qa-regen — deterministically regenerate the iOS DebugBridge
+# paysec-ios-qa-regen — deterministically regenerate the iOS DebugBridge
 # package and the app-owned typed state accessors.
 
 set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: gstack-ios-qa-regen --app-source <dir> --bridge-dir <dir>
+Usage: paysec-ios-qa-regen --app-source <dir> --bridge-dir <dir>
 
   --app-source  Swift source tree to scan for @Observable state
   --bridge-dir  Destination for the generated local DebugBridge package
@@ -19,12 +19,12 @@ BRIDGE_DIR=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --app-source)
-      [[ $# -ge 2 ]] || { echo "gstack-ios-qa-regen: --app-source requires a value" >&2; exit 2; }
+      [[ $# -ge 2 ]] || { echo "paysec-ios-qa-regen: --app-source requires a value" >&2; exit 2; }
       APP_SOURCE="$2"
       shift 2
       ;;
     --bridge-dir)
-      [[ $# -ge 2 ]] || { echo "gstack-ios-qa-regen: --bridge-dir requires a value" >&2; exit 2; }
+      [[ $# -ge 2 ]] || { echo "paysec-ios-qa-regen: --bridge-dir requires a value" >&2; exit 2; }
       BRIDGE_DIR="$2"
       shift 2
       ;;
@@ -33,7 +33,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      echo "gstack-ios-qa-regen: unknown argument: $1" >&2
+      echo "paysec-ios-qa-regen: unknown argument: $1" >&2
       usage >&2
       exit 2
       ;;
@@ -41,31 +41,31 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$APP_SOURCE" || -z "$BRIDGE_DIR" ]]; then
-  echo "gstack-ios-qa-regen: both --app-source and --bridge-dir are required" >&2
+  echo "paysec-ios-qa-regen: both --app-source and --bridge-dir are required" >&2
   usage >&2
   exit 2
 fi
 
 if [[ ! -d "$APP_SOURCE" ]]; then
-  echo "gstack-ios-qa-regen: app source directory not found: $APP_SOURCE" >&2
+  echo "paysec-ios-qa-regen: app source directory not found: $APP_SOURCE" >&2
   exit 1
 fi
 
 if ! command -v bun >/dev/null 2>&1; then
-  echo "gstack-ios-qa-regen: bun runtime not on PATH — install from https://bun.sh" >&2
+  echo "paysec-ios-qa-regen: bun runtime not on PATH — install from https://bun.sh" >&2
   exit 1
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-GSTACK_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-TEMPLATE_DIR="$GSTACK_ROOT/ios-qa/templates"
-GENERATOR="$GSTACK_ROOT/ios-qa/scripts/gen-accessors.ts"
-VERSION_FILE="$GSTACK_ROOT/VERSION"
+PAYSEC_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+TEMPLATE_DIR="$PAYSEC_ROOT/ios-device-qa/templates"
+GENERATOR="$PAYSEC_ROOT/ios-device-qa/scripts/gen-accessors.ts"
+VERSION_FILE="$PAYSEC_ROOT/VERSION"
 GENERATED_DIR="$APP_SOURCE/DebugBridgeGenerated"
 
 for required in "$GENERATOR" "$VERSION_FILE"; do
   if [[ ! -f "$required" ]]; then
-    echo "gstack-ios-qa-regen: missing required gstack file: $required" >&2
+    echo "paysec-ios-qa-regen: missing required paysec file: $required" >&2
     exit 1
   fi
 done
@@ -86,7 +86,7 @@ install_file() {
   local destination="$2"
 
   if [[ ! -f "$source" ]]; then
-    echo "gstack-ios-qa-regen: missing template: $source" >&2
+    echo "paysec-ios-qa-regen: missing template: $source" >&2
     exit 1
   fi
   if [[ -f "$destination" ]] && cmp -s "$source" "$destination"; then
@@ -101,9 +101,9 @@ install_file() {
 }
 
 # Invalidate the completion marker before changing any package source. A
-# failed or interrupted regeneration must never look current to ios-sync.
+# failed or interrupted regeneration must never look current to ios-bridge-sync.
 mkdir -p "$GENERATED_DIR"
-rm -f -- "$GENERATED_DIR/.gstack-version"
+rm -f -- "$GENERATED_DIR/.paysec-version"
 
 # This is intentionally an allowlist, not a template glob. Wiring belongs to
 # the consuming app and StateAccessor.swift is emitted by the parser below.
@@ -122,7 +122,7 @@ install_file "$TEMPLATE_DIR/DebugBridgeTouch.m.template" \
 install_file "$TEMPLATE_DIR/DebugBridgeTouch.h.template" \
   "$BRIDGE_DIR/Sources/DebugBridgeTouch/include/DebugBridgeTouch.h"
 
-# Older ios-sync versions copied the entire template set flat into the app's
+# Older ios-bridge-sync versions copied the entire template set flat into the app's
 # generated-source directory. Those files can shadow the package modules or
 # make Xcode compile two harness implementations. Remove only the explicit
 # obsolete generated paths; handwritten app sources are never touched.
@@ -140,15 +140,15 @@ for obsolete in \
 do
   if [[ -f "$obsolete" || -L "$obsolete" ]]; then
     rm -f -- "$obsolete"
-    echo "gstack-ios-qa-regen: removed obsolete generated file $obsolete"
+    echo "paysec-ios-qa-regen: removed obsolete generated file $obsolete"
   fi
 done
 
 bun run "$GENERATOR" --input "$APP_SOURCE" --output "$GENERATED_DIR"
 
-# Stamp only after successful accessor generation. ios-sync uses this marker
+# Stamp only after successful accessor generation. ios-bridge-sync uses this marker
 # to distinguish a complete current install from an interrupted regeneration.
-install_file "$VERSION_FILE" "$GENERATED_DIR/.gstack-version"
+install_file "$VERSION_FILE" "$GENERATED_DIR/.paysec-version"
 
-echo "gstack-ios-qa-regen: bridge package ready at $BRIDGE_DIR"
-echo "gstack-ios-qa-regen: accessors ready at $GENERATED_DIR/StateAccessor.swift"
+echo "paysec-ios-qa-regen: bridge package ready at $BRIDGE_DIR"
+echo "paysec-ios-qa-regen: accessors ready at $GENERATED_DIR/StateAccessor.swift"

@@ -1,7 +1,7 @@
 /**
- * /plan-design-review AskUserQuestion floor regression (periodic, paid, real-PTY).
+ * /plan-ux-review AskUserQuestion floor regression (periodic, paid, real-PTY).
  *
- * See test/skill-e2e-plan-eng-finding-floor.test.ts for the contract.
+ * See test/skill-e2e-plan-tech-finding-floor.test.ts for the contract.
  */
 
 import { test } from 'bun:test';
@@ -11,13 +11,13 @@ import { FORCING_FLOOR_DESIGN } from './fixtures/forcing-finding-seeds';
 
 const describeE2E = describeE2ETier('periodic');
 
-describeE2E('/plan-design-review AskUserQuestion floor (periodic)', () => {
+describeE2E('/plan-ux-review AskUserQuestion floor (periodic)', () => {
   test(
     'seeded forcing finding causes the agent to fire at least one AskUserQuestion',
     async () => {
       const obs = await runPlanSkillFloorCheck({
-        skillName: 'plan-design-review',
-        slashCommand: '/plan-design-review',
+        skillName: 'plan-ux-review',
+        slashCommand: '/plan-ux-review',
         followUpPrompt: FORCING_FLOOR_DESIGN,
         cwd: process.cwd(),
         timeoutMs: 600_000,

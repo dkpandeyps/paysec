@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
-// gstack-taste-update — update the persistent taste profile at
-// ~/.gstack/projects/$SLUG/taste-profile.json
+// paysec-taste-update — update the persistent taste profile at
+// ~/.paysec/projects/$SLUG/taste-profile.json
 //
 // Usage:
-//   gstack-taste-update approved <variant-path> [--reason "<why>"]
-//   gstack-taste-update rejected <variant-path> [--reason "<why>"]
-//   gstack-taste-update show                       — print current profile summary
-//   gstack-taste-update migrate                    — upgrade legacy approved.json to v1
+//   paysec-taste-update approved <variant-path> [--reason "<why>"]
+//   paysec-taste-update rejected <variant-path> [--reason "<why>"]
+//   paysec-taste-update show                       — print current profile summary
+//   paysec-taste-update migrate                    — upgrade legacy approved.json to v1
 //
-// Schema v1 at ~/.gstack/projects/$SLUG/taste-profile.json:
+// Schema v1 at ~/.paysec/projects/$SLUG/taste-profile.json:
 //
 //   {
 //     "version": 1,
@@ -33,7 +33,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
 
-const STATE_DIR = process.env.GSTACK_STATE_DIR || path.join(process.env.HOME || '/', '.gstack');
+const STATE_DIR = process.env.PAYSEC_STATE_DIR || path.join(process.env.HOME || '/', '.paysec');
 const SCHEMA_VERSION = 1;
 const SESSION_CAP = 50;
 const DECAY_PER_WEEK = 0.05;
@@ -167,7 +167,7 @@ function applyDecay(profile: TasteProfile): TasteProfile {
  * the session is recorded but dimensions don't get updated.
  *
  * Future v2: parse the variant PNG's EXIF, or read an accompanying manifest
- * that design-shotgun writes next to each variant.
+ * that design-variants writes next to each variant.
  */
 function extractSignals(reason?: string): Partial<Record<Dimension, string[]>> {
   if (!reason) return {};
@@ -273,7 +273,7 @@ switch (cmd) {
   case 'rejected': {
     const variant = args[1];
     if (!variant) {
-      console.error(`Usage: gstack-taste-update ${cmd} <variant-path> [--reason "<why>"]`);
+      console.error(`Usage: paysec-taste-update ${cmd} <variant-path> [--reason "<why>"]`);
       process.exit(1);
     }
     const reasonIdx = args.indexOf('--reason');
@@ -288,6 +288,6 @@ switch (cmd) {
     cmdMigrate();
     break;
   default:
-    console.error('Usage: gstack-taste-update {approved|rejected|show|migrate} [args]');
+    console.error('Usage: paysec-taste-update {approved|rejected|show|migrate} [args]');
     process.exit(1);
 }

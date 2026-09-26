@@ -5,9 +5,9 @@ import * as path from 'path';
 import * as os from 'os';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const EVIDENCE = path.join(ROOT, 'bin', 'gstack-evidence');
+const EVIDENCE = path.join(ROOT, 'bin', 'paysec-evidence');
 
-let gstackHome: string;
+let paysecHome: string;
 let repoDir: string;
 
 import { gitIn, findFilesBySuffix } from './helpers/scratch-repo';
@@ -19,7 +19,7 @@ function git(args: string) {
 function run(args: string[], opts: { cwd?: string } = {}): { status: number; stdout: string; stderr: string } {
   const r = spawnSync(EVIDENCE, args, {
     cwd: opts.cwd ?? repoDir,
-    env: { ...process.env, GSTACK_HOME: gstackHome },
+    env: { ...process.env, PAYSEC_HOME: paysecHome },
     encoding: 'utf-8',
     timeout: 60000,
     maxBuffer: 16 * 1024 * 1024, // the truncation test streams 3MB through the wrapper
@@ -28,7 +28,7 @@ function run(args: string[], opts: { cwd?: string } = {}): { status: number; std
 }
 
 function ledgerFile(): string {
-  const found = findFilesBySuffix(path.join(gstackHome, 'projects'), '-evidence.jsonl');
+  const found = findFilesBySuffix(path.join(paysecHome, 'projects'), '-evidence.jsonl');
   expect(found.length).toBeGreaterThan(0);
   return found[0];
 }
@@ -42,8 +42,8 @@ function records(): any[] {
 }
 
 beforeEach(() => {
-  gstackHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-evidence-home-'));
-  repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-evidence-repo-'));
+  paysecHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-evidence-home-'));
+  repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-evidence-repo-'));
   git('init -q -b main');
   fs.writeFileSync(path.join(repoDir, 'src.txt'), 'v1\n');
   fs.writeFileSync(path.join(repoDir, '.gitignore'), 'scratch.txt\n');
@@ -52,11 +52,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  fs.rmSync(gstackHome, { recursive: true, force: true });
+  fs.rmSync(paysecHome, { recursive: true, force: true });
   fs.rmSync(repoDir, { recursive: true, force: true });
 });
 
-describe('gstack-evidence run', () => {
+describe('paysec-evidence run', () => {
   test('records a complete evidence record and propagates exit 0', () => {
     const r = run(['run', '--label', 'tests', '--', 'echo ok']);
     expect(r.status).toBe(0);
@@ -83,16 +83,16 @@ describe('gstack-evidence run', () => {
   });
 
   test('spawn failure (ENOENT, argv-direct form) records and propagates 127', () => {
-    const r = run(['run', '--label', 'tests', '--', '/nonexistent-gstack-binary', 'arg']);
+    const r = run(['run', '--label', 'tests', '--', '/nonexistent-paysec-binary', 'arg']);
     expect(r.status).toBe(127);
     expect(records().pop().exit).toBe(127);
   });
 
   test('TRANSPARENCY: ledger failure never breaks the command (append-failure injection)', () => {
-    // Point GSTACK_HOME somewhere mkdir cannot succeed.
+    // Point PAYSEC_HOME somewhere mkdir cannot succeed.
     const r = spawnSync(EVIDENCE, ['run', '--label', 'tests', '--', 'echo still-ran'], {
       cwd: repoDir,
-      env: { ...process.env, GSTACK_HOME: '/dev/null/nope' },
+      env: { ...process.env, PAYSEC_HOME: '/dev/null/nope' },
       encoding: 'utf-8',
       timeout: 60000,
     });
@@ -138,7 +138,7 @@ describe('gstack-evidence run', () => {
   test('works as a backgrounded job (ship Step 5 lanes run with & wait)', () => {
     execSync(`bash -c '"${EVIDENCE}" run --label bg -- "echo backgrounded" & wait'`, {
       cwd: repoDir,
-      env: { ...process.env, GSTACK_HOME: gstackHome },
+      env: { ...process.env, PAYSEC_HOME: paysecHome },
       encoding: 'utf-8',
       timeout: 60000,
     });
@@ -175,9 +175,9 @@ describe('gstack-evidence run', () => {
   });
 });
 
-describe('gstack-evidence check', () => {
+describe('paysec-evidence check', () => {
   test('KEYSTONE: evidence recorded on a dirty tree stays FRESH after committing the exact tested content', () => {
-    // Dirty the tree (this is /ship Step 5: tests run on uncommitted code).
+    // Dirty the tree (this is /ship-pr Step 5: tests run on uncommitted code).
     fs.writeFileSync(path.join(repoDir, 'src.txt'), 'v2-tested\n');
     expect(run(['run', '--label', 'tests', '--', 'echo green']).status).toBe(0);
     expect(records().pop().dirty).toBe(true);
@@ -304,7 +304,7 @@ describe('gstack-evidence check', () => {
 
   test('check never errors outside a git repo — degrades to STALE', () => {
     expect(run(['run', '--label', 'tests', '--', 'echo green']).status).toBe(0);
-    const nonGit = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-evidence-nongit-'));
+    const nonGit = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-evidence-nongit-'));
     try {
       const chk = run(['check', '--label', 'tests'], { cwd: nonGit });
       expect([0, 1]).toContain(chk.status); // different slug → MISSING; the point is: no crash

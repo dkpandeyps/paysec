@@ -2,7 +2,7 @@
 import { spawn } from "node:child_process";
 
 const child = spawn("bun", [
-  "bin/gstack-redact",
+  "bin/paysec-redact",
   "--repo-visibility", "public",
   "--json",
   "--max-bytes", "16000000",

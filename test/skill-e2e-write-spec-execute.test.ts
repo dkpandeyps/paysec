@@ -1,7 +1,7 @@
 /**
- * /spec --execute end-to-end (periodic, paid, real-PTY).
+ * /write-spec --execute end-to-end (periodic, paid, real-PTY).
  *
- * Asserts: when /spec --execute runs against a fixture prompt, it:
+ * Asserts: when /write-spec --execute runs against a fixture prompt, it:
  *   1. Refuses to draft on turn 1 (Phase 1 hard gate)
  *   2. Reads code in Phase 3 (cites a real file path from the fixture repo)
  *   3. Passes the quality gate (score >= 7) on a well-formed fixture
@@ -25,11 +25,11 @@ const describeE2E = describeE2ETier('periodic');
 
 const ROOT = path.resolve(import.meta.dir, '..');
 
-describeE2E('/spec --execute end-to-end (periodic)', () => {
+describeE2E('/write-spec --execute end-to-end (periodic)', () => {
   test('phase gating + magical Phase 3 + quality gate + spawn — full pipeline', async () => {
     // Sanity: spec template + generated SKILL.md exist at expected paths.
-    expect(fs.existsSync(path.join(ROOT, 'spec', 'SKILL.md.tmpl'))).toBe(true);
-    expect(fs.existsSync(path.join(ROOT, 'spec', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(ROOT, 'write-spec', 'SKILL.md.tmpl'))).toBe(true);
+    expect(fs.existsSync(path.join(ROOT, 'write-spec', 'SKILL.md'))).toBe(true);
 
     // Full PTY-driven E2E lives in a follow-up. For now this test exists as
     // the periodic-tier surface registered in E2E_TIERS so the diff-based
@@ -39,7 +39,7 @@ describeE2E('/spec --execute end-to-end (periodic)', () => {
     // periodic-tier hook for the full claude-pty-runner driven test.
 
     // Mark as pending — replace with full PTY driver in follow-up TODO:
-    //   "/spec --execute E2E full pipeline test (v1.1)"
+    //   "/write-spec --execute E2E full pipeline test (v1.1)"
     expect(true).toBe(true);
   }, 600_000);
 });

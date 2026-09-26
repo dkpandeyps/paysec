@@ -1,7 +1,7 @@
 /**
- * gstack-slug cache-read sanitization.
+ * paysec-slug cache-read sanitization.
  *
- * `eval "$(gstack-slug)"` is how callers load SLUG/BRANCH. The compute and
+ * `eval "$(paysec-slug)"` is how callers load SLUG/BRANCH. The compute and
  * fallback paths filter to [a-zA-Z0-9._-], but a value read straight from the
  * cache file used to be echoed unsanitized — a planted cache file could inject
  * shell. This pins the fix: a poisoned cache must never produce shell
@@ -15,7 +15,7 @@ import os from 'os';
 import path from 'path';
 
 const ROOT = path.resolve(__dirname, '..');
-const SLUG_BIN = path.join(ROOT, 'bin', 'gstack-slug');
+const SLUG_BIN = path.join(ROOT, 'bin', 'paysec-slug');
 
 /** Reproduce the script's cache-key derivation: absolute path with / -> _. */
 function cacheKeyFor(dir: string): string {
@@ -29,12 +29,12 @@ function runSlug(cwd: string, home: string) {
   });
 }
 
-describe('gstack-slug cache-read sanitization', () => {
+describe('paysec-slug cache-read sanitization', () => {
   test('a poisoned cache file cannot inject shell metacharacters into output', () => {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'gslug-home-'));
     const proj = fs.mkdtempSync(path.join(os.tmpdir(), 'gslug-proj-'));
     try {
-      const cacheDir = path.join(home, '.gstack', 'slug-cache');
+      const cacheDir = path.join(home, '.paysec', 'slug-cache');
       fs.mkdirSync(cacheDir, { recursive: true });
       // realpath: macOS tmpdir is a symlink (/var -> /private/var); the script
       // runs in the resolved cwd, so key off the resolved path.
@@ -64,11 +64,11 @@ describe('gstack-slug cache-read sanitization', () => {
   });
 });
 
-// The GSTACK_PROJECT_SLUG escape hatch is per-invocation, never durable: a
+// The PAYSEC_PROJECT_SLUG escape hatch is per-invocation, never durable: a
 // test exporting it from the repo root once rebound the ENTIRE repo's session
 // state (evals, decisions, timelines) to the test's slug via the cwd cache.
-// The cache is also GSTACK_HOME-aware now, matching lib/bin-context.ts's
-// native port — temp-home runs must not litter the real ~/.gstack (observed:
+// The cache is also PAYSEC_HOME-aware now, matching lib/bin-context.ts's
+// native port — temp-home runs must not litter the real ~/.paysec (observed:
 // 2,528 stale temp-cwd entries).
 describe('slug cache hygiene', () => {
   test('an env-override run never writes the cwd cache', () => {
@@ -76,7 +76,7 @@ describe('slug cache hygiene', () => {
     try {
       const r = spawnSync(['bash', SLUG_BIN], {
         cwd: os.tmpdir(),
-        env: { ...process.env, GSTACK_HOME: home, GSTACK_PROJECT_SLUG: 'override-slug' },
+        env: { ...process.env, PAYSEC_HOME: home, PAYSEC_PROJECT_SLUG: 'override-slug' },
       });
       expect(r.stdout.toString()).toContain('SLUG=override-slug');
       expect(fs.existsSync(path.join(home, 'slug-cache'))).toBe(false);
@@ -85,16 +85,16 @@ describe('slug cache hygiene', () => {
     }
   });
 
-  test('an env-less run caches under GSTACK_HOME, not $HOME', () => {
+  test('an env-less run caches under PAYSEC_HOME, not $HOME', () => {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'slug-home-'));
     try {
       // Strip any ambient override: a sibling test leaking
-      // GSTACK_PROJECT_SLUG in a shared-process shard would flip this run
+      // PAYSEC_PROJECT_SLUG in a shared-process shard would flip this run
       // into override mode, which (correctly) skips the cache write.
-      const { GSTACK_PROJECT_SLUG: _drop, ...ambient } = process.env;
+      const { PAYSEC_PROJECT_SLUG: _drop, ...ambient } = process.env;
       const r = spawnSync(['bash', SLUG_BIN], {
         cwd: os.tmpdir(),
-        env: { ...ambient, GSTACK_HOME: home },
+        env: { ...ambient, PAYSEC_HOME: home },
       });
       expect(r.exitCode).toBe(0);
       const entries = fs.readdirSync(path.join(home, 'slug-cache'));

@@ -1,16 +1,16 @@
 #!/usr/bin/env bun
 /**
- * gstack-evidence — verification-evidence ledger: the mechanical arm of /ship's
+ * paysec-evidence — verification-evidence ledger: the mechanical arm of /ship-pr's
  * IRON LAW ("no completion claims without fresh verification evidence").
  *
- *   gstack-evidence run --label <L> -- <cmd...>
- *   gstack-evidence check [--label <L> [--expect-cmd <exact string>]]... | --all
+ *   paysec-evidence run --label <L> -- <cmd...>
+ *   paysec-evidence check [--label <L> [--expect-cmd <exact string>]]... | --all
  *                         [--max-age <hours>] [--allow-paths <csv>]
  *
  * `run` is a TRANSPARENT wrapper: it streams the child's output through
  * unchanged, tees it to a 0600 log (2MB cap with a truncation marker), and
  * appends {ts, label, command, cmd_sha256, exit, duration_s, commit, tree,
- * dirty, wtree, log_path} to ~/.gstack/projects/<slug>/<branch>-evidence.jsonl.
+ * dirty, wtree, log_path} to ~/.paysec/projects/<slug>/<branch>-evidence.jsonl.
  *
  * TRANSPARENCY INVARIANT (load-bearing): the child's exit code is ALWAYS the
  * wrapper's exit code. Every bookkeeping failure — ledger append, log dir,
@@ -18,10 +18,10 @@
  * wrapper must never turn green tests red.
  *
  * Freshness binds to `wtree`, the working-tree content fingerprint from
- * bin/gstack-wtree: evidence recorded on uncommitted code stays FRESH after
+ * bin/paysec-wtree: evidence recorded on uncommitted code stays FRESH after
  * the exact tested content is committed, and an untracked new source file
  * invalidates it. `cmd_sha256` = sha256 of the exact command string, no
- * normalization — the same convention as bin/gstack-verify-gate (which hashes
+ * normalization — the same convention as bin/paysec-verify-gate (which hashes
  * for TRUST; this ledger hashes for FRESHNESS).
  *
  * MACHINE-LOCAL by design: neither the ledger nor the logs are brain-synced.
@@ -60,7 +60,7 @@ interface EvidenceRecord {
 }
 
 function warn(msg: string): void {
-  console.error(`gstack-evidence: warning: ${msg}`);
+  console.error(`paysec-evidence: warning: ${msg}`);
 }
 
 function sha256(text: string): string {
@@ -82,7 +82,7 @@ function git(args: string[]): string | undefined {
 
 function currentWtree(): string | undefined {
   try {
-    const r = spawnSync(join(BIN_DIR, "gstack-wtree"), { encoding: "utf-8", timeout: 30000 });
+    const r = spawnSync(join(BIN_DIR, "paysec-wtree"), { encoding: "utf-8", timeout: 30000 });
     if (r.status !== 0) return undefined;
     const out = (r.stdout || "").trim();
     return /^[0-9a-f]{40}$/.test(out) ? out : undefined;
@@ -92,13 +92,13 @@ function currentWtree(): string | undefined {
 }
 
 function ledgerPath(): { dir: string; file: string; logsDir: string } {
-  const home = process.env.GSTACK_HOME || (process.env.HOME ? join(process.env.HOME, ".gstack") : undefined);
+  const home = process.env.PAYSEC_HOME || (process.env.HOME ? join(process.env.HOME, ".paysec") : undefined);
   // No resolvable home: skip bookkeeping (a literal "~" dir in cwd would land
   // inside the repo and perturb the fingerprint it exists to compute).
-  if (!home) throw new Error("no GSTACK_HOME/HOME — bookkeeping skipped");
-  // ONE gstack-slug spawn: its output carries both SLUG= and BRANCH= lines
+  if (!home) throw new Error("no PAYSEC_HOME/HOME — bookkeeping skipped");
+  // ONE paysec-slug spawn: its output carries both SLUG= and BRANCH= lines
   // (same branch→filename sanitization as reviews.jsonl).
-  const slugOut = spawnSync(join(BIN_DIR, "gstack-slug"), { encoding: "utf-8" });
+  const slugOut = spawnSync(join(BIN_DIR, "paysec-slug"), { encoding: "utf-8" });
   const sm = (slugOut.stdout || "").match(/^SLUG=(.+)$/m);
   const bm = (slugOut.stdout || "").match(/^BRANCH=(.+)$/m);
   const slug = sm ? sm[1].trim() : "unknown";
@@ -160,7 +160,7 @@ async function cmdRun(argv: string[]): Promise<number> {
   const sep = argv.indexOf("--");
   if (li >= 0 && li + 1 < argv.length && (sep < 0 || li < sep)) label = argv[li + 1];
   if (sep < 0 || sep + 1 >= argv.length) {
-    console.error("usage: gstack-evidence run --label <L> -- <cmd...>");
+    console.error("usage: paysec-evidence run --label <L> -- <cmd...>");
     return 2;
   }
   const cmdArgv = argv.slice(sep + 1);
@@ -207,7 +207,7 @@ async function cmdRun(argv: string[]): Promise<number> {
       if (logBytes + chunk.byteLength > LOG_MAX_BYTES) {
         const room = LOG_MAX_BYTES - logBytes;
         if (room > 0) writeSync(log.fd, chunk.subarray(0, room));
-        writeSync(log.fd, Buffer.from("\n\n[gstack-evidence: log truncated at 2MB — output continued on console]\n"));
+        writeSync(log.fd, Buffer.from("\n\n[paysec-evidence: log truncated at 2MB — output continued on console]\n"));
         truncated = true;
       } else {
         writeSync(log.fd, chunk);
@@ -216,7 +216,7 @@ async function cmdRun(argv: string[]): Promise<number> {
     } catch {
       truncated = true; // stop teeing on any write failure; console stream continues
       try {
-        writeSync(log.fd, Buffer.from("\n\n[gstack-evidence: log ended early (write failure) — output continued on console]\n"));
+        writeSync(log.fd, Buffer.from("\n\n[paysec-evidence: log ended early (write failure) — output continued on console]\n"));
       } catch {}
     }
   };
@@ -309,7 +309,7 @@ function record(
     } catch {}
     // Summary line on stderr so calling agents get the exit + log path even
     // when the lane ran backgrounded. Never on stdout (stays transparent).
-    console.error(`gstack-evidence: recorded label=${label} exit=${exitCode} log=${logPath ?? "-"}`);
+    console.error(`paysec-evidence: recorded label=${label} exit=${exitCode} log=${logPath ?? "-"}`);
   } catch (e: any) {
     warn(`ledger append failed (${e?.message ?? e}) — the command result stands`);
   }
@@ -328,7 +328,7 @@ function cmdCheck(argv: string[]): number {
     if (a === "--label") wanted.push({ label: argv[++i] ?? "" });
     else if (a === "--expect-cmd") {
       if (wanted.length === 0) {
-        console.error("gstack-evidence: --expect-cmd requires a preceding --label");
+        console.error("paysec-evidence: --expect-cmd requires a preceding --label");
         return 2;
       }
       wanted[wanted.length - 1].expectCmd = argv[++i] ?? "";
@@ -338,14 +338,14 @@ function cmdCheck(argv: string[]): number {
       if (!Number.isFinite(maxAgeHours) || maxAgeHours <= 0) {
         // A typo must never silently drop the age gate (fail open) on a
         // freshness checker: it is a usage error.
-        console.error(`gstack-evidence: --max-age must be a positive number of hours, got: ${JSON.stringify(argv[i])}`);
+        console.error(`paysec-evidence: --max-age must be a positive number of hours, got: ${JSON.stringify(argv[i])}`);
         return 2;
       }
     }
     else if (a === "--allow-paths") allowPaths = (argv[++i] ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   }
   if (!all && wanted.length === 0) {
-    console.error("usage: gstack-evidence check [--label <L> [--expect-cmd <s>]]... | --all  [--max-age <hrs>] [--allow-paths <csv>]");
+    console.error("usage: paysec-evidence check [--label <L> [--expect-cmd <s>]]... | --all  [--max-age <hrs>] [--allow-paths <csv>]");
     return 2;
   }
 
@@ -433,7 +433,7 @@ try {
   } else if (sub === "check") {
     process.exit(cmdCheck(rest));
   } else {
-    console.error("usage: gstack-evidence run|check ...");
+    console.error("usage: paysec-evidence run|check ...");
     process.exit(2);
   }
 } catch (e: any) {

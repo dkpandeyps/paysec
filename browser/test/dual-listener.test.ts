@@ -8,7 +8,7 @@
  *
  * These are source-level assertions — they keep future contributors from
  * silently widening the tunnel surface during a routine refactor.  Behavioral
- * integration tests live in the E2E suite (browse/test/pair-agent-e2e.test.ts,
+ * integration tests live in the E2E suite (browser/test/pair-agent-e2e.test.ts,
  * added in a later wave commit).
  */
 
@@ -353,8 +353,8 @@ describe('Rate limit + denial log wiring', () => {
   });
 });
 
-describe('E3: /welcome GSTACK_SLUG path traversal gate', () => {
-  test('/welcome validates GSTACK_SLUG against ^[a-z0-9_-]+$ before interpolating into path', () => {
+describe('E3: /welcome PAYSEC_SLUG path traversal gate', () => {
+  test('/welcome validates PAYSEC_SLUG against ^[a-z0-9_-]+$ before interpolating into path', () => {
     const welcomeBlock = sliceBetween(
       SERVER_SRC,
       "url.pathname === '/welcome'",

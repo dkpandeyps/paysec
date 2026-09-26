@@ -1,9 +1,9 @@
 /**
- * plan-ceo-review carve — static ordering guard (GATE tier, free, deterministic).
+ * plan-business-review carve — static ordering guard (GATE tier, free, deterministic).
  *
  * This is the per-PR mechanical backstop for the v2-plan Phase B carve of
- * plan-ceo-review (Codex outside-voice P2). The periodic real-PTY E2E
- * (skill-e2e-plan-ceo-review-section-loading.test.ts) is the behavioral proof,
+ * plan-business-review (Codex outside-voice P2). The periodic real-PTY E2E
+ * (skill-e2e-plan-business-review-section-loading.test.ts) is the behavioral proof,
  * but it runs weekly and costs money. This file runs on every `bun test` and
  * fails CI the moment the carve's structural invariants break:
  *
@@ -12,7 +12,7 @@
  *     stays in the always-loaded skeleton, never stranded in the on-demand file.
  *  2. The heavy review body (Sections 1-11) is NOT in the skeleton — it moved to
  *     the section. A regression that inlines it back would re-bloat the skeleton.
- *  3. The review report writer ("GSTACK REVIEW REPORT") lives in the section, and
+ *  3. The review report writer ("PAYSEC REVIEW REPORT") lives in the section, and
  *     the blocking EXIT PLAN MODE GATE that verifies it lives in the skeleton
  *     AFTER the STOP — so the gate fires once the section work returns.
  *  4. Nothing review-governing sits in the skeleton below the STOP (Codex P1):
@@ -24,10 +24,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const SKELETON = path.join(ROOT, 'plan-ceo-review', 'SKILL.md');
-const SECTION = path.join(ROOT, 'plan-ceo-review', 'sections', 'review-sections.md');
+const SKELETON = path.join(ROOT, 'plan-business-review', 'SKILL.md');
+const SECTION = path.join(ROOT, 'plan-business-review', 'sections', 'review-sections.md');
 
-describe('plan-ceo-review carve — static ordering', () => {
+describe('plan-business-review carve — static ordering', () => {
   const skeleton = fs.readFileSync(SKELETON, 'utf-8');
   const section = fs.readFileSync(SECTION, 'utf-8');
 
@@ -36,11 +36,11 @@ describe('plan-ceo-review carve — static ordering', () => {
 
   const STEP0 = '## Step 0: Nuclear Scope Challenge + Mode Selection';
   const STOP = 'sections/review-sections.md'; // appears in the index row + STOP directive
-  const GATE = 'GSTACK REVIEW REPORT';
+  const GATE = 'PAYSEC REVIEW REPORT';
 
   test('skeleton emits a STOP-Read directive pointing at the section', () => {
     expect(skeleton).toContain('> **STOP.**');
-    expect(skeleton).toContain('plan-ceo-review/sections/review-sections.md');
+    expect(skeleton).toContain('plan-business-review/sections/review-sections.md');
     expect(skeleton).toContain('## Section index — Read each section when its situation applies');
   });
 

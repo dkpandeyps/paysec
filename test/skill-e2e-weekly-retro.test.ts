@@ -54,24 +54,24 @@ describeIfSelected('Base branch detection', ['retro-base-branch'], () => {
     // preamble + global/compare modes; CLAUDE.md: "extract, don't copy").
     fs.mkdirSync(path.join(dir, 'retro'), { recursive: true });
     fs.writeFileSync(
-      path.join(dir, 'retro', 'SKILL.md'),
-      extractSkillSections(path.join(ROOT, 'retro'), RETRO_E2E_SECTIONS),
+      path.join(dir, 'weekly-retro', 'SKILL.md'),
+      extractSkillSections(path.join(ROOT, 'weekly-retro'), RETRO_E2E_SECTIONS),
     );
 
     const result = await runSkillTest({
-      prompt: `Read retro/SKILL.md for instructions on how to run a retrospective.
+      prompt: `Read weekly-retro/SKILL.md for instructions on how to run a retrospective.
 
 IMPORTANT: Follow the "Detect default branch" step first. Since there is no remote, gh will fail — fall back to main.
 Then use the detected branch name for all git queries.
 
-Run /retro for the last 7 days of this git repo. Skip any AskUserQuestion calls — this is non-interactive.
+Run /weekly-retro for the last 7 days of this git repo. Skip any AskUserQuestion calls — this is non-interactive.
 This is a local-only repo so use the local branch (main) instead of origin/main for all git log commands.
 
 Write your retrospective to ${dir}/retro-output.md`,
       workingDirectory: dir,
       maxTurns: 25,
       // 360s, not 240s: same runner-contention class as review-dashboard-via.
-      // /retro is a long multi-step flow — a clean pass measured 225s and the
+      // /weekly-retro is a long multi-step flow — a clean pass measured 225s and the
       // next CI run timed out at the 240s line (exitReason "timeout", 3/3
       // attempts). Outer bun timeout below rises to 480s for headroom.
       timeout: 360_000,
@@ -79,13 +79,13 @@ Write your retrospective to ${dir}/retro-output.md`,
       runId,
     });
 
-    logCost('/retro base-branch', result);
+    logCost('/weekly-retro base-branch', result);
     // The report is the work product: a run that exits max-turns without
     // writing it is a FAIL, not a pass — otherwise this test cannot detect
     // the most basic regression (the skill stops producing its report).
     const retroPath = path.join(dir, 'retro-output.md');
     const wroteReport = fs.existsSync(retroPath);
-    recordE2E(evalCollector, '/retro default branch detection', 'Base branch detection', result, {
+    recordE2E(evalCollector, '/weekly-retro default branch detection', 'Base branch detection', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason) && wroteReport,
     });
     expect(['success', 'error_max_turns']).toContain(result.exitReason);
@@ -140,8 +140,8 @@ describeIfSelected('Retro E2E', ['retro'], () => {
     // Retro skill — extracted repo-scoped flow, not the full 1820-line file.
     fs.mkdirSync(path.join(retroDir, 'retro'), { recursive: true });
     fs.writeFileSync(
-      path.join(retroDir, 'retro', 'SKILL.md'),
-      extractSkillSections(path.join(ROOT, 'retro'), RETRO_E2E_SECTIONS),
+      path.join(retroDir, 'weekly-retro', 'SKILL.md'),
+      extractSkillSections(path.join(ROOT, 'weekly-retro'), RETRO_E2E_SECTIONS),
     );
   });
 
@@ -151,9 +151,9 @@ describeIfSelected('Retro E2E', ['retro'], () => {
 
   testConcurrentIfSelected('retro', async () => {
     const result = await runSkillTest({
-      prompt: `Read retro/SKILL.md for instructions on how to run a retrospective.
+      prompt: `Read weekly-retro/SKILL.md for instructions on how to run a retrospective.
 
-Run /retro for the last 7 days of this git repo. Skip any AskUserQuestion calls — this is non-interactive.
+Run /weekly-retro for the last 7 days of this git repo. Skip any AskUserQuestion calls — this is non-interactive.
 Write your retrospective report to ${retroDir}/retro-output.md
 
 Analyze the git history and produce the narrative report as described in the SKILL.md.`,
@@ -165,13 +165,13 @@ Analyze the git history and produce the narrative report as described in the SKI
       model: 'claude-opus-4-7',
     });
 
-    logCost('/retro', result);
+    logCost('/weekly-retro', result);
     // Accept error_max_turns (retro does many git commands to analyze
     // history) — but only WITH the report on disk. The report is the work
     // product; max-turns with nothing written is a fail.
     const retroPath = path.join(retroDir, 'retro-output.md');
     const wroteReport = fs.existsSync(retroPath);
-    recordE2E(evalCollector, '/retro', 'Retro E2E', result, {
+    recordE2E(evalCollector, '/weekly-retro', 'Retro E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason) && wroteReport,
     });
     expect(['success', 'error_max_turns']).toContain(result.exitReason);

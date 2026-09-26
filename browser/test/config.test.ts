@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { resolveConfig, ensureStateDir, readVersionHash, getGitRoot, getRemoteSlug, resolveGstackHome, resolveChromiumProfile, cleanSingletonLocks } from '../src/config';
+import { resolveConfig, ensureStateDir, readVersionHash, getGitRoot, getRemoteSlug, resolvePaysecHome, resolveChromiumProfile, cleanSingletonLocks } from '../src/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -19,15 +19,15 @@ describe('config', () => {
       const gitRoot = getGitRoot();
       expect(gitRoot).not.toBeNull();
       expect(config.projectDir).toBe(gitRoot);
-      expect(config.stateDir).toBe(path.join(gitRoot!, '.gstack'));
-      expect(config.stateFile).toBe(path.join(gitRoot!, '.gstack', 'browse.json'));
+      expect(config.stateDir).toBe(path.join(gitRoot!, '.paysec'));
+      expect(config.stateFile).toBe(path.join(gitRoot!, '.paysec', 'browse.json'));
     });
 
     test('derives paths from BROWSE_STATE_FILE when set', () => {
-      const stateFile = '/tmp/test-config/.gstack/browse.json';
+      const stateFile = '/tmp/test-config/.paysec/browse.json';
       const config = resolveConfig({ BROWSE_STATE_FILE: stateFile });
       expect(config.stateFile).toBe(stateFile);
-      expect(config.stateDir).toBe('/tmp/test-config/.gstack');
+      expect(config.stateDir).toBe('/tmp/test-config/.paysec');
       expect(config.projectDir).toBe('/tmp/test-config');
     });
 
@@ -42,7 +42,7 @@ describe('config', () => {
   describe('ensureStateDir', () => {
     test('creates directory if it does not exist', () => {
       const tmpDir = path.join(os.tmpdir(), `browse-config-test-${Date.now()}`);
-      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.gstack', 'browse.json') });
+      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.paysec', 'browse.json') });
       expect(fs.existsSync(config.stateDir)).toBe(false);
       ensureStateDir(config);
       expect(fs.existsSync(config.stateDir)).toBe(true);
@@ -52,7 +52,7 @@ describe('config', () => {
 
     test('is a no-op if directory already exists', () => {
       const tmpDir = path.join(os.tmpdir(), `browse-config-test-${Date.now()}`);
-      const stateDir = path.join(tmpDir, '.gstack');
+      const stateDir = path.join(tmpDir, '.paysec');
       fs.mkdirSync(stateDir, { recursive: true });
       const config = resolveConfig({ BROWSE_STATE_FILE: path.join(stateDir, 'browse.json') });
       ensureStateDir(config); // should not throw
@@ -61,32 +61,32 @@ describe('config', () => {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     });
 
-    test('writes a self-contained .gstack/.gitignore with * unconditionally', () => {
+    test('writes a self-contained .paysec/.gitignore with * unconditionally', () => {
       // Even with NO project .gitignore, the state dir must carry its own
       // ignore so persisted cookies / network+audit logs can never be git-added.
       const tmpDir = path.join(os.tmpdir(), `browse-selfignore-test-${Date.now()}`);
       fs.mkdirSync(tmpDir, { recursive: true });
-      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.gstack', 'browse.json') });
+      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.paysec', 'browse.json') });
       ensureStateDir(config);
       const selfIgnore = path.join(config.stateDir, '.gitignore');
       expect(fs.existsSync(selfIgnore)).toBe(true);
       expect(fs.readFileSync(selfIgnore, 'utf-8')).toBe('*\n');
-      // No nesting: the ignore is directly inside the state dir, not .gstack/.gstack/.
-      expect(fs.existsSync(path.join(config.stateDir, '.gstack'))).toBe(false);
+      // No nesting: the ignore is directly inside the state dir, not .paysec/.paysec/.
+      expect(fs.existsSync(path.join(config.stateDir, '.paysec'))).toBe(false);
       fs.rmSync(tmpDir, { recursive: true, force: true });
     });
 
-    test('writes the self-contained .gitignore even when git already ignores .gstack/ (before the early return)', () => {
+    test('writes the self-contained .gitignore even when git already ignores .paysec/ (before the early return)', () => {
       // Pins the load-bearing property: the state-dir ignore is written
       // UNCONDITIONALLY, before the `if (isIgnoredByGit(...)) return` early exit.
-      // A git repo whose root .gitignore already lists .gstack/ makes
+      // A git repo whose root .gitignore already lists .paysec/ makes
       // isIgnoredByGit true, so the early return fires — moving the write below
       // it (the exact bug the fix removed) would skip the guard here.
       const tmpDir = path.join(os.tmpdir(), `browse-gitignored-repo-test-${Date.now()}`);
       fs.mkdirSync(tmpDir, { recursive: true });
       Bun.spawnSync(['git', 'init'], { cwd: tmpDir, stdout: 'ignore', stderr: 'ignore' });
-      fs.writeFileSync(path.join(tmpDir, '.gitignore'), '.gstack/\n');
-      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.gstack', 'browse.json') });
+      fs.writeFileSync(path.join(tmpDir, '.gitignore'), '.paysec/\n');
+      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.paysec', 'browse.json') });
       ensureStateDir(config);
       const selfIgnore = path.join(config.stateDir, '.gitignore');
       expect(fs.existsSync(selfIgnore)).toBe(true);
@@ -94,26 +94,26 @@ describe('config', () => {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     });
 
-    test('adds .gstack/ to .gitignore if not present', () => {
+    test('adds .paysec/ to .gitignore if not present', () => {
       const tmpDir = path.join(os.tmpdir(), `browse-gitignore-test-${Date.now()}`);
       fs.mkdirSync(tmpDir, { recursive: true });
       fs.writeFileSync(path.join(tmpDir, '.gitignore'), 'node_modules/\n');
-      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.gstack', 'browse.json') });
+      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.paysec', 'browse.json') });
       ensureStateDir(config);
       const content = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf-8');
-      expect(content).toContain('.gstack/');
-      expect(content).toBe('node_modules/\n.gstack/\n');
+      expect(content).toContain('.paysec/');
+      expect(content).toBe('node_modules/\n.paysec/\n');
       fs.rmSync(tmpDir, { recursive: true, force: true });
     });
 
-    test('does not duplicate .gstack/ in .gitignore', () => {
+    test('does not duplicate .paysec/ in .gitignore', () => {
       const tmpDir = path.join(os.tmpdir(), `browse-gitignore-test-${Date.now()}`);
       fs.mkdirSync(tmpDir, { recursive: true });
-      fs.writeFileSync(path.join(tmpDir, '.gitignore'), 'node_modules/\n.gstack/\n');
-      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.gstack', 'browse.json') });
+      fs.writeFileSync(path.join(tmpDir, '.gitignore'), 'node_modules/\n.paysec/\n');
+      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.paysec', 'browse.json') });
       ensureStateDir(config);
       const content = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf-8');
-      expect(content).toBe('node_modules/\n.gstack/\n');
+      expect(content).toBe('node_modules/\n.paysec/\n');
       fs.rmSync(tmpDir, { recursive: true, force: true });
     });
 
@@ -121,20 +121,20 @@ describe('config', () => {
       const tmpDir = path.join(os.tmpdir(), `browse-gitignore-test-${Date.now()}`);
       fs.mkdirSync(tmpDir, { recursive: true });
       fs.writeFileSync(path.join(tmpDir, '.gitignore'), 'node_modules');
-      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.gstack', 'browse.json') });
+      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.paysec', 'browse.json') });
       ensureStateDir(config);
       const content = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf-8');
-      expect(content).toBe('node_modules\n.gstack/\n');
+      expect(content).toBe('node_modules\n.paysec/\n');
       fs.rmSync(tmpDir, { recursive: true, force: true });
     });
 
     test('logs warning to browse-server.log on non-ENOENT gitignore error', () => {
       const tmpDir = path.join(os.tmpdir(), `browse-gitignore-test-${Date.now()}`);
       fs.mkdirSync(tmpDir, { recursive: true });
-      // Create a read-only .gitignore (no .gstack/ entry → would try to append)
+      // Create a read-only .gitignore (no .paysec/ entry → would try to append)
       fs.writeFileSync(path.join(tmpDir, '.gitignore'), 'node_modules/\n');
       fs.chmodSync(path.join(tmpDir, '.gitignore'), 0o444);
-      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.gstack', 'browse.json') });
+      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.paysec', 'browse.json') });
       ensureStateDir(config); // should not throw
       // Verify warning was written to server log
       const logPath = path.join(config.stateDir, 'browse-server.log');
@@ -152,13 +152,13 @@ describe('config', () => {
     test('skips if no .gitignore exists', () => {
       const tmpDir = path.join(os.tmpdir(), `browse-gitignore-test-${Date.now()}`);
       fs.mkdirSync(tmpDir, { recursive: true });
-      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.gstack', 'browse.json') });
+      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.paysec', 'browse.json') });
       ensureStateDir(config);
       expect(fs.existsSync(path.join(tmpDir, '.gitignore'))).toBe(false);
       fs.rmSync(tmpDir, { recursive: true, force: true });
     });
 
-    test('leaves .gitignore alone when git already ignores .gstack/ globally', () => {
+    test('leaves .gitignore alone when git already ignores .paysec/ globally', () => {
       const { spawnSync } = require('child_process');
       const tmpDir = path.join(os.tmpdir(), `browse-gitignore-global-${Date.now()}`);
       fs.mkdirSync(tmpDir, { recursive: true });
@@ -168,27 +168,27 @@ describe('config', () => {
       spawnSync('git', ['config', 'user.email', 'test@test.com'], { cwd: tmpDir });
       spawnSync('git', ['config', 'user.name', 'Test'], { cwd: tmpDir });
 
-      // Write a global excludes file that ignores .gstack/
+      // Write a global excludes file that ignores .paysec/
       const excludesFile = path.join(tmpDir, 'global-gitignore');
-      fs.writeFileSync(excludesFile, '.gstack/\n');
+      fs.writeFileSync(excludesFile, '.paysec/\n');
       spawnSync('git', ['config', 'core.excludesFile', excludesFile], { cwd: tmpDir });
 
-      // .gitignore exists but does NOT contain .gstack/
+      // .gitignore exists but does NOT contain .paysec/
       fs.writeFileSync(path.join(tmpDir, '.gitignore'), 'node_modules/\n');
       spawnSync('git', ['add', '.gitignore'], { cwd: tmpDir });
       spawnSync('git', ['commit', '-qm', 'init'], { cwd: tmpDir });
 
-      // Verify git knows .gstack/ is ignored
-      const check = spawnSync('git', ['check-ignore', '-q', '.gstack/'], { cwd: tmpDir });
+      // Verify git knows .paysec/ is ignored
+      const check = spawnSync('git', ['check-ignore', '-q', '.paysec/'], { cwd: tmpDir });
       expect(check.status).toBe(0);
 
-      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.gstack', 'browse.json') });
+      const config = resolveConfig({ BROWSE_STATE_FILE: path.join(tmpDir, '.paysec', 'browse.json') });
       ensureStateDir(config);
 
       // .gitignore must NOT have been modified
       const content = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf-8');
       expect(content).toBe('node_modules/\n');
-      expect(fs.existsSync(path.join(tmpDir, '.gstack'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, '.paysec'))).toBe(true);
 
       fs.rmSync(tmpDir, { recursive: true, force: true });
     });
@@ -207,21 +207,21 @@ describe('config', () => {
       const url = 'git@github.com:garrytan/gstack.git';
       const match = url.match(/[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
       expect(match).not.toBeNull();
-      expect(`${match![1]}-${match![2]}`).toBe('garrytan-gstack');
+      expect(`${match![1]}-${match![2]}`).toBe('garrytan-paysec');
     });
 
     test('parses HTTPS remote URLs', () => {
       const url = 'https://github.com/garrytan/gstack.git';
       const match = url.match(/[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
       expect(match).not.toBeNull();
-      expect(`${match![1]}-${match![2]}`).toBe('garrytan-gstack');
+      expect(`${match![1]}-${match![2]}`).toBe('garrytan-paysec');
     });
 
     test('parses HTTPS remote URLs without .git suffix', () => {
       const url = 'https://github.com/garrytan/gstack';
       const match = url.match(/[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
       expect(match).not.toBeNull();
-      expect(`${match![1]}-${match![2]}`).toBe('garrytan-gstack');
+      expect(`${match![1]}-${match![2]}`).toBe('garrytan-paysec');
     });
   });
 
@@ -383,25 +383,25 @@ describe('startup error log', () => {
   });
 });
 
-describe('resolveGstackHome', () => {
-  test('honors GSTACK_HOME env var when set', () => {
-    const orig = process.env.GSTACK_HOME;
-    process.env.GSTACK_HOME = '/tmp/custom-gstack-home';
+describe('resolvePaysecHome', () => {
+  test('honors PAYSEC_HOME env var when set', () => {
+    const orig = process.env.PAYSEC_HOME;
+    process.env.PAYSEC_HOME = '/tmp/custom-paysec-home';
     try {
-      expect(resolveGstackHome()).toBe('/tmp/custom-gstack-home');
+      expect(resolvePaysecHome()).toBe('/tmp/custom-paysec-home');
     } finally {
-      if (orig === undefined) delete process.env.GSTACK_HOME;
-      else process.env.GSTACK_HOME = orig;
+      if (orig === undefined) delete process.env.PAYSEC_HOME;
+      else process.env.PAYSEC_HOME = orig;
     }
   });
 
-  test('falls back to os.homedir() + /.gstack when env unset', () => {
-    const orig = process.env.GSTACK_HOME;
-    delete process.env.GSTACK_HOME;
+  test('falls back to os.homedir() + /.paysec when env unset', () => {
+    const orig = process.env.PAYSEC_HOME;
+    delete process.env.PAYSEC_HOME;
     try {
-      expect(resolveGstackHome()).toBe(path.join(os.homedir(), '.gstack'));
+      expect(resolvePaysecHome()).toBe(path.join(os.homedir(), '.paysec'));
     } finally {
-      if (orig !== undefined) process.env.GSTACK_HOME = orig;
+      if (orig !== undefined) process.env.PAYSEC_HOME = orig;
     }
   });
 });
@@ -429,17 +429,17 @@ describe('resolveChromiumProfile', () => {
     }
   });
 
-  test('falls back to resolveGstackHome()/chromium-profile when nothing set', () => {
+  test('falls back to resolvePaysecHome()/chromium-profile when nothing set', () => {
     const origEnv = process.env.CHROMIUM_PROFILE;
-    const origHome = process.env.GSTACK_HOME;
+    const origHome = process.env.PAYSEC_HOME;
     delete process.env.CHROMIUM_PROFILE;
-    process.env.GSTACK_HOME = '/tmp/fallback-gstack';
+    process.env.PAYSEC_HOME = '/tmp/fallback-paysec';
     try {
-      expect(resolveChromiumProfile()).toBe('/tmp/fallback-gstack/chromium-profile');
+      expect(resolveChromiumProfile()).toBe('/tmp/fallback-paysec/chromium-profile');
     } finally {
       if (origEnv !== undefined) process.env.CHROMIUM_PROFILE = origEnv;
-      if (origHome === undefined) delete process.env.GSTACK_HOME;
-      else process.env.GSTACK_HOME = origHome;
+      if (origHome === undefined) delete process.env.PAYSEC_HOME;
+      else process.env.PAYSEC_HOME = origHome;
     }
   });
 

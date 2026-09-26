@@ -3,11 +3,11 @@
 **Status:** P0 TODO (follow-up to sidebar security fix PR)
 **Branch:** garrytan/extension-prompt-injection-defense
 **Date:** 2026-03-28
-**CEO Plan:** ~/.gstack/projects/garrytan-gstack/ceo-plans/2026-03-28-sidebar-prompt-injection-defense.md
+**CEO Plan:** ~/.paysec/projects/garrytan-paysec/ceo-plans/2026-03-28-sidebar-prompt-injection-defense.md
 
 ## The Problem
 
-The gstack Chrome extension sidebar gives Claude bash access to control the browser.
+The paysec Chrome extension sidebar gives Claude bash access to control the browser.
 A prompt injection attack (via user message, page content, or crafted URL) can hijack
 Claude into executing arbitrary commands. PR 1 fixes this architecturally (command
 allowlist, XML framing, Opus default). This design doc covers the ML classifier layer
@@ -102,10 +102,10 @@ on the current page via browse commands. The allowlist prevents `curl` and `rm`,
 
 ## Architecture
 
-### Reusable Security Module: `browse/src/security.ts`
+### Reusable Security Module: `browser/src/security.ts`
 
 ```typescript
-// Public API -- any gstack component can call these
+// Public API -- any paysec component can call these
 export async function loadModel(): Promise<void>
 export async function checkInjection(input: string): Promise<SecurityResult>
 export async function scanPageContent(html: string): Promise<SecurityResult>
@@ -236,7 +236,7 @@ Sophisticated attacks avoid this, which is why it's one layer among seven.
 ### Local Logging (always on)
 
 ```json
-// ~/.gstack/security/attempts.jsonl
+// ~/.paysec/security/attempts.jsonl
 {
   "ts": "2026-03-28T22:00:00Z",
   "url_domain": "example.com",
@@ -256,8 +256,8 @@ detection occurs, even if the user has telemetry set to "off":
 
 ```
 AskUserQuestion:
-  "gstack just blocked a prompt injection attempt from {domain}. These detections
-   are rare and valuable for improving defenses for all gstack users. Can we
+  "paysec just blocked a prompt injection attempt from {domain}. These detections
+   are rare and valuable for improving defenses for all paysec users. Can we
    anonymously report this detection? (payload hash + confidence score only,
    no URL, no personal data)"
 
@@ -277,16 +277,16 @@ Add to sidebar header:
 - Yellow shield: degraded (model not loaded, regex-only)
 - Red shield: inactive (security module error)
 
-Implementation: add security state to existing `/health` endpoint (don't create a
-new `/security-status` endpoint). Sidepanel polls `/health` and reads the security field.
+Implementation: add security state to existing `/code-health` endpoint (don't create a
+new `/security-status` endpoint). Sidepanel polls `/code-health` and reads the security field.
 
 ## BrowseSafe-Bench Red Team Harness
 
-### `browse/test/security-bench.test.ts`
+### `browser/test/security-bench.test.ts`
 
 ```
 1. Download BrowseSafe-Bench dataset (3,680 cases) on first run
-2. Cache to ~/.gstack/models/browsesafe-bench/ (not re-downloaded in CI)
+2. Cache to ~/.paysec/models/browsesafe-bench/ (not re-downloaded in CI)
 3. Run every case through checkInjection()
 4. Report:
    - Detection rate per attack type (11 types)
@@ -353,7 +353,7 @@ Components to port:
 - 5ms inference means we can scan EVERYTHING: every message, every page, every tool
   output, every browse command response. No latency tradeoffs.
 - Zero external dependencies. Pure TypeScript. Works everywhere Bun works.
-- gstack becomes the only open source tool with native-speed prompt injection detection.
+- paysec becomes the only open source tool with native-speed prompt injection detection.
 - The tokenizer + inference engine could be published as a standalone package.
 
 **Why it might not:**
@@ -387,7 +387,7 @@ accelerate.symbols.cblas_sgemm(...);
 
 **Effort:** L (human: ~2 weeks / CC: ~4-6 hours)
 **Result:** ~5-10ms inference on Apple Silicon, pure Bun, no npm dependencies.
-**Limitation:** macOS-only (Linux would need OpenBLAS FFI). But gstack already
+**Limitation:** macOS-only (Linux would need OpenBLAS FFI). But paysec already
 ships macOS-only compiled binaries.
 
 ## Codex Review Findings (from the eng review)
@@ -416,8 +416,8 @@ apply to this ML classifier PR:
 ## Implementation Checklist
 
 - [ ] Add `@huggingface/transformers` to package.json
-- [ ] Create `browse/src/security.ts` with full public API
-- [ ] Implement `loadModel()` with download-on-first-use to ~/.gstack/models/
+- [ ] Create `browser/src/security.ts` with full public API
+- [ ] Implement `loadModel()` with download-on-first-use to ~/.paysec/models/
 - [ ] Implement `checkInjection()` with DeBERTa + regex + encoding normalization
 - [ ] Implement `scanPageContent()` (same classifier, different input)
 - [ ] Implement `injectCanary()` + `checkCanary()`
@@ -427,10 +427,10 @@ apply to this ML classifier PR:
 - [ ] Add canary checking to sidebar-agent.ts output stream
 - [ ] Add shield icon to sidepanel.js
 - [ ] Add blocking message UI to sidepanel.js
-- [ ] Add security state to /health endpoint
+- [ ] Add security state to /code-health endpoint
 - [ ] Implement special telemetry (AskUserQuestion on detection)
-- [ ] Create browse/test/security.test.ts (unit + adversarial)
-- [ ] Create browse/test/security-bench.test.ts (BrowseSafe-Bench harness)
+- [ ] Create browser/test/security.test.ts (unit + adversarial)
+- [ ] Create browser/test/security-bench.test.ts (BrowseSafe-Bench harness)
 - [ ] Cache BrowseSafe-Bench dataset for offline CI
 - [ ] Add `test:security-bench` script to package.json
 - [ ] Update CLAUDE.md with security module documentation

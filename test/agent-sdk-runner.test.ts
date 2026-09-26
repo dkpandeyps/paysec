@@ -353,7 +353,7 @@ describe('runAgentSdkTest — options propagation', () => {
     expect(opts.env?.ANTHROPIC_API_KEY).toBe('fake');
     expect(opts.env?.PATH).toBeTruthy();
     expect(opts.env?.CLAUDE_CONFIG_DIR).toMatch(/\/\.claude$/);
-    expect(opts.env?.GSTACK_HOME).toContain('gstack-home');
+    expect(opts.env?.PAYSEC_HOME).toContain('paysec-home');
     expect(opts.pathToClaudeCodeExecutable).toBe('/fake/path/claude');
   });
 

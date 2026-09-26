@@ -2,7 +2,7 @@
  * Skill coverage floor — gate-tier, free, runs every PR.
  *
  * Phase 0 of the cathedral parity-eval suite: structural-compliance smoke
- * test that covers every gstack skill with file-IO assertions. The intent
+ * test that covers every paysec skill with file-IO assertions. The intent
  * is "every skill ships with at least one CI-blocking check" — even when
  * a skill doesn't (yet) have a behavioral E2E test, this floor catches
  * frontmatter regressions, missing generated header, empty/trivial bodies,

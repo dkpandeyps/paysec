@@ -1,16 +1,16 @@
 /**
- * GSTACK_STATE_ROOT override — verifies the 3 plan-tune bins honor
- * GSTACK_STATE_ROOT as a higher-priority override over GSTACK_HOME.
+ * PAYSEC_STATE_ROOT override — verifies the 3 tune-questions bins honor
+ * PAYSEC_STATE_ROOT as a higher-priority override over PAYSEC_HOME.
  *
- * Surfaced by plan-tune cathedral D16 (Codex outside voice): tests can't
- * isolate from real ~/.gstack today because the bins ignore STATE_ROOT.
+ * Surfaced by tune-questions cathedral D16 (Codex outside voice): tests can't
+ * isolate from real ~/.paysec today because the bins ignore STATE_ROOT.
  * Without this override, the cathedral's E2E + integration tests would
  * silently pollute the user's real profile.
  *
  * Contract:
- *   - GSTACK_STATE_ROOT set → bins write under STATE_ROOT (HOME ignored).
- *   - Only GSTACK_HOME set → bins write under HOME (existing behavior).
- *   - Neither set → falls back to $HOME/.gstack (existing behavior).
+ *   - PAYSEC_STATE_ROOT set → bins write under STATE_ROOT (HOME ignored).
+ *   - Only PAYSEC_HOME set → bins write under HOME (existing behavior).
+ *   - Neither set → falls back to $HOME/.paysec (existing behavior).
  *   - Both set → STATE_ROOT wins.
  */
 
@@ -21,16 +21,16 @@ import * as os from 'os';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const BIN_LOG = path.join(ROOT, 'bin', 'gstack-question-log');
-const BIN_PREF = path.join(ROOT, 'bin', 'gstack-question-preference');
-const BIN_DEV = path.join(ROOT, 'bin', 'gstack-developer-profile');
+const BIN_LOG = path.join(ROOT, 'bin', 'paysec-question-log');
+const BIN_PREF = path.join(ROOT, 'bin', 'paysec-question-preference');
+const BIN_DEV = path.join(ROOT, 'bin', 'paysec-developer-profile');
 
 let stateRoot: string;
 let homeRoot: string;
 
 beforeEach(() => {
-  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-state-'));
-  homeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-home-'));
+  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-state-'));
+  homeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-home-'));
 });
 
 afterEach(() => {
@@ -48,8 +48,8 @@ function runBin(
     if (v !== undefined) cleaned[k] = v;
   }
   // Strip these from process.env so the override matrix is clean.
-  if (env.GSTACK_STATE_ROOT === undefined) delete cleaned.GSTACK_STATE_ROOT;
-  if (env.GSTACK_HOME === undefined) delete cleaned.GSTACK_HOME;
+  if (env.PAYSEC_STATE_ROOT === undefined) delete cleaned.PAYSEC_STATE_ROOT;
+  if (env.PAYSEC_HOME === undefined) delete cleaned.PAYSEC_HOME;
   const res = spawnSync(bin, args, {
     env: cleaned,
     encoding: 'utf-8',
@@ -63,7 +63,7 @@ function runBin(
 }
 
 const SAMPLE_LOG = {
-  skill: 'plan-tune',
+  skill: 'tune-questions',
   question_id: 'state-root-test',
   question_summary: 'Test STATE_ROOT honoring',
   category: 'clarification',
@@ -74,11 +74,11 @@ const SAMPLE_LOG = {
   session_id: 'state-root-test-session',
 };
 
-describe('gstack-question-log honors GSTACK_STATE_ROOT', () => {
+describe('paysec-question-log honors PAYSEC_STATE_ROOT', () => {
   test('STATE_ROOT set, HOME unset → writes under STATE_ROOT', () => {
     const r = runBin(BIN_LOG, [JSON.stringify(SAMPLE_LOG)], {
-      GSTACK_STATE_ROOT: stateRoot,
-      GSTACK_HOME: undefined,
+      PAYSEC_STATE_ROOT: stateRoot,
+      PAYSEC_HOME: undefined,
     });
     expect(r.status).toBe(0);
     // The slug is derived from cwd; just check at least one log file exists.
@@ -90,8 +90,8 @@ describe('gstack-question-log honors GSTACK_STATE_ROOT', () => {
 
   test('STATE_ROOT wins over HOME when both set', () => {
     const r = runBin(BIN_LOG, [JSON.stringify(SAMPLE_LOG)], {
-      GSTACK_STATE_ROOT: stateRoot,
-      GSTACK_HOME: homeRoot,
+      PAYSEC_STATE_ROOT: stateRoot,
+      PAYSEC_HOME: homeRoot,
     });
     expect(r.status).toBe(0);
     // STATE_ROOT must have the file.
@@ -107,8 +107,8 @@ describe('gstack-question-log honors GSTACK_STATE_ROOT', () => {
 
   test('only HOME set → preserves existing behavior (writes under HOME)', () => {
     const r = runBin(BIN_LOG, [JSON.stringify(SAMPLE_LOG)], {
-      GSTACK_STATE_ROOT: undefined,
-      GSTACK_HOME: homeRoot,
+      PAYSEC_STATE_ROOT: undefined,
+      PAYSEC_HOME: homeRoot,
     });
     expect(r.status).toBe(0);
     const homeProjects = fs.readdirSync(path.join(homeRoot, 'projects'));
@@ -121,7 +121,7 @@ describe('gstack-question-log honors GSTACK_STATE_ROOT', () => {
   });
 });
 
-describe('gstack-question-preference honors GSTACK_STATE_ROOT', () => {
+describe('paysec-question-preference honors PAYSEC_STATE_ROOT', () => {
   test('STATE_ROOT set → preferences file lives under STATE_ROOT', () => {
     const write = runBin(
       BIN_PREF,
@@ -130,10 +130,10 @@ describe('gstack-question-preference honors GSTACK_STATE_ROOT', () => {
         JSON.stringify({
           question_id: 'state-root-pref-test',
           preference: 'never-ask',
-          source: 'plan-tune',
+          source: 'tune-questions',
         }),
       ],
-      { GSTACK_STATE_ROOT: stateRoot, GSTACK_HOME: undefined },
+      { PAYSEC_STATE_ROOT: stateRoot, PAYSEC_HOME: undefined },
     );
     expect(write.status).toBe(0);
     const projectDirs = fs.readdirSync(path.join(stateRoot, 'projects'));
@@ -145,12 +145,12 @@ describe('gstack-question-preference honors GSTACK_STATE_ROOT', () => {
   });
 });
 
-describe('gstack-developer-profile honors GSTACK_STATE_ROOT', () => {
+describe('paysec-developer-profile honors PAYSEC_STATE_ROOT', () => {
   test('STATE_ROOT set → profile file lives under STATE_ROOT, not HOME', () => {
     // --read creates a stub profile if missing.
     const r = runBin(BIN_DEV, ['--read'], {
-      GSTACK_STATE_ROOT: stateRoot,
-      GSTACK_HOME: homeRoot,
+      PAYSEC_STATE_ROOT: stateRoot,
+      PAYSEC_HOME: homeRoot,
     });
     expect(r.status).toBe(0);
     expect(fs.existsSync(path.join(stateRoot, 'developer-profile.json'))).toBe(true);

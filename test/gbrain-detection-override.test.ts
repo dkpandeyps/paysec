@@ -3,12 +3,12 @@
  * override (T2 / v1.50.0.0).
  *
  * The override mechanism lives in scripts/gen-skill-docs.ts: when invoked
- * with --respect-detection, it reads ~/.gstack/gbrain-detection.json and
+ * with --respect-detection, it reads ~/.paysec/gbrain-detection.json and
  * un-suppresses GBRAIN_CONTEXT_LOAD + GBRAIN_SAVE_RESULTS for hosts that
  * statically list them in suppressedResolvers (claude, codex, slate,
  * factory, opencode, openclaw, cursor, kiro).
  *
- * Tests drive gen-skill-docs as a subprocess against a temp GSTACK_HOME
+ * Tests drive gen-skill-docs as a subprocess against a temp PAYSEC_HOME
  * with each detection state, then assert what landed in the generated
  * Claude-host SKILL.md. This is end-to-end through the actual override
  * pipeline — no mocking — so it catches regressions in either the loader
@@ -49,8 +49,8 @@ function makeFixture(detectionJson: string | null): FixtureEnv {
 }
 
 /**
- * Run gen-skill-docs with --respect-detection and an isolated GSTACK_HOME.
- * Returns the regenerated office-hours/SKILL.md content WITHOUT writing
+ * Run gen-skill-docs with --respect-detection and an isolated PAYSEC_HOME.
+ * Returns the regenerated idea-review/SKILL.md content WITHOUT writing
  * over the committed file: we use --dry-run to keep the working tree
  * clean, then parse the output via re-reading the committed file... no,
  * that doesn't work for dry-run since dry-run doesn't write.
@@ -82,7 +82,7 @@ function regenAndSnapshot(opts: {
   try {
     execFileSync('bun', args, {
       cwd: REPO_ROOT,
-      env: { ...process.env, GSTACK_HOME: opts.tmpHome },
+      env: { ...process.env, PAYSEC_HOME: opts.tmpHome },
       stdio: ['ignore', 'pipe', 'pipe'],
       timeout: 30_000,
     });
@@ -105,12 +105,12 @@ describe('gbrain detection override → gen-skill-docs', () => {
   // Single skill probe is enough to assert the override pipeline. The
   // resolver unit test (test/resolvers-gbrain-save-results.test.ts) covers
   // per-skill metadata correctness already.
-  // office-hours is carved (v2 plan T9): GBRAIN_CONTEXT_LOAD stays in the
+  // idea-review is carved (v2 plan T9): GBRAIN_CONTEXT_LOAD stays in the
   // skeleton, GBRAIN_SAVE_RESULTS moved into sections/design-and-handoff.md.
   // Probe the union so the detection override is asserted wherever the blocks land.
-  const PROBE_FILES = ['office-hours/SKILL.md', 'office-hours/sections/design-and-handoff.md'];
+  const PROBE_FILES = ['idea-review/SKILL.md', 'idea-review/sections/design-and-handoff.md'];
   const probeUnion = (snap: Map<string, string>): string =>
-    (snap.get('office-hours/SKILL.md') ?? '') + '\n' + (snap.get('office-hours/sections/design-and-handoff.md') ?? '');
+    (snap.get('idea-review/SKILL.md') ?? '') + '\n' + (snap.get('idea-review/sections/design-and-handoff.md') ?? '');
 
   test('with detected:true, Claude-host SKILL.md gains brain-aware blocks', () => {
     const { tmpHome, cleanup } = makeFixture(
@@ -126,7 +126,7 @@ describe('gbrain detection override → gen-skill-docs', () => {
 
       // GBRAIN_SAVE_RESULTS un-suppressed → resolver output rendered.
       expect(content).toContain('## Save Results to Brain');
-      expect(content).toContain('gbrain put "office-hours/');
+      expect(content).toContain('gbrain put "idea-review/');
       expect(content).toContain('Skip this entire section if `gbrain` is not on PATH');
 
       // GBRAIN_CONTEXT_LOAD also un-suppressed (D6 bundling).
@@ -149,9 +149,9 @@ describe('gbrain detection override → gen-skill-docs', () => {
       const content = probeUnion(snap);
 
       // A slow engine must not silently suppress brain features — same
-      // treatment as "ok" (matches gstack-gbrain-detect --is-ok).
+      // treatment as "ok" (matches paysec-gbrain-detect --is-ok).
       expect(content).toContain('## Save Results to Brain');
-      expect(content).toContain('gbrain put "office-hours/');
+      expect(content).toContain('gbrain put "idea-review/');
     } finally {
       cleanup();
     }
@@ -174,11 +174,11 @@ describe('gbrain detection override → gen-skill-docs', () => {
       const content = probeUnion(snap);
 
       // PGLite is single-writer: a live `gbrain serve` (the recommended
-      // /setup-gbrain default spawns one at session start) legitimately owns
+      // /brain-setup default spawns one at session start) legitimately owns
       // the embedded DB. gbrain is installed and healthy — a transient lock
       // must not silently strip brain blocks (same reasoning as "timeout").
       expect(content).toContain('## Save Results to Brain');
-      expect(content).toContain('gbrain put "office-hours/');
+      expect(content).toContain('gbrain put "idea-review/');
     } finally {
       cleanup();
     }
@@ -197,7 +197,7 @@ describe('gbrain detection override → gen-skill-docs', () => {
       const content = probeUnion(snap);
 
       // GBRAIN_SAVE_RESULTS suppressed → no rendered block, no gbrain put line.
-      expect(content).not.toContain('gbrain put "office-hours/');
+      expect(content).not.toContain('gbrain put "idea-review/');
       // Section header from the resolver also absent (resolver returns "").
       // BUT — the BRAIN_CACHE_REFRESH and BRAIN_WRITE_BACK resolvers are NOT
       // gated by detection (host-agnostic), so other "Brain ..." sections may
@@ -216,7 +216,7 @@ describe('gbrain detection override → gen-skill-docs', () => {
         files: PROBE_FILES,
       });
       const content = probeUnion(snap);
-      expect(content).not.toContain('gbrain put "office-hours/');
+      expect(content).not.toContain('gbrain put "idea-review/');
     } finally {
       cleanup();
     }
@@ -237,7 +237,7 @@ describe('gbrain detection override → gen-skill-docs', () => {
         files: PROBE_FILES,
       });
       const content = probeUnion(snap);
-      expect(content).not.toContain('gbrain put "office-hours/');
+      expect(content).not.toContain('gbrain put "idea-review/');
       expect(content).not.toContain('## Save Results to Brain');
     } finally {
       cleanup();

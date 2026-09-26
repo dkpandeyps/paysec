@@ -1,7 +1,7 @@
 /**
- * /plan-eng-review AskUserQuestion floor regression (periodic, paid, real-PTY).
+ * /plan-tech-review AskUserQuestion floor regression (periodic, paid, real-PTY).
  *
- * Catches the May 2026 transcript bug where /plan-eng-review wrote a
+ * Catches the May 2026 transcript bug where /plan-tech-review wrote a
  * multi-section review plan to ~/.claude/plans/ and called ExitPlanMode
  * without firing any AskUserQuestion. See
  * `.context/attachments/pasted_text_2026-05-06_10-25-23.txt`.
@@ -22,13 +22,13 @@ import { FORCING_FLOOR_ENG } from './fixtures/forcing-finding-seeds';
 
 const describeE2E = describeE2ETier('periodic');
 
-describeE2E('/plan-eng-review AskUserQuestion floor (periodic)', () => {
+describeE2E('/plan-tech-review AskUserQuestion floor (periodic)', () => {
   test(
     'seeded forcing finding causes the agent to fire at least one AskUserQuestion',
     async () => {
       const obs = await runPlanSkillFloorCheck({
-        skillName: 'plan-eng-review',
-        slashCommand: '/plan-eng-review',
+        skillName: 'plan-tech-review',
+        slashCommand: '/plan-tech-review',
         followUpPrompt: FORCING_FLOOR_ENG,
         cwd: process.cwd(),
         timeoutMs: 600_000,

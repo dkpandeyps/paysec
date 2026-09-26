@@ -3,7 +3,7 @@
  *
  * One process hosts many boards under /boards/<id>/. Spawned by
  * daemon-client.ts when no live daemon is found on the project's discovery
- * file (.gstack/design.json). Replaces the per-invocation server in
+ * file (.paysec/design.json). Replaces the per-invocation server in
  * serve.ts as the default for `$D compare --serve`; serve.ts is kept as
  * the --no-daemon legacy/test path.
  *
@@ -253,7 +253,7 @@ function handleIndex(): Response {
   const empty = `<p class="empty">No boards yet. Run <code>$D compare --serve</code> to publish one.</p>`;
   const list = sorted.length === 0 ? empty : `<ul>\n${rows}\n</ul>`;
   const html = `<!DOCTYPE html><html lang="en"><head>
-<meta charset="utf-8"><title>gstack design boards</title><style>
+<meta charset="utf-8"><title>paysec design boards</title><style>
   body{font:14px/1.5 -apple-system,system-ui,sans-serif;max-width:720px;margin:32px auto;padding:0 16px;color:#1a1a1a}
   h1{font-size:20px;margin-bottom:4px}
   .meta{color:#666;margin-bottom:24px;font-size:13px}
@@ -268,7 +268,7 @@ function handleIndex(): Response {
   .empty{color:#888;font-style:italic}
   code{font-family:ui-monospace,monospace;background:#f5f5f5;padding:2px 6px;border-radius:3px}
 </style></head><body>
-<h1>gstack design boards</h1>
+<h1>paysec design boards</h1>
 <p class="meta">daemon up ${Math.floor((Date.now() - startTime) / 1000)}s · ${boards.size} board(s) · ${nonDoneCount()} active</p>
 ${list}
 </body></html>`;
@@ -357,7 +357,7 @@ async function handlePublish(req: Request, origin: string): Promise<Response> {
 
 function handleBoardGet(board: Board): Response {
   board.lastTouched = Date.now();
-  // No __GSTACK_SERVER_URL injection — board JS uses relative URLs that
+  // No __PAYSEC_SERVER_URL injection — board JS uses relative URLs that
   // resolve against /boards/<id>/ (the trailing slash is load-bearing here;
   // the 301 from the bare /boards/<id> form ensures it).
   return new Response(board.htmlContent, {
@@ -454,7 +454,7 @@ async function handleBoardReload(board: Board, req: Request): Promise<Response> 
 }
 
 function boardExpiredHtml(id: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Board expired — gstack</title>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Board expired — paysec</title>
 <style>body{font:14px/1.5 -apple-system,system-ui,sans-serif;max-width:600px;margin:80px auto;padding:0 20px;color:#1a1a1a;text-align:center}
 h1{font-size:20px}.id{font-family:ui-monospace,monospace;color:#888;font-size:13px}
 a{color:#0070f3;text-decoration:none}a:hover{text-decoration:underline}</style></head><body>

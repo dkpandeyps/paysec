@@ -1,5 +1,5 @@
 // Audit + attempts logging. Reuses the same rotation primitives as
-// browse/src/tunnel-denial-log.ts (10MB rotation, 5 generations).
+// browser/src/tunnel-denial-log.ts (10MB rotation, 5 generations).
 
 import { mkdir, appendFile, stat, rename, readFile } from 'fs/promises';
 import { join, dirname } from 'path';
@@ -11,20 +11,20 @@ const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_GENS = 5;
 
 export function defaultAuditPath(): string {
-  return process.env.GSTACK_IOS_AUDIT_PATH
-    ?? join(homedir(), '.gstack', 'security', 'ios-qa-audit.jsonl');
+  return process.env.PAYSEC_IOS_AUDIT_PATH
+    ?? join(homedir(), '.paysec', 'security', 'ios-qa-audit.jsonl');
 }
 
 export function defaultAttemptsPath(): string {
-  return process.env.GSTACK_IOS_ATTEMPTS_PATH
-    ?? join(homedir(), '.gstack', 'security', 'attempts.jsonl');
+  return process.env.PAYSEC_IOS_ATTEMPTS_PATH
+    ?? join(homedir(), '.paysec', 'security', 'attempts.jsonl');
 }
 
 let _saltCache: string | null = null;
 
 async function loadDeviceSalt(): Promise<string> {
   if (_saltCache) return _saltCache;
-  const path = join(homedir(), '.gstack', 'security', 'device-salt');
+  const path = join(homedir(), '.paysec', 'security', 'device-salt');
   try {
     _saltCache = (await readFile(path, 'utf-8')).trim();
   } catch {

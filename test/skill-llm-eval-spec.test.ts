@@ -1,7 +1,7 @@
 /**
- * /spec LLM-judge eval (periodic, paid).
+ * /write-spec LLM-judge eval (periodic, paid).
  *
- * Asserts: when /spec runs against a fixture vague request, the agent
+ * Asserts: when /write-spec runs against a fixture vague request, the agent
  * produces a spec body that scores >= 8/10 against an LLM judge using
  * the contributor's 14 Quality Standards as the rubric.
  *
@@ -22,10 +22,10 @@ const describeEval = evalsEnabled ? describe : describe.skip;
 
 const ROOT = path.resolve(import.meta.dir, '..');
 
-describeEval('/spec LLM-judge eval (periodic)', () => {
+describeEval('/write-spec LLM-judge eval (periodic)', () => {
   test('spec body scores >= 8/10 against 14-standard rubric on fixture request', async () => {
     // Sanity: required files exist for the eval.
-    expect(fs.existsSync(path.join(ROOT, 'spec', 'SKILL.md.tmpl'))).toBe(true);
+    expect(fs.existsSync(path.join(ROOT, 'write-spec', 'SKILL.md.tmpl'))).toBe(true);
 
     // Full LLM-judge run lives in a follow-up. This file registers the
     // periodic-tier surface so the diff-based selector picks it up when
@@ -35,11 +35,11 @@ describeEval('/spec LLM-judge eval (periodic)', () => {
     //
     // Expected v1.1 implementation:
     //   1. Pick fixture prompt from test/fixtures/spec/vague-bug.md
-    //   2. Spawn `claude -p` with /spec loaded, send the prompt + role-play
+    //   2. Spawn `claude -p` with /write-spec loaded, send the prompt + role-play
     //      five Phase 1 answers (from test/fixtures/spec/vague-bug-answers.json)
     //   3. Capture final spec body
     //   4. Dispatch to Claude judge with prompt encoding the 14 Quality
-    //      Standards from spec/SKILL.md.tmpl
+    //      Standards from write-spec/SKILL.md.tmpl
     //   5. Assert numeric score >= 8
 
     expect(true).toBe(true);

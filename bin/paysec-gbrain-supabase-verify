@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# gstack-gbrain-supabase-verify — structural check on a Supabase Session
+# paysec-gbrain-supabase-verify — structural check on a Supabase Session
 # Pooler URL before handing it to `gbrain init`.
 #
 # Usage:
-#   gstack-gbrain-supabase-verify <url>
-#   echo "<url>" | gstack-gbrain-supabase-verify -
+#   paysec-gbrain-supabase-verify <url>
+#   echo "<url>" | paysec-gbrain-supabase-verify -
 #
 # Accepts ONLY Session Pooler URLs (port 6543, host *.pooler.supabase.com).
 # Rejects direct-connection URLs (db.*.supabase.co:5432) since those are
@@ -31,10 +31,10 @@
 # refer to "the URL" generically.
 set -euo pipefail
 
-die()   { echo "gstack-gbrain-supabase-verify: $*" >&2; exit 2; }
+die()   { echo "paysec-gbrain-supabase-verify: $*" >&2; exit 2; }
 reject_direct() {
   cat >&2 <<EOF
-gstack-gbrain-supabase-verify: rejected direct-connection URL
+paysec-gbrain-supabase-verify: rejected direct-connection URL
 
   You pasted a Supabase direct-connection URL (db.*.supabase.co on port
   5432). Direct connections are IPv6-only and fail in many environments.

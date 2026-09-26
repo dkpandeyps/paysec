@@ -1,5 +1,5 @@
 /**
- * Unit tests for browse/src/file-permissions.ts
+ * Unit tests for browser/src/file-permissions.ts
  *
  * Strategy:
  *   - POSIX assertions check fs.statSync.mode bits directly (cheap, reliable,
@@ -161,9 +161,9 @@ describe('mkdirSecure', () => {
 
   test('on Windows, the created directory stays usable by the caller', () => {
     if (process.platform !== 'win32') return;
-    // The state-dir path that broke: mkdirSecure() creates .gstack/, hardens
+    // The state-dir path that broke: mkdirSecure() creates .paysec/, hardens
     // it, and the very next thing the daemon does is write a lockfile inside.
-    const d = path.join(tmpDir, 'state', '.gstack');
+    const d = path.join(tmpDir, 'state', '.paysec');
     mkdirSecure(d);
     expect(() => fs.writeFileSync(path.join(d, 'browse.json.lock'), '1')).not.toThrow();
     expect(fs.readdirSync(d)).toContain('browse.json.lock');

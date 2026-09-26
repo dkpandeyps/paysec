@@ -39,8 +39,8 @@ import { resolvePopplerTool } from "../../src/pdftotext";
 
 const FIXTURE = path.resolve(__dirname, "../fixtures/emoji-gate.md");
 const ROOT = path.resolve(__dirname, "../../..");
-const PDF_BIN = path.join(ROOT, "make-pdf/dist/pdf");
-const BROWSE_BIN = path.join(ROOT, "browse/dist/browse");
+const PDF_BIN = path.join(ROOT, "md-to-pdf/dist/pdf");
+const BROWSE_BIN = path.join(ROOT, "browser/dist/browse");
 
 // Saturated-pixel floor. Measured ~1650 at 100dpi for the fixture's color
 // emoji; a tofu render yields ~0. 200 sits well clear of both.
@@ -50,7 +50,7 @@ const SATURATED_PIXEL_FLOOR = 200;
 const SATURATION_DELTA = 40;
 // Per-child wall-clock bound. Bun's test timeout doesn't reliably interrupt a
 // synchronous execFileSync, so each child gets its own ceiling — a wedged
-// browser/poppler binary (or a hostile GSTACK_*_BIN override) fails instead of
+// browser/poppler binary (or a hostile PAYSEC_*_BIN override) fails instead of
 // hanging the whole job.
 const CHILD_TIMEOUT_MS = 25_000;
 
@@ -77,7 +77,7 @@ function emojiFontAvailable(): boolean {
 }
 
 function prerequisitesAvailable(): { ok: true } | { ok: false; reason: string } {
-  if (!fs.existsSync(PDF_BIN)) return { ok: false, reason: `make-pdf binary missing (${PDF_BIN}). Run bun run build.` };
+  if (!fs.existsSync(PDF_BIN)) return { ok: false, reason: `md-to-pdf binary missing (${PDF_BIN}). Run bun run build.` };
   if (!fs.existsSync(BROWSE_BIN)) return { ok: false, reason: `browse binary missing (${BROWSE_BIN}).` };
   if (!fs.existsSync(FIXTURE)) return { ok: false, reason: `fixture missing (${FIXTURE}).` };
   if (!resolvePopplerTool("pdffonts")) return { ok: false, reason: "pdffonts not found (install poppler-utils)." };
@@ -188,7 +188,7 @@ describe("emoji render gate", () => {
     // In CI, missing prerequisites are a hard failure — a silent skip would let
     // the Linux tofu regression ship behind a green build. Locally, just warn.
     test("emoji gate prerequisites are present (hard-required in CI)", () => {
-      // Hard-require only where the binary is expected: the make-pdf gate
+      // Hard-require only where the binary is expected: the md-to-pdf gate
       // workflow is macOS-only (path-filtered) and builds dist/pdf first.
       // The Linux free lane deliberately doesn't build it — warn-skip there.
       if (process.env.CI && process.platform === 'darwin') {

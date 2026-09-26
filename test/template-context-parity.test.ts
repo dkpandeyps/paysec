@@ -17,7 +17,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const SHIP_SECTIONS = path.join(ROOT, 'ship', 'sections');
+const SHIP_SECTIONS = path.join(ROOT, 'ship-pr', 'sections');
 
 function readSection(file: string): string {
   return fs.readFileSync(path.join(SHIP_SECTIONS, file), 'utf-8');

@@ -271,7 +271,7 @@ export async function validateNavigationUrl(url: string): Promise<string> {
 
   // about:blank ONLY — the canonical empty page, and the one the daemon opens its own
   // first tab on. Blocking it meant `browse newtab about:blank` failed, which is what
-  // `make-pdf setup` runs as its Chromium smoke test: make-pdf reported "Chromium failed
+  // `md-to-pdf setup` runs as its Chromium smoke test: md-to-pdf reported "Chromium failed
   // to launch" against a perfectly healthy Chromium, and any browse session whose daemon
   // restarted could never recreate the blank tab it starts from.
   //

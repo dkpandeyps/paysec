@@ -10,14 +10,14 @@
  *   - scripts/dev-skill.ts (watch mode)
  */
 
-import { ALL_COMMANDS } from '../../browse/src/commands';
-import { parseSnapshotArgs } from '../../browse/src/snapshot';
+import { ALL_COMMANDS } from '../../browser/src/commands';
+import { parseSnapshotArgs } from '../../browser/src/snapshot';
 import * as fs from 'fs';
 import * as path from 'path';
 
 /** CLI-only commands: valid $B invocations that are handled by the CLI, not the server */
 const CLI_COMMANDS = new Set([
-  'status', 'pair-agent', 'tunnel',
+  'status', 'pair-remote-agent', 'tunnel',
 ]);
 
 export interface BrowseCommand {

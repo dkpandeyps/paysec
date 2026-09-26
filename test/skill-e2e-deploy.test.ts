@@ -37,7 +37,7 @@ describeIfSelected('Land-and-Deploy skill E2E', ['land-and-deploy-workflow'], ()
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'feat: update hello']);
 
-    copyDirSync(path.join(ROOT, 'land-and-deploy'), path.join(landDir, 'land-and-deploy'));
+    copyDirSync(path.join(ROOT, 'merge-and-deploy'), path.join(landDir, 'merge-and-deploy'));
   });
 
   afterAll(() => {
@@ -46,7 +46,7 @@ describeIfSelected('Land-and-Deploy skill E2E', ['land-and-deploy-workflow'], ()
 
   testConcurrentIfSelected('land-and-deploy-workflow', async () => {
     const result = await runSkillTest({
-      prompt: `Read land-and-deploy/SKILL.md for the /land-and-deploy skill instructions.
+      prompt: `Read merge-and-deploy/SKILL.md for the /merge-and-deploy skill instructions.
 
 You are on branch feat/add-deploy with changes against main. This repo has a fly.toml
 with app = "test-app", indicating a Fly.io deployment.
@@ -57,7 +57,7 @@ Instead, simulate the workflow:
 2. Infer the production URL (https://test-app.fly.dev)
 3. Note the merge method would be squash
 4. Write the deploy configuration to CLAUDE.md
-5. Write a deploy report skeleton to .gstack/deploy-reports/report.md showing the
+5. Write a deploy report skeleton to .paysec/deploy-reports/report.md showing the
    expected report structure (PR number: simulated, timing: simulated, verdict: simulated)
 
 Do NOT use AskUserQuestion. Do NOT run gh or fly commands.`,
@@ -69,8 +69,8 @@ Do NOT use AskUserQuestion. Do NOT run gh or fly commands.`,
       runId,
     });
 
-    logCost('/land-and-deploy', result);
-    recordE2E(evalCollector, '/land-and-deploy workflow', 'Land-and-Deploy skill E2E', result);
+    logCost('/merge-and-deploy', result);
+    recordE2E(evalCollector, '/merge-and-deploy workflow', 'Land-and-Deploy skill E2E', result);
     expect(result.exitReason).toBe('success');
 
     const claudeMd = path.join(landDir, 'CLAUDE.md');
@@ -80,7 +80,7 @@ Do NOT use AskUserQuestion. Do NOT run gh or fly commands.`,
       expect(hasFly).toBe(true);
     }
 
-    const reportDir = path.join(landDir, '.gstack', 'deploy-reports');
+    const reportDir = path.join(landDir, '.paysec', 'deploy-reports');
     expect(fs.existsSync(reportDir)).toBe(true);
   }, 180_000);
 });
@@ -109,7 +109,7 @@ describeIfSelected('Land-and-Deploy first-run E2E', ['land-and-deploy-first-run'
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'feat: first deploy']);
 
-    copyDirSync(path.join(ROOT, 'land-and-deploy'), path.join(firstRunDir, 'land-and-deploy'));
+    copyDirSync(path.join(ROOT, 'merge-and-deploy'), path.join(firstRunDir, 'merge-and-deploy'));
   });
 
   afterAll(() => {
@@ -118,9 +118,9 @@ describeIfSelected('Land-and-Deploy first-run E2E', ['land-and-deploy-first-run'
 
   testConcurrentIfSelected('land-and-deploy-first-run', async () => {
     const result = await runSkillTest({
-      prompt: `Read land-and-deploy/SKILL.md for the /land-and-deploy skill instructions.
+      prompt: `Read merge-and-deploy/SKILL.md for the /merge-and-deploy skill instructions.
 
-You are on branch feat/first-deploy. This is the FIRST TIME running /land-and-deploy
+You are on branch feat/first-deploy. This is the FIRST TIME running /merge-and-deploy
 for this project — there is NO land-deploy-confirmed file.
 
 This repo has a fly.toml with app = "first-run-app", indicating a Fly.io deployment.
@@ -135,7 +135,7 @@ Instead, simulate the Step 1.5 first-run dry-run validation:
    - Command validation results (simulated as all passing)
    - Staging detection results (none expected)
    - What will happen steps
-5. Write the dry-run report to .gstack/deploy-reports/dry-run-validation.md
+5. Write the dry-run report to .paysec/deploy-reports/dry-run-validation.md
 
 Do NOT use AskUserQuestion. Do NOT run gh or fly commands.
 Just demonstrate the first-run dry-run output.`,
@@ -147,12 +147,12 @@ Just demonstrate the first-run dry-run output.`,
       runId,
     });
 
-    logCost('/land-and-deploy first-run', result);
-    recordE2E(evalCollector, '/land-and-deploy first-run', 'Land-and-Deploy first-run E2E', result);
+    logCost('/merge-and-deploy first-run', result);
+    recordE2E(evalCollector, '/merge-and-deploy first-run', 'Land-and-Deploy first-run E2E', result);
     expect(result.exitReason).toBe('success');
 
     // Verify dry-run report was created
-    const reportDir = path.join(firstRunDir, '.gstack', 'deploy-reports');
+    const reportDir = path.join(firstRunDir, '.paysec', 'deploy-reports');
     expect(fs.existsSync(reportDir)).toBe(true);
 
     // Check report content mentions platform detection
@@ -189,7 +189,7 @@ describeIfSelected('Land-and-Deploy review gate E2E', ['land-and-deploy-review-g
       run('git', ['commit', '-m', `feat: add file${i}`]);
     }
 
-    copyDirSync(path.join(ROOT, 'land-and-deploy'), path.join(reviewDir, 'land-and-deploy'));
+    copyDirSync(path.join(ROOT, 'merge-and-deploy'), path.join(reviewDir, 'merge-and-deploy'));
   });
 
   afterAll(() => {
@@ -198,18 +198,18 @@ describeIfSelected('Land-and-Deploy review gate E2E', ['land-and-deploy-review-g
 
   testConcurrentIfSelected('land-and-deploy-review-gate', async () => {
     const result = await runSkillTest({
-      prompt: `Read land-and-deploy/SKILL.md for the /land-and-deploy skill instructions.
+      prompt: `Read merge-and-deploy/SKILL.md for the /merge-and-deploy skill instructions.
 
 Focus on Step 3.5a and Step 3.5a-bis (the review staleness check and inline review offer).
 
 This repo has 6 commits since the initial commit. There are NO review logs
-(gstack-review-read would return NO_REVIEWS).
+(paysec-review-read would return NO_REVIEWS).
 
 Simulate what the readiness gate would show:
-1. Run gstack-review-read equivalent (simulate NO_REVIEWS output)
+1. Run paysec-review-read equivalent (simulate NO_REVIEWS output)
 2. Determine review staleness: Eng Review should be "NOT RUN"
 3. Note that Step 3.5a-bis would offer an inline review
-4. Write a simulated readiness report to .gstack/deploy-reports/readiness-report.md
+4. Write a simulated readiness report to .paysec/deploy-reports/readiness-report.md
    showing the review status as NOT RUN with the inline review offer text
 
 Do NOT use AskUserQuestion. Do NOT run gh commands.
@@ -222,12 +222,12 @@ Show what the readiness gate output would look like.`,
       runId,
     });
 
-    logCost('/land-and-deploy review-gate', result);
-    recordE2E(evalCollector, '/land-and-deploy review-gate', 'Land-and-Deploy review gate E2E', result);
+    logCost('/merge-and-deploy review-gate', result);
+    recordE2E(evalCollector, '/merge-and-deploy review-gate', 'Land-and-Deploy review gate E2E', result);
     expect(result.exitReason).toBe('success');
 
     // Verify readiness report was created
-    const reportDir = path.join(reviewDir, '.gstack', 'deploy-reports');
+    const reportDir = path.join(reviewDir, '.paysec', 'deploy-reports');
     expect(fs.existsSync(reportDir)).toBe(true);
 
     const reportFiles = fs.readdirSync(reportDir);
@@ -258,7 +258,7 @@ describeIfSelected('Canary skill E2E', ['canary-workflow'], () => {
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'initial']);
 
-    copyDirSync(path.join(ROOT, 'canary'), path.join(canaryDir, 'canary'));
+    copyDirSync(path.join(ROOT, 'post-deploy-monitor'), path.join(canaryDir, 'canary'));
   });
 
   afterAll(() => {
@@ -267,16 +267,16 @@ describeIfSelected('Canary skill E2E', ['canary-workflow'], () => {
 
   testConcurrentIfSelected('canary-workflow', async () => {
     const result = await runSkillTest({
-      prompt: `Read canary/SKILL.md for the /canary skill instructions.
+      prompt: `Read post-deploy-monitor/SKILL.md for the /post-deploy-monitor skill instructions.
 
 You are simulating a canary check. There is NO browse daemon available and NO production URL.
 
 Instead, demonstrate you understand the workflow:
-1. Create the .gstack/canary-reports/ directory structure
-2. Write a simulated baseline.json to .gstack/canary-reports/baseline.json with the
+1. Create the .paysec/canary-reports/ directory structure
+2. Write a simulated baseline.json to .paysec/canary-reports/baseline.json with the
    schema described in Phase 2 of the skill (url, timestamp, branch, pages with
    screenshot path, console_errors count, and load_time_ms)
-3. Write a simulated canary report to .gstack/canary-reports/canary-report.md following
+3. Write a simulated canary report to .paysec/canary-reports/canary-report.md following
    the Phase 6 Health Report format (CANARY REPORT header, duration, pages, status,
    per-page results table, verdict)
 
@@ -290,12 +290,12 @@ Just create the directory structure and report files showing the correct schema.
       runId,
     });
 
-    logCost('/canary', result);
-    recordE2E(evalCollector, '/canary workflow', 'Canary skill E2E', result);
+    logCost('/post-deploy-monitor', result);
+    recordE2E(evalCollector, '/post-deploy-monitor workflow', 'Canary skill E2E', result);
     expect(result.exitReason).toBe('success');
 
-    expect(fs.existsSync(path.join(canaryDir, '.gstack', 'canary-reports'))).toBe(true);
-    const reportDir = path.join(canaryDir, '.gstack', 'canary-reports');
+    expect(fs.existsSync(path.join(canaryDir, '.paysec', 'canary-reports'))).toBe(true);
+    const reportDir = path.join(canaryDir, '.paysec', 'canary-reports');
     const files = fs.readdirSync(reportDir, { recursive: true }) as string[];
     expect(files.length).toBeGreaterThan(0);
   }, 180_000);
@@ -319,7 +319,7 @@ describeIfSelected('Benchmark skill E2E', ['benchmark-workflow'], () => {
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'initial']);
 
-    copyDirSync(path.join(ROOT, 'benchmark'), path.join(benchDir, 'benchmark'));
+    copyDirSync(path.join(ROOT, 'perf-check'), path.join(benchDir, 'benchmark'));
   });
 
   afterAll(() => {
@@ -328,17 +328,17 @@ describeIfSelected('Benchmark skill E2E', ['benchmark-workflow'], () => {
 
   testConcurrentIfSelected('benchmark-workflow', async () => {
     const result = await runSkillTest({
-      prompt: `Read benchmark/SKILL.md for the /benchmark skill instructions.
+      prompt: `Read perf-check/SKILL.md for the /perf-check skill instructions.
 
 You are simulating a benchmark run. There is NO browse daemon available and NO production URL.
 
 Instead, demonstrate you understand the workflow:
-1. Create the .gstack/benchmark-reports/ directory structure including baselines/
-2. Write a simulated baseline.json to .gstack/benchmark-reports/baselines/baseline.json
+1. Create the .paysec/benchmark-reports/ directory structure including baselines/
+2. Write a simulated baseline.json to .paysec/benchmark-reports/baselines/baseline.json
    with the schema from Phase 4 (url, timestamp, branch, pages with ttfb_ms, fcp_ms,
    lcp_ms, dom_interactive_ms, dom_complete_ms, full_load_ms, total_requests,
    total_transfer_bytes, js_bundle_bytes, css_bundle_bytes, largest_resources)
-3. Write a simulated benchmark report to .gstack/benchmark-reports/benchmark-report.md
+3. Write a simulated benchmark report to .paysec/benchmark-reports/benchmark-report.md
    following the Phase 5 comparison format (PERFORMANCE REPORT header, page comparison
    table with Baseline/Current/Delta/Status columns, regression thresholds applied)
 4. Include the Phase 7 Performance Budget section in the report
@@ -353,12 +353,12 @@ Just create the files showing the correct schema and report format.`,
       runId,
     });
 
-    logCost('/benchmark', result);
-    recordE2E(evalCollector, '/benchmark workflow', 'Benchmark skill E2E', result);
+    logCost('/perf-check', result);
+    recordE2E(evalCollector, '/perf-check workflow', 'Benchmark skill E2E', result);
     expect(result.exitReason).toBe('success');
 
-    expect(fs.existsSync(path.join(benchDir, '.gstack', 'benchmark-reports'))).toBe(true);
-    const baselineDir = path.join(benchDir, '.gstack', 'benchmark-reports', 'baselines');
+    expect(fs.existsSync(path.join(benchDir, '.paysec', 'benchmark-reports'))).toBe(true);
+    const baselineDir = path.join(benchDir, '.paysec', 'benchmark-reports', 'baselines');
     if (fs.existsSync(baselineDir)) {
       const files = fs.readdirSync(baselineDir);
       expect(files.length).toBeGreaterThan(0);
@@ -385,7 +385,7 @@ describeIfSelected('Setup-Deploy skill E2E', ['setup-deploy-workflow'], () => {
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'initial']);
 
-    copyDirSync(path.join(ROOT, 'setup-deploy'), path.join(setupDir, 'setup-deploy'));
+    copyDirSync(path.join(ROOT, 'deploy-setup'), path.join(setupDir, 'deploy-setup'));
   });
 
   afterAll(() => {
@@ -394,9 +394,9 @@ describeIfSelected('Setup-Deploy skill E2E', ['setup-deploy-workflow'], () => {
 
   testConcurrentIfSelected('setup-deploy-workflow', async () => {
     const result = await runSkillTest({
-      prompt: `Read setup-deploy/SKILL.md for the /setup-deploy skill instructions.
+      prompt: `Read deploy-setup/SKILL.md for the /deploy-setup skill instructions.
 
-This repo has a fly.toml with app = "my-cool-app". Run the /setup-deploy workflow:
+This repo has a fly.toml with app = "my-cool-app". Run the /deploy-setup workflow:
 1. Detect the platform from fly.toml (should be Fly.io)
 2. Extract the app name: my-cool-app
 3. Infer production URL: https://my-cool-app.fly.dev
@@ -414,8 +414,8 @@ Just detect the platform and write the config.`,
       runId,
     });
 
-    logCost('/setup-deploy', result);
-    recordE2E(evalCollector, '/setup-deploy workflow', 'Setup-Deploy skill E2E', result);
+    logCost('/deploy-setup', result);
+    recordE2E(evalCollector, '/deploy-setup workflow', 'Setup-Deploy skill E2E', result);
     expect(result.exitReason).toBe('success');
 
     const claudeMd = path.join(setupDir, 'CLAUDE.md');

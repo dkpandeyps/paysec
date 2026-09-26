@@ -1,5 +1,5 @@
 /**
- * Config keys for redaction (T12). Verifies gstack-config knows the two new
+ * Config keys for redaction (T12). Verifies paysec-config knows the two new
  * keys, validates their value domains, and does NOT expose a block_private key
  * (HIGH blocks both visibilities unconditionally — locked decision).
  */
@@ -9,13 +9,13 @@ import * as os from "os";
 import * as path from "path";
 import { spawnSync } from "child_process";
 
-const CONFIG = path.resolve(import.meta.dir, "..", "bin", "gstack-config");
+const CONFIG = path.resolve(import.meta.dir, "..", "bin", "paysec-config");
 let home: string;
 
 function cfg(args: string[]): { code: number; out: string; err: string } {
   const r = spawnSync(CONFIG, args, {
     encoding: "utf8",
-    env: { ...process.env, GSTACK_HOME: home },
+    env: { ...process.env, PAYSEC_HOME: home },
   });
   return { code: r.status ?? 0, out: r.stdout ?? "", err: r.stderr ?? "" };
 }

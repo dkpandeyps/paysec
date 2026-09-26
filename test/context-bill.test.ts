@@ -1,5 +1,5 @@
 /**
- * gstack-context-bill — token bill-of-materials for an installed skills tree.
+ * paysec-context-bill — token bill-of-materials for an installed skills tree.
  *
  * Free tier, no network, no API keys. Covers the STRIPPED port:
  *   - ALWAYS-ON ledger: exact frontmatter byte sums, dead-key flag against
@@ -142,7 +142,7 @@ describe("upstream fix a: root-as-container + walkMd exclusions", () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "context-bill-root-"));
     fs.writeFileSync(path.join(tmp, "SKILL.md"), "---\nname: router\ndescription: r\n---\n# Router\n");
     fs.mkdirSync(path.join(tmp, "qa"));
-    fs.writeFileSync(path.join(tmp, "qa", "SKILL.md"), "---\nname: qa\ndescription: q\n---\n# QA\n");
+    fs.writeFileSync(path.join(tmp, "qa-fix", "SKILL.md"), "---\nname: qa\ndescription: q\n---\n# QA\n");
     const dirs = findSkillDirs(tmp).map((d) => path.relative(fs.realpathSync(tmp), fs.realpathSync(d)) || ".");
     expect(dirs.sort()).toEqual([".", "qa"]);
     // A NON-root skill dir is still a leaf: nothing nested under qa/ counts.
@@ -154,7 +154,7 @@ describe("upstream fix a: root-as-container + walkMd exclusions", () => {
 
   it("totalMd: a container skill excludes nested child skills' bytes; the grand total sums per-skill with no overlap", () => {
     // Regression pin for the v1.63 double-count: totalMd on a skill dir that
-    // CONTAINS other skill dirs (the gstack root wraps the whole tree) used to
+    // CONTAINS other skill dirs (the paysec root wraps the whole tree) used to
     // swallow the children's .md bytes too, so the TOTAL line billed every
     // nested skill twice. A revert of the topSeg/SKILL.md skip in totalMd
     // (lib/context-bill.ts) must fail here.
@@ -200,7 +200,7 @@ describe("upstream fix a: root-as-container + walkMd exclusions", () => {
 });
 
 describe("upstream fix b: installed-tree layout (repo-checkout subdir skip)", () => {
-  it("skips a subdir that is its own repo checkout (gstack/ inside ~/.claude/skills)", () => {
+  it("skips a subdir that is its own repo checkout (paysec/ inside ~/.claude/skills)", () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "context-bill-install-"));
     // Flat installed skill dirs.
     for (const name of ["qa", "ship"]) {
@@ -209,10 +209,10 @@ describe("upstream fix b: installed-tree layout (repo-checkout subdir skip)", ()
     }
     // A full repo checkout dropped into the tree: has .git and its own router
     // SKILL.md plus nested skill sources. None of it is an installed skill.
-    fs.mkdirSync(path.join(tmp, "gstack", ".git"), { recursive: true });
-    fs.writeFileSync(path.join(tmp, "gstack", "SKILL.md"), "---\nname: _router\ndescription: d\n---\n# router\n");
-    fs.mkdirSync(path.join(tmp, "gstack", "review"));
-    fs.writeFileSync(path.join(tmp, "gstack", "review", "SKILL.md"), "---\nname: review\ndescription: d\n---\n# r\n");
+    fs.mkdirSync(path.join(tmp, "paysec", ".git"), { recursive: true });
+    fs.writeFileSync(path.join(tmp, "paysec", "SKILL.md"), "---\nname: _router\ndescription: d\n---\n# router\n");
+    fs.mkdirSync(path.join(tmp, "paysec", "review"));
+    fs.writeFileSync(path.join(tmp, "paysec", "pr-review", "SKILL.md"), "---\nname: review\ndescription: d\n---\n# r\n");
 
     const names = buildBill(tmp).skills.map((s) => s.name).sort();
     expect(names).toEqual(["qa", "ship"]);
@@ -704,8 +704,8 @@ describe("CLI plumbing", () => {
     expect(await contextBillMain([path.join(os.tmpdir(), "does-not-exist-xyz")], { stdout: c.stream, stderr: c.stream })).toBe(1);
   });
 
-  it("bin/gstack-context-bill runs standalone", () => {
-    const result = Bun.spawnSync([path.join(ROOT, "bin", "gstack-context-bill"), TREE_A]);
+  it("bin/paysec-context-bill runs standalone", () => {
+    const result = Bun.spawnSync([path.join(ROOT, "bin", "paysec-context-bill"), TREE_A]);
     expect(result.exitCode).toBe(0);
     expect(result.stdout.toString()).toContain("ALWAYS-ON");
     expect(result.stdout.toString()).toContain("EAGER");

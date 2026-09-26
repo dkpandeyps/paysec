@@ -1,16 +1,16 @@
 ---
-name: design-html
+name: design-to-html
 preamble-tier: 2
 version: 1.0.0
 description: |
   Design finalization: generates production-quality Pretext-native HTML/CSS.
-  Works with approved mockups from /design-shotgun, CEO plans from /plan-ceo-review,
-  design review context from /plan-design-review, or from scratch with a user
+  Works with approved mockups from /design-variants, CEO plans from /plan-business-review,
+  design review context from /plan-ux-review, or from scratch with a user
   description. Text actually reflows, heights are computed, layouts are dynamic.
   30KB overhead, zero deps. Smart API routing: picks the right Pretext patterns
   for each design type. Use when: "finalize this design", "turn this into HTML",
   "build me a page", "implement this design", or after any planning skill.
-  Proactively suggest when user has approved a design or has a plan ready. (gstack)
+  Proactively suggest when user has approved a design or has a plan ready. (paysec)
 voice-triggers:
   - "build the design"
   - "code the mockup"
@@ -32,7 +32,7 @@ allowed-tools:
 
 {{PREAMBLE}}
 
-# /design-html: Pretext-Native HTML Engine
+# /design-to-html: Pretext-Native HTML Engine
 
 You generate production-quality HTML where text actually works correctly. Not CSS
 approximations. Computed layout via Pretext. Text reflows on resize, heights adjust
@@ -50,39 +50,39 @@ around obstacles.
 ## Step 0: Input Detection
 
 ```bash
-eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
+eval "$(~/.claude/skills/paysec/bin/paysec-slug 2>/dev/null)"
 ```
 
 Detect what design context exists for this project. Run all four checks:
 
 ```bash
 setopt +o nomatch 2>/dev/null || true
-_CEO=$(ls -t ~/.gstack/projects/$SLUG/ceo-plans/*.md 2>/dev/null | head -1)
+_CEO=$(ls -t ~/.paysec/projects/$SLUG/ceo-plans/*.md 2>/dev/null | head -1)
 [ -n "$_CEO" ] && echo "CEO_PLAN: $_CEO" || echo "NO_CEO_PLAN"
 ```
 
 ```bash
 setopt +o nomatch 2>/dev/null || true
-_APPROVED=$(ls -t ~/.gstack/projects/$SLUG/designs/*/approved.json 2>/dev/null | head -1)
+_APPROVED=$(ls -t ~/.paysec/projects/$SLUG/designs/*/approved.json 2>/dev/null | head -1)
 [ -n "$_APPROVED" ] && echo "APPROVED: $_APPROVED" || echo "NO_APPROVED"
 ```
 
 ```bash
 setopt +o nomatch 2>/dev/null || true
-_VARIANTS=$(ls -t ~/.gstack/projects/$SLUG/designs/*/variant-*.png 2>/dev/null | head -1)
+_VARIANTS=$(ls -t ~/.paysec/projects/$SLUG/designs/*/variant-*.png 2>/dev/null | head -1)
 [ -n "$_VARIANTS" ] && echo "VARIANTS: $_VARIANTS" || echo "NO_VARIANTS"
 ```
 
 ```bash
 setopt +o nomatch 2>/dev/null || true
-_FINALIZED=$(ls -t ~/.gstack/projects/$SLUG/designs/*/finalized.html 2>/dev/null | head -1)
+_FINALIZED=$(ls -t ~/.paysec/projects/$SLUG/designs/*/finalized.html 2>/dev/null | head -1)
 [ -n "$_FINALIZED" ] && echo "FINALIZED: $_FINALIZED" || echo "NO_FINALIZED"
 [ -f DESIGN.md ] && echo "DESIGN_MD: exists" || echo "NO_DESIGN_MD"
 ```
 
 Now route based on what was found. Check these cases in order:
 
-### Case A: approved.json exists (design-shotgun ran)
+### Case A: approved.json exists (design-variants ran)
 
 If `APPROVED` was found, read it. Extract: approved variant PNG path, user feedback,
 screen name. Also read the CEO plan if one exists (it adds strategic context).
@@ -110,13 +110,13 @@ Read whichever context exists:
 - If DESIGN.md found: read it for design tokens and constraints.
 
 Use AskUserQuestion:
-> Found [CEO plan from /plan-ceo-review | design review variants from /plan-design-review | both]
+> Found [CEO plan from /plan-business-review | design review variants from /plan-ux-review | both]
 > but no approved design mockup.
-> A) Run /design-shotgun — explore design variants based on the existing plan context
+> A) Run /design-variants — explore design variants based on the existing plan context
 > B) Skip mockups — I'll design the HTML directly from the plan context
 > C) I have a PNG — let me provide the path
 
-If A: tell the user to run /design-shotgun, then come back to /design-html.
+If A: tell the user to run /design-variants, then come back to /design-to-html.
 If B: proceed to Step 1 in "plan-driven mode." There is no approved PNG, the plan is
 the source of truth. Ask the user for a screen name to use for the output directory
 (e.g., "landing-page", "dashboard", "pricing").
@@ -128,12 +128,12 @@ If none of the above produced any context:
 
 Use AskUserQuestion:
 > No design context found for this project. How do you want to start?
-> A) Run /plan-ceo-review first — think through the product strategy before designing
-> B) Run /plan-design-review first — design review with visual mockups
-> C) Run /design-shotgun — jump straight to visual design exploration
+> A) Run /plan-business-review first — think through the product strategy before designing
+> B) Run /plan-ux-review first — design review with visual mockups
+> C) Run /design-variants — jump straight to visual design exploration
 > D) Just describe it — tell me what you want and I'll design the HTML live
 
-If A, B, or C: tell the user to run that skill, then come back to /design-html.
+If A, B, or C: tell the user to run that skill, then come back to /design-to-html.
 If D: proceed to Step 1 in "freeform mode." Ask the user for a screen name.
 
 ### Context summary
@@ -226,8 +226,8 @@ For **vanilla HTML output**, check for the vendored Pretext bundle:
 ```bash
 _PRETEXT_VENDOR=""
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-[ -n "$_ROOT" ] && [ -f "$_ROOT/.claude/skills/gstack/design-html/vendor/pretext.js" ] && _PRETEXT_VENDOR="$_ROOT/.claude/skills/gstack/design-html/vendor/pretext.js"
-[ -z "$_PRETEXT_VENDOR" ] && [ -f ~/.claude/skills/gstack/design-html/vendor/pretext.js ] && _PRETEXT_VENDOR=~/.claude/skills/gstack/design-html/vendor/pretext.js
+[ -n "$_ROOT" ] && [ -f "$_ROOT/.claude/skills/paysec/design-to-html/vendor/pretext.js" ] && _PRETEXT_VENDOR="$_ROOT/.claude/skills/paysec/design-to-html/vendor/pretext.js"
+[ -z "$_PRETEXT_VENDOR" ] && [ -f ~/.claude/skills/paysec/design-to-html/vendor/pretext.js ] && _PRETEXT_VENDOR=~/.claude/skills/paysec/design-to-html/vendor/pretext.js
 [ -n "$_PRETEXT_VENDOR" ] && echo "VENDOR: $_PRETEXT_VENDOR" || echo "VENDOR_MISSING"
 ```
 
@@ -250,10 +250,10 @@ Run the detected install command. Then use standard imports in the component.
 ### HTML Generation
 
 Write a single file using the Write tool. Save to:
-`~/.gstack/projects/$SLUG/designs/<screen-name>-YYYYMMDD/finalized.html`
+`~/.paysec/projects/$SLUG/designs/<screen-name>-YYYYMMDD/finalized.html`
 
 For framework output, save to:
-`~/.gstack/projects/$SLUG/designs/<screen-name>-YYYYMMDD/finalized.[tsx|svelte|vue]`
+`~/.paysec/projects/$SLUG/designs/<screen-name>-YYYYMMDD/finalized.[tsx|svelte|vue]`
 
 **Always include in vanilla HTML:**
 - Pretext source (inlined or CDN, see above)
@@ -475,9 +475,9 @@ If `$B` is available (browse binary), take verification screenshots at 3 viewpor
 
 ```bash
 $B goto "file://<path-to-finalized.html>"
-$B screenshot /tmp/gstack-verify-mobile.png --width 375
-$B screenshot /tmp/gstack-verify-tablet.png --width 768
-$B screenshot /tmp/gstack-verify-desktop.png --width 1440
+$B screenshot /tmp/paysec-verify-mobile.png --width 375
+$B screenshot /tmp/paysec-verify-tablet.png --width 768
+$B screenshot /tmp/paysec-verify-desktop.png --width 1440
 ```
 
 Show all three screenshots inline using the Read tool. Check for:
@@ -542,8 +542,8 @@ Extract from the HTML:
 
 Use AskUserQuestion:
 > No DESIGN.md found. I can extract the design tokens from the HTML we just built
-> and create a DESIGN.md for your project. This means future /design-shotgun and
-> /design-html runs will be style-consistent automatically.
+> and create a DESIGN.md for your project. This means future /design-variants and
+> /design-to-html runs will be style-consistent automatically.
 > A) Create DESIGN.md from these tokens
 > B) Skip — I'll handle the design system later
 
@@ -596,5 +596,5 @@ Use AskUserQuestion:
   use content from the plan. In freeform mode, generate realistic content based on the
   user's description. Never use "Lorem ipsum", "Your text here", or placeholder content.
 
-- **One page per invocation.** For multi-page designs, run /design-html once per page.
+- **One page per invocation.** For multi-page designs, run /design-to-html once per page.
   Each run produces one HTML file.

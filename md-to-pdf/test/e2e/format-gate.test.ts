@@ -18,14 +18,14 @@ import * as path from "node:path";
 
 const FIXTURE = path.resolve(__dirname, "../fixtures/diagram-gate.md");
 const ROOT = path.resolve(__dirname, "../../..");
-const PDF_BIN = path.join(ROOT, "make-pdf/dist/pdf");
-const BROWSE_BIN = path.join(ROOT, "browse/dist/browse");
+const PDF_BIN = path.join(ROOT, "md-to-pdf/dist/pdf");
+const BROWSE_BIN = path.join(ROOT, "browser/dist/browse");
 const BUNDLE = path.join(ROOT, "lib/diagram-render/dist/diagram-render.html");
 
 const CHILD_TIMEOUT_MS = 60_000;
 
 function prerequisitesAvailable(): { ok: true } | { ok: false; reason: string } {
-  if (!fs.existsSync(PDF_BIN)) return { ok: false, reason: `make-pdf binary missing (${PDF_BIN}). Run bun run build.` };
+  if (!fs.existsSync(PDF_BIN)) return { ok: false, reason: `md-to-pdf binary missing (${PDF_BIN}). Run bun run build.` };
   if (!fs.existsSync(BROWSE_BIN)) return { ok: false, reason: `browse binary missing (${BROWSE_BIN}).` };
   if (!fs.existsSync(BUNDLE)) return { ok: false, reason: `diagram-render bundle missing (${BUNDLE}).` };
   if (!fs.existsSync(FIXTURE)) return { ok: false, reason: `fixture missing (${FIXTURE}).` };
@@ -122,7 +122,7 @@ describe("output format gate", () => {
 
   if (!avail.ok) {
     test("format gate prerequisites are present (hard-required in CI)", () => {
-      // Hard-require only where the binary is expected: the make-pdf gate
+      // Hard-require only where the binary is expected: the md-to-pdf gate
       // workflow is macOS-only (path-filtered) and builds dist/pdf first.
       // The Linux free lane deliberately doesn't build it — warn-skip there.
       if (process.env.CI && process.platform === 'darwin') {

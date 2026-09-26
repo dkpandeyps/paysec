@@ -21,7 +21,7 @@ const BG_SRC = fs.readFileSync(path.join(EXT_DIR, 'background.js'), 'utf-8');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const senderAuth = require(path.join(EXT_DIR, 'sender-auth.js'));
 
-// The pinned production id (derivable via browse/scripts/extension-id.ts) —
+// The pinned production id (derivable via browser/scripts/extension-id.ts) —
 // the policy only compares it against sender.id, so any stable value works.
 const OWN_ID = 'dgbkdbjebeiblbajiilljmhjdpmiglep';
 const FOREIGN_ID = 'ffffffffffffffffffffffffffffffff';
@@ -140,7 +140,7 @@ function loadBackground() {
   // background.js is a classic (non-module) service worker script — evaluate
   // it with its globals injected. importScripts is satisfied by passing the
   // already-required sender-auth module under the global name it registers.
-  const run = new Function('chrome', 'importScripts', 'gstackSenderAuth', 'fetch', BG_SRC);
+  const run = new Function('chrome', 'importScripts', 'paysecSenderAuth', 'fetch', BG_SRC);
   run(chromeStub, () => {}, senderAuth, fetchSpy);
   if (!captured.listener) throw new Error('background.js did not register an onMessage listener');
   return { listener: captured.listener, calls };
@@ -281,8 +281,8 @@ describe('background.js ↔ sender-auth.js wiring', () => {
     expect(BG_SRC).toContain("importScripts('sender-auth.js')");
   });
 
-  test('background.js consults gstackSenderAuth.denialFor in the message listener', () => {
-    expect(BG_SRC).toContain('gstackSenderAuth.denialFor(msg.type, sender, chrome.runtime.id)');
+  test('background.js consults paysecSenderAuth.denialFor in the message listener', () => {
+    expect(BG_SRC).toContain('paysecSenderAuth.denialFor(msg.type, sender, chrome.runtime.id)');
   });
 
   test('manifest keeps a classic (non-module) service worker — importScripts requires it', () => {

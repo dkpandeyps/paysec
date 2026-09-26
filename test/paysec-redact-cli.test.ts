@@ -1,5 +1,5 @@
 /**
- * Contract tests for bin/gstack-redact — exit codes, JSON shape, flags,
+ * Contract tests for bin/paysec-redact — exit codes, JSON shape, flags,
  * auto-redact mode, oversize fail-closed. Spawns the shim via `bun`.
  */
 import { describe, test, expect } from "bun:test";
@@ -7,7 +7,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 
-const BIN = path.resolve(import.meta.dir, "..", "bin", "gstack-redact");
+const BIN = path.resolve(import.meta.dir, "..", "bin", "paysec-redact");
 
 function run(
   args: string[],
@@ -23,7 +23,7 @@ function run(
   };
 }
 
-describe("gstack-redact exit codes", () => {
+describe("paysec-redact exit codes", () => {
   test("clean → 0", () => {
     expect(run([], "just some prose").code).toBe(0);
   });
@@ -35,7 +35,7 @@ describe("gstack-redact exit codes", () => {
   });
 });
 
-describe("gstack-redact --json", () => {
+describe("paysec-redact --json", () => {
   test("emits valid JSON with findings + counts", () => {
     const { stdout, code } = run(["--json"], "key AKIA1234567890ABCDEF");
     expect(code).toBe(3);
@@ -46,7 +46,7 @@ describe("gstack-redact --json", () => {
   });
 });
 
-describe("gstack-redact --auto-redact", () => {
+describe("paysec-redact --auto-redact", () => {
   test("prints redacted body to stdout, exits 0", () => {
     const { stdout, code } = run(["--auto-redact", "pii.email"], "ping bob@corp.io please");
     expect(code).toBe(0);
@@ -55,7 +55,7 @@ describe("gstack-redact --auto-redact", () => {
   });
 });
 
-describe("gstack-redact --allowlist", () => {
+describe("paysec-redact --allowlist", () => {
   test("allowlisted span is suppressed", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "redact-allow-"));
     const allow = path.join(dir, "allow.txt");
@@ -66,7 +66,7 @@ describe("gstack-redact --allowlist", () => {
   });
 });
 
-describe("gstack-redact --self-email", () => {
+describe("paysec-redact --self-email", () => {
   test("own email is not flagged", () => {
     const { code } = run(
       ["--repo-visibility", "public", "--self-email", "me@garry.dev"],
@@ -76,7 +76,7 @@ describe("gstack-redact --self-email", () => {
   });
 });
 
-describe("gstack-redact --from-file", () => {
+describe("paysec-redact --from-file", () => {
   test("reads input from a file", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "redact-file-"));
     const f = path.join(dir, "spec.md");
@@ -88,7 +88,7 @@ describe("gstack-redact --from-file", () => {
   });
 });
 
-describe("gstack-redact oversize fails closed", () => {
+describe("paysec-redact oversize fails closed", () => {
   test("input over --max-bytes blocks (exit 3)", () => {
     const { code, stdout } = run(["--max-bytes", "100"], "a".repeat(500));
     expect(code).toBe(3);

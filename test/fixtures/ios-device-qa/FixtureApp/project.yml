@@ -2,7 +2,7 @@ name: FixtureApp
 options:
   deploymentTarget:
     iOS: "17.0"
-  bundleIdPrefix: com.gstack.iosqa
+  bundleIdPrefix: com.paysec.iosqa
   developmentLanguage: en
   createIntermediateGroups: true
 
@@ -11,7 +11,7 @@ settings:
   CODE_SIGN_STYLE: Automatic
   ENABLE_USER_SCRIPT_SANDBOXING: NO
   # Personal-team bundle IDs are scoped per-team; this prefix is unique.
-  PRODUCT_BUNDLE_IDENTIFIER: com.gstack.iosqa.fixture
+  PRODUCT_BUNDLE_IDENTIFIER: com.paysec.iosqa.fixture
 
 # Local SPM package providing DebugBridgeCore + DebugBridgeUI as dependencies.
 # packages keyword (with `path:`) means a sibling local package next to project.yml.
@@ -34,13 +34,13 @@ targets:
     info:
       path: Sources/FixtureApp/Info.plist
       properties:
-        CFBundleDisplayName: ios-qa fixture
+        CFBundleDisplayName: ios-device-qa fixture
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIRequiredDeviceCapabilities: [arm64]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.gstack.iosqa.fixture
+        PRODUCT_BUNDLE_IDENTIFIER: com.paysec.iosqa.fixture
         DEVELOPMENT_TEAM: 623FYQ2M88
         CODE_SIGN_STYLE: Automatic
         TARGETED_DEVICE_FAMILY: "1"

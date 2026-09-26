@@ -1,5 +1,5 @@
 /**
- * AskUserQuestion format regression test for /plan-ceo-review and /plan-eng-review
+ * AskUserQuestion format regression test for /plan-business-review and /plan-tech-review
  * running under Codex CLI (GPT-5.4).
  *
  * Context: GPT-class models under the "No preamble / Prefer doing over listing"
@@ -12,10 +12,10 @@
  * test/helpers/codex-session-runner.ts to drive `codex exec` instead of `claude -p`.
  *
  * Four cases:
- *   1. plan-ceo-review mode selection (kind-differentiated)
- *   2. plan-ceo-review approach menu (coverage-differentiated)
- *   3. plan-eng-review per-issue coverage decision
- *   4. plan-eng-review per-issue architectural choice (kind-differentiated)
+ *   1. plan-business-review mode selection (kind-differentiated)
+ *   2. plan-business-review approach menu (coverage-differentiated)
+ *   3. plan-tech-review per-issue coverage decision
+ *   4. plan-tech-review per-issue architectural choice (kind-differentiated)
  *
  * Assertions on captured AskUserQuestion text:
  *   - RECOMMENDATION: Choose present (all cases)
@@ -53,10 +53,10 @@ const describeCodex = SKIP ? describe.skip : describe;
 // --- Touchfiles ---
 
 const CODEX_FORMAT_TOUCHFILES: Record<string, string[]> = {
-  'codex-plan-ceo-format-mode':      ['.agents/skills/gstack-plan-ceo-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'model-overlays/gpt.md', 'model-overlays/gpt-5.4.md'],
-  'codex-plan-ceo-format-approach':  ['.agents/skills/gstack-plan-ceo-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'model-overlays/gpt.md', 'model-overlays/gpt-5.4.md'],
-  'codex-plan-eng-format-coverage':  ['.agents/skills/gstack-plan-eng-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'model-overlays/gpt.md', 'model-overlays/gpt-5.4.md'],
-  'codex-plan-eng-format-kind':      ['.agents/skills/gstack-plan-eng-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'model-overlays/gpt.md', 'model-overlays/gpt-5.4.md'],
+  'codex-plan-ceo-format-mode':      ['.agents/skills/paysec-plan-business-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'model-overlays/gpt.md', 'model-overlays/gpt-5.4.md'],
+  'codex-plan-ceo-format-approach':  ['.agents/skills/paysec-plan-business-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'model-overlays/gpt.md', 'model-overlays/gpt-5.4.md'],
+  'codex-plan-eng-format-coverage':  ['.agents/skills/paysec-plan-tech-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'model-overlays/gpt.md', 'model-overlays/gpt-5.4.md'],
+  'codex-plan-eng-format-kind':      ['.agents/skills/paysec-plan-tech-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'model-overlays/gpt.md', 'model-overlays/gpt-5.4.md'],
 };
 
 let selectedTests: string[] | null = null;
@@ -124,7 +124,7 @@ We're building a new user dashboard that shows recent activity, notifications, a
 - Cache: Redis for dashboard aggregates
 `;
 
-function setupCodexSkillDir(tmpPrefix: string, skillName: 'plan-ceo-review' | 'plan-eng-review'): { skillDir: string; planDir: string; outFile: string } {
+function setupCodexSkillDir(tmpPrefix: string, skillName: 'plan-business-review' | 'plan-tech-review'): { skillDir: string; planDir: string; outFile: string } {
   const planDir = fs.mkdtempSync(path.join(os.tmpdir(), tmpPrefix));
   const run = (cmd: string, args: string[]) =>
     spawnSync(cmd, args, { cwd: planDir, stdio: 'pipe', timeout: 5000 });
@@ -137,9 +137,9 @@ function setupCodexSkillDir(tmpPrefix: string, skillName: 'plan-ceo-review' | 'p
   run('git', ['add', '.']);
   run('git', ['commit', '-m', 'add plan']);
 
-  // Codex skill lives in .agents/skills/gstack-{name}/ per the gstack host convention.
-  const codexSkillSource = path.join(ROOT, '.agents', 'skills', `gstack-${skillName}`);
-  const skillDir = path.join(planDir, '.agents', 'skills', `gstack-${skillName}`);
+  // Codex skill lives in .agents/skills/paysec-{name}/ per the paysec host convention.
+  const codexSkillSource = path.join(ROOT, '.agents', 'skills', `paysec-${skillName}`);
+  const skillDir = path.join(planDir, '.agents', 'skills', `paysec-${skillName}`);
   fs.mkdirSync(skillDir, { recursive: true });
   fs.cpSync(codexSkillSource, skillDir, { recursive: true });
 
@@ -170,7 +170,7 @@ describeCodex('Codex Plan Format — CEO Mode Selection', () => {
   let skillDir: string, planDir: string, outFile: string;
 
   beforeAll(() => {
-    ({ skillDir, planDir, outFile } = setupCodexSkillDir('codex-e2e-plan-format-ceo-mode-', 'plan-ceo-review'));
+    ({ skillDir, planDir, outFile } = setupCodexSkillDir('codex-e2e-plan-format-ceo-mode-', 'plan-business-review'));
   });
 
   afterAll(() => {
@@ -180,10 +180,10 @@ describeCodex('Codex Plan Format — CEO Mode Selection', () => {
   testIfSelected('codex-plan-ceo-format-mode', async () => {
     const result = await runCodexSkill({
       skillDir,
-      prompt: `Read the plan-ceo-review skill. Read plan.md (the plan to review). Proceed to Step 0F (Mode Selection) where the skill presents 4 mode options (SCOPE EXPANSION, SELECTIVE EXPANSION, HOLD SCOPE, SCOPE REDUCTION) via AskUserQuestion. These options differ in kind (review posture), not coverage. ${captureInstruction(outFile)}`,
+      prompt: `Read the plan-business-review skill. Read plan.md (the plan to review). Proceed to Step 0F (Mode Selection) where the skill presents 4 mode options (SCOPE EXPANSION, SELECTIVE EXPANSION, HOLD SCOPE, SCOPE REDUCTION) via AskUserQuestion. These options differ in kind (review posture), not coverage. ${captureInstruction(outFile)}`,
       timeoutMs: 300_000,
       cwd: planDir,
-      skillName: 'gstack-plan-ceo-review',
+      skillName: 'paysec-plan-business-review',
       sandbox: 'workspace-write',
     });
 
@@ -210,7 +210,7 @@ describeCodex('Codex Plan Format — CEO Approach Menu', () => {
   let skillDir: string, planDir: string, outFile: string;
 
   beforeAll(() => {
-    ({ skillDir, planDir, outFile } = setupCodexSkillDir('codex-e2e-plan-format-ceo-approach-', 'plan-ceo-review'));
+    ({ skillDir, planDir, outFile } = setupCodexSkillDir('codex-e2e-plan-format-ceo-approach-', 'plan-business-review'));
   });
 
   afterAll(() => {
@@ -220,10 +220,10 @@ describeCodex('Codex Plan Format — CEO Approach Menu', () => {
   testIfSelected('codex-plan-ceo-format-approach', async () => {
     const result = await runCodexSkill({
       skillDir,
-      prompt: `Read the plan-ceo-review skill. Read plan.md. Proceed to Step 0C-bis (Implementation Alternatives / Approach Menu) where the skill generates 2-3 approaches (minimal viable vs ideal architecture) and presents them via AskUserQuestion. These options differ in coverage so Completeness: N/10 applies. ${captureInstruction(outFile)}`,
+      prompt: `Read the plan-business-review skill. Read plan.md. Proceed to Step 0C-bis (Implementation Alternatives / Approach Menu) where the skill generates 2-3 approaches (minimal viable vs ideal architecture) and presents them via AskUserQuestion. These options differ in coverage so Completeness: N/10 applies. ${captureInstruction(outFile)}`,
       timeoutMs: 300_000,
       cwd: planDir,
-      skillName: 'gstack-plan-ceo-review',
+      skillName: 'paysec-plan-business-review',
       sandbox: 'workspace-write',
     });
 
@@ -247,7 +247,7 @@ describeCodex('Codex Plan Format — Eng Coverage Issue', () => {
   let skillDir: string, planDir: string, outFile: string;
 
   beforeAll(() => {
-    ({ skillDir, planDir, outFile } = setupCodexSkillDir('codex-e2e-plan-format-eng-cov-', 'plan-eng-review'));
+    ({ skillDir, planDir, outFile } = setupCodexSkillDir('codex-e2e-plan-format-eng-cov-', 'plan-tech-review'));
   });
 
   afterAll(() => {
@@ -257,10 +257,10 @@ describeCodex('Codex Plan Format — Eng Coverage Issue', () => {
   testIfSelected('codex-plan-eng-format-coverage', async () => {
     const result = await runCodexSkill({
       skillDir,
-      prompt: `Read the plan-eng-review skill. Read plan.md. In your Section 3 Test Review, generate ONE AskUserQuestion about test coverage depth where options are clearly coverage-differentiated: A) full coverage incl. edge + error paths (Completeness 10/10), B) happy path only (7/10), C) smoke test (3/10). ${captureInstruction(outFile)}`,
+      prompt: `Read the plan-tech-review skill. Read plan.md. In your Section 3 Test Review, generate ONE AskUserQuestion about test coverage depth where options are clearly coverage-differentiated: A) full coverage incl. edge + error paths (Completeness 10/10), B) happy path only (7/10), C) smoke test (3/10). ${captureInstruction(outFile)}`,
       timeoutMs: 300_000,
       cwd: planDir,
-      skillName: 'gstack-plan-eng-review',
+      skillName: 'paysec-plan-tech-review',
       sandbox: 'workspace-write',
     });
 
@@ -284,7 +284,7 @@ describeCodex('Codex Plan Format — Eng Kind Issue', () => {
   let skillDir: string, planDir: string, outFile: string;
 
   beforeAll(() => {
-    ({ skillDir, planDir, outFile } = setupCodexSkillDir('codex-e2e-plan-format-eng-kind-', 'plan-eng-review'));
+    ({ skillDir, planDir, outFile } = setupCodexSkillDir('codex-e2e-plan-format-eng-kind-', 'plan-tech-review'));
   });
 
   afterAll(() => {
@@ -294,10 +294,10 @@ describeCodex('Codex Plan Format — Eng Kind Issue', () => {
   testIfSelected('codex-plan-eng-format-kind', async () => {
     const result = await runCodexSkill({
       skillDir,
-      prompt: `Read the plan-eng-review skill. Read plan.md. In your Section 1 Architecture review, generate ONE AskUserQuestion about an architectural choice where the options differ in kind (e.g. Redis vs Postgres materialized view vs in-process cache — different kinds of systems with different tradeoffs, NOT more-or-less-complete versions of the same thing). ${captureInstruction(outFile)}`,
+      prompt: `Read the plan-tech-review skill. Read plan.md. In your Section 1 Architecture review, generate ONE AskUserQuestion about an architectural choice where the options differ in kind (e.g. Redis vs Postgres materialized view vs in-process cache — different kinds of systems with different tradeoffs, NOT more-or-less-complete versions of the same thing). ${captureInstruction(outFile)}`,
       timeoutMs: 300_000,
       cwd: planDir,
-      skillName: 'gstack-plan-eng-review',
+      skillName: 'paysec-plan-tech-review',
       sandbox: 'workspace-write',
     });
 

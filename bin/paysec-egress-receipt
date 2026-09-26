@@ -1,19 +1,19 @@
 #!/usr/bin/env bun
-// gstack-egress-receipt — bun script that BRIDGES shell callers (the bash
-// egress sinks: gstack-telemetry-sync, gstack-update-check, gstack-brain-sync,
-// and the sourced helpers in gstack-egress-lib.sh) into lib/egress-receipt.ts.
+// paysec-egress-receipt — bun script that BRIDGES shell callers (the bash
+// egress sinks: paysec-telemetry-sync, paysec-update-check, paysec-brain-sync,
+// and the sourced helpers in paysec-egress-lib.sh) into lib/egress-receipt.ts.
 //
 // Usage:
-//   gstack-egress-receipt write --sink S --host H --class C \
+//   paysec-egress-receipt write --sink S --host H --class C \
 //       (--payload-file F | --no-payload) [--consent "key=value"]
 //     → prints the receipt id on stdout, exit 0.
 //     → exit 3 + "EGRESS_RECEIPT_FAILED: ..." on stderr when the receipt
 //       cannot be written. Fail-closed callers MUST then refuse the send.
 //
-//   gstack-egress-receipt outcome <receipt-id> <status>
+//   paysec-egress-receipt outcome <receipt-id> <status>
 //     → best-effort response-status record; never blocks anything.
 //
-// Home: GSTACK_HOME, legacy GSTACK_STATE_DIR, else ~/.gstack.
+// Home: PAYSEC_HOME, legacy PAYSEC_STATE_DIR, else ~/.paysec.
 // The payload file is hashed as-is: pass the SAME file to curl (`-d @file`)
 // so the receipt hash matches the exact bytes sent (scan-at-sink precedent).
 
@@ -39,7 +39,7 @@ function parseArgs(args: string[], valueFlags: string[], boolFlags: string[]) {
 }
 
 function usage(message: string): never {
-  process.stderr.write(`gstack-egress-receipt: ${message}\n`);
+  process.stderr.write(`paysec-egress-receipt: ${message}\n`);
   process.exit(2);
 }
 
@@ -73,12 +73,12 @@ if (command === 'write') {
   }
 } else if (command === 'outcome') {
   const [receipt, status, ...extra] = rest;
-  if (!receipt || !status || extra.length) usage('Usage: gstack-egress-receipt outcome <receipt-id> <status>');
+  if (!receipt || !status || extra.length) usage('Usage: paysec-egress-receipt outcome <receipt-id> <status>');
   try {
     writeOutcome({ receipt, status });
   } catch {
     // Best-effort: the pre-send receipt is the invariant, the outcome is bookkeeping.
   }
 } else {
-  usage('Usage: gstack-egress-receipt write|outcome ...');
+  usage('Usage: paysec-egress-receipt write|outcome ...');
 }

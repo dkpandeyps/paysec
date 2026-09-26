@@ -1,8 +1,8 @@
-# gstack v2 — the lightest opinionated skill pack
+# paysec v2 — the lightest opinionated skill pack
 
 ## Context
 
-gstack has an externally documented reputation for being "fat." Third-party reviews (dev.to, May 2026) explicitly say gstack "can feel bloated when all roles are turned on... potentially consuming 10K+ tokens before any real code is written, and daily usage burns through tokens fast... making even straightforward tasks feel sluggish and redundant." Anthropic's own canonical Skills guidance prescribes the "progressive disclosure" pattern (`SKILL.md` skeleton + `references/` loaded on demand) — gstack diverges from this.
+paysec has an externally documented reputation for being "fat." Third-party reviews (dev.to, May 2026) explicitly say paysec "can feel bloated when all roles are turned on... potentially consuming 10K+ tokens before any real code is written, and daily usage burns through tokens fast... making even straightforward tasks feel sluggish and redundant." Anthropic's own canonical Skills guidance prescribes the "progressive disclosure" pattern (`SKILL.md` skeleton + `references/` loaded on demand) — paysec diverges from this.
 
 The numbers back the criticism:
 
@@ -11,18 +11,18 @@ The numbers back the criticism:
 - ship.md is 164KB (~41K tokens); ship.md.tmpl is only 48KB — **115KB is resolver-injected**, the highest-leverage compression target
 - Catalog in always-loaded system prompt: 50+ skills × multi-paragraph descriptions, voice triggers, proactive-suggest paragraphs
 
-This plan ships gstack v2 in two coordinated releases: v1.45.0.0 lands the foundation + low-risk wins, then v2.0.0.0 ships the architectural break + marketing-grade repositioning 2-4 weeks later. The split came out of cross-model review: Codex argued v2 looks like posturing without real breakage; the hybrid shape gives the genuinely-breaking sections/ pattern the major bump it earns, while letting the risk-free wins ship immediately.
+This plan ships paysec v2 in two coordinated releases: v1.45.0.0 lands the foundation + low-risk wins, then v2.0.0.0 ships the architectural break + marketing-grade repositioning 2-4 weeks later. The split came out of cross-model review: Codex argued v2 looks like posturing without real breakage; the hybrid shape gives the genuinely-breaking sections/ pattern the major bump it earns, while letting the risk-free wins ship immediately.
 
 ## Release shape
 
 ```
-v1.45.0.0 (Foundation Release)          v2.0.0.0 (gstack v2 Launch)
+v1.45.0.0 (Foundation Release)          v2.0.0.0 (paysec v2 Launch)
 ─────────────────────────────           ─────────────────────────────
 ~1-2 weeks of CC work                   2-4 weeks later, coordinated
                                         
 Phase 0: Eval coverage matrix           Phase B: sections/ pattern
   gate + periodic for all 31 skills       on 5 heavyweights
-                                          (ship, plan-ceo, office-hours,
+                                          (ship, plan-ceo, idea-review,
 Phase A: Build-time compression           plan-eng, plan-design)
   conditional resolver injection
   jargon dedup                          Phase C: Eval annotations
@@ -30,7 +30,7 @@ Phase A: Build-time compression           plan-eng, plan-design)
                                         
 Catalog trim (Codex high-leverage win)  Lighter-touch migration
   one-line skill descriptions             release note + auto-regenerate
-  drop voice triggers/proactive blocks    on /gstack-upgrade
+  drop voice triggers/proactive blocks    on /paysec-upgrade
                                         
 Hard token budgets defined              Marketing-grade CHANGELOG
   enforced via budget-regression          v1 vs v2 numbers table
@@ -55,8 +55,8 @@ Normal release voice                      "lightest opinionated skill pack"
 | `test/skill-e2e-budget-regression.test.ts` (existing gate-tier) | Extend with per-skill hard budgets |
 | Real-PTY harness from v1.13.2.0 | Reuse for behavioral-contract evals (~$0.50/eval) |
 | SDK harness | Reuse for cheap shape evals (~$0/eval where possible) |
-| `gstack-upgrade/migrations/` | Pattern exists for state-format migrations; reuse for v2 auto-regenerate |
-| `~/.gstack/analytics/skill-usage.jsonl` | Already collected; powers deferred `gstack budget` CLI |
+| `paysec-upgrade/migrations/` | Pattern exists for state-format migrations; reuse for v2 auto-regenerate |
+| `~/.paysec/analytics/skill-usage.jsonl` | Already collected; powers deferred `paysec budget` CLI |
 
 We are catching up to Anthropic's canonical Skills pattern, not inventing one.
 
@@ -69,8 +69,8 @@ TODAY                              v1.45.0.0                         v2.0.0.0
 ship.md: 164KB                     ship.md: ~80KB (-50%)             ship.md: ~15KB skeleton
                                                                      + 5×~5KB sections
 28/31 over 40KB ceiling            ~10/31 over ceiling                ~3/31 over ceiling
-                                                                     (cso, document-release,
-                                                                      design-consultation
+                                                                     (security-audit, docs-release-update,
+                                                                      design-system
                                                                       kept as monoliths)
 Catalog: multi-paragraph           Catalog: one-line per skill        Catalog: one-line per skill
 descriptions, voice triggers       (~70% catalog cut)                 (same)
@@ -82,36 +82,36 @@ reviews                            internally measured                pack" exte
 
 ## Phase 0 — Eval coverage matrix (v1.45.0.0)
 
-**Goal:** every skill in gstack ships with at least one gate-tier eval AND one periodic-tier eval that asserts a must-have behavior. The eval suite becomes the design spec. This is the load-bearing claim of the plan — must come first.
+**Goal:** every skill in paysec ships with at least one gate-tier eval AND one periodic-tier eval that asserts a must-have behavior. The eval suite becomes the design spec. This is the load-bearing claim of the plan — must come first.
 
 **Cross-model tension noted:** Codex argued this is a procrastination trap and shape-asserts are shallow. User explicitly chose full tiered coverage anyway (D9 = A), with rationale: "the eval suite IS the design spec; that commitment is the load-bearing claim of the whole plan." We accept the larger upfront investment.
 
-**Mitigation of Codex's "shape vs quality" critique:** for orchestration/judgment skills (plan-ceo, office-hours, autoplan), the must-have isn't deterministic output — it's structural compliance (does it call AskUserQuestion in the right shape? does it follow the section order? does it persist artifacts?). Eval design must capture structural contracts, not output content. Where structural eval is impossible, that section is explicitly noted as "judgment-dependent, not eval-protected" — Codex's #2 critique is honored by NOT then stripping unprotected judgment prose.
+**Mitigation of Codex's "shape vs quality" critique:** for orchestration/judgment skills (plan-ceo, idea-review, auto-plan-review), the must-have isn't deterministic output — it's structural compliance (does it call AskUserQuestion in the right shape? does it follow the section order? does it persist artifacts?). Eval design must capture structural contracts, not output content. Where structural eval is impossible, that section is explicitly noted as "judgment-dependent, not eval-protected" — Codex's #2 critique is honored by NOT then stripping unprotected judgment prose.
 
 **Skills currently lacking dedicated E2E coverage** (eval-writing target):
 
 | Skill | Gate eval (target) | Periodic eval (target) | Est. cost/run |
 |---|---|---|---|
-| qa-only | report-only flag triggers | full QA flow with fix-loop disabled | $0.30 / $1.50 |
+| qa-report | report-only flag triggers | full QA flow with fix-loop disabled | $0.30 / $1.50 |
 | retro | weekly aggregate runs without error | full retro produces ranked output | $0.20 / $2.00 |
-| document-release | reads CHANGELOG, produces Diataxis map | full post-ship doc update | $0.30 / $1.80 |
-| document-generate | generates 4 doc types from prompt | E2E generation passes quality bar | $0.30 / $2.00 |
-| context-save | persists state to expected path | round-trip restore preserves context | $0.10 / $0.50 |
-| context-restore | reads latest save, applies to session | cross-workspace restore works | $0.10 / $0.50 |
-| gstack-upgrade | detects install type, runs upgrade | full upgrade + migration round-trip | $0.20 / $1.00 |
-| sync-gbrain | refreshes index without error | full sync produces searchable corpus | $0.20 / $1.50 |
-| setup-gbrain | path 1-4 detection works | end-to-end setup for each path | $0.20 / $2.00 |
-| setup-browser-cookies | picker UI loads without error | cookie import round-trip | $0.20 / $1.00 |
-| setup-deploy | detects config, writes expected files | full deploy config setup | $0.20 / $1.00 |
-| design-consultation | DESIGN.md template renders | full design system generation | $0.30 / $2.50 |
-| design-shotgun | variants generated and saved | full multi-variant exploration | $0.30 / $2.00 |
-| open-gstack-browser | launches browser without error | sidebar attaches and shows activity | $0.20 / $0.80 |
-| pair-agent | setup key generated, instructions printed | full pair flow with second agent | $0.20 / $1.50 |
-| land-and-deploy | merge gates check correctly | full merge → deploy → canary | $0.30 / $3.00 |
+| docs-release-update | reads CHANGELOG, produces Diataxis map | full post-ship doc update | $0.30 / $1.80 |
+| docs-generate | generates 4 doc types from prompt | E2E generation passes quality bar | $0.30 / $2.00 |
+| save-context | persists state to expected path | round-trip restore preserves context | $0.10 / $0.50 |
+| restore-context | reads latest save, applies to session | cross-workspace restore works | $0.10 / $0.50 |
+| paysec-upgrade | detects install type, runs upgrade | full upgrade + migration round-trip | $0.20 / $1.00 |
+| brain-sync | refreshes index without error | full sync produces searchable corpus | $0.20 / $1.50 |
+| brain-setup | path 1-4 detection works | end-to-end setup for each path | $0.20 / $2.00 |
+| import-browser-cookies | picker UI loads without error | cookie import round-trip | $0.20 / $1.00 |
+| deploy-setup | detects config, writes expected files | full deploy config setup | $0.20 / $1.00 |
+| design-system | DESIGN.md template renders | full design system generation | $0.30 / $2.50 |
+| design-variants | variants generated and saved | full multi-variant exploration | $0.30 / $2.00 |
+| open-paysec-browser | launches browser without error | sidebar attaches and shows activity | $0.20 / $0.80 |
+| pair-remote-agent | setup key generated, instructions printed | full pair flow with second agent | $0.20 / $1.50 |
+| merge-and-deploy | merge gates check correctly | full merge → deploy → canary | $0.30 / $3.00 |
 | canary | post-deploy loop runs, exits cleanly | full canary cycle with alert simulation | $0.20 / $1.50 |
 | benchmark | runs and produces score | full regression detection | $0.20 / $2.00 |
-| plan-devex-review | mode routing works | full DX review with scoring | $0.40 / $3.00 |
-| devex-review | live DX audit produces scorecard | E2E DX measurement vs plan baseline | $0.40 / $2.50 |
+| plan-dx-review | mode routing works | full DX review with scoring | $0.40 / $3.00 |
+| dx-audit | live DX audit produces scorecard | E2E DX measurement vs plan baseline | $0.40 / $2.50 |
 
 Estimated added CI cost: **~$5/run gate, ~$30/run periodic.** Combined with existing E2E suite (~$15/gate, ~$30/periodic), total: ~$20/gate (every PR), ~$60/periodic (weekly). Acceptable.
 
@@ -139,7 +139,7 @@ export type ResolverEntry = ResolverFn | {
 // scripts/resolvers/index.ts — gate the heavy ones
 QUESTION_TUNING: {
   resolve: generateQuestionTuning,
-  appliesTo: (ctx) => ['plan-ceo-review','plan-eng-review','office-hours'].includes(ctx.skillName),
+  appliesTo: (ctx) => ['plan-business-review','plan-tech-review','idea-review'].includes(ctx.skillName),
 },
 REVIEW_ARMY: {
   resolve: generateReviewArmy,
@@ -147,7 +147,7 @@ REVIEW_ARMY: {
 },
 REVIEW_DASHBOARD: {
   resolve: generateReviewDashboard,
-  appliesTo: (ctx) => ['ship','plan-ceo-review','plan-eng-review','plan-design-review','plan-devex-review','devex-review'].includes(ctx.skillName),
+  appliesTo: (ctx) => ['ship','plan-business-review','plan-tech-review','plan-ux-review','plan-dx-review','dx-audit'].includes(ctx.skillName),
 },
 // ... audit all 21 resolvers, gate per actual usage
 ```
@@ -161,19 +161,19 @@ if (gate && !gate(ctx)) return '';
 return args.length > 0 ? resolver(ctx, args) : resolver(ctx);
 ```
 
-**A.2 Jargon-list dedup** — currently `scripts/resolvers/preamble/generate-writing-style.ts` inlines the full 1.8KB jargon glossary into 37 skills. Replace inline with a reference: "For the canonical jargon list, Read `~/.claude/skills/gstack/scripts/jargon-list.json` on first use." Saves ~66KB total corpus.
+**A.2 Jargon-list dedup** — currently `scripts/resolvers/preamble/generate-writing-style.ts` inlines the full 1.8KB jargon glossary into 37 skills. Replace inline with a reference: "For the canonical jargon list, Read `~/.claude/skills/paysec/scripts/jargon-list.json` on first use." Saves ~66KB total corpus.
 
-**A.3 Terse-mode actually compresses** — read `~/.gstack/config.yaml` once in `gen-skill-docs.ts`, pass `explainLevel` into `TemplateContext`, and have `generate-writing-style.ts` / `generate-completeness.ts` / `generate-confusion-protocol.ts` / `generate-context-health.ts` return `''` when terse. Today the bytes ship regardless of config — the flag only changes runtime model behavior. Add `--explain-level=terse` build flag for benchmarking.
+**A.3 Terse-mode actually compresses** — read `~/.paysec/config.yaml` once in `gen-skill-docs.ts`, pass `explainLevel` into `TemplateContext`, and have `generate-writing-style.ts` / `generate-completeness.ts` / `generate-confusion-protocol.ts` / `generate-context-health.ts` return `''` when terse. Today the bytes ship regardless of config — the flag only changes runtime model behavior. Add `--explain-level=terse` build flag for benchmarking.
 
-**A.4 Catalog trim** (moved up per Codex #6) — shorten skill descriptions in the always-loaded system prompt to one line per skill. Voice triggers move from catalog descriptions into in-skill content. Proactive-suggest paragraphs move to a separate `~/.claude/skills/gstack/scripts/proactive-suggestions.json` loaded only when the agent needs routing guidance. Per-skill description format:
+**A.4 Catalog trim** (moved up per Codex #6) — shorten skill descriptions in the always-loaded system prompt to one line per skill. Voice triggers move from catalog descriptions into in-skill content. Proactive-suggest paragraphs move to a separate `~/.claude/skills/paysec/scripts/proactive-suggestions.json` loaded only when the agent needs routing guidance. Per-skill description format:
 
 ```
-- <skill-name>: <one-line outcome description, ≤80 chars> (gstack)
+- <skill-name>: <one-line outcome description, ≤80 chars> (paysec)
 ```
 
 Estimated catalog cut: ~70% (largest single always-loaded reduction).
 
-**A.5 cso/ targeted compression** (Codex #9) — cso gets resolver dedup + catalog trim. Security guidance prose stays uncompressed monolithically until Phase B audit shows specific sections can safely move to sections/ with eval coverage. Not "exempt" — just sequenced last.
+**A.5 security-audit/ targeted compression** (Codex #9) — security-audit gets resolver dedup + catalog trim. Security guidance prose stays uncompressed monolithically until Phase B audit shows specific sections can safely move to sections/ with eval coverage. Not "exempt" — just sequenced last.
 
 **A.6 Hard token budgets** (Codex #10) — define and enforce in `test/skill-e2e-budget-regression.test.ts`:
 
@@ -215,11 +215,11 @@ ship/
 
 **Conversion order** (one at a time, validate each before next):
 1. `ship/` — most invocations, biggest cost, riskiest. Land alone, observe 1 week.
-2. `plan-ceo-review/` — conversational; risk of breaking flow. Land second, observe carefully.
-3. `office-hours/` — most conversational. Land third only if 1+2 went clean.
-4. `plan-eng-review/` and `plan-design-review/` — bundle, similar shape.
+2. `plan-business-review/` — conversational; risk of breaking flow. Land second, observe carefully.
+3. `idea-review/` — most conversational. Land third only if 1+2 went clean.
+4. `plan-tech-review/` and `plan-ux-review/` — bundle, similar shape.
 
-**Do not convert** unless explicitly approved later: `autoplan` (orchestrator that already chains skills), `design-review` (UI flow already tight), `qa` (single-purpose), `investigate` (single-purpose).
+**Do not convert** unless explicitly approved later: `auto-plan-review` (orchestrator that already chains skills), `design-qa` (UI flow already tight), `qa` (single-purpose), `investigate` (single-purpose).
 
 ## Phase C — Eval annotations + CI orphan check (v2.0.0.0)
 
@@ -242,9 +242,9 @@ This avoids "maintenance theater" of mandatory annotations with no semantics, an
 ## Migration approach (v2.0.0.0, lighter touch per D11)
 
 - Release note in v2.0.0.0 CHANGELOG explains the sections/ format change and concrete user impact: forks/copy-pasted SKILL.md files need re-fetch; first-invocation of heavyweight skills has ~200-500ms section-read latency added.
-- `/gstack-upgrade` auto-regenerates on next invocation. No interactive migration prompts.
+- `/paysec-upgrade` auto-regenerates on next invocation. No interactive migration prompts.
 - Vendored installs get a single one-line warning at session start on first v2 contact (re-use existing vendored-install warning pattern in skill preamble).
-- `gstack-upgrade --explain-v2` flag for users who want the full explanation on demand.
+- `paysec-upgrade --explain-v2` flag for users who want the full explanation on demand.
 
 ## Forks / customization compatibility (Codex #11)
 
@@ -261,7 +261,7 @@ v1.45.0.0:
 - Dogfood: 1 week active use across all of Garry's workspaces before announcing.
 
 v2.0.0.0:
-- **Canary cohort**: ship to dogfood users (Garry + active agents) first via a v2.0.0-rc.1 tag. Real-PTY harness logs section Reads for top 5 workflows (`/ship`, `/qa`, `/review`, `/plan-ceo-review`, `/autoplan`); alert on Read-miss for required sections.
+- **Canary cohort**: ship to dogfood users (Garry + active agents) first via a v2.0.0-rc.1 tag. Real-PTY harness logs section Reads for top 5 workflows (`/ship-pr`, `/qa-fix`, `/pr-review`, `/plan-business-review`, `/auto-plan-review`); alert on Read-miss for required sections.
 - **Manual verification**: top 5 workflows manually run before tagging v2.0.0.0 final, with before/after transcripts saved as eval baselines.
 - **Regression dashboard**: existing `bun run eval:summary` extended with v1 vs v2 per-skill token + behavioral compliance comparison.
 - **Rollback**: revert PR + `bun run gen:skill-docs` regenerates old shape. Documented in CONTRIBUTING.md.
@@ -272,40 +272,40 @@ v2.0.0.0:
 |---|---|---|
 | 1. Architecture | Lazy-section silent-loss risk; mitigated via 6-layer defense above | Findings addressed in plan |
 | 2. Errors/Rescues | gen-skill-docs gate-fail loud; missing sections fall back to skeleton; CI orphan check loud | Findings addressed |
-| 3. Security | cso targeted dedup not blanket exemption (Codex #9); migration script runs at user-shell trust boundary, same as existing migrations | Findings addressed |
+| 3. Security | security-audit targeted dedup not blanket exemption (Codex #9); migration script runs at user-shell trust boundary, same as existing migrations | Findings addressed |
 | 4. Data/UX edge cases | v1→v2 muscle-memory break warned in release note; vendored installs get one-line warning; concurrent dev-symlink sessions risk is existing CLAUDE.md caveat | Findings addressed |
 | 5. Code quality | ~150 LOC additive across gen-skill-docs/types/index; ~20 new eval test files; sections/ extraction is mechanical | OK |
 | 6. Tests | Phase 0 IS the test plan. Coverage matrix CI gate enforces every skill has its evals | Findings addressed |
 | 7. Performance | Build time <2× current; runtime adds 200-500ms first-invocation for sectioned heavyweights; catalog trim reduces always-loaded prompt size on every session | Documented |
-| 8. Observability | budget-regression test already exists; canary cohort transcript logging in Phase B; migration outcome logged to ~/.gstack/analytics/migrations.jsonl | Findings addressed |
+| 8. Observability | budget-regression test already exists; canary cohort transcript logging in Phase B; migration outcome logged to ~/.paysec/analytics/migrations.jsonl | Findings addressed |
 | 9. Deployment | Two-release split + warn-before-fail eval annotations + rollback via revert | Findings addressed |
 | 10. Long-term trajectory | Reversibility 3/5; sections/ pattern becomes template for future skills; deferred TODOs extend v2 narrative for v2.1+ | OK |
-| 11. Design/UX | README v2 banner + CHANGELOG numbers table land in v2.0.0.0; concrete numbers, gstack voice, no AI slop | OK |
+| 11. Design/UX | README v2 banner + CHANGELOG numbers table land in v2.0.0.0; concrete numbers, paysec voice, no AI slop | OK |
 
 ## NOT in scope
 
-- **Skill removals.** User said "keep all functions." qa-only, design-shotgun, pair-agent, open-gstack-browser all stay. They get evals + catalog trim like everyone else.
+- **Skill removals.** User said "keep all functions." qa-report, design-variants, pair-remote-agent, open-paysec-browser all stay. They get evals + catalog trim like everyone else.
 - **Skill renames.** No `qa` → `qa-fix` collapses. Keep CLI surface stable.
-- **gstack lite/pro install profiles.** Deferred to TODOS for post-v2.
-- **gstack budget CLI.** Deferred to TODOS for post-v2.
+- **paysec lite/pro install profiles.** Deferred to TODOS for post-v2.
+- **paysec budget CLI.** Deferred to TODOS for post-v2.
 - **Per-skill eval coverage badge in README.** Deferred to TODOS.
 - **Cross-tool portability test/demo (Codex/Cursor compat).** Deferred to TODOS.
 - **Token-cost preview on invocation.** Deferred to TODOS.
 - **Skill autoload telemetry.** Deferred to TODOS.
-- **gstack diff PR comment.** Deferred to TODOS.
+- **paysec diff PR comment.** Deferred to TODOS.
 
 ## TODOS.md updates (deferred items, recommend bulk-add post-merge)
 
 | TODO | Priority | Effort (human / CC) | Depends on |
 |---|---|---|---|
-| `gstack lite` install profile (5-skill core) | P2 | 2 days / 3-4 hrs | v2.0.0.0 |
-| `gstack pro` opt-in upgrade path | P2 | 1 day / 1 hr | gstack lite |
-| `gstack budget` CLI (per-skill token usage telemetry) | P2 | 1 day / 1 hr | v1.45.0.0 |
-| Per-skill eval coverage badge in `gstack-skills list` + README | P3 | 1 day / 1 hr | Phase 0 |
+| `paysec lite` install profile (5-skill core) | P2 | 2 days / 3-4 hrs | v2.0.0.0 |
+| `paysec pro` opt-in upgrade path | P2 | 1 day / 1 hr | paysec lite |
+| `paysec budget` CLI (per-skill token usage telemetry) | P2 | 1 day / 1 hr | v1.45.0.0 |
+| Per-skill eval coverage badge in `paysec-skills list` + README | P3 | 1 day / 1 hr | Phase 0 |
 | Cross-tool portability test/demo (Codex CLI, Cursor) | P3 | 2 days / 2 hrs | v2.0.0.0 |
-| Token-cost preview on skill invocation | P3 | 1 day / 1 hr | gstack budget CLI |
+| Token-cost preview on skill invocation | P3 | 1 day / 1 hr | paysec budget CLI |
 | Skill autoload telemetry (dead-weight detection) | P3 | 2 days / 2 hrs | v1.45.0.0 |
-| `gstack diff` PR comment (per-PR budget delta) | P3 | 1 day / 1 hr | budget-regression extended |
+| `paysec diff` PR comment (per-PR budget delta) | P3 | 1 day / 1 hr | budget-regression extended |
 | Section-level eval annotations visible to user (confidence signal) | P3 | half day / 30 min | Phase C |
 
 ## Critical files
@@ -326,12 +326,12 @@ v2.0.0.0:
 | `test/skill-e2e-*.test.ts` (~20 new files) | New evals for skills currently lacking coverage | Phase 0 |
 | `test/skill-e2e-budget-regression.test.ts` | Extend with per-skill hard budgets | A.6 |
 | `test/helpers/touchfiles.ts` | Register new tests for diff-based selection | Phase 0 |
-| `ship/SKILL.md.tmpl` → `ship/sections/manifest.json` + `ship/sections/*.md` | Skeleton extraction | B |
-| `plan-ceo-review/SKILL.md.tmpl` → sections/ | Skeleton extraction | B |
-| `office-hours/SKILL.md.tmpl` → sections/ | Skeleton extraction | B |
-| `plan-eng-review/SKILL.md.tmpl` → sections/ | Skeleton extraction | B |
-| `plan-design-review/SKILL.md.tmpl` → sections/ | Skeleton extraction | B |
-| `gstack-upgrade/migrations/v2.0.0.0.sh` (new) | Auto-regenerate + vendored-install warning | B |
+| `ship-pr/SKILL.md.tmpl` → `ship-pr/sections/manifest.json` + `ship-pr/sections/*.md` | Skeleton extraction | B |
+| `plan-business-review/SKILL.md.tmpl` → sections/ | Skeleton extraction | B |
+| `idea-review/SKILL.md.tmpl` → sections/ | Skeleton extraction | B |
+| `plan-tech-review/SKILL.md.tmpl` → sections/ | Skeleton extraction | B |
+| `plan-ux-review/SKILL.md.tmpl` → sections/ | Skeleton extraction | B |
+| `paysec-upgrade/migrations/v2.0.0.0.sh` (new) | Auto-regenerate + vendored-install warning | B |
 | `CHANGELOG.md` | v1.45.0.0 entry (normal), v2.0.0.0 entry (marketing-grade w/ numbers table) | A, B |
 | `README.md` | v2.0.0.0 banner; "lightest opinionated skill pack" positioning | B |
 | `CONTRIBUTING.md` | Document sections/ pattern + rollback procedure | B |
@@ -346,15 +346,15 @@ v2.0.0.0:
 5. Catalog system-prompt size measured: target ≤8K tokens (vs ~25K current). Capture before/after in PR body.
 6. Total SKILL.md corpus byte count: target ≤1.3MB (vs 2.1MB). Capture in PR body.
 7. Top 3 heaviest skills under 100KB.
-8. Manual smoke: invoke `/ship`, `/plan-ceo-review`, `/office-hours` in fresh Claude Code sessions; confirm no missing behavior. Save transcripts as v1.45 baselines.
+8. Manual smoke: invoke `/ship-pr`, `/plan-business-review`, `/idea-review` in fresh Claude Code sessions; confirm no missing behavior. Save transcripts as v1.45 baselines.
 
 **v2.0.0.0:**
 1. All v1.45 checks pass
 2. Sectioned skills: total corpus ≤700KB; heavyweight skeletons ≤30KB each
-3. `test/skill-e2e-ship-section-loading.test.ts` (new): asserts `/ship` Reads expected sections per decision tree
+3. `test/skill-e2e-ship-pr-section-loading.test.ts` (new): asserts `/ship-pr` Reads expected sections per decision tree
 4. Canary cohort: 1 week dogfood at v2.0.0-rc.1 with transcript logging; zero Read-miss for marked-required sections
 5. Top 5 workflows manually verified; transcripts compared against v1.45 baselines
-6. Migration: `gstack-upgrade` on a v1.45 install successfully regenerates without prompts; vendored-install warning appears once
+6. Migration: `paysec-upgrade` on a v1.45 install successfully regenerates without prompts; vendored-install warning appears once
 7. CHANGELOG numbers table matches measured reality
 8. WARN-mode orphan check: PR summary shows orphan list; build passes
 
@@ -365,7 +365,7 @@ Items from Codex's review accepted and integrated above:
 - #4 Warn-before-fail eval annotations (Phase C)
 - #5 Coverage semantics in annotation comments, not just paths
 - #6 Catalog trim moved up to Phase A (was buried after sections/)
-- #9 cso gets resolver dedup + catalog trim (not blanket exempt)
+- #9 security-audit gets resolver dedup + catalog trim (not blanket exempt)
 - #10 Hard token budgets defined + enforced (Phase A.6)
 - #11 Forks/customization compatibility documented (Migration section)
 - #12 Rollout strategy with canary cohort + manual top-5-workflows verification (Rollout section)
@@ -392,7 +392,7 @@ Synthesized from this review's findings. Each task derives from a specific phase
 - [ ] **T3 (P1, human: ~half day / CC: ~30 min)** — A.2 + A.3 jargon dedup + terse-mode gen-time compression
   - Surfaced by: Phase A section
   - Files: `scripts/resolvers/preamble/generate-writing-style.ts`, `generate-completeness.ts`, `generate-confusion-protocol.ts`, `generate-context-health.ts`
-  - Verify: jargon-list no longer appears inlined in generated SKILL.md; `gstack-config set explain_level terse && bun run gen:skill-docs` produces shorter files
+  - Verify: jargon-list no longer appears inlined in generated SKILL.md; `paysec-config set explain_level terse && bun run gen:skill-docs` produces shorter files
 - [ ] **T4 (P1, human: ~1 day / CC: ~2 hours)** — A.4 catalog trim — one-line skill descriptions; voice triggers + proactive paragraphs moved to JSON
   - Surfaced by: Codex #6 (highest-leverage), Phase A.4
   - Files: `scripts/skill-catalog.ts` (new), `scripts/proactive-suggestions.json` (new), per-skill SKILL.md.tmpl frontmatter for one-line description field
@@ -401,10 +401,10 @@ Synthesized from this review's findings. Each task derives from a specific phase
   - Surfaced by: Codex #10
   - Files: `test/skill-e2e-budget-regression.test.ts`
   - Verify: budget-regression fails when artificially inflated test SKILL.md exceeds budget
-- [ ] **T6 (P1, human: ~1 day / CC: ~1 hour)** — A.5 cso resolver dedup + catalog trim (NOT broader compression)
+- [ ] **T6 (P1, human: ~1 day / CC: ~1 hour)** — A.5 security-audit resolver dedup + catalog trim (NOT broader compression)
   - Surfaced by: Codex #9
-  - Files: `cso/SKILL.md.tmpl` (no structural change, only resolver gate audit)
-  - Verify: cso SKILL.md size drops 20-30%; cso E2E evals still pass
+  - Files: `security-audit/SKILL.md.tmpl` (no structural change, only resolver gate audit)
+  - Verify: security-audit SKILL.md size drops 20-30%; security-audit E2E evals still pass
 - [ ] **T7 (P1, human: ~1 day / CC: ~1 hour)** — Regenerate all SKILL.md atomically + measure
   - Surfaced by: Phase A
   - Files: all `*/SKILL.md` regenerated
@@ -416,17 +416,17 @@ Synthesized from this review's findings. Each task derives from a specific phase
 
 - [ ] **T9 (P1, human: ~2 days / CC: ~3 hours)** — Phase B.1 convert ship/ to skeleton + sections/
   - Surfaced by: Phase B section
-  - Files: `ship/SKILL.md.tmpl` → skeleton; `ship/sections/manifest.json` + `ship/sections/*.md`
-  - Verify: new `test/skill-e2e-ship-section-loading.test.ts` asserts expected Reads per decision tree; existing ship evals pass; ship.md skeleton <15KB
+  - Files: `ship-pr/SKILL.md.tmpl` → skeleton; `ship-pr/sections/manifest.json` + `ship-pr/sections/*.md`
+  - Verify: new `test/skill-e2e-ship-pr-section-loading.test.ts` asserts expected Reads per decision tree; existing ship evals pass; ship.md skeleton <15KB
 - [ ] **T10 (P1, human: ~1 day / CC: ~1 hour)** — Canary cohort for ship/ (1 week dogfood at v2.0.0-rc.1)
   - Surfaced by: Rollout strategy section, Codex #12
   - Files: `test/helpers/transcript-section-logger.ts` (new)
   - Verify: zero Read-miss on marked-required sections in dogfood transcripts
-- [ ] **T11 (P1, human: ~2 days / CC: ~3 hours)** — Phase B.2 convert plan-ceo-review/ (after ship/ proven)
+- [ ] **T11 (P1, human: ~2 days / CC: ~3 hours)** — Phase B.2 convert plan-business-review/ (after ship/ proven)
   - Surfaced by: Phase B section
-  - Files: `plan-ceo-review/SKILL.md.tmpl` + `plan-ceo-review/sections/`
+  - Files: `plan-business-review/SKILL.md.tmpl` + `plan-business-review/sections/`
   - Verify: section-loading test green; plan-ceo evals pass
-- [ ] **T12 (P2, human: ~3 days / CC: ~4 hours)** — Phase B.3 + B.4 convert office-hours/ + plan-eng-review/ + plan-design-review/
+- [ ] **T12 (P2, human: ~3 days / CC: ~4 hours)** — Phase B.3 + B.4 convert idea-review/ + plan-tech-review/ + plan-ux-review/
   - Surfaced by: Phase B section
   - Files: respective `SKILL.md.tmpl` + `sections/` directories
   - Verify: section-loading tests green; respective evals pass
@@ -434,29 +434,29 @@ Synthesized from this review's findings. Each task derives from a specific phase
   - Surfaced by: Phase C section, Codex #4 + #5
   - Files: `scripts/gen-skill-docs.ts` (orphan walker), all `sections/*.md` (annotations with coverage semantics)
   - Verify: orphan check reports correctly in PR summary; build still passes in WARN mode
-- [ ] **T14 (P1, human: ~half day / CC: ~30 min)** — `gstack-upgrade/migrations/v2.0.0.0.sh` lighter-touch auto-regenerate
+- [ ] **T14 (P1, human: ~half day / CC: ~30 min)** — `paysec-upgrade/migrations/v2.0.0.0.sh` lighter-touch auto-regenerate
   - Surfaced by: Migration approach section
-  - Files: `gstack-upgrade/migrations/v2.0.0.0.sh`
+  - Files: `paysec-upgrade/migrations/v2.0.0.0.sh`
   - Verify: upgrade from v1.45 install produces clean v2 state without prompts; vendored install gets one-line warning
 - [ ] **T15 (P1, human: ~half day / CC: ~1 hour)** — v2.0.0.0 marketing-grade CHANGELOG with v1 vs v2 numbers table
   - Surfaced by: D5, Release shape, Codex #7 (real breakage documented)
   - Files: `CHANGELOG.md`, `VERSION`, `README.md` (v2 banner)
   - Verify: numbers table matches measured corpus; release note documents concrete breakage (sections/ format change, first-invocation latency, vendored-install deprecation); positioning past-tenses bloat reputation
-- [ ] **T16 (P2, human: ~1 day / CC: ~1 hour)** — Bulk-add 9 deferred TODOS to TODOS.md (gstack lite, gstack budget, etc.)
+- [ ] **T16 (P2, human: ~1 day / CC: ~1 hour)** — Bulk-add 9 deferred TODOS to TODOS.md (paysec lite, paysec budget, etc.)
   - Surfaced by: TODOS.md updates section
   - Files: `TODOS.md`
-  - Verify: TODOS format matches `.claude/skills/review/TODOS-format.md`
+  - Verify: TODOS format matches `.claude/skills/pr-review/TODOS-format.md`
 
 ## Failure Modes Registry
 
 | Codepath | Failure mode | Rescued? | Test? | User sees | Logged |
 |---|---|---|---|---|---|
 | gen-skill-docs.ts gate check | resolver `appliesTo` throws | Y — try/catch logs + skips resolver | Y (test/gen-skill-docs.test.ts extended) | "resolver X errored, skipped" in build output | stderr |
-| sections/ Read at runtime | section file missing | Y — agent falls back to skeleton-only behavior | Y (test/skill-e2e-ship-section-loading.test.ts) | warning in agent prose | session transcript |
+| sections/ Read at runtime | section file missing | Y — agent falls back to skeleton-only behavior | Y (test/skill-e2e-ship-pr-section-loading.test.ts) | warning in agent prose | session transcript |
 | CI orphan walker | sections/*.md missing eval annotation | WARN mode v2.0; FAIL v2.1+ | Y (test/skill-coverage-matrix.test.ts) | PR summary lists orphans | PR comment |
-| Migration script v2.0.0.0.sh | regenerate fails on damaged install | Y — script aborts, prints repair steps | Y (migration test) | clear error + repair steps | ~/.gstack/analytics/migrations.jsonl |
+| Migration script v2.0.0.0.sh | regenerate fails on damaged install | Y — script aborts, prints repair steps | Y (migration test) | clear error + repair steps | ~/.paysec/analytics/migrations.jsonl |
 | Catalog one-line generator | skill missing one-line description in frontmatter | Y — gen-skill-docs fails build loudly | Y (gen-skill-docs.test.ts extended) | build error | stderr |
-| Canary section-Read logger | logger missing for a heavyweight skill | Y — silently skipped, gap visible in dashboard | Y (transcript-logger test) | none directly; surfaced in canary dashboard | ~/.gstack/analytics/section-reads.jsonl |
+| Canary section-Read logger | logger missing for a heavyweight skill | Y — silently skipped, gap visible in dashboard | Y (transcript-logger test) | none directly; surfaced in canary dashboard | ~/.paysec/analytics/section-reads.jsonl |
 
 No critical gaps — every failure mode has a rescue, a test, and visibility.
 
@@ -464,7 +464,7 @@ No critical gaps — every failure mode has a rescue, a test, and visibility.
 
 System architecture (build pipeline):
 ```
-  CONFIG (~/.gstack/config.yaml)
+  CONFIG (~/.paysec/config.yaml)
      |
      v
   +-----------------+      +--------------------+
@@ -496,11 +496,11 @@ System architecture (build pipeline):
 
 Section-Read flow (v2 runtime):
 ```
-  USER /ship
+  USER /ship-pr
      |
      v
   +-----------------------+
-  | ship/SKILL.md         |
+  | ship-pr/SKILL.md         |
   | (12-15KB skeleton)    |
   | reads:                |
   |  - manifest.json      |
@@ -551,7 +551,7 @@ No stale diagrams to fix.
 |                      | hybrid v1.45/v2.0 split + lighter migration |
 | Section 1  (Arch)    | 1 finding — silent-loss risk, 6-layer mit   |
 | Section 2  (Errors)  | 6 failure modes mapped, 0 CRITICAL GAPS     |
-| Section 3  (Security)| cso targeted dedup (Codex #9 absorbed)      |
+| Section 3  (Security)| security-audit targeted dedup (Codex #9 absorbed)      |
 | Section 4  (Data/UX) | v1→v2 muscle memory warned, vendored noted  |
 | Section 5  (Quality) | ~150 LOC additive, mechanical extraction    |
 | Section 6  (Tests)   | Phase 0 IS the test plan                    |
@@ -577,7 +577,7 @@ No stale diagrams to fix.
 +====================================================================+
 ```
 
-## Eng-review additions (from /plan-eng-review session)
+## Eng-review additions (from /plan-tech-review session)
 
 ### Architectural decisions locked in
 
@@ -588,12 +588,12 @@ No stale diagrams to fix.
 ### Adjacent TODOS surfaced (informational, not blocking)
 
 - **TODOS:161** — planned "resolver injection at session start" for browser-skills (P2). Has architectural overlap with this plan's `appliesTo` predicate. Decision: keep separate for now — browser-skill resolver injection is runtime (session-start hostname matching); our `appliesTo` is build-time (gen-skill-docs.ts). Different lifecycles, different concerns. Revisit only if the browser-skills work needs the same predicate shape.
-- **TODOS:1120** — `test/ship-version-sync.test.ts` reimplements ship/SKILL.md.tmpl Step 12 bash. D2 (sections/*.md.tmpl pipeline) is the structural fix. Phase B work obviates this TODO; mark as resolved when ship/ extraction lands.
-- **TODOS:1136** — `git show` fallback in ship/SKILL.md.tmpl Step 12 line 409. Phase B touches this; bundle the `git rev-parse --verify` fix into the version-bump section extraction.
+- **TODOS:1120** — `test/ship-version-sync.test.ts` reimplements ship-pr/SKILL.md.tmpl Step 12 bash. D2 (sections/*.md.tmpl pipeline) is the structural fix. Phase B work obviates this TODO; mark as resolved when ship/ extraction lands.
+- **TODOS:1136** — `git show` fallback in ship-pr/SKILL.md.tmpl Step 12 line 409. Phase B touches this; bundle the `git rev-parse --verify` fix into the version-bump section extraction.
 
 ### Test plan artifact
 
-Test plan written to `~/.gstack/projects/garrytan-gstack/garrytan-garrytan-slim-skill-tokens-eng-review-test-plan-<timestamp>.md`. `/qa` and `/qa-only` consume this as primary test input. Covers: per-phase test coverage targets, fixture design for section-loading tests, CI budget enforcement check, migration round-trip test.
+Test plan written to `~/.paysec/projects/garrytan-paysec/garrytan-garrytan-slim-skill-tokens-eng-review-test-plan-<timestamp>.md`. `/qa-fix` and `/qa-report` consume this as primary test input. Covers: per-phase test coverage targets, fixture design for section-loading tests, CI budget enforcement check, migration round-trip test.
 
 ### Failure modes additions
 
@@ -619,16 +619,16 @@ v1.45 runs **sequentially** in a single branch, T1 → T8. The parallelization m
 | T3 jargon dedup + terse compression | `scripts/resolvers/preamble/*` | T2 |
 | T4 catalog trim | `scripts/skill-catalog.ts`, `scripts/proactive-suggestions.json`, all SKILL.md.tmpl frontmatter | T2 |
 | T5 hard token budgets + override path | `test/skill-e2e-budget-regression.test.ts` (per-suite caps + `EVALS_BUDGET_OVERRIDE_REASON`) | T1 |
-| T6 cso targeted dedup | `cso/SKILL.md.tmpl` | T2, T3 |
+| T6 security-audit targeted dedup | `security-audit/SKILL.md.tmpl` | T2, T3 |
 | T7 regenerate all SKILL.md atomically | all `*/SKILL.md` | T1-T6 |
 | T8 v1.45 CHANGELOG | `CHANGELOG.md`, `VERSION` | T7 |
 | **— v1.45.0.0 ship boundary —** | | |
-| T9 ship/ sections/ extraction | `ship/SKILL.md.tmpl`, `ship/sections/*`, gen-skill-docs (sections pipeline w/ TemplateContext contract) | T8 + sections-pipeline (T2/D2) |
+| T9 ship/ sections/ extraction | `ship-pr/SKILL.md.tmpl`, `ship-pr/sections/*`, gen-skill-docs (sections pipeline w/ TemplateContext contract) | T8 + sections-pipeline (T2/D2) |
 | T10 ship/ canary cohort | `test/helpers/transcript-section-logger.ts` | T9 |
-| T11 plan-ceo-review sections/ | `plan-ceo-review/SKILL.md.tmpl` + sections | T10 (ship/ proven) |
-| T12 office-hours + plan-eng + plan-design sections/ | respective directories | T11 |
+| T11 plan-business-review sections/ | `plan-business-review/SKILL.md.tmpl` + sections | T10 (ship/ proven) |
+| T12 idea-review + plan-eng + plan-design sections/ | respective directories | T11 |
 | T13 Phase C eval annotations + 3-tier orphan check | gen-skill-docs.ts orphan walker, all sections/*.md | T9-T12 |
-| T14 migration script | `gstack-upgrade/migrations/v2.0.0.0.sh` | T13 |
+| T14 migration script | `paysec-upgrade/migrations/v2.0.0.0.sh` | T13 |
 | T15 v2.0.0.0 CHANGELOG + README banner | `CHANGELOG.md`, `README.md`, `VERSION` | T14 |
 | T16 TODOS bulk-add | `TODOS.md` | — anytime |
 
@@ -646,7 +646,7 @@ User said "do it like 11, not just 10. max it out and then some." Maxed-out scop
 - **Token-efficiency ratio measured:** quality-per-token = judge_score / tokens_consumed (forces v2 to be measurably MORE efficient, not just smaller)
 - **"Quality budget" alongside "token budget":** both enforced in CI. A v2 skill that compressed to half size but dropped from 9/10 quality to 6/10 fails the gate.
 - **Side-by-side PR comment:** every PR that touches a heavyweight skill auto-posts a v1.45-baseline vs current parity comparison in the PR summary
-- **Public benchmark page:** `gstack.benchmarks.md` (new), continuously updated. Quotable: "v2 average parity score: 9.2/10, average token reduction: 67%."
+- **Public benchmark page:** `paysec.benchmarks.md` (new), continuously updated. Quotable: "v2 average parity score: 9.2/10, average token reduction: 67%."
 - **Continuous monitoring:** parity suite runs weekly on main; alerts if any skill drifts below baseline (Discord webhook or similar)
 - **Baseline-capture script:** `test/helpers/capture-parity-baseline.ts` — run once at v1.44 HEAD to lock in golden transcripts before any Phase A work lands
 
@@ -659,7 +659,7 @@ Effort: human ~3-4 days / CC ~6-8 hours one-time + ~$30/week ongoing for continu
    - **Generated orphan** (`sections/foo.md` exists, no `sections/foo.md.tmpl`) → FAIL immediately, every release
    - **Manifest orphan** (`sections/foo.md.tmpl` exists, not in `manifest.json`) → WARN in v2.0, FAIL in v2.1+
    - **Hand-edited generated file** (`sections/foo.md` diverges from what regen would produce) → FAIL immediately, with "this file is generated, edit `.tmpl` instead" message
-3. **Budget cap override path (codex D3 critique):** `EVALS_BUDGET_HARD_CAP=$30` becomes the default; per-suite caps via `EVALS_BUDGET_HARD_CAP_GATE=$25`, `EVALS_BUDGET_HARD_CAP_PERIODIC=$70`; override path `EVALS_BUDGET_OVERRIDE_REASON="<text>"` env required to exceed cap (CI prints the reason in build output for audit trail); daily org-level spend alert via existing analytics (`~/.gstack/analytics/skill-usage.jsonl` aggregator).
+3. **Budget cap override path (codex D3 critique):** `EVALS_BUDGET_HARD_CAP=$30` becomes the default; per-suite caps via `EVALS_BUDGET_HARD_CAP_GATE=$25`, `EVALS_BUDGET_HARD_CAP_PERIODIC=$70`; override path `EVALS_BUDGET_OVERRIDE_REASON="<text>"` env required to exceed cap (CI prints the reason in build output for audit trail); daily org-level spend alert via existing analytics (`~/.paysec/analytics/skill-usage.jsonl` aggregator).
 4. **Manifest as passive data (codex D1 critique):** `manifest.json` fields are IDs, file paths, and human-readable trigger text ONLY. No `applies_when` predicate. The skill skeleton's decision-tree prose is the ONLY place "when to read X" is decided. Avoids inventing a fourth condition language alongside tier-gating + `appliesTo` + `requiredReads`.
 5. **T7 as integration-branch flow (codex parallelization critique, now obviated by sequential):** sequential execution means T7 is just "atomic regenerate within the single v1.45 branch." Integration-branch dance not needed. The critique's intent (no 3-way merge surprise) is honored by collapsing to sequential.
 
@@ -675,25 +675,25 @@ Effort: human ~3-4 days / CC ~6-8 hours one-time + ~$30/week ongoing for continu
 
 Still 0 critical gaps.
 
-## v2 launch copy specs (from /plan-devex-review)
+## v2 launch copy specs (from /plan-dx-review)
 
 These drafts become the source of truth for v2.0.0.0 launch tone. T15 implements them verbatim (unless workshopping at ship time produces a measurably better take, in which case update both plan and implementation in lockstep).
 
 ### JUST_UPGRADED notice (Persona A — existing user upgrading)
 
-Triggered by `gstack-update-check` showing `JUST_UPGRADED v1.x v2.0.0.0`. Replaces the generic v1 "Running gstack v{to} (just updated!)" with persona-A-aware copy that names the perceived speed win AND signals "your muscle memory still works."
+Triggered by `paysec-update-check` showing `JUST_UPGRADED v1.x v2.0.0.0`. Replaces the generic v1 "Running paysec v{to} (just updated!)" with persona-A-aware copy that names the perceived speed win AND signals "your muscle memory still works."
 
 ```
-Running gstack v2.0.0.0 (just updated!) — your sessions are now ~67% lighter.
+Running paysec v2.0.0.0 (just updated!) — your sessions are now ~67% lighter.
 Heavyweight skills load only the sections they need; the catalog dropped to
-one line per skill. Everything still works the same way — your /ship, /qa,
-/review commands haven't changed. Run `/gstack-upgrade --explain-v2` for the
+one line per skill. Everything still works the same way — your /ship-pr, /qa-fix,
+/pr-review commands haven't changed. Run `/paysec-upgrade --explain-v2` for the
 full migration story, or just keep working.
 ```
 
 Voice rules honored: lead with the win ("67% lighter"); concrete numbers; reassurance that workflows are unchanged ("everything still works the same way"); escape hatch (`--explain-v2`). No em dashes. Aimed at a 5-second read.
 
-Implementation: update `~/.claude/skills/gstack/gstack-upgrade/SKILL.md.tmpl` Inline upgrade flow with v2-aware message; existing `JUST_UPGRADED <from> <to>` detection in skill preamble fires it.
+Implementation: update `~/.claude/skills/paysec/paysec-upgrade/SKILL.md.tmpl` Inline upgrade flow with v2-aware message; existing `JUST_UPGRADED <from> <to>` detection in skill preamble fires it.
 
 ### CHANGELOG numbers table (Persona A's magical moment + Persona B's evaluation evidence)
 
@@ -703,27 +703,27 @@ Lands in `## [v2.0.0.0]` entry of CHANGELOG.md, immediately under the headline. 
 |---|---|---|---|
 | Total SKILL.md corpus | 2.1 MB | ~700 KB | **−67%** |
 | ship.md (heaviest) | 164 KB | ~15 KB skeleton + 5×~5 KB sections | **−76% first-Read** |
-| plan-ceo-review.md | 131 KB | ~12 KB skeleton + sections on demand | **−68% first-Read** |
-| office-hours.md | 111 KB | ~10 KB skeleton + sections on demand | **−71% first-Read** |
+| plan-business-review.md | 131 KB | ~12 KB skeleton + sections on demand | **−68% first-Read** |
+| idea-review.md | 111 KB | ~10 KB skeleton + sections on demand | **−71% first-Read** |
 | Catalog tokens (always-loaded system prompt) | ~25K tokens | ~6K tokens | **−76%** |
-| Per-invocation tokens (typical /ship session) | ~41K | ~14K skeleton + on-demand sections | **~60% drop** |
+| Per-invocation tokens (typical /ship-pr session) | ~41K | ~14K skeleton + on-demand sections | **~60% drop** |
 | Eval coverage (skills with E2E protection) | ~16 of 31 | **31 of 31 + parity baselines** | quality gate enabled |
 | Parity score vs v1.44 baseline (LLM judge, all 31 skills) | — | **≥9.0/10 floor** | (CI-enforced; see parity-eval suite) |
 
-Below the table, one paragraph in gstack voice: "v1 was the heaviest opinionated skill pack. v2 is the lightest. The compression isn't free — every skill ships with both gate-tier and periodic-tier E2E evals, and a continuous parity-monitor catches silent quality regressions. The numbers above are measured against `test/helpers/parity-baseline-v1.44.1/` and reproduced by `bun run eval:parity`."
+Below the table, one paragraph in paysec voice: "v1 was the heaviest opinionated skill pack. v2 is the lightest. The compression isn't free — every skill ships with both gate-tier and periodic-tier E2E evals, and a continuous parity-monitor catches silent quality regressions. The numbers above are measured against `test/helpers/parity-baseline-v1.44.1/` and reproduced by `bun run eval:parity`."
 
 ### README v2 banner
 
 Placement: top of README.md, immediately under the existing Karpathy pull-quote, above "When I heard Karpathy say this..." Stays in place for 60 days post-launch, then collapses to a one-line "v2 released May 2026" entry in the Quick start section.
 
 ```markdown
-> **gstack v2.0.0.0 — the lightest opinionated skill pack (May 2026)**
+> **paysec v2.0.0.0 — the lightest opinionated skill pack (May 2026)**
 >
 > Heavyweight skills now load only the sections they need. Total SKILL.md
 > corpus dropped from 2.1 MB to ~700 KB. Every skill ships with E2E eval
 > protection and a continuous parity-monitor against v1.44 baselines.
 > See the [v2.0.0.0 release notes](CHANGELOG.md) for per-skill numbers and
-> the migration story. Existing users: `/gstack-upgrade` auto-regenerates.
+> the migration story. Existing users: `/paysec-upgrade` auto-regenerates.
 ```
 
 Voice rules honored: lead with the position ("lightest opinionated skill pack"); concrete numbers (2.1 MB → 700 KB); proof of rigor (eval protection + parity monitor); migration path explicit. No em dashes. Aimed at a 10-second read.
@@ -732,19 +732,19 @@ Voice rules honored: lead with the position ("lightest opinionated skill pack");
 
 - Lock the actual v1.44 baseline numbers into `test/helpers/parity-baseline-v1.44.1/` BEFORE Phase A regeneration starts. The "v1 vs v2" delta only quotes accurately if v1.44 was measured in the same units (token count via `tiktoken`, byte count via `wc -c`, eval coverage via `test/skill-coverage-matrix.ts`).
 - If the measured v2 numbers come in LESS impressive than the drafts above (e.g., ship.md ends up at 25 KB instead of 15 KB), update the drafts to reflect reality. Never invent numbers; the marketing-grade ship moment dies the moment readers find a number they can disprove with `wc -c`.
-- The JUST_UPGRADED notice fires automatically via existing `gstack-upgrade` detection — no new mechanism required.
-- The README banner placement above the existing Karpathy quote is intentional: persona B (new evaluator) sees the v2 win BEFORE the Karpathy framing, anchoring "this is May 2026's most-current gstack."
+- The JUST_UPGRADED notice fires automatically via existing `paysec-upgrade` detection — no new mechanism required.
+- The README banner placement above the existing Karpathy quote is intentional: persona B (new evaluator) sees the v2 win BEFORE the Karpathy framing, anchoring "this is May 2026's most-current paysec."
 
-## GSTACK REVIEW REPORT
+## PAYSEC REVIEW REPORT
 
 | Review | Trigger | Why | Runs | Status | Findings |
 |---|---|---|---|---|---|
-| CEO Review | `/plan-ceo-review` | Scope & strategy | 1 | CLEAR | SCOPE_EXPANSION mode; 3 expansion proposals (1 accepted: v2 launch positioning; 2 deferred: gstack lite, gstack budget); 11/11 sections reviewed; 0 critical gaps |
-| Codex Review | `/codex review` | Independent 2nd opinion (outside voice) | 1 | issues_found | 12 challenges surfaced; 7 absorbed into plan (#4, #5, #6, #9, #10, #11, #12); 3 surfaced as user-decision (#1 user kept original pick, #7 hybrid split adopted, #8 user accepted codex) |
-| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAR | 3 architectural decisions locked (D1 JSON manifest, D2 sections/*.md.tmpl pipeline, D3 CI cost cap); 4 new failure modes added (all rescued+tested); test plan artifact written; parallelization map produced (3 lanes parallel in v1.45, sequential in v2.0); 0 critical gaps; 0 unresolved decisions |
-| Codex Consult (2nd pass) | `/codex` (consult on eng-review additions) | Independent challenge of D1/D2/D3 + parallelization | 1 | issues_found | 7 additional findings on eng-review additions; 5 absorbed (TemplateContext contract, 3-tier orphan classification, budget cap override path, manifest as passive data not predicates, T7 as integration-flow obviated by sequential); 2 surfaced as user-decision (attention-architecture risk → cathedral parity-eval suite added at "11"; parallelization collapsed to sequential v1.45 per codex critique) |
-| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | not required (no significant UI scope; README/CHANGELOG only) |
-| DX Review | `/plan-devex-review` | Developer experience gaps | 1 | CLEAR | DX POLISH mode; product type = Claude Code Skill; 2 personas tracked equally (existing-user upgrader + new-user evaluator); initial 7.9/10 → 9.0/10 after launch-copy specs added to plan (JUST_UPGRADED notice, CHANGELOG numbers table, README v2 banner all drafted as T15 deliverables); all 8 passes evaluated; skill DX checklist passes |
+| CEO Review | `/plan-business-review` | Scope & strategy | 1 | CLEAR | SCOPE_EXPANSION mode; 3 expansion proposals (1 accepted: v2 launch positioning; 2 deferred: paysec lite, paysec budget); 11/11 sections reviewed; 0 critical gaps |
+| Codex Review | `/codex-second-opinion review` | Independent 2nd opinion (outside voice) | 1 | issues_found | 12 challenges surfaced; 7 absorbed into plan (#4, #5, #6, #9, #10, #11, #12); 3 surfaced as user-decision (#1 user kept original pick, #7 hybrid split adopted, #8 user accepted codex) |
+| Eng Review | `/plan-tech-review` | Architecture & tests (required) | 1 | CLEAR | 3 architectural decisions locked (D1 JSON manifest, D2 sections/*.md.tmpl pipeline, D3 CI cost cap); 4 new failure modes added (all rescued+tested); test plan artifact written; parallelization map produced (3 lanes parallel in v1.45, sequential in v2.0); 0 critical gaps; 0 unresolved decisions |
+| Codex Consult (2nd pass) | `/codex-second-opinion` (consult on eng-review additions) | Independent challenge of D1/D2/D3 + parallelization | 1 | issues_found | 7 additional findings on eng-review additions; 5 absorbed (TemplateContext contract, 3-tier orphan classification, budget cap override path, manifest as passive data not predicates, T7 as integration-flow obviated by sequential); 2 surfaced as user-decision (attention-architecture risk → cathedral parity-eval suite added at "11"; parallelization collapsed to sequential v1.45 per codex critique) |
+| Design Review | `/plan-ux-review` | UI/UX gaps | 0 | — | not required (no significant UI scope; README/CHANGELOG only) |
+| DX Review | `/plan-dx-review` | Developer experience gaps | 1 | CLEAR | DX POLISH mode; product type = Claude Code Skill; 2 personas tracked equally (existing-user upgrader + new-user evaluator); initial 7.9/10 → 9.0/10 after launch-copy specs added to plan (JUST_UPGRADED notice, CHANGELOG numbers table, README v2 banner all drafted as T15 deliverables); all 8 passes evaluated; skill DX checklist passes |
 
 **CODEX:** First pass (CEO): 12 findings, 7 absorbed, 3 cross-model user-decided, 2 baked into tasks. Second pass (post eng-review): 7 findings on the new D1/D2/D3 additions, 5 absorbed, 2 user-decided. Both passes preserved as audit trail. 19 total codex findings → 12 absorbed without friction, 5 user-decided across both passes, 2 quality-of-life refinements baked into tasks. DX review skipped fresh codex pass (3 prior passes already covered structural blind spots; remaining DX work is copy-craft, where codex adds less value than user taste).
 

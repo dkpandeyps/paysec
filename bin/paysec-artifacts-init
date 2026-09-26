@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
-# gstack-artifacts-init — set up ~/.gstack/ as a git repo synced to a private
+# paysec-artifacts-init — set up ~/.paysec/ as a git repo synced to a private
 # git host (GitHub or GitLab) so a remote gbrain can ingest your artifacts
-# (CEO plans, designs, /investigate reports) as a federated source.
+# (CEO plans, designs, /debug-root-cause reports) as a federated source.
 #
-# Replaces gstack-brain-init in v1.27.0.0 (per D4 hard-delete; no compat
-# shim). Existing users are migrated by gstack-upgrade/migrations/v1.27.0.0.sh.
+# Replaces paysec-brain-init in v1.27.0.0 (per D4 hard-delete; no compat
+# shim). Existing users are migrated by paysec-upgrade/migrations/v1.27.0.0.sh.
 #
 # Usage:
-#   gstack-artifacts-init [--remote <url>] [--host github|gitlab|manual]
+#   paysec-artifacts-init [--remote <url>] [--host github|gitlab|manual]
 #                         [--push-protocol auto|https|ssh]
 #                         [--url-form-supported true|false]
 #
 # Interactive by default. Pass --remote to skip the host prompt.
 #
-# Idempotent: safe to re-run. If ~/.gstack/.git already exists AND points at
+# Idempotent: safe to re-run. If ~/.paysec/.git already exists AND points at
 # the same remote, reconfigures drivers/hooks/attributes without clobbering
 # history. If it points at a DIFFERENT remote, refuses.
 #
 # What it does:
-#   1. git init ~/.gstack/  (or verify existing repo points at the right remote)
+#   1. git init ~/.paysec/  (or verify existing repo points at the right remote)
 #   2. Write .gitignore = "*"  (ignore everything; allowlist is explicit)
 #   3. Write .brain-allowlist  (canonical paths to sync)
 #   4. Write .brain-privacy-map.json  (paths → privacy class)
@@ -27,23 +27,23 @@
 #   7. Install .git/hooks/pre-commit  (defense-in-depth secret scan)
 #   8. Provider-aware repo create (gh / glab) OR manual URL paste
 #   9. Initial commit + push
-#   10. Write ~/.gstack-artifacts-remote.txt  (HTTPS URL — canonical form)
+#   10. Write ~/.paysec-artifacts-remote.txt  (HTTPS URL — canonical form)
 #   11. Print "Send this to your brain admin" hookup command
 #
 # Env:
-#   GSTACK_HOME — override ~/.gstack
+#   PAYSEC_HOME — override ~/.paysec
 #   USER — fallback for repo naming if $USER is unset
 
 set -euo pipefail
 
-GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
+PAYSEC_HOME="${PAYSEC_HOME:-$HOME/.paysec}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-URL_BIN="$SCRIPT_DIR/gstack-artifacts-url"
-REMOTE_FILE="$HOME/.gstack-artifacts-remote.txt"
+URL_BIN="$SCRIPT_DIR/paysec-artifacts-url"
+REMOTE_FILE="$HOME/.paysec-artifacts-remote.txt"
 
 # Egress receipt helpers (_receipted_git): fail-open for user-directed
 # git ops against the user's own artifacts remote.
-. "$SCRIPT_DIR/gstack-egress-lib.sh"
+. "$SCRIPT_DIR/paysec-egress-lib.sh"
 
 # remote host for receipt records (github.com etc). Set once PUSH_URL exists.
 _artifacts_host() {
@@ -73,11 +73,11 @@ case "$PUSH_PROTOCOL" in
 esac
 
 # ---- preconditions ----
-mkdir -p "$GSTACK_HOME"
+mkdir -p "$PAYSEC_HOME"
 
 EXISTING_REMOTE=""
-if [ -d "$GSTACK_HOME/.git" ]; then
-  EXISTING_REMOTE=$(git -C "$GSTACK_HOME" remote get-url origin 2>/dev/null || echo "")
+if [ -d "$PAYSEC_HOME/.git" ]; then
+  EXISTING_REMOTE=$(git -C "$PAYSEC_HOME" remote get-url origin 2>/dev/null || echo "")
   if [ -n "$EXISTING_REMOTE" ] && [ -n "$REMOTE_URL" ]; then
     # Compare at the canonical level. The stored remote is SSH (for git push),
     # the input is usually HTTPS — same logical repo, different surface form.
@@ -85,14 +85,14 @@ if [ -d "$GSTACK_HOME/.git" ]; then
     INPUT_HTTPS=$("$URL_BIN" --to https "$REMOTE_URL" 2>/dev/null || echo "$REMOTE_URL")
     if [ "$EXISTING_HTTPS" != "$INPUT_HTTPS" ]; then
       cat >&2 <<EOF
-gstack-artifacts-init: ~/.gstack/ is already a git repo pointing at:
+paysec-artifacts-init: ~/.paysec/ is already a git repo pointing at:
   $EXISTING_REMOTE  (canonical: $EXISTING_HTTPS)
 
 You asked to init with:
   $REMOTE_URL  (canonical: $INPUT_HTTPS)
 
 Refusing to overwrite. To switch remotes, edit manually:
-  git -C ~/.gstack remote set-url origin <url>
+  git -C ~/.paysec remote set-url origin <url>
 EOF
       exit 1
     fi
@@ -112,15 +112,15 @@ if [ -z "$REMOTE_URL" ] && [ -n "$EXISTING_REMOTE" ]; then
   echo "Using existing remote: $REMOTE_URL"
 fi
 
-REPO_NAME="gstack-artifacts-${USER:-$(whoami)}"
-DESCRIPTION="gstack artifacts (CEO plans, designs, reports) — synced from ~/.gstack/projects/"
+REPO_NAME="paysec-artifacts-${USER:-$(whoami)}"
+DESCRIPTION="paysec artifacts (CEO plans, designs, reports) — synced from ~/.paysec/projects/"
 
 # Decide host preference if not pinned by --host.
 if [ -z "$REMOTE_URL" ] && [ -z "$HOST_PREF" ]; then
   if $gh_ok && $glab_ok; then
     cat >&2 <<EOF
 
-gstack-artifacts-init: which git host?
+paysec-artifacts-init: which git host?
   1) GitHub      (gh CLI authenticated)
   2) GitLab      (glab CLI authenticated)
   3) Other / paste a private git URL
@@ -178,7 +178,7 @@ if [ -z "$REMOTE_URL" ]; then
       ;;
     manual)
       echo "(provide a private git URL)"
-      printf "Paste an HTTPS git URL (e.g. https://github.com/you/gstack-artifacts.git): " >&2
+      printf "Paste an HTTPS git URL (e.g. https://github.com/you/paysec-artifacts.git): " >&2
       read -r REMOTE_URL || REMOTE_URL=""
       if [ -z "$REMOTE_URL" ]; then
         echo "No URL provided. Aborting." >&2
@@ -191,8 +191,8 @@ if [ -z "$REMOTE_URL" ]; then
 fi
 
 # ---- canonicalize to HTTPS form ----
-# We store HTTPS in ~/.gstack-artifacts-remote.txt (codex Finding #10:
-# canonical form, derive the configured push form via gstack-artifacts-url).
+# We store HTTPS in ~/.paysec-artifacts-remote.txt (codex Finding #10:
+# canonical form, derive the configured push form via paysec-artifacts-url).
 # Unrecognized forms (local bare paths, file:// URLs, self-hosted gitea, etc.)
 # pass through verbatim so unusual remotes still work.
 CANONICAL_HTTPS=$("$URL_BIN" --to https "$REMOTE_URL" 2>/dev/null || echo "")
@@ -235,7 +235,7 @@ fi
 
 # ---- verify push URL is reachable ----
 echo "Verifying remote connectivity: $PUSH_URL"
-if ! _receipted_git open artifacts-init "$(_artifacts_host)" artifacts-remote-ls-remote "user ran gstack-artifacts-init" \
+if ! _receipted_git open artifacts-init "$(_artifacts_host)" artifacts-remote-ls-remote "user ran paysec-artifacts-init" \
     bash -c 'git ls-remote "$1" >/dev/null 2>&1' _ "$PUSH_URL"; then
   cat >&2 <<EOF
 Remote not reachable via $RESOLVED_PUSH_PROTOCOL: $PUSH_URL
@@ -243,34 +243,34 @@ This could mean:
   - Wrong URL
   - Credentials for $RESOLVED_PUSH_PROTOCOL are not configured for your git host
   - Network issue
-Fix and re-run gstack-artifacts-init, or choose --push-protocol https|ssh.
+Fix and re-run paysec-artifacts-init, or choose --push-protocol https|ssh.
 EOF
   exit 1
 fi
 
 # ---- git init ----
-if [ ! -d "$GSTACK_HOME/.git" ]; then
-  git -C "$GSTACK_HOME" init -q -b main 2>/dev/null || git -C "$GSTACK_HOME" init -q
-  git -C "$GSTACK_HOME" branch -M main 2>/dev/null || true
+if [ ! -d "$PAYSEC_HOME/.git" ]; then
+  git -C "$PAYSEC_HOME" init -q -b main 2>/dev/null || git -C "$PAYSEC_HOME" init -q
+  git -C "$PAYSEC_HOME" branch -M main 2>/dev/null || true
 fi
 
-if [ -z "$(git -C "$GSTACK_HOME" remote 2>/dev/null)" ]; then
-  git -C "$GSTACK_HOME" remote add origin "$PUSH_URL"
+if [ -z "$(git -C "$PAYSEC_HOME" remote 2>/dev/null)" ]; then
+  git -C "$PAYSEC_HOME" remote add origin "$PUSH_URL"
 else
-  git -C "$GSTACK_HOME" remote set-url origin "$PUSH_URL"
+  git -C "$PAYSEC_HOME" remote set-url origin "$PUSH_URL"
 fi
 
 # ---- write canonical files (idempotent) ----
-cat > "$GSTACK_HOME/.gitignore" <<'EOF'
-# gstack-artifacts sync: ignore-everything base. Paths are included explicitly via
-# .brain-allowlist and `git add -f` from gstack-brain-sync. Do not edit.
+cat > "$PAYSEC_HOME/.gitignore" <<'EOF'
+# paysec-artifacts sync: ignore-everything base. Paths are included explicitly via
+# .brain-allowlist and `git add -f` from paysec-brain-sync. Do not edit.
 *
 EOF
 
-cat > "$GSTACK_HOME/.brain-allowlist" <<'EOF'
-# Canonical allowlist of paths that gstack-brain-sync will publish.
+cat > "$PAYSEC_HOME/.brain-allowlist" <<'EOF'
+# Canonical allowlist of paths that paysec-brain-sync will publish.
 # One glob per line. Anything not matching stays local.
-# Do not edit directly; managed by gstack-artifacts-init. User additions go
+# Do not edit directly; managed by paysec-artifacts-init. User additions go
 # below the marker and survive re-init.
 projects/*/learnings.jsonl
 projects/*/*-reviews.jsonl
@@ -278,8 +278,8 @@ projects/*/ceo-plans/*.md
 projects/*/ceo-plans/*/*.md
 projects/*/designs/*.md
 projects/*/designs/*/*.md
-# Project-root design / test-plan artifacts written by /office-hours,
-# /plan-eng-review, and /autoplan. The skills emit
+# Project-root design / test-plan artifacts written by /idea-review,
+# /plan-tech-review, and /auto-plan-review. The skills emit
 # `{user}-{branch}-design-{datetime}.md`,
 # `{user}-{branch}-test-plan-{datetime}.md`, and
 # `{user}-{branch}-eng-review-test-plan-{datetime}.md` at the project
@@ -291,7 +291,7 @@ projects/*/*-design-*.md
 projects/*/*-test-plan-*.md
 projects/*/*-eng-review-test-plan-*.md
 projects/*/timeline.jsonl
-# The decision store. gstack-decision-log enqueues projects/<slug>/decisions.jsonl
+# The decision store. paysec-decision-log enqueues projects/<slug>/decisions.jsonl
 # after EVERY write, but no glob above matched it, so compute_paths_to_stage rejected
 # all of them at its "must match at least one allowlist glob" check -- a writer
 # enqueueing a path the syncer is guaranteed to drop. Without these the durable
@@ -304,7 +304,7 @@ developer-profile.json
 builder-journey.md
 builder-profile.jsonl
 # Transcripts staged in remote-http MCP mode (per plan D11 split-engine).
-# gstack-memory-ingest persists per-run dirs here when local gbrain import
+# paysec-memory-ingest persists per-run dirs here when local gbrain import
 # is skipped; brain admin pulls + indexes into the remote brain.
 transcripts/run-*/*.md
 transcripts/run-*/**/*.md
@@ -315,7 +315,7 @@ transcripts/run-*/**/*.md
 # ---- USER ADDITIONS BELOW ---- (survives re-init; above is managed)
 EOF
 
-cat > "$GSTACK_HOME/.brain-privacy-map.json" <<'EOF'
+cat > "$PAYSEC_HOME/.brain-privacy-map.json" <<'EOF'
 [
   {"pattern": "projects/*/learnings.jsonl", "class": "artifact"},
   {"pattern": "projects/*/*-reviews.jsonl", "class": "artifact"},
@@ -339,8 +339,8 @@ cat > "$GSTACK_HOME/.brain-privacy-map.json" <<'EOF'
 ]
 EOF
 
-cat > "$GSTACK_HOME/.gitattributes" <<'EOF'
-# gstack-artifacts: merge drivers for cross-machine sync conflicts.
+cat > "$PAYSEC_HOME/.gitattributes" <<'EOF'
+# paysec-artifacts: merge drivers for cross-machine sync conflicts.
 *.jsonl merge=jsonl-append
 retros/*.md merge=union
 projects/*/designs/**/*.md merge=union
@@ -350,18 +350,18 @@ projects/*/*-test-plan-*.md merge=union
 EOF
 
 # ---- register merge drivers in local git config ----
-git -C "$GSTACK_HOME" config merge.jsonl-append.driver "$SCRIPT_DIR/gstack-jsonl-merge %O %A %B"
-git -C "$GSTACK_HOME" config merge.jsonl-append.name "gstack JSONL append-only merger"
-git -C "$GSTACK_HOME" config merge.union.driver "cat %A %B > %A.merged && mv %A.merged %A"
-git -C "$GSTACK_HOME" config merge.union.name "union concat"
+git -C "$PAYSEC_HOME" config merge.jsonl-append.driver "$SCRIPT_DIR/paysec-jsonl-merge %O %A %B"
+git -C "$PAYSEC_HOME" config merge.jsonl-append.name "paysec JSONL append-only merger"
+git -C "$PAYSEC_HOME" config merge.union.driver "cat %A %B > %A.merged && mv %A.merged %A"
+git -C "$PAYSEC_HOME" config merge.union.name "union concat"
 
 # ---- install pre-commit hook (defense-in-depth) ----
-HOOK="$GSTACK_HOME/.git/hooks/pre-commit"
+HOOK="$PAYSEC_HOME/.git/hooks/pre-commit"
 mkdir -p "$(dirname "$HOOK")"
 cat > "$HOOK" <<'HOOK_EOF'
 #!/usr/bin/env bash
-# gstack-artifacts pre-commit hook — secret-scan defense-in-depth.
-# The primary scanner runs inside gstack-brain-sync BEFORE staging. This hook
+# paysec-artifacts pre-commit hook — secret-scan defense-in-depth.
+# The primary scanner runs inside paysec-brain-sync BEFORE staging. This hook
 # catches any manual `git commit` a user might accidentally run against the
 # artifacts repo.
 set -uo pipefail
@@ -385,9 +385,9 @@ patterns = [
 ]
 for name, rx in patterns:
     if rx.search(out):
-        sys.stderr.write(f'gstack-artifacts pre-commit: refusing commit — {name} detected in staged diff.\n')
+        sys.stderr.write(f'paysec-artifacts pre-commit: refusing commit — {name} detected in staged diff.\n')
         sys.stderr.write('Either edit the offending file, or if intentional, run:\n')
-        sys.stderr.write('  gstack-brain-sync --skip-file <path>  (to permanently exclude)\n')
+        sys.stderr.write('  paysec-brain-sync --skip-file <path>  (to permanently exclude)\n')
         sys.exit(1)
 sys.exit(0)
 "
@@ -395,35 +395,35 @@ HOOK_EOF
 chmod +x "$HOOK"
 
 # ---- initial commit (idempotent) ----
-cd "$GSTACK_HOME"
+cd "$PAYSEC_HOME"
 git add -f .gitignore .brain-allowlist .brain-privacy-map.json .gitattributes
 if git rev-parse HEAD >/dev/null 2>&1; then
   if ! git diff --cached --quiet 2>/dev/null; then
-    git -c user.email="gstack@localhost" -c user.name="gstack-artifacts-init" \
-        commit -q -m "chore: gstack-artifacts-init (refresh sync config)"
+    git -c user.email="paysec@localhost" -c user.name="paysec-artifacts-init" \
+        commit -q -m "chore: paysec-artifacts-init (refresh sync config)"
   fi
 else
-  git -c user.email="gstack@localhost" -c user.name="gstack-artifacts-init" \
-      commit -q -m "chore: gstack-artifacts-init"
+  git -c user.email="paysec@localhost" -c user.name="paysec-artifacts-init" \
+      commit -q -m "chore: paysec-artifacts-init"
 fi
 
 # ---- initial push ----
-if ! _receipted_git open artifacts-init "$(_artifacts_host)" artifacts-initial-push "user ran gstack-artifacts-init" \
+if ! _receipted_git open artifacts-init "$(_artifacts_host)" artifacts-initial-push "user ran paysec-artifacts-init" \
     bash -c 'git push -q -u origin main 2>/dev/null'; then
   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-  if _receipted_git open artifacts-init "$(_artifacts_host)" artifacts-fetch "user ran gstack-artifacts-init" \
+  if _receipted_git open artifacts-init "$(_artifacts_host)" artifacts-fetch "user ran paysec-artifacts-init" \
       bash -c 'git fetch origin 2>/dev/null' \
-    && _receipted_git open artifacts-init "$(_artifacts_host)" artifacts-pull "user ran gstack-artifacts-init" \
+    && _receipted_git open artifacts-init "$(_artifacts_host)" artifacts-pull "user ran paysec-artifacts-init" \
       bash -c 'git pull --ff-only origin "$1" 2>/dev/null' _ "$CURRENT_BRANCH"; then
-    _receipted_git open artifacts-init "$(_artifacts_host)" artifacts-initial-push "user ran gstack-artifacts-init" \
+    _receipted_git open artifacts-init "$(_artifacts_host)" artifacts-initial-push "user ran paysec-artifacts-init" \
       git push -q -u origin "$CURRENT_BRANCH" || {
       echo "Push to $PUSH_URL failed. The remote may have divergent content." >&2
-      echo "Try: cd ~/.gstack && git pull --rebase origin $CURRENT_BRANCH && git push origin $CURRENT_BRANCH" >&2
+      echo "Try: cd ~/.paysec && git pull --rebase origin $CURRENT_BRANCH && git push origin $CURRENT_BRANCH" >&2
       exit 1
     }
   else
     echo "Push to $PUSH_URL failed and fetch/merge didn't help." >&2
-    echo "Manual recovery: cd ~/.gstack && git status, then push once conflicts are resolved." >&2
+    echo "Manual recovery: cd ~/.paysec && git status, then push once conflicts are resolved." >&2
     exit 1
   fi
 fi
@@ -434,12 +434,12 @@ chmod 600 "$REMOTE_FILE"
 
 # ---- print brain-admin hookup command (always print, never auto-execute;
 #      codex Finding #3) ----
-SOURCE_ID="gstack-artifacts-${USER:-$(whoami)}"
+SOURCE_ID="paysec-artifacts-${USER:-$(whoami)}"
 cat <<EOF
 
-gstack-artifacts-init complete.
-Repo:    $GSTACK_HOME (git)
-Remote:  $CANONICAL_HTTPS  (canonical form, in ~/.gstack-artifacts-remote.txt)
+paysec-artifacts-init complete.
+Repo:    $PAYSEC_HOME (git)
+Remote:  $CANONICAL_HTTPS  (canonical form, in ~/.paysec-artifacts-remote.txt)
 Push:    $PUSH_URL  ($RESOLVED_PUSH_PROTOCOL form for git push)
 
 EOF
@@ -476,5 +476,5 @@ After that, your CEO plans / designs / reports become searchable via
 ─────────────────────────────────────────────────────────────────────────
 
 New machine? Put a copy of $REMOTE_FILE in that machine's home directory,
-then run: gstack-artifacts-init  (it'll detect the remote and re-init).
+then run: paysec-artifacts-init  (it'll detect the remote and re-init).
 EOF

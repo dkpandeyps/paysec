@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# check-freeze.sh — PreToolUse hook for /freeze skill
+# check-freeze.sh — PreToolUse hook for /lock-edits skill
 # Reads JSON from stdin, checks if file_path is within the freeze boundary.
 # Returns a PreToolUse hookSpecificOutput with permissionDecision "deny" to block,
 # or {} to allow. The decision MUST be nested under hookSpecificOutput — Claude
@@ -8,7 +8,7 @@
 # Polarity: freeze is a DENY-tier hook, so an unreadable payload DENIES
 # (fail closed). A payload that parses but has no file_path is a non-file
 # tool — allow. This is the opposite edge-handling from careful's ask-tier
-# and intentionally so: /guard runs both, and a boundary that fails open is
+# and intentionally so: /full-guard runs both, and a boundary that fails open is
 # not a boundary.
 set -euo pipefail
 
@@ -19,20 +19,20 @@ INPUT=$(cat)
 # freeze previously carried its own grep-first extractor which truncated at
 # escaped quotes and failed OPEN; the shared file kills that drift class.
 _HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=careful/bin/hook-extract.sh
+# shellcheck source=safe-mode/bin/hook-extract.sh
 # Freeze is deny-tier: if its own helpers are missing/broken (partial install,
 # mid-upgrade state), the boundary must fail CLOSED — inline JSON, since the
 # encoder we would normally use lives in the file that just failed to load.
 # NOTE: bash treats `.` on a MISSING file as fatal in non-interactive shells
 # (an if-guard cannot catch it) — the existence check must come first.
-_HOOK_HELPER="$_HOOK_DIR/../../careful/bin/hook-extract.sh"
+_HOOK_HELPER="$_HOOK_DIR/../../safe-mode/bin/hook-extract.sh"
 if [ ! -f "$_HOOK_HELPER" ] || ! . "$_HOOK_HELPER" 2>/dev/null; then
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"[freeze] Hook helpers unavailable (broken install?) - blocked, fail closed. Reinstall gstack or run /unfreeze."}}\n'
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"[freeze] Hook helpers unavailable (broken install?) - blocked, fail closed. Reinstall paysec or run /unlock-edits."}}\n'
   exit 0
 fi
 
 # Locate the freeze directory state file
-STATE_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}"
+STATE_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.paysec}"
 FREEZE_FILE="$STATE_DIR/freeze-dir.txt"
 
 # If no freeze file exists, allow everything (not yet configured)
@@ -61,14 +61,14 @@ fi
 
 # Extract file_path from tool_input with the shared real-JSON parser.
 set +e
-FILE_PATH=$(gstack_hook_extract_field "$INPUT" file_path)
+FILE_PATH=$(paysec_hook_extract_field "$INPUT" file_path)
 EXTRACT_RC=$?
 set -e
 
 # Unparseable payload (or no parser available): DENY. A boundary hook that
 # allows what it cannot read is not a boundary.
 if [ "$EXTRACT_RC" -ne 0 ] && [ -n "$INPUT" ]; then
-  gstack_hook_decision deny "[freeze] Could not parse the tool payload to check the freeze boundary. Blocked (fail closed). Freeze boundary: $FREEZE_DIR"
+  paysec_hook_decision deny "[freeze] Could not parse the tool payload to check the freeze boundary. Blocked (fail closed). Freeze boundary: $FREEZE_DIR"
   exit 0
 fi
 
@@ -123,12 +123,12 @@ case "$FILE_PATH" in
     ;;
   *)
     # Outside freeze boundary — deny
-    # Log hook fire event (shared helper respects GSTACK_HOME)
-    gstack_hook_log_fire freeze boundary_deny
+    # Log hook fire event (shared helper respects PAYSEC_HOME)
+    paysec_hook_log_fire freeze boundary_deny
 
     # The reason is JSON-encoded by the shared helper. Never interpolate paths
     # into hand-built JSON: a path containing a quote or newline produced
     # malformed JSON here, and the deny silently no-oped.
-    gstack_hook_decision deny "[freeze] Blocked: $FILE_PATH is outside the freeze boundary ($FREEZE_DIR). Only edits within the frozen directory are allowed."
+    paysec_hook_decision deny "[freeze] Blocked: $FILE_PATH is outside the freeze boundary ($FREEZE_DIR). Only edits within the frozen directory are allowed."
     ;;
 esac

@@ -7,7 +7,7 @@ Review the `git diff origin/main` output for the issues listed below. Be specifi
 **Two-pass review:**
 - **Pass 1 (CRITICAL):** Run SQL & Data Safety, Race Conditions, LLM Output Trust Boundary, Shell Injection, and Enum Completeness first. Highest severity.
 - **Pass 2 (INFORMATIONAL):** Run remaining categories below. Lower severity but still actioned.
-- **Specialist categories (handled by parallel subagents, NOT this checklist):** Test Gaps, Dead Code, Magic Numbers, Conditional Side Effects, Performance & Bundle Impact, Crypto & Entropy. See `review/specialists/` for these.
+- **Specialist categories (handled by parallel subagents, NOT this checklist):** Test Gaps, Dead Code, Magic Numbers, Conditional Side Effects, Performance & Bundle Impact, Crypto & Entropy. See `pr-review/specialists/` for these.
 
 All findings get action via Fix-First Review: obvious mechanical fixes are applied automatically,
 genuinely ambiguous issues are batched into a single user question.
@@ -88,7 +88,7 @@ To do this: use Grep to find all references to the sibling values (e.g., grep fo
 
 #### Completeness Gaps
 - Shortcut implementations where the complete version would cost <30 minutes CC time (e.g., partial enum handling, incomplete error paths, missing edge cases that are straightforward to add)
-- Options presented with only human-team effort estimates — should show both human and CC+gstack time
+- Options presented with only human-team effort estimates — should show both human and CC+paysec time
 - Test coverage gaps where adding the missing tests is a "lake" not an "ocean" (e.g., missing negative-path tests, missing edge case tests that mirror happy-path structure)
 - Features implemented at 80-90% when 100% is achievable with modest additional code
 
@@ -143,7 +143,7 @@ lean toward AUTO-FIX (they're more mechanical).
 
 ## Fix-First Heuristic
 
-This heuristic is referenced by both `/review` and `/ship`. It determines whether
+This heuristic is referenced by both `/pr-review` and `/ship-pr`. It determines whether
 the agent auto-fixes a finding or asks the user.
 
 ```

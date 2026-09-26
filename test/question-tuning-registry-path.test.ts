@@ -3,13 +3,13 @@
  *
  * The preamble told agents to choose question_id from a RELATIVE
  * `scripts/question-registry.ts` — which never resolves from a user's
- * project cwd (the file lives only under the gstack install root). The
+ * project cwd (the file lives only under the paysec install root). The
  * lookup silently failed and agents fabricated ids via the {skill}-{slug}
- * fallback (one observed /plan-eng-review session: 21/21 unregistered).
+ * fallback (one observed /plan-tech-review session: 21/21 unregistered).
  *
  * The resolver now interpolates the installed path the same way ${bin}
  * paths are interpolated: ctx.paths.skillRoot (a `~`-rooted path on Claude,
- * $GSTACK_ROOT on env-var hosts).
+ * $PAYSEC_ROOT on env-var hosts).
  */
 import { describe, test, expect } from 'bun:test';
 import * as fs from 'fs';
@@ -33,12 +33,12 @@ function makeCtx(host: 'claude' | 'codex'): TemplateContext {
 describe('question-tuning registry path is absolute (#2489)', () => {
   test('claude host renders the installed registry path', () => {
     const out = generateQuestionTuning(makeCtx('claude'));
-    expect(out).toContain('`~/.claude/skills/gstack/scripts/question-registry.ts`');
+    expect(out).toContain('`~/.claude/skills/paysec/scripts/question-registry.ts`');
   });
 
-  test('env-var host renders $GSTACK_ROOT-anchored registry path', () => {
+  test('env-var host renders $PAYSEC_ROOT-anchored registry path', () => {
     const out = generateQuestionTuning(makeCtx('codex'));
-    expect(out).toContain('`$GSTACK_ROOT/scripts/question-registry.ts`');
+    expect(out).toContain('`$PAYSEC_ROOT/scripts/question-registry.ts`');
   });
 
   test('no host renders a bare relative registry path', () => {
@@ -55,8 +55,8 @@ describe('question-tuning registry path is absolute (#2489)', () => {
   });
 
   test('rendered SKILL.md carries the absolute path', () => {
-    const rendered = fs.readFileSync(path.join(ROOT, 'plan-eng-review', 'SKILL.md'), 'utf-8');
-    expect(rendered).toContain('~/.claude/skills/gstack/scripts/question-registry.ts');
+    const rendered = fs.readFileSync(path.join(ROOT, 'plan-tech-review', 'SKILL.md'), 'utf-8');
+    expect(rendered).toContain('~/.claude/skills/paysec/scripts/question-registry.ts');
     expect(rendered).not.toContain('`scripts/question-registry.ts`');
   });
 });

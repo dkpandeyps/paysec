@@ -13,7 +13,7 @@ the steps to expose your iPhone to remote agents safely so they can run iOS QA o
   capability tiers).
 - **Auth:** Tailscale identity validation via the local `tailscaled` socket
   (`/var/run/tailscale.sock` LocalAPI WhoIs). Allowlist file at
-  `~/.gstack/ios-qa-allowlist.json` is the single source of truth for who can
+  `~/.paysec/ios-qa-allowlist.json` is the single source of truth for who can
   do what.
 
 ## Step 1: Install and run Tailscale
@@ -79,7 +79,7 @@ mint server-side for them:
 
 ```bash
 # Server-side mint (owner-only, runs locally on the Mac with the device):
-gstack-ios-qa-mint --remote ci@example.com --capability mutate --ttl 1h
+paysec-ios-qa-mint --remote ci@example.com --capability mutate --ttl 1h
 
 # Self-service mint (agent over tailnet):
 curl -X POST http://<mac-tailnet-ip>:9999/auth/mint \
@@ -122,14 +122,14 @@ restrict the tailnet ACL to limit who can even *reach* the daemon port.
 ## Step 5: Audit trail
 
 Every authenticated mutating request through the tailnet listener writes a
-row to `~/.gstack/security/ios-qa-audit.jsonl`:
+row to `~/.paysec/security/ios-qa-audit.jsonl`:
 
 ```jsonl
 {"ts":"2026-05-18T14:23:00Z","identity":"ci@example.com","device_udid":"00008101-XXXX","endpoint":"/tap","session_id":"abc...","capability":"interact","request_id":"req_001","status":200}
 ```
 
 Rejections (no token, expired token, capability-insufficient, identity not
-allowlisted, rate limit hit) write to `~/.gstack/security/attempts.jsonl`.
+allowlisted, rate limit hit) write to `~/.paysec/security/attempts.jsonl`.
 
 ## Rate limits
 
@@ -151,7 +151,7 @@ allowlisted, rate limit hit) write to `~/.gstack/security/attempts.jsonl`.
 | Symptom | Cause | Action |
 |---|---|---|
 | Daemon refuses to open tailnet listener | `/var/run/tailscale.sock` missing or permission-denied | Install Tailscale; verify `tailscale status` works as the user running daemon |
-| `403 identity_not_allowed` | identity missing from allowlist | Owner mint: `gstack-ios-qa-mint --remote <identity>` |
+| `403 identity_not_allowed` | identity missing from allowlist | Owner mint: `paysec-ios-qa-mint --remote <identity>` |
 | `403 capability_insufficient` | token tier below endpoint requirement | Owner mint with higher `--capability` tier |
 | `429 rate_limited` | >10 mints/min from one identity | Wait 60s; investigate why the agent is re-minting so often |
 | `409 schema_mismatch` on `/state/restore` | snapshot from older app build | Discard the snapshot; re-capture from current app build |

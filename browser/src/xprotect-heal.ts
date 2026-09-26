@@ -11,9 +11,9 @@
  *   1. Classify the launch failure against the XProtect kill signature
  *      (positive AND negative fixtures under test, F9).
  *   2. Clear com.apple.quarantine on the Playwright cache bundles ONLY —
- *      a GSTACK_CHROMIUM_PATH bundle belongs to the wrapper/embedder and is
+ *      a PAYSEC_CHROMIUM_PATH bundle belongs to the wrapper/embedder and is
  *      never touched (same scope contract as probePoisonedChromiumBundle).
- *   3. Force-reinstall Chromium FROM THE GSTACK INSTALL ROOT (ENG-OV3: the
+ *   3. Force-reinstall Chromium FROM THE PAYSEC INSTALL ROOT (ENG-OV3: the
  *      root whose node_modules pins the same playwright-core our compiled
  *      binary embeds — a cwd-resolved `bunx playwright install` would fetch
  *      the LATEST playwright's revision, which the embedded playwright-core
@@ -125,28 +125,28 @@ export function expectedChromiumRevision(executablePath: string): string | null 
 }
 
 /**
- * Find the gstack install root whose node_modules pins the SAME
+ * Find the paysec install root whose node_modules pins the SAME
  * playwright-core revision our binary embeds (ENG-OV3). Candidates:
  * the dev checkout (source runs) and the global ./setup install. A candidate
  * qualifies only when its playwright-core/browsers.json chromium revision
  * matches — running the reinstall anywhere else heals to the WRONG revision.
  */
-export function findGstackInstallRoot(
+export function findPaysecInstallRoot(
   expectedRevision: string,
   candidates?: string[],
 ): string | null {
   const roots = candidates ?? [
-    // Dev checkout: browse/src/ → repo root. In the compiled binary
+    // Dev checkout: browser/src/ → repo root. In the compiled binary
     // __dirname points into the bunfs bundle and won't exist on disk,
     // so this candidate simply fails the existsSync below.
     path.resolve(__dirname, '..', '..'),
     // Global install root (the ./setup target). os.homedir() rather than
     // process.env.HOME: with HOME unset the env form produced the RELATIVE
-    // path '.claude/skills/gstack' under the daemon's cwd — often an
+    // path '.claude/skills/paysec' under the daemon's cwd — often an
     // untrusted repo being QA'd, whose planted node_modules would then be
     // where the heal runs the playwright install (repo-controlled code
     // execution). The absolute-or-skip guard below backstops the class.
-    path.join(os.homedir(), '.claude', 'skills', 'gstack'),
+    path.join(os.homedir(), '.claude', 'skills', 'paysec'),
   ];
   for (const root of roots) {
     if (!path.isAbsolute(root)) continue;
@@ -179,7 +179,7 @@ function defaultRunXattr(target: string): number | null {
  * Playwright cache (the headless shell is what XProtect actually killed in
  * #2554; the headed bundle rides along so a later headed launch doesn't
  * re-trip). Scope contract mirrors probePoisonedChromiumBundle: NEVER act
- * on a GSTACK_CHROMIUM_PATH bundle — that belongs to the wrapper/embedder.
+ * on a PAYSEC_CHROMIUM_PATH bundle — that belongs to the wrapper/embedder.
  * Best-effort: xattr failures are logged, never thrown (the forced
  * reinstall below is the real heal).
  */
@@ -187,7 +187,7 @@ export function clearQuarantineOnPlaywrightCache(
   executablePath: string,
   runXattr: (target: string) => number | null = defaultRunXattr,
 ): boolean {
-  const customPath = process.env.GSTACK_CHROMIUM_PATH;
+  const customPath = process.env.PAYSEC_CHROMIUM_PATH;
   if (customPath && path.resolve(executablePath) === path.resolve(customPath)) {
     logHeal('quarantine-clear-skipped', { reason: 'custom-chromium-path' });
     return false;
@@ -238,7 +238,7 @@ export interface ReinstallResult {
 }
 
 /**
- * Run `bunx playwright install --force chromium` from the gstack install
+ * Run `bunx playwright install --force chromium` from the paysec install
  * root, bounded at ~120s. The child gets its own process group (detached)
  * so a timeout kills the WHOLE tree (bunx → playwright CLI → download
  * workers), never leaving a zombie download saturating the network.
@@ -336,7 +336,7 @@ export async function maybeHealXProtectKill(
   const message = err instanceof Error ? err.message : String(err);
   if (!isXProtectKillSignature(message, deps.platform ?? process.platform)) return false;
   if (opts.usesCustomExecutable) {
-    // A GSTACK_CHROMIUM_PATH bundle belongs to the wrapper/embedder — never
+    // A PAYSEC_CHROMIUM_PATH bundle belongs to the wrapper/embedder — never
     // quarantine-clear or reinstall over it (probePoisonedChromiumBundle's
     // scope contract).
     logHeal('skip', { reason: 'custom-executable' });
@@ -357,7 +357,7 @@ export async function maybeHealXProtectKill(
     logHeal('reinstall-skipped', { reason: 'no-revision-in-path', execPath });
     return false;
   }
-  const root = (deps.installRoot ?? findGstackInstallRoot)(revision);
+  const root = (deps.installRoot ?? findPaysecInstallRoot)(revision);
   if (!root) {
     // No install root pins our revision — a cwd-resolved install would heal
     // to the WRONG revision (ENG-OV3), so surface guidance instead.
@@ -393,8 +393,8 @@ export function buildXProtectGuidance(originalMessage: string): string {
     `${originalMessage}\n` +
     '[browse] This launch failure matches the macOS XProtect kill signature (#2554): ' +
     "the OS killed Playwright's Chromium at spawn. Automatic self-heal did not complete. " +
-    'Fix manually: run `bunx playwright install chromium` from your gstack install ' +
-    '(the directory whose node_modules pins playwright — ~/.claude/skills/gstack for ' +
+    'Fix manually: run `bunx playwright install chromium` from your paysec install ' +
+    '(the directory whose node_modules pins playwright — ~/.claude/skills/paysec for ' +
     'global installs), then retry.'
   );
 }

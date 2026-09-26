@@ -3,7 +3,7 @@
  * test-free-shards — enumerate, shard, curate, and run the free test suite.
  *
  * Four jobs:
- *   1. Enumeration. Walk `browse/test/`, `test/`, `make-pdf/test/` and return
+ *   1. Enumeration. Walk `browser/test/`, `test/`, `md-to-pdf/test/` and return
  *      every `*.test.{ts,tsx,js,jsx,mjs,cjs}` that isn't a paid-eval test.
  *   2. Sharding. Stable-hash assign each test to one of N shards. Used by CI
  *      to parallelize the free suite when needed.
@@ -97,14 +97,14 @@ const ROOT = path.resolve(import.meta.dir, '..');
 // source of truth for free-suite roots: package.json's `test` script routes
 // through this runner rather than passing its own directory globs.
 export const TEST_ROOTS = [
-  'browse/test',
+  'browser/test',
   'test',
-  'make-pdf/test',
+  'md-to-pdf/test',
   'design/test',
   // v1.65 orphan wire-in (decision D3a): these ran under NO script or CI —
   // written coverage that caught nothing. All were green on arrival.
-  'ios-qa/daemon/test',
-  'ios-qa/scripts',
+  'ios-device-qa/daemon/test',
+  'ios-device-qa/scripts',
   'browser-skills',
 ] as const;
 const TEST_FILE_REGEX = /\.test\.(?:[cm]?[jt]s|tsx|jsx)$/;
@@ -162,7 +162,7 @@ export const KNOWN_WINDOWS_INCOMPATIBLE: Array<{ file: string; reason: string }>
     reason: 'asserts "claude" binary on PATH (only true when running inside Claude Code, not on bare CI runner)',
   },
   {
-    file: 'browse/test/findport.test.ts',
+    file: 'browser/test/findport.test.ts',
     reason: 'asserts Bun.serve.stop() is fire-and-forget — Bun behavior differs on Windows for this polyfill',
   },
   // First full run of the expanded lane (v1.66, 13 → ~258 files) surfaced
@@ -186,7 +186,7 @@ export const KNOWN_WINDOWS_INCOMPATIBLE: Array<{ file: string; reason: string }>
     reason: 'runs a bash migration script + jq against a scaffolded git state — POSIX toolchain paths break under cmd spawn',
   },
   {
-    file: 'test/gstack-decision-semantic.test.ts',
+    file: 'test/paysec-decision-semantic.test.ts',
     reason: 'installs a fake gbrain SHEBANG SHIM on PATH; Windows spawn cannot exec shebang scripts',
   },
   {
@@ -194,7 +194,7 @@ export const KNOWN_WINDOWS_INCOMPATIBLE: Array<{ file: string; reason: string }>
     reason: 'spawns the PostToolUse hook script (bash shebang) directly; Windows spawn cannot exec it',
   },
   {
-    file: 'browse/test/browser-skills-e2e.test.ts',
+    file: 'browser/test/browser-skills-e2e.test.ts',
     reason: 'asserts forward-slash tier paths (<repo>/browser-skills/) that resolve with backslashes on Windows',
   },
   {
@@ -207,7 +207,7 @@ export const KNOWN_WINDOWS_INCOMPATIBLE: Array<{ file: string; reason: string }>
     reason: 'census walk throws at module load on Windows (skill-census.ts:63) — the skills-tree symlink layout needs Developer Mode that CI runners lack',
   },
   {
-    file: 'browse/test/browser-manager-unit.test.ts',
+    file: 'browser/test/browser-manager-unit.test.ts',
     reason: 'wedges the shard to its wall deadline on windows-latest (in-flight at kill); needs a Windows repro to diagnose — macOS + Linux lanes cover the file',
   },
   // Round-3 census (PR #2593 run 31919871680): the round-2 wedge had been
@@ -215,7 +215,7 @@ export const KNOWN_WINDOWS_INCOMPATIBLE: Array<{ file: string; reason: string }>
   // All the same POSIX-environment classes: PID/cmdline identity probing,
   // bash scripts as the subject under test, env-scrubbed child spawns.
   {
-    file: 'browse/test/server-embedder-terminal-port.test.ts',
+    file: 'browser/test/server-embedder-terminal-port.test.ts',
     reason: 'identity-based terminal-agent kill probes PID/cmdline with POSIX semantics; teardown asserts fail on windows-latest',
   },
   {
@@ -224,7 +224,7 @@ export const KNOWN_WINDOWS_INCOMPATIBLE: Array<{ file: string; reason: string }>
   },
   {
     file: 'test/context-save-hardening.test.ts',
-    reason: 'bash context-save/migration scripts (HOME-unset semantics, random-suffix path) are the subject under test',
+    reason: 'bash save-context/migration scripts (HOME-unset semantics, random-suffix path) are the subject under test',
   },
   {
     file: 'test/eval-list-cli.test.ts',
@@ -245,11 +245,11 @@ export const KNOWN_WINDOWS_INCOMPATIBLE: Array<{ file: string; reason: string }>
   // Round-4 census (PR #2593 run 31920052810): unhandled errors with no
   // (fail) lines — attributed statically (the lane had no log artifact yet).
   {
-    file: 'browse/test/browser-skill-commands.test.ts',
+    file: 'browser/test/browser-skill-commands.test.ts',
     reason: 'spawnSkill spawns bun with a constructed env — bun resolution fails under Windows spawn (unhandled, no (fail) line)',
   },
   {
-    file: 'browse/test/security-audit-r2.test.ts',
+    file: 'browser/test/security-audit-r2.test.ts',
     reason: 'symlink-attack fixtures (evil-link) need Developer Mode CI runners lack; expect(toThrow) fires unhandled on Windows',
   },
 ];
@@ -272,7 +272,7 @@ const KNOWN_WINDOWS_SAFE: Array<{ file: string; reason: string }> = [
   {
     file: 'test/uninstall-windows-copies.test.ts',
     // Trips the "spawns bin/ shebang script" pattern via the
-    // path.join(ROOT, 'bin', 'gstack-uninstall') constant, but the script is
+    // path.join(ROOT, 'bin', 'paysec-uninstall') constant, but the script is
     // always spawned through spawnSync('bash', [UNINSTALL, ...]). This file
     // carries the #2563 Windows real-dir-copy uninstall coverage — the bug
     // ONLY reproduces on the copy install shape windows-latest exercises.
@@ -280,7 +280,7 @@ const KNOWN_WINDOWS_SAFE: Array<{ file: string; reason: string }> = [
     reason: 'bin/ hit is a bash-spawned script path; #2563 real-dir uninstall coverage must run on windows-latest',
   },
   {
-    file: 'browse/test/file-permissions.test.ts',
+    file: 'browser/test/file-permissions.test.ts',
     // Trips the POSIX-mode-bitmask pattern, but every `mode & 0o777` assertion
     // is platform-guarded (win32 returns early / takes the icacls branch).
     // This file carries the win32-only icacls-by-SID regression tests, which
@@ -290,7 +290,7 @@ const KNOWN_WINDOWS_SAFE: Array<{ file: string; reason: string }> = [
     reason: 'mode-bitmask hits are POSIX-branch only; win32-only ACL regression tests must run on windows-latest',
   },
   {
-    file: 'browse/test/terminal-agent-owner-watchdog.test.ts',
+    file: 'browser/test/terminal-agent-owner-watchdog.test.ts',
     // Trips the spawn(['bun','run',...]) pattern, whose reason is the
     // Playwright-bound browse server. This test spawns terminal-agent.ts,
     // which imports only fs/path/crypto + local helpers (no Playwright, no
@@ -343,7 +343,7 @@ export const RESERVED_CPUS = 2;
  * should anyone re-attempt it on a newer Bun.
  */
 export const WORKER_HOSTILE: Record<string, string> = {
-  'browse/test/security-live-playwright.test.ts':
+  'browser/test/security-live-playwright.test.ts':
     'Bun 1.3.13 segfaults running this file in a --parallel worker ("panic: '
     + 'Segmentation fault ... a bug in Bun"), and the crashed-worker retry then '
     + 'wedges the whole invocation past the wall clock. Passes serially.',
@@ -373,7 +373,7 @@ export const WORKER_HOSTILE: Record<string, string> = {
  */
 export const TREE_MUTATING: Record<string, string> = {
   'test/catalog-mode-full.test.ts': 'regenerates ALL SKILL.md in full-catalog mode, then restores',
-  'test/spec-template-sync.test.ts': 'regenerates all SKILL.md in place to compare spec/SKILL.md',
+  'test/spec-template-sync.test.ts': 'regenerates all SKILL.md in place to compare write-spec/SKILL.md',
   'test/gen-skill-docs-idempotency.test.ts': 'regenerates all SKILL.md twice to prove idempotency',
   'test/gen-skill-docs.test.ts': 'regenerates .agents/ (codex host) golden artifacts in place',
   'test/skill-validation.test.ts': 'regenerates .agents/ (codex host) artifacts in place (3 sites)',
@@ -524,7 +524,7 @@ export interface BuildShardArgsOptions {
 export function buildShardArgs(files: string[], options: BuildShardArgsOptions = {}): string[] {
   // Exact absolute selectors: bun treats positional test paths as substring
   // filters, so a relative `test/x.test.ts` would ALSO select
-  // `browse/test/x.test.ts` — shard bleed that double-runs files.
+  // `browser/test/x.test.ts` — shard bleed that double-runs files.
   const selectors = exactTestFileSelectors(files, options.rootDir ?? ROOT);
   const args = ['test', ...selectors, `--timeout=${FREE_TEST_TIMEOUT_MS}`];
   if (options.parallel) args.push('--parallel');
@@ -973,11 +973,11 @@ function shardEpilogue(outcome: FreeShardOutcome, totalShards: number): string {
  *
  * Per-shard temp isolation: each spawned child gets its own throwaway TMPDIR
  * (TEMP/TMP on Windows) so shards can't trip over each other's temp files.
- * Deliberately NOT GSTACK_HOME: injecting one shared scratch home for a whole
+ * Deliberately NOT PAYSEC_HOME: injecting one shared scratch home for a whole
  * invocation made 6,900 tests share a MUTABLE state dir — config tests wrote
  * keys into it and relink/update-check tests then read them (measured: 12
  * cross-contamination failures on the first full run). Tests that need
- * GSTACK_HOME isolation mkdtemp their own per test — the repo convention —
+ * PAYSEC_HOME isolation mkdtemp their own per test — the repo convention —
  * and the hermetic-env machinery covers E2E children.
  */
 export async function runFreeShard(
@@ -1021,7 +1021,7 @@ export async function runFreeShard(
     : { command: process.execPath, args: buildShardArgs(files, { parallel: options.parallel, rootDir }) };
 
   const env = { ...(options.env ?? process.env) };
-  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-free-shard-'));
+  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-free-shard-'));
   const childTmp = path.join(stateDir, 'tmp');
   fs.mkdirSync(childTmp);
   env.TMPDIR = childTmp;
@@ -1139,7 +1139,7 @@ let logPathSequence = 0;
 function nextDefaultLogPath(): string {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   logPathSequence += 1;
-  return path.join(os.tmpdir(), `gstack-free-test-${stamp}-${process.pid}-${logPathSequence}.log`);
+  return path.join(os.tmpdir(), `paysec-free-test-${stamp}-${process.pid}-${logPathSequence}.log`);
 }
 
 function exitCodeFor(status: FreeShardStatus): number {

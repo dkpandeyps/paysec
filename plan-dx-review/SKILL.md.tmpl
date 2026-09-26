@@ -1,5 +1,5 @@
 ---
-name: plan-devex-review
+name: plan-dx-review
 preamble-tier: 3
 interactive: true
 version: 2.0.0
@@ -11,7 +11,7 @@ description: |
   Use when asked to "DX review", "developer experience audit", "devex review",
   or "API design review".
   Proactively suggest when the user has a plan for developer-facing products
-  (APIs, CLIs, SDKs, libraries, platforms, docs). (gstack)
+  (APIs, CLIs, SDKs, libraries, platforms, docs). (paysec)
 voice-triggers:
   - "dx review"
   - "developer experience review"
@@ -19,7 +19,7 @@ voice-triggers:
   - "devex audit"
   - "API design review"
   - "onboarding review"
-benefits-from: [office-hours]
+benefits-from: [idea-review]
 allowed-tools:
   - Read
   - Edit
@@ -38,7 +38,7 @@ triggers:
 
 {{BASE_BRANCH_DETECT}}
 
-# /plan-devex-review: Developer Experience Plan Review
+# /plan-dx-review: Developer Experience Plan Review
 
 You are a developer advocate who has onboarded onto 100 developer tools. You have
 opinions about what makes developers abandon a tool in minute 2 versus fall in love
@@ -97,7 +97,7 @@ Then read:
 **Design doc check:**
 ```bash
 setopt +o nomatch 2>/dev/null || true
-SLUG=$(~/.claude/skills/gstack/browse/bin/remote-slug 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
+SLUG=$(~/.claude/skills/paysec/browser/bin/remote-slug 2>/dev/null || basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-' || echo 'no-branch')
 {{DESIGN_DOC_DISCOVERY}}
 ```
@@ -122,9 +122,9 @@ Before proceeding, read the plan and infer the developer product type from conte
 - Mentions SKILL.md, skill template, Claude Code, AI agent, MCP → **Claude Code Skill**
 
 If NONE of the above: the plan has no developer-facing surface. Tell the user:
-"This plan doesn't appear to have developer-facing surfaces. /plan-devex-review
+"This plan doesn't appear to have developer-facing surfaces. /plan-dx-review
 reviews plans for APIs, CLIs, SDKs, libraries, platforms, and docs. Consider
-/plan-eng-review or /plan-design-review instead." Exit gracefully.
+/plan-tech-review or /plan-ux-review instead." Exit gracefully.
 
 If detected: State your classification and ask for confirmation. Do not ask from
 scratch. "I'm reading this as a CLI Tool plan. Correct?"
@@ -137,7 +137,7 @@ Note the product type; it influences which persona options are offered in Step 0
 {{BRAIN_PREFLIGHT}}
 
 ---
-{{SECTION_INDEX:plan-devex-review}}
+{{SECTION_INDEX:plan-dx-review}}
 ---
 
 
@@ -264,7 +264,7 @@ AskUserQuestion:
 Every great developer tool has a magical moment: the instant a developer goes from
 "is this worth my time?" to "oh wow, this is real."
 
-Load the "## Pass 1" section from `~/.claude/skills/gstack/plan-devex-review/dx-hall-of-fame.md`
+Load the "## Pass 1" section from `~/.claude/skills/paysec/plan-dx-review/dx-hall-of-fame.md`
 for gold standard examples.
 
 Identify the most likely magical moment for this product type, then present delivery

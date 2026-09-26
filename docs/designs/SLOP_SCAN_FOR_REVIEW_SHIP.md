@@ -1,4 +1,4 @@
-# Design: slop-scan integration in /review and /ship
+# Design: slop-scan integration in /pr-review and /ship-pr
 
 Status: deferred
 Created: 2026-04-09
@@ -12,7 +12,7 @@ and trust boundary checks do.
 
 ## Integration points
 
-### /review (Step 4, after checklist pass)
+### /pr-review (Step 4, after checklist pass)
 
 Run `bun run slop:diff` after the critical/informational checklist pass. Show new
 findings inline with other review output:
@@ -21,7 +21,7 @@ findings inline with other review output:
 Pre-Landing Review: 3 issues (1 critical, 2 informational)
 
 AI Slop: +2 new findings, -0 removed
-  browse/src/new-feature.ts
+  browser/src/new-feature.ts
     defensive.empty-catch: 2 locations
       line 42: empty catch, boundary=filesystem
       line 87: empty catch, boundary=process
@@ -33,9 +33,9 @@ Fix-First heuristic applies: if the finding is an empty catch around a file op,
 auto-fix with `safeUnlink()`. If it's a catch-and-log in extension code, skip
 (that's the correct pattern per CLAUDE.md guidelines).
 
-### /ship (Step 3.5, pre-landing review + PR body)
+### /ship-pr (Step 3.5, pre-landing review + PR body)
 
-Same integration as /review. Additionally, show a one-line summary in the PR body:
+Same integration as /pr-review. Additionally, show a one-line summary in the PR body:
 
 ```markdown
 ## Pre-Landing Review
@@ -75,10 +75,10 @@ Follow CLAUDE.md "Slop-scan" section. Summary:
 
 ## Effort estimate
 
-| Task | Human | CC+gstack |
+| Task | Human | CC+paysec |
 |------|-------|-----------|
-| Add to review/SKILL.md.tmpl | 2 hours | 10 min |
-| Add to ship/SKILL.md.tmpl | 2 hours | 10 min |
-| Add to review/checklist.md | 1 hour | 5 min |
+| Add to pr-review/SKILL.md.tmpl | 2 hours | 10 min |
+| Add to ship-pr/SKILL.md.tmpl | 2 hours | 10 min |
+| Add to pr-review/checklist.md | 1 hour | 5 min |
 | Test with actual PRs | 2 hours | 15 min |
 | Regenerate SKILL.md files | — | 1 min |

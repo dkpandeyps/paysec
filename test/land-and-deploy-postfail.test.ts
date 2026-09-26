@@ -2,7 +2,7 @@
  * Coverage for PR #1620 — Post-failure PR-state check after `gh pr merge`
  * non-zero exit.
  *
- * The fix lives in land-and-deploy/SKILL.md.tmpl as Step §4a-postfail.
+ * The fix lives in merge-and-deploy/SKILL.md.tmpl as Step §4a-postfail.
  * After ANY non-zero `gh pr merge`, the skill must query authoritative PR
  * state via `gh pr view --json state,mergeCommit,mergedAt,mergedBy` and
  * branch on the result instead of retrying `gh pr merge` (cli/cli#3442,
@@ -25,8 +25,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 const ROOT = path.resolve(import.meta.dir, "..");
-const TMPL = path.join(ROOT, "land-and-deploy", "SKILL.md.tmpl");
-const MD = path.join(ROOT, "land-and-deploy", "SKILL.md");
+const TMPL = path.join(ROOT, "merge-and-deploy", "SKILL.md.tmpl");
+const MD = path.join(ROOT, "merge-and-deploy", "SKILL.md");
 
 function readTmpl(): string {
   return fs.readFileSync(TMPL, "utf-8");
@@ -35,7 +35,7 @@ function readMd(): string {
   return fs.readFileSync(MD, "utf-8");
 }
 
-describe("PR #1620 §4a-postfail in land-and-deploy template", () => {
+describe("PR #1620 §4a-postfail in merge-and-deploy template", () => {
   test("§4a-postfail header present in template", () => {
     expect(readTmpl()).toMatch(/### 4a-postfail: Post-failure PR-state check/);
   });

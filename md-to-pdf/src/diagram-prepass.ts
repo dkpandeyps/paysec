@@ -129,7 +129,7 @@ export function extractDiagramFences(markdown: string): FenceExtraction {
         const info = parseInfoString(openFence.info);
         if (DIAGRAM_LANGS.has(info.lang) && info.render && openFence.indent === 0) {
           ordinal++;
-          const token = `gstack-diagram-slot-${runId}-${ordinal}`;
+          const token = `paysec-diagram-slot-${runId}-${ordinal}`;
           fences.push({
             lang: info.lang,
             source: openFence.body.join("\n"),
@@ -263,11 +263,11 @@ export function buildDiagramFigure(fence: DiagramFence, svg: string): string {
   const captioned = fence.title
     ? `\n<figcaption class="diagram-caption">${escapeHtml(fence.title)}</figcaption>`
     : "";
-  const pageAttr = fence.page ? ` data-gstack-page="${fence.page}"` : "";
+  const pageAttr = fence.page ? ` data-paysec-page="${fence.page}"` : "";
   const sourceB64 = Buffer.from(fence.source, "utf8").toString("base64");
   return [
     `<figure class="diagram" role="img" aria-label="${escapeHtml(label)}"${pageAttr}` +
-      ` data-gstack-lang="${escapeHtml(fence.lang)}" data-gstack-source="${sourceB64}">`,
+      ` data-paysec-lang="${escapeHtml(fence.lang)}" data-paysec-source="${sourceB64}">`,
     cleanSvg,
     captioned,
     `</figure>`,
@@ -276,7 +276,7 @@ export function buildDiagramFigure(fence: DiagramFence, svg: string): string {
 
 /** Recover the original fence source from a rendered figure (round-trip). */
 export function decodeFigureSource(figureHtml: string): string | null {
-  const m = figureHtml.match(/\bdata-gstack-source="([A-Za-z0-9+/=]*)"/);
+  const m = figureHtml.match(/\bdata-paysec-source="([A-Za-z0-9+/=]*)"/);
   if (!m) return null;
   try {
     return Buffer.from(m[1], "base64").toString("utf8");
@@ -315,7 +315,7 @@ export class RenderTab {
     const bundleSrc = resolveBundlePath();
     const html = fs.readFileSync(bundleSrc);
     const sha = crypto.createHash("sha256").update(html).digest("hex").slice(0, 16);
-    const staged = path.join(PAYLOAD_TMP_DIR, `gstack-diagram-render-${sha}.html`);
+    const staged = path.join(PAYLOAD_TMP_DIR, `paysec-diagram-render-${sha}.html`);
     // Never trust an existing file at the predictable shared-/tmp name: verify
     // its content hash and re-stage on mismatch (a pre-planted file would
     // otherwise be loaded into the render tab as the bundle).
@@ -405,7 +405,7 @@ export class RenderTab {
   private jsViaFile(expression: string): string {
     const file = path.join(
       PAYLOAD_TMP_DIR,
-      `gstack-diagram-expr-${process.pid}-${crypto.randomBytes(4).toString("hex")}.js`,
+      `paysec-diagram-expr-${process.pid}-${crypto.randomBytes(4).toString("hex")}.js`,
     );
     fs.writeFileSync(file, expression, "utf8");
     try {
@@ -434,15 +434,15 @@ export class RenderCallError extends Error {
 /** Resolve dist/diagram-render.html: env override → repo-relative (dev) → global install. */
 export function resolveBundlePath(env: NodeJS.ProcessEnv = process.env): string {
   const candidates = [
-    env.GSTACK_DIAGRAM_BUNDLE,
-    // dev: make-pdf/src/* → repo root lib/. (In a compiled binary this is the
+    env.PAYSEC_DIAGRAM_BUNDLE,
+    // dev: md-to-pdf/src/* → repo root lib/. (In a compiled binary this is the
     // virtual /$bunfs/root and simply never exists — harmless.)
     path.resolve(import.meta.dir, "../../lib/diagram-render/dist/diagram-render.html"),
-    // compiled binary at <root>/make-pdf/dist/pdf → <root>/lib/… — same shape
-    // in the repo and in the ~/.claude/skills/gstack global install. argv[0]
+    // compiled binary at <root>/md-to-pdf/dist/pdf → <root>/lib/… — same shape
+    // in the repo and in the ~/.claude/skills/paysec global install. argv[0]
     // is the literal string "bun" in compiled binaries; execPath is real.
     path.resolve(path.dirname(process.execPath), "../../lib/diagram-render/dist/diagram-render.html"),
-    path.join(os.homedir(), ".claude/skills/gstack/lib/diagram-render/dist/diagram-render.html"),
+    path.join(os.homedir(), ".claude/skills/paysec/lib/diagram-render/dist/diagram-render.html"),
   ].filter((p): p is string => !!p);
   for (const p of candidates) {
     if (fs.existsSync(p)) return p;
@@ -576,7 +576,7 @@ const SRC_RE = /\bsrc\s*=\s*("([^"]*)"|'([^']*)')/i;
 
 /**
  * Inline every local <img> as a data URI, probe intrinsic dimensions from the
- * bytes, and annotate the tag with data-gstack-px-width/-height for the width
+ * bytes, and annotate the tag with data-paysec-px-width/-height for the width
  * policy. Oversized rasters are downscaled to print resolution via the bundle
  * tab. Missing files become visible placeholders (or throw under --strict);
  * remote URLs warn (offline posture) unless --allow-network.
@@ -702,7 +702,7 @@ export function inlineLocalImages(html: string, opts: PrepassImageOptions): stri
 
     const dataUri = `data:${mime};base64,${buf.toString("base64")}`;
     const attrs = dims
-      ? ` data-gstack-px-width="${Math.round(dims.width)}" data-gstack-px-height="${Math.round(dims.height)}"`
+      ? ` data-paysec-px-width="${Math.round(dims.width)}" data-paysec-px-height="${Math.round(dims.height)}"`
       : "";
     memo.set(filePath, { dataUri, attrs });
     return rewriteImgTag(tag, memo.get(filePath)!);
@@ -726,7 +726,7 @@ function annotateFromDataUri(tag: string, src: string): string {
     if (!dims) return tag;
     return tag.replace(
       /^<img\b/i,
-      `<img data-gstack-px-width="${Math.round(dims.width)}" data-gstack-px-height="${Math.round(dims.height)}"`,
+      `<img data-paysec-px-width="${Math.round(dims.width)}" data-paysec-px-height="${Math.round(dims.height)}"`,
     );
   } catch {
     return tag;

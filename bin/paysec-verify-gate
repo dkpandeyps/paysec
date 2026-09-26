@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
-# gstack-verify-gate — Stop hook. Blocks the turn from ending until the
+# paysec-verify-gate — Stop hook. Blocks the turn from ending until the
 # project's declared verification command passes.
 #
 # Declare the command on one line in the project's CLAUDE.md:
-#   <!-- gstack:verify: bun test -->
+#   <!-- paysec:verify: bun test -->
 #
-# Read-or-ask: gstack never invents this command. No declaration, no gate.
+# Read-or-ask: paysec never invents this command. No declaration, no gate.
 # Fails open on every absence (no CLAUDE.md, no declaration, empty value).
 #
 # Trust boundary: hooks bypass the permission system, so a declared command
 # NEVER runs until the user records it in the per-repo trust store:
-#   gstack-verify-gate --trust        (run from inside the repo)
+#   paysec-verify-gate --trust        (run from inside the repo)
 # The store maps realpath(repo root) -> sha256(command) at
-# ${GSTACK_HOME:-$HOME/.gstack}/verify-gate-trust (flat "path<TAB>hash",
+# ${PAYSEC_HOME:-$HOME/.paysec}/verify-gate-trust (flat "path<TAB>hash",
 # 0600, atomic rewrite). Any edit to the declared command invalidates trust
 # until --trust is run again. Untrusted commands never block the turn.
 #
 # Exit 0 = allow the turn to end, one-line reason on stdout.
 # Exit 2 = block, Claude Code feeds stderr back to the agent.
 #
-# Remove with: gstack-settings-hook remove-source --source verify-gate
+# Remove with: paysec-settings-hook remove-source --source verify-gate
 set -uo pipefail
 
 TAB="$(printf '\t')"
-STORE="${GSTACK_HOME:-$HOME/.gstack}/verify-gate-trust"
+STORE="${PAYSEC_HOME:-$HOME/.paysec}/verify-gate-trust"
 
 _sha256() {
   if command -v shasum >/dev/null 2>&1; then
@@ -45,9 +45,9 @@ _resolve_root() {
 }
 
 # Extract the declared command from $ROOT/CLAUDE.md into CMD (may be empty).
-# Accepts both `<!-- gstack:verify: cmd -->` and bare `gstack:verify: cmd`.
+# Accepts both `<!-- paysec:verify: cmd -->` and bare `paysec:verify: cmd`.
 _extract_cmd() {
-  CMD="$(sed -n 's/^[[:space:]]*\(<!--[[:space:]]*\)\{0,1\}gstack:verify:[[:space:]]*\(.*\)$/\2/p' "$ROOT/CLAUDE.md" | head -1)"
+  CMD="$(sed -n 's/^[[:space:]]*\(<!--[[:space:]]*\)\{0,1\}paysec:verify:[[:space:]]*\(.*\)$/\2/p' "$ROOT/CLAUDE.md" | head -1)"
   CMD="${CMD%%-->*}"
   CMD="$(printf '%s' "$CMD" | tr -d '`' | sed 's/[[:space:]]*$//')"
 }
@@ -96,11 +96,11 @@ _json_escape() {
 # Forensic audit of trust grants. --trust stays agent-runnable (guardrail
 # posture: catch accidents, not determined actors — same as the redaction
 # guard), but a grant is never invisible: append {ts, root, cmd_sha256,
-# cmd verbatim, tty} to a 0600 JSONL under GSTACK_HOME/security/.
+# cmd verbatim, tty} to a 0600 JSONL under PAYSEC_HOME/security/.
 # Args: $1 = root key, $2 = cmd sha256, $3 = cmd verbatim.
 _log_trust_grant() {
   local sec_dir log tty ts
-  sec_dir="${GSTACK_HOME:-$HOME/.gstack}/security"
+  sec_dir="${PAYSEC_HOME:-$HOME/.paysec}/security"
   log="$sec_dir/verify-gate-trust-grants.jsonl"
   tty=false
   [ -t 0 ] && tty=true
@@ -120,7 +120,7 @@ if [ "${1:-}" = "--trust" ]; then
   fi
   _extract_cmd
   if [ -z "$CMD" ]; then
-    echo "verify-gate: $ROOT/CLAUDE.md declares no 'gstack:verify:' command, nothing to trust." >&2
+    echo "verify-gate: $ROOT/CLAUDE.md declares no 'paysec:verify:' command, nothing to trust." >&2
     exit 1
   fi
   KEY="$(_trust_key)"
@@ -154,7 +154,7 @@ fi
 _extract_cmd
 
 if [ -z "$CMD" ]; then
-  echo "verify-gate: $ROOT/CLAUDE.md declares no 'gstack:verify:' command, allowing."
+  echo "verify-gate: $ROOT/CLAUDE.md declares no 'paysec:verify:' command, allowing."
   exit 0
 fi
 
@@ -175,7 +175,7 @@ _session_key() {
   [ -n "$sid" ] || sid="ppid-$PPID"
   _sha256 "$sid|$(_trust_key)"
 }
-ATTEMPTS_DIR="${GSTACK_HOME:-$HOME/.gstack}/verify-gate-attempts"
+ATTEMPTS_DIR="${PAYSEC_HOME:-$HOME/.paysec}/verify-gate-attempts"
 COUNTER="$ATTEMPTS_DIR/$(_session_key)"
 
 # A first entry (stop_hook_active=false) starts a fresh blocking episode.
@@ -210,5 +210,5 @@ fi
 
 echo "verify-gate: declared check FAILED with exit $STATUS: $CMD" >&2
 printf '%s\n' "$OUT" | tail -20 >&2
-echo "Fix the failure, or drop the gstack:verify line from $ROOT/CLAUDE.md." >&2
+echo "Fix the failure, or drop the paysec:verify line from $ROOT/CLAUDE.md." >&2
 exit 2

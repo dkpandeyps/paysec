@@ -35,7 +35,7 @@ import * as path from 'path';
 // Keep these verbatim against the H2 headings in the generated SKILL.md files.
 // If gen-skill-docs renames a heading, test/skill-fixture.test.ts fails free.
 
-/** /review E2E (sql-injection, enum-completeness, design-lite): the core
+/** /pr-review E2E (sql-injection, enum-completeness, design-lite): the core
  *  review workflow without the shared preamble, Review Army, or Fix-First. */
 export const REVIEW_E2E_SECTIONS = [
   'When to invoke this skill',
@@ -66,7 +66,7 @@ export const REVIEW_ARMY_E2E_SECTIONS = [
   'Important Rules',
 ];
 
-/** /retro E2E (retro, retro-base-branch): the repo-scoped retro flow
+/** /weekly-retro E2E (retro, retro-base-branch): the repo-scoped retro flow
  *  (Steps 0-14 live under Instructions/Prior Learnings/Capture Learnings)
  *  + the narrative report template. Global mode and Compare mode are not
  *  exercised by the E2E tests and are dropped. */
@@ -84,7 +84,7 @@ export const RETRO_E2E_SECTIONS = [
 ];
 
 /** codex-review-findings E2E against the Codex host variant
- *  (.agents/skills/gstack-review/SKILL.md). Same core workflow as
+ *  (.agents/skills/paysec-pr-review/SKILL.md). Same core workflow as
  *  REVIEW_E2E_SECTIONS, minus "When to invoke this skill" (the Codex host
  *  adapter does not emit that section). */
 export const CODEX_REVIEW_E2E_SECTIONS = [
@@ -144,7 +144,7 @@ function splitFrontmatter(raw: string, file: string): { frontmatter: string; bod
 /**
  * Scan body lines for H2 sections, fence-aware: `## `-prefixed lines inside
  * ``` / ~~~ code fences are template content (e.g. the PLAN COMPLETION AUDIT
- * output format, the /context-save checkpoint template), NOT section
+ * output format, the /save-context checkpoint template), NOT section
  * boundaries. Fences close only on a matching char of >= opening length,
  * per CommonMark, so 4-backtick fences embedding 3-backtick blocks work.
  */

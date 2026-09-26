@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Set up gstack for local development — test skills from within this repo.
+# Set up paysec for local development — test skills from within this repo.
 #
-# Creates .claude/skills/gstack → (symlink to repo root) so Claude Code
+# Creates .claude/skills/paysec → (symlink to repo root) so Claude Code
 # discovers skills from your working tree. Changes take effect immediately.
 #
 # Also copies .env from the main worktree if this is a Conductor workspace
@@ -31,26 +31,26 @@ fi
 # 3. Create .claude/skills/ inside the repo
 mkdir -p "$REPO_ROOT/.claude/skills"
 
-# 4. Symlink .claude/skills/gstack → repo root
+# 4. Symlink .claude/skills/paysec → repo root
 # This makes setup think it's inside a real .claude/skills/ directory
-GSTACK_LINK="$REPO_ROOT/.claude/skills/gstack"
-if [ -L "$GSTACK_LINK" ]; then
+PAYSEC_LINK="$REPO_ROOT/.claude/skills/paysec"
+if [ -L "$PAYSEC_LINK" ]; then
   echo "Updating existing symlink..."
-  rm "$GSTACK_LINK"
-elif [ -d "$GSTACK_LINK" ]; then
-  echo "Error: .claude/skills/gstack is a real directory, not a symlink." >&2
+  rm "$PAYSEC_LINK"
+elif [ -d "$PAYSEC_LINK" ]; then
+  echo "Error: .claude/skills/paysec is a real directory, not a symlink." >&2
   echo "Remove it manually if you want to use dev mode." >&2
   exit 1
 fi
-ln -s "$REPO_ROOT" "$GSTACK_LINK"
+ln -s "$REPO_ROOT" "$PAYSEC_LINK"
 
-# 5. Create .agents/skills/gstack → repo root (for Codex/Gemini/Cursor)
+# 5. Create .agents/skills/paysec → repo root (for Codex/Gemini/Cursor)
 mkdir -p "$REPO_ROOT/.agents/skills"
-AGENTS_LINK="$REPO_ROOT/.agents/skills/gstack"
+AGENTS_LINK="$REPO_ROOT/.agents/skills/paysec"
 if [ -L "$AGENTS_LINK" ]; then
   rm "$AGENTS_LINK"
 elif [ -d "$AGENTS_LINK" ]; then
-  echo "Warning: .agents/skills/gstack is a real directory, skipping." >&2
+  echo "Warning: .agents/skills/paysec is a real directory, skipping." >&2
 fi
 if [ ! -e "$AGENTS_LINK" ]; then
   ln -s "$REPO_ROOT" "$AGENTS_LINK"
@@ -59,13 +59,13 @@ fi
 # 6. Run setup via the symlink so it detects .claude/skills/ as its parent.
 #
 # Workspace/dev setup MUST be non-interactive: Conductor runs this under a
-# forwarded pty, so any `read` in setup (skill-prefix prompt, plan-tune hook
+# forwarded pty, so any `read` in setup (skill-prefix prompt, tune-questions hook
 # consent) would hang the workspace forever. Detaching stdin makes every setup
 # prompt take its smart non-interactive default (flat skill names, etc.).
 #
 # `--plan-tune-hooks=prompt` is load-bearing, not redundant: stdin alone only
 # suppresses the *prompt* branch. A saved `plan_tune_hooks: yes` or an exported
-# GSTACK_PLAN_TUNE_HOOKS=yes would still resolve to "install" and rewrite the
+# PAYSEC_PLAN_TUNE_HOOKS=yes would still resolve to "install" and rewrite the
 # user's global ~/.claude/settings.json to point at THIS ephemeral worktree —
 # which breaks once the workspace is deleted. The flag has highest precedence,
 # so it pins resolution to "prompt", and closed stdin then makes prompt-mode a
@@ -73,34 +73,34 @@ fi
 # global settings.json. To install the hooks, run `./setup --plan-tune-hooks`
 # directly (outside dev-setup). Saved prefix/other config preferences still apply.
 #
-# GSTACK_SKIP_GBRAIN_REGEN=1 is passed INLINE (not exported) so it scopes to
+# PAYSEC_SKIP_GBRAIN_REGEN=1 is passed INLINE (not exported) so it scopes to
 # exactly this nested setup call and can't leak into any other setup path. It
 # tells setup NOT to regenerate the gbrain :user variant into the tracked
 # worktree (that would dirty checked-in source). We render it into an untracked
 # per-workspace dir below instead.
-GSTACK_SKIP_GBRAIN_REGEN=1 "$GSTACK_LINK/setup" --plan-tune-hooks=prompt </dev/null
+PAYSEC_SKIP_GBRAIN_REGEN=1 "$PAYSEC_LINK/setup" --plan-tune-hooks=prompt </dev/null
 
 # 7. Brain-aware (gbrain) blocks — render into an untracked workspace dir.
 #
 # The worktree's SKILL.md files stay canonical (the guard above). If gbrain is
 # installed, render the :user variant (with GBRAIN_CONTEXT_LOAD +
-# GBRAIN_SAVE_RESULTS) into .claude/gstack-rendered (gitignored, per-workspace)
+# GBRAIN_SAVE_RESULTS) into .claude/paysec-rendered (gitignored, per-workspace)
 # and repoint the workspace's SKILL.md symlinks at it. gen-skill-docs --out-dir
 # also rewrites the section-base path so section reads resolve to the render, not
 # the global install. Result: this workspace gets the full gbrain experience
-# while git stays clean. Other projects pick up blocks via `gstack-config
+# while git stays clean. Other projects pick up blocks via `paysec-config
 # gbrain-refresh` (printed below).
-GBRAIN_DETECT="$REPO_ROOT/bin/gstack-gbrain-detect"
-RENDER_DIR="$REPO_ROOT/.claude/gstack-rendered"
+GBRAIN_DETECT="$REPO_ROOT/bin/paysec-gbrain-detect"
+RENDER_DIR="$REPO_ROOT/.claude/paysec-rendered"
 if [ -x "$GBRAIN_DETECT" ] && "$GBRAIN_DETECT" --is-ok 2>/dev/null; then
   echo ""
-  echo "gbrain detected — rendering brain-aware skills into .claude/gstack-rendered (workspace-only, untracked)..."
+  echo "gbrain detected — rendering brain-aware skills into .claude/paysec-rendered (workspace-only, untracked)..."
   rm -rf "$RENDER_DIR"
   if ( cd "$REPO_ROOT" && bun run gen:skill-docs:user --host claude --out-dir "$RENDER_DIR" >/dev/null 2>&1 ); then
     # Repoint each project-local SKILL.md symlink whose worktree target has a
     # rendered counterpart. The skill DIRECTORY name (basename of the symlink
     # target's dir) maps to RENDER_DIR/<dir>/SKILL.md, which is robust to
-    # frontmatter renames and the gstack- prefix on the link name.
+    # frontmatter renames and the paysec- prefix on the link name.
     repointed=0
     for skill_link in "$REPO_ROOT"/.claude/skills/*/SKILL.md; do
       [ -L "$skill_link" ] || continue
@@ -117,11 +117,11 @@ fi
 
 echo ""
 echo "Dev mode active. Skills resolve from this working tree."
-echo "  .claude/skills/gstack → $REPO_ROOT"
-echo "  .agents/skills/gstack → $REPO_ROOT"
+echo "  .claude/skills/paysec → $REPO_ROOT"
+echo "  .agents/skills/paysec → $REPO_ROOT"
 echo "Edit any SKILL.md and test immediately — no copy/deploy needed."
 echo ""
 echo "To make brain-aware blocks live across your OTHER projects too, run:"
-echo "  gstack-config gbrain-refresh"
+echo "  paysec-config gbrain-refresh"
 echo ""
 echo "To tear down: bin/dev-teardown"

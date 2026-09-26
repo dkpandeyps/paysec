@@ -3,29 +3,29 @@
 Status: design + first implementation slice
 Owner: maintainer-directed internal work
 Related: `runtime/context.js` (Context.dev provider pattern),
-`scripts/gstack2/browser-provider-contract.ts` (the existing provider-contract idiom),
-`lib/gstack-decision-semantic.ts` (degrade-to-null reliability contract)
+`scripts/paysec2/browser-provider-contract.ts` (the existing provider-contract idiom),
+`lib/paysec-decision-semantic.ts` (degrade-to-null reliability contract)
 
 ## Problem
 
-gstack carries ~17k LOC of home-grown code-intelligence glue: transcript
-ingestion (`bin/gstack-memory-ingest.ts`, ~1.9k), a unified sync verb
-(`bin/gstack-gbrain-sync.ts`, ~1.6k), context loading
-(`bin/gstack-brain-context-load.ts`), a three-tier planning cache
-(`bin/gstack-brain-cache`), source reconciliation, engine-status classification,
-destructive-op guards, plus ~15 `bin/gstack-gbrain-*` and `bin/gstack-brain-*`
+paysec carries ~17k LOC of home-grown code-intelligence glue: transcript
+ingestion (`bin/paysec-memory-ingest.ts`, ~1.9k), a unified sync verb
+(`bin/paysec-gbrain-sync.ts`, ~1.6k), context loading
+(`bin/paysec-brain-context-load.ts`), a three-tier planning cache
+(`bin/paysec-brain-cache`), source reconciliation, engine-status classification,
+destructive-op guards, plus ~15 `bin/paysec-gbrain-*` and `bin/paysec-brain-*`
 entrypoints and ~40 tests. All of it is bespoke wiring around one external tool
 (GBrain) reached by direct CLI shell-out.
 
-We do not want to keep maintaining a home-grown indexer. We want gstack to
+We do not want to keep maintaining a home-grown indexer. We want paysec to
 define a **small optional contract** that external providers implement, so the
-indexing/search/graph work lives in the provider, not in gstack.
+indexing/search/graph work lives in the provider, not in paysec.
 
-Hard requirement, non-negotiable: **gstack must remain fully functional with the
+Hard requirement, non-negotiable: **paysec must remain fully functional with the
 provider OFF.** File-only paths (the decision store, Context Recovery, grep) stay
 reliable and never depend on a provider being present. This is the existing
-decision-store philosophy (`lib/gstack-decision.ts` has zero gbrain imports;
-`lib/gstack-decision-semantic.ts` degrades to `null`). The contract is an
+decision-store philosophy (`lib/paysec-decision.ts` has zero gbrain imports;
+`lib/paysec-decision-semantic.ts` degrades to `null`). The contract is an
 enhancement, never a dependency.
 
 ## Design decision: repo-oriented, not document-store
@@ -113,7 +113,7 @@ Two orthogonal consent axes, both explicit, neither auto-granted:
    leaves the machine.
 2. **Install consent (Graphify only).** Graphify is never auto-installed. The
    `options`/`status` display marks it available only when its CLI is present,
-   and nothing in gstack runs a Graphify installer. Install is a user action
+   and nothing in paysec runs a Graphify installer. Install is a user action
    (`pip install graphifyy && graphify install`).
 
 This matches the Context.dev model: selection persists without granting egress
@@ -134,7 +134,7 @@ consent; egress requires a separate explicit step.
 
 All three are driven directly from the runtime — no MCP client:
 
-- **GBrain** (`garrytan/gbrain`, the gstack-ecosystem tool): full contract fit,
+- **GBrain** (`garrytan/gbrain`, the paysec-ecosystem tool): full contract fit,
   driven via the existing `gbrain` CLI chokepoint (`lib/gbrain-exec.ts`). Native
   primitive is document-by-slug (put/delete/get/export) PLUS a repo axis
   (`sources add`/`sync`). Advertises all seven capabilities. **Recommended
@@ -167,7 +167,7 @@ not to a half-baked in-house index).
 
 ### Integration surfaces (no MCP needed)
 
-Each provider exposes a runtime-drivable surface, so gstack drives them with a
+Each provider exposes a runtime-drivable surface, so paysec drives them with a
 CLI shell-out or plain HTTP — it never speaks MCP:
 
 - **GBrain / Graphify: CLI.** Shell out (`spawnSync`), same shape and the same
@@ -183,8 +183,8 @@ search from the runtime.
 ## Picker: recommend GBrain first
 
 `lib/code-intelligence/picker.ts` + `selection.ts`. The user picks a provider
-with `gstack-code-intelligence select <provider>`, persisted to
-`$GSTACK_HOME/code-intelligence.json`. `resolveSelectedProvider()` constructs the
+with `paysec-code-intelligence select <provider>`, persisted to
+`$PAYSEC_HOME/code-intelligence.json`. `resolveSelectedProvider()` constructs the
 selected provider, or returns `null` when nothing is selected — the provider-OFF
 path, where callers degrade to grep / the file-only decision store. Availability
 is proven at call time: a selected provider whose CLI/server is absent throws
@@ -202,13 +202,13 @@ The contract is the seam; the bespoke glue collapses onto it. Mapping:
 
 | Today (bespoke) | Under the contract |
 |-----------------|--------------------|
-| `bin/gstack-gbrain-sync.ts` (`sync`/`reindex-code`/`sources`) | `provider.registerSource` / `provider.refresh` |
-| `lib/gstack-decision-semantic.ts` `semanticRecall` | `provider.search` (scoped) → same degrade-to-null |
-| `bin/gstack-brain-context-load.ts` (`query`/`list_pages`) | `provider.search` / `provider.status` |
-| `bin/gstack-memory-ingest.ts` (`import`, put) | `provider.add` (optional cap; GBrain-only) |
+| `bin/paysec-gbrain-sync.ts` (`sync`/`reindex-code`/`sources`) | `provider.registerSource` / `provider.refresh` |
+| `lib/paysec-decision-semantic.ts` `semanticRecall` | `provider.search` (scoped) → same degrade-to-null |
+| `bin/paysec-brain-context-load.ts` (`query`/`list_pages`) | `provider.search` / `provider.status` |
+| `bin/paysec-memory-ingest.ts` (`import`, put) | `provider.add` (optional cap; GBrain-only) |
 | `lib/gbrain-sources.ts` (`ensureSourceRegistered`, `probeSource`) | GBrain adapter internals |
 | `lib/gbrain-local-status.ts` | GBrain adapter availability probe (kept, reused) |
-| `bin/gstack-gbrain-detect` / `-install` / `-source-wireup` / `-repo-policy` | provider setup + picker + consent (thinner) |
+| `bin/paysec-gbrain-detect` / `-install` / `-source-wireup` / `-repo-policy` | provider setup + picker + consent (thinner) |
 
 The point is not to delete 17k LOC in one commit — it is to make every consumer
 call the contract, then retire the bespoke paths provider-by-provider behind it.
@@ -219,22 +219,22 @@ specifics entirely.
 
 Phased, each phase independently revertable. Skill-template edits are deferred to
 a later phase precisely so the first slices do not trigger the
-`gen:gstack2` / parity re-baseline cycle.
+`gen:paysec2` / parity re-baseline cycle.
 
 - **Phase 1 (this slice): the contract, three real adapters, and a usable CLI.**
   `contract.ts` + fully-drivable GBrain (CLI), Graphify (CLI), and Sourcebot
-  (HTTP + config) adapters + the selection store + the `gstack-code-intelligence`
+  (HTTP + config) adapters + the selection store + the `paysec-code-intelligence`
   CLI (`options`/`status`/`select`/`consent`/`index`/`search`) + tests. A user
   can select a provider and index/search their repo today. No skill-template or
-  generated-file changes yet, so no `gen:gstack2` / parity re-baseline.
+  generated-file changes yet, so no `gen:paysec2` / parity re-baseline.
 - **Phase 2: route internal consumers through the contract.** Point
-  `gstack-decision-semantic` and `gstack-brain-context-load` at
+  `paysec-decision-semantic` and `paysec-brain-context-load` at
   `resolveSelectedProvider()`, preserving degrade-to-null exactly. Behavior-neutral
   for the file-only paths.
 - **Phase 3: surface selection in the skills.** Offer the picker at the moments a
   skill would benefit from indexed search, mirroring the `context` command's
-  just-in-time consent prompt. Regenerate skills (`bun run gen:gstack2`), re-run
-  `bun run test:gstack2`, re-baseline parity intentionally.
+  just-in-time consent prompt. Regenerate skills (`bun run gen:paysec2`), re-run
+  `bun run test:paysec2`, re-baseline parity intentionally.
 - **Phase 4: retire bespoke glue.** Once every consumer is on the contract,
   delete the sync/ingest/cache entrypoints and their tests provider-by-provider.
 
@@ -301,5 +301,5 @@ adapter against a fake `graphify` shim (index builds a graph, search returns hit
 status counts nodes); the Sourcebot adapter against an injected `fetch` + a temp
 `config.json` (register writes a local git connection, search maps `files[]` to
 hits); and every adapter degrading to `PROVIDER_UNAVAILABLE` when its tool/server
-is absent. The `gstack-code-intelligence` CLI was smoke-tested end-to-end:
+is absent. The `paysec-code-intelligence` CLI was smoke-tested end-to-end:
 select → consent gate → local Graphify index (5-node graph) → search.

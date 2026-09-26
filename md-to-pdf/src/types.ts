@@ -1,5 +1,5 @@
 /**
- * make-pdf — shared types.
+ * md-to-pdf — shared types.
  *
  * No runtime code. Imports are safe from any module.
  */

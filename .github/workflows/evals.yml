@@ -112,25 +112,25 @@ jobs:
           - name: e2e-design
             file: test/skill-e2e-design.test.ts
           - name: e2e-qa-bugs
-            file: test/skill-e2e-qa-bugs.test.ts
+            file: test/skill-e2e-qa-fix-bugs.test.ts
           - name: e2e-qa-workflow
-            file: test/skill-e2e-qa-workflow.test.ts
+            file: test/skill-e2e-qa-fix-workflow.test.ts
           - name: e2e-review
-            file: test/skill-e2e-review.test.ts
+            file: test/skill-e2e-pr-review.test.ts
           - name: e2e-retro
-            file: test/skill-e2e-retro.test.ts
+            file: test/skill-e2e-weekly-retro.test.ts
           - name: e2e-review-attribution
-            file: test/skill-e2e-review-attribution.test.ts
+            file: test/skill-e2e-pr-review-attribution.test.ts
           - name: e2e-workflow
             file: test/skill-e2e-workflow.test.ts
-            # Earned its extra attempt with receipts: document-release is a
+            # Earned its extra attempt with receipts: docs-release-update is a
             # long multi-step E2E that timed out on attempt 2 under in-shard
             # concurrency (PR #2593 round 4) while passing other rounds.
             retries: 2
           # Rehomed from the deleted pre-split monolith (its filename never
           # matched the skill-e2e-* glob, so these gate tests silently never
           # ran). Both files hold gate-tier tests: review/plan-eng coverage
-          # audits and the /ship failure-ownership triage.
+          # audits and the /ship-pr failure-ownership triage.
           - name: e2e-coverage-audit
             file: test/skill-e2e-coverage-audit.test.ts
           - name: e2e-triage
@@ -142,18 +142,18 @@ jobs:
           - name: e2e-gemini
             file: test/gemini-e2e.test.ts
           # Real-PTY plan-mode smokes. Only the deterministically-reliable ones
-          # are CI-gated: office-hours (asks its mode question first, caught by
+          # are CI-gated: idea-review (asks its mode question first, caught by
           # the collapsed/bullet prose-AUQ detector) and plan-mode-no-op (no
           # ask-first dependency). The plan-eng/plan-design plan-mode + floor
           # smokes are periodic (stochastic ask-first — see touchfiles E2E_TIERS).
           # Needs the interactive-config seed step below; PTY sessions otherwise
           # wedge on the fresh-container onboarding/API-key dialog.
           - name: e2e-pty-plan-smoke
-            file: test/skill-e2e-office-hours-auto-mode.test.ts test/skill-e2e-plan-mode-no-op.test.ts
+            file: test/skill-e2e-idea-review-auto-mode.test.ts test/skill-e2e-plan-mode-no-op.test.ts
             timeout: 35
             # The documented contention-heavy PTY family: ROTATING members
             # failed attempt 2 in consecutive PR #2593 rounds
-            # (plan-design-review, then plan-eng-review) while the family
+            # (plan-ux-review, then plan-tech-review) while the family
             # passes on branches still running three attempts. Every other
             # row keeps --retry 1.
             retries: 2
@@ -222,14 +222,14 @@ jobs:
             console.log("seeded", p);
           '
 
-      # PTY smokes drive the interactive `claude` TUI and send /office-hours,
-      # /plan-ceo-review, /plan-eng-review, and /plan-design-review. Claude Code
+      # PTY smokes drive the interactive `claude` TUI and send /idea-review,
+      # /plan-business-review, /plan-tech-review, and /plan-ux-review. Claude Code
       # discovers user-scoped skills from $HOME/.claude/skills/<name>/SKILL.md,
       # but .claude/skills is gitignored, so a fresh CI checkout has NO registry
-      # — claude prints "Unknown command: /plan-ceo-review". Mirror setup's
-      # --no-prefix registry minimally: a gstack root symlink (resolves the
-      # preamble's absolute ~/.claude/skills/gstack/bin/* and
-      # ~/.claude/skills/gstack/<skill>/sections/* paths) plus a per-skill
+      # — claude prints "Unknown command: /plan-business-review". Mirror setup's
+      # --no-prefix registry minimally: a paysec root symlink (resolves the
+      # preamble's absolute ~/.claude/skills/paysec/bin/* and
+      # ~/.claude/skills/paysec/<skill>/sections/* paths) plus a per-skill
       # top-level dir holding SKILL.md (+ sections) symlinks for the four skills
       # these tests invoke. No ./setup (it builds binaries, launches Chromium,
       # installs fonts, reads a /dev/tty prompt) and no binary build (SKILL.md +
@@ -242,28 +242,28 @@ jobs:
       # into the repo checkout, and this container's cross-mount symlinks
       # defeat the TUI skill scanner (see the note inside the step below) —
       # the real-file copies here are what the TUI actually reads. HOME is
-      # also not hermeticized, so the absolute ~/.claude/skills/gstack/...
-      # preamble paths resolve through the gstack root symlink this step makes.
-      - name: Register gstack skills for PTY smoke
+      # also not hermeticized, so the absolute ~/.claude/skills/paysec/...
+      # preamble paths resolve through the paysec root symlink this step makes.
+      - name: Register paysec skills for PTY smoke
         if: matrix.suite.name == 'e2e-pty-plan-smoke'
         run: |
           set -eu
           SKILLS_DIR="$HOME/.claude/skills"
-          REPO="$GITHUB_WORKSPACE"   # /__w/gstack/gstack
+          REPO="$GITHUB_WORKSPACE"   # /__w/paysec/paysec
           mkdir -p "$SKILLS_DIR"
-          # The gstack root stays a symlink — the preamble's runtime bash resolves
-          # ~/.claude/skills/gstack/bin/* and ~/.claude/skills/gstack/<skill>/sections/*
+          # The paysec root stays a symlink — the preamble's runtime bash resolves
+          # ~/.claude/skills/paysec/bin/* and ~/.claude/skills/paysec/<skill>/sections/*
           # through it, and bash follows cross-mount symlinks fine.
-          ln -snf "$REPO" "$SKILLS_DIR/gstack"
+          ln -snf "$REPO" "$SKILLS_DIR/paysec"
           # But the per-skill SKILL.md the TUI DISCOVERS must be a REAL file on the
           # same mount as $HOME. claude 2.1.187's interactive-TUI skill scanner does
           # not follow the /github/home -> /__w cross-mount symlink (proven: `claude
-          # -p` discovered the skill — READY — while the TUI rejected /office-hours
+          # -p` discovered the skill — READY — while the TUI rejected /idea-review
           # as "Unknown command"; a local macOS repro with the identical symlinked
           # registry recognized it, isolating the failure to the container's
           # cross-mount symlink). Copy SKILL.md + sections as real files so the TUI
           # reads them directly.
-          for s in office-hours plan-ceo-review plan-eng-review plan-design-review; do
+          for s in idea-review plan-business-review plan-tech-review plan-ux-review; do
             rm -rf "${SKILLS_DIR:?}/$s"
             mkdir -p "$SKILLS_DIR/$s"
             cp "$REPO/$s/SKILL.md" "$SKILLS_DIR/$s/SKILL.md"
@@ -273,12 +273,12 @@ jobs:
           # surfaces /slash commands from <cwd>/.claude/skills, and the smokes run
           # with cwd=$REPO whose .claude/skills is gitignored (absent on a fresh CI
           # checkout) — the user-dir registration above feeds `claude -p` but the
-          # TUI looks here. No gstack symlink in the project dir: it would point at
+          # TUI looks here. No paysec symlink in the project dir: it would point at
           # its own parent ($REPO). Runtime preamble paths use the user-dir
-          # ~/.claude/skills/gstack symlink above.
+          # ~/.claude/skills/paysec symlink above.
           PROJ_SKILLS="$REPO/.claude/skills"
           mkdir -p "$PROJ_SKILLS"
-          for s in office-hours plan-ceo-review plan-eng-review plan-design-review; do
+          for s in idea-review plan-business-review plan-tech-review plan-ux-review; do
             rm -rf "${PROJ_SKILLS:?}/$s"
             mkdir -p "$PROJ_SKILLS/$s"
             cp "$REPO/$s/SKILL.md" "$PROJ_SKILLS/$s/SKILL.md"
@@ -288,43 +288,43 @@ jobs:
           # first-run branch mid-test. On a fresh runner these are all missing, so
           # each smoke's preamble fires feature discovery / telemetry / lake-intro
           # prompts before the behavior under test — and touching the
-          # feature-discovery marker under ~/.claude/skills/gstack/ trips Claude
+          # feature-discovery marker under ~/.claude/skills/paysec/ trips Claude
           # Code's sensitive-file permission prompt, stalling the run before the
           # scope gate renders (the documented intermittent
           # scope-gate-question-NOT-observed failure: outcome=asked was the
           # permission dialog, not the gate). Dev machines never hit this because
           # the operator's markers already exist; CI must seed them explicitly.
-          mkdir -p "$HOME/.gstack"
-          touch "$HOME/.gstack/.activated" \
-                "$HOME/.gstack/.first-loop-tip-shown" \
-                "$HOME/.gstack/.telemetry-prompted" \
-                "$HOME/.gstack/.proactive-prompted" \
-                "$HOME/.gstack/.completeness-intro-seen" \
-                "$HOME/.gstack/.plan-tune-nudge-shown"
-          # These two resolve through the gstack root symlink into $REPO —
+          mkdir -p "$HOME/.paysec"
+          touch "$HOME/.paysec/.activated" \
+                "$HOME/.paysec/.first-loop-tip-shown" \
+                "$HOME/.paysec/.telemetry-prompted" \
+                "$HOME/.paysec/.proactive-prompted" \
+                "$HOME/.paysec/.completeness-intro-seen" \
+                "$HOME/.paysec/.plan-tune-nudge-shown"
+          # These two resolve through the paysec root symlink into $REPO —
           # untracked scratch in the CI checkout, exactly where the preamble looks.
-          touch "$SKILLS_DIR/gstack/.feature-prompted-continuous-checkpoint" \
-                "$SKILLS_DIR/gstack/.feature-prompted-model-overlay"
+          touch "$SKILLS_DIR/paysec/.feature-prompted-continuous-checkpoint" \
+                "$SKILLS_DIR/paysec/.feature-prompted-model-overlay"
           echo "--- registry under $SKILLS_DIR ---"
-          ls -la "$SKILLS_DIR/gstack" "$SKILLS_DIR/office-hours" "$SKILLS_DIR/plan-ceo-review"
+          ls -la "$SKILLS_DIR/paysec" "$SKILLS_DIR/idea-review" "$SKILLS_DIR/plan-business-review"
           # Fail fast if any committed target moved/renamed — a dangling symlink
           # would otherwise resurface as a silent "Unknown command" + 35-min timeout.
           for f in \
-            "$SKILLS_DIR/office-hours/SKILL.md" \
-            "$SKILLS_DIR/plan-ceo-review/SKILL.md" \
-            "$SKILLS_DIR/plan-eng-review/SKILL.md" \
-            "$SKILLS_DIR/plan-design-review/SKILL.md" \
-            "$SKILLS_DIR/gstack/bin/gstack-update-check" \
-            "$SKILLS_DIR/gstack/office-hours/sections/design-and-handoff.md" \
-            "$SKILLS_DIR/gstack/plan-ceo-review/sections/review-sections.md" \
-            "$SKILLS_DIR/gstack/plan-eng-review/sections/review-sections.md" \
-            "$SKILLS_DIR/gstack/plan-design-review/sections/review-sections.md"; do
+            "$SKILLS_DIR/idea-review/SKILL.md" \
+            "$SKILLS_DIR/plan-business-review/SKILL.md" \
+            "$SKILLS_DIR/plan-tech-review/SKILL.md" \
+            "$SKILLS_DIR/plan-ux-review/SKILL.md" \
+            "$SKILLS_DIR/paysec/bin/paysec-update-check" \
+            "$SKILLS_DIR/paysec/idea-review/sections/design-and-handoff.md" \
+            "$SKILLS_DIR/paysec/plan-business-review/sections/review-sections.md" \
+            "$SKILLS_DIR/paysec/plan-tech-review/sections/review-sections.md" \
+            "$SKILLS_DIR/paysec/plan-ux-review/sections/review-sections.md"; do
             if [ ! -e "$f" ]; then
               echo "ERROR: skill-registry target missing (symlink dangles): $f" >&2
               exit 1
             fi
           done
-          for s in office-hours plan-ceo-review plan-eng-review plan-design-review; do
+          for s in idea-review plan-business-review plan-tech-review plan-ux-review; do
             grep -m1 "^name: $s\$" "$SKILLS_DIR/$s/SKILL.md" >/dev/null \
               || { echo "ERROR: $s SKILL.md missing 'name: $s' frontmatter" >&2; exit 1; }
           done
@@ -344,7 +344,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: eval-${{ matrix.suite.name }}
-          path: ~/.gstack-dev/evals/*.json
+          path: ~/.paysec-dev/evals/*.json
           retention-days: 90
 
   report:

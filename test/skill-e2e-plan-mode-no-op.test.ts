@@ -15,8 +15,8 @@
  * runner, same outcome contract — just `inPlanMode: false`.
  *
  * Coverage grew with the scope-gate bypass (plan-mode auto-select B):
- *  - plan-ceo-review: original preamble-misfire regression.
- *  - plan-eng-review / plan-design-review: the bypass must NOT fire outside
+ *  - plan-business-review: original preamble-misfire regression.
+ *  - plan-tech-review / plan-ux-review: the bypass must NOT fire outside
  *    plan mode (scopeGateAutoSelectObserved stays false), and when the run
  *    ends in 'asked', the question that fired must be the scope gate itself
  *    (outside plan mode with no named target, the gate is the FIRST
@@ -57,7 +57,7 @@ weekly export emails. One new component, one route, one test file.
 `;
 
 describeE2E('plan-mode-info no-op outside plan mode (gate regression)', () => {
-  for (const skillName of ['plan-ceo-review', 'plan-eng-review', 'plan-design-review'] as const) {
+  for (const skillName of ['plan-business-review', 'plan-tech-review', 'plan-ux-review'] as const) {
     test(`${skillName} reaches a terminal outcome outside plan mode`, async () => {
       const obs = await runPlanSkillObservation({
         skillName,
@@ -69,7 +69,7 @@ describeE2E('plan-mode-info no-op outside plan mode (gate regression)', () => {
         // that shape CONTRACTUAL ("use exactly this shape" in the template);
         // native AskUserQuestion could render terse option labels that a
         // correct run would fail on (red-team finding).
-        ...(skillName === 'plan-ceo-review'
+        ...(skillName === 'plan-business-review'
           ? {}
           : { extraArgs: ['--disallowedTools', 'AskUserQuestion'] }),
       });
@@ -89,7 +89,7 @@ describeE2E('plan-mode-info no-op outside plan mode (gate regression)', () => {
       // section is leaking outside plan mode.
       expect(obs.evidence).not.toContain(PLAN_MODE_REMINDER);
 
-      if (skillName !== 'plan-ceo-review') {
+      if (skillName !== 'plan-business-review') {
         // Scope-gate bypass must not misfire: no auto-select announcement
         // outside plan mode.
         expect(obs.scopeGateAutoSelectObserved ?? false).toBe(false);
@@ -101,7 +101,7 @@ describeE2E('plan-mode-info no-op outside plan mode (gate regression)', () => {
         // through — the exact regression this test exists to catch.
         //
         // Throw WITH the evidence tail instead of a bare expect: this member
-        // (plan-design-review especially) intermittently fails ONLY this
+        // (plan-ux-review especially) intermittently fails ONLY this
         // check on unchanged code (PR #2593 rounds 3/11/rerun, passing
         // rounds 5/6), and a bare Expected-true/Received-false in CI logs is
         // undiagnosable — we can't tell a detector-sensitivity miss (render
@@ -124,9 +124,9 @@ describeE2E('plan-mode-info no-op outside plan mode (gate regression)', () => {
   // review output), proving the target was used rather than the question
   // merely skipped. Also the over-trigger guard for the tightened
   // "explicit-only" exception wording.
-  test('plan-eng-review skips the scope gate for an explicitly-pasted target', async () => {
+  test('plan-tech-review skips the scope gate for an explicitly-pasted target', async () => {
     const obs = await runPlanSkillObservation({
-      skillName: 'plan-eng-review',
+      skillName: 'plan-tech-review',
       inPlanMode: false,
       initialPlanContent: NAMED_TARGET_SEED,
       trackTokens: [SEED_TOKEN],

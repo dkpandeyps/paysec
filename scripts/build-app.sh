@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build GStack Browser.app — macOS application bundle
+# Build PaySec Browser.app — macOS application bundle
 #
 # Creates a self-contained .app with:
 #   - Compiled browse binary
@@ -7,7 +7,7 @@
 #   - Chrome extension (sidebar)
 #   - Info.plist with bundle ID
 #
-# Output: dist/GStack Browser.app and dist/GStack-Browser.dmg
+# Output: dist/PaySec Browser.app and dist/PaySec-Browser.dmg
 #
 # Usage:
 #   ./scripts/build-app.sh           # Build .app + DMG
@@ -17,8 +17,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-APP_NAME="GStack Browser"
-BUNDLE_ID="com.gstack.browser"
+APP_NAME="PaySec Browser"
+BUNDLE_ID="com.paysec.browser"
 VERSION=$(cat "$ROOT/VERSION" 2>/dev/null || echo "0.0.1")
 BUILD_DIR="$ROOT/dist"
 APP_DIR="$BUILD_DIR/$APP_NAME.app"
@@ -27,7 +27,7 @@ echo "Building $APP_NAME v$VERSION..."
 
 # ─── Step 1: Compile browse binary ─────────────────────────────
 echo "  Compiling browse binary..."
-cd "$ROOT/browse"
+cd "$ROOT/browser"
 bun build --compile src/cli.ts --outfile "$BUILD_DIR/browse-app" --target=bun 2>/dev/null
 cd "$ROOT"
 
@@ -56,8 +56,8 @@ mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"
 
 # Launcher script
-cp "$ROOT/scripts/app/gstack-browser" "$APP_DIR/Contents/MacOS/gstack-browser"
-chmod +x "$APP_DIR/Contents/MacOS/gstack-browser"
+cp "$ROOT/scripts/app/paysec-browser" "$APP_DIR/Contents/MacOS/paysec-browser"
+chmod +x "$APP_DIR/Contents/MacOS/paysec-browser"
 
 # Browse binary
 cp "$BUILD_DIR/browse-app" "$APP_DIR/Contents/Resources/browse"
@@ -65,16 +65,16 @@ chmod +x "$APP_DIR/Contents/Resources/browse"
 
 # Extension
 cp -r "$ROOT/extension" "$APP_DIR/Contents/Resources/extension"
-# Remove .auth.json if present (auth now via /health endpoint)
+# Remove .auth.json if present (auth now via /code-health endpoint)
 rm -f "$APP_DIR/Contents/Resources/extension/.auth.json"
 
 # Server source (needed for `bun run server.ts` subprocess)
 # The launcher sets BROWSE_SERVER_SCRIPT to point at this.
 # Copy the full src/ directory since server.ts imports other modules.
 echo "  Copying browse source..."
-cp -r "$ROOT/browse/src" "$APP_DIR/Contents/Resources/src"
+cp -r "$ROOT/browser/src" "$APP_DIR/Contents/Resources/src"
 # Also need package.json for module resolution
-cp "$ROOT/browse/package.json" "$APP_DIR/Contents/Resources/" 2>/dev/null || true
+cp "$ROOT/browser/package.json" "$APP_DIR/Contents/Resources/" 2>/dev/null || true
 
 # Chromium
 mkdir -p "$APP_DIR/Contents/Resources/chromium"
@@ -82,7 +82,7 @@ echo "  Copying Chromium (~330MB)..."
 cp -a "$CHROME_APP" "$APP_DIR/Contents/Resources/chromium/"
 
 # ─── Step 3b: Rebrand Chromium ────────────────────────────────────
-# Patch the bundled Chromium's Info.plist so macOS shows "GStack Browser"
+# Patch the bundled Chromium's Info.plist so macOS shows "PaySec Browser"
 # in the menu bar, Dock, and Cmd+Tab instead of "Google Chrome for Testing"
 CHROMIUM_PLIST="$APP_DIR/Contents/Resources/chromium/$(basename "$CHROME_APP")/Contents/Info.plist"
 if [ -f "$CHROMIUM_PLIST" ]; then
@@ -98,7 +98,7 @@ if [ -f "$CHROMIUM_PLIST" ]; then
     APP_NAME_SED_ESCAPED=$(printf '%s' "$APP_NAME" | sed 's/[&/\]/\\&/g')
     sed -i '' "s/Google Chrome for Testing/${APP_NAME_SED_ESCAPED}/g" "$CHROMIUM_STRINGS" 2>/dev/null || true
   fi
-  # Replace Chromium's icon with ours so the Dock shows the GStack icon
+  # Replace Chromium's icon with ours so the Dock shows the PaySec icon
   # (Chromium's process owns the Dock icon, not our launcher)
   ICON_SRC="$SCRIPT_DIR/app/icon.icns"
   if [ -f "$ICON_SRC" ]; then
@@ -138,7 +138,7 @@ cat > "$APP_DIR/Contents/Info.plist" << PLIST
   <key>CFBundleShortVersionString</key>
   <string>$VERSION</string>
   <key>CFBundleExecutable</key>
-  <string>gstack-browser</string>
+  <string>paysec-browser</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleSignature</key>
@@ -161,7 +161,7 @@ PLIST
 APP_SIZE=$(du -sh "$APP_DIR" | cut -f1)
 echo ""
 echo "  $APP_NAME.app: $APP_SIZE"
-echo "    Contents/MacOS/gstack-browser     (launcher)"
+echo "    Contents/MacOS/paysec-browser     (launcher)"
 echo "    Contents/Resources/browse          ($(du -sh "$APP_DIR/Contents/Resources/browse" | cut -f1))"
 echo "    Contents/Resources/extension/      ($(du -sh "$APP_DIR/Contents/Resources/extension" | cut -f1))"
 echo "    Contents/Resources/chromium/       ($(du -sh "$APP_DIR/Contents/Resources/chromium" | cut -f1))"
@@ -173,7 +173,7 @@ if [ "${1:-}" = "--no-dmg" ]; then
   exit 0
 fi
 
-DMG_PATH="$BUILD_DIR/GStack-Browser.dmg"
+DMG_PATH="$BUILD_DIR/PaySec-Browser.dmg"
 echo ""
 echo "  Creating DMG..."
 rm -f "$DMG_PATH"

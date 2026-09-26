@@ -14,7 +14,7 @@ beforeAll(async () => {
 
 describe('gen-llms-txt — shape', () => {
   test('emits required top-level sections', () => {
-    expect(generated.content).toContain('# gstack');
+    expect(generated.content).toContain('# paysec');
     expect(generated.content).toContain('## Skills');
     expect(generated.content).toContain('## Browse Commands');
     // Convention block
@@ -64,7 +64,7 @@ describe('gen-llms-txt — shape', () => {
 });
 
 describe('gen-llms-txt — strict mode', () => {
-  test('does NOT throw on the live skill set (every gstack skill has name + description)', async () => {
+  test('does NOT throw on the live skill set (every paysec skill has name + description)', async () => {
     // The point of strict mode: catch missing-frontmatter skills before they
     // sneak past gen-skill-docs. The current repo state should pass strict.
     await expect(generateLlmsTxt({ root: ROOT, strict: true })).resolves.toBeDefined();
@@ -80,9 +80,9 @@ describe('gen-llms-txt — strict mode', () => {
         path.join(tmp, 'badskill', 'SKILL.md.tmpl'),
         '---\nname: badskill\n---\nbody\n',
       );
-      // Need a dummy browse/src/commands.ts shape — but we read from real
+      // Need a dummy browser/src/commands.ts shape — but we read from real
       // ROOT for browse commands. The strict failure should fire on the
-      // skill before that. So we point at the real browse/src indirectly
+      // skill before that. So we point at the real browser/src indirectly
       // through the absolute import in gen-llms-txt.ts (already imported
       // at module load). That's fine — strict throws on parsing, before
       // browse commands are read. But the real ROOT includes valid skills
@@ -95,8 +95,8 @@ describe('gen-llms-txt — strict mode', () => {
 });
 
 describe('gen-llms-txt — generated file is fresh', () => {
-  test('committed gstack/llms.txt matches what the generator produces now', () => {
-    const committed = fs.readFileSync(path.join(ROOT, 'gstack', 'llms.txt'), 'utf-8');
+  test('committed paysec/llms.txt matches what the generator produces now', () => {
+    const committed = fs.readFileSync(path.join(ROOT, 'paysec', 'llms.txt'), 'utf-8');
     expect(committed).toBe(generated.content);
   });
 });

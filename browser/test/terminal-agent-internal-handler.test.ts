@@ -10,7 +10,7 @@ import * as path from 'path';
 // This test fails CI if the helper goes away or the existing routes
 // regress to inline auth + JSON parse boilerplate. Wiring tests
 // (token grant/revoke behavior) already live in
-// browse/test/terminal-agent-integration.test.ts.
+// browser/test/terminal-agent-integration.test.ts.
 
 const AGENT_TS = path.resolve(import.meta.path, '..', '..', 'src', 'terminal-agent.ts');
 

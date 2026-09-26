@@ -1,6 +1,6 @@
 # diagram-render
 
-Offline diagram rendering for make-pdf and /diagram. One self-contained HTML
+Offline diagram rendering for md-to-pdf and /make-diagram. One self-contained HTML
 page (`dist/diagram-render.html`, ~9MB) bundles mermaid, the excalidraw export
 utilities, and the official mermaid→excalidraw converter. The browse daemon
 loads it with `load-html`; callers drive it through `browse js` and pull bytes
@@ -19,7 +19,7 @@ fails CI if `dist/` is edited by hand or falls out of sync with `BUILD_INFO.json
 | `__mermaidToExcalidraw(text)` | mermaid text → `.excalidraw` scene JSON (flowcharts fully; other types degrade upstream). |
 | `__excalidrawToSvg(sceneJson)` | scene JSON → SVG string (Excalifont embedded, offline). |
 | `__rasterize(svg, targetWidthPx)` | SVG → PNG data URL. Callers own DPI math: `targetWidthPx = placed width (in) × 300`. Throws on tainted canvas. |
-| `__downscaleRaster(dataUri, targetWidthPx, mime)` | raster data URI → smaller data URI at `targetWidthPx` (same mime). make-pdf uses it to normalize oversized photos to print resolution. |
+| `__downscaleRaster(dataUri, targetWidthPx, mime)` | raster data URI → smaller data URI at `targetWidthPx` (same mime). md-to-pdf uses it to normalize oversized photos to print resolution. |
 | `__mountForScreenshot(svg, px)` | taint-proof fallback: mounts SVG at `#raster-stage` for `browse screenshot --selector`. |
 | `__probeImage(src)` | data URI/URL → `{width, height}` JSON. |
 | `__bundleInfo` | `{ name, deps }` — pinned dependency versions baked at build. |

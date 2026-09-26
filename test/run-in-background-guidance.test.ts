@@ -6,7 +6,7 @@ import * as path from 'path';
 //
 // Claude Code v2.1.198 made subagents run in the BACKGROUND by default.
 // Guidance written before that ("do NOT use run_in_background") stopped
-// producing a foreground run — the review army and autoplan dual-voice
+// producing a foreground run — the review army and auto-plan-review dual-voice
 // steps silently launched specialists in the background and merged before
 // they completed. The only guidance that works post-2.1.198 is an explicit
 // `run_in_background: false` on the Agent call.
@@ -17,7 +17,7 @@ import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
 
-const GENERATED_WITH_GUIDANCE = ['review/SKILL.md', 'autoplan/SKILL.md'];
+const GENERATED_WITH_GUIDANCE = ['pr-review/SKILL.md', 'auto-plan-review/SKILL.md'];
 
 // The inverted, post-2.1.198-inert phrasings. Checked across every generated
 // SKILL.md so the regression can't migrate to another skill unnoticed.
@@ -29,7 +29,7 @@ function allGeneratedSkillFiles(): string[] {
     if (!entry.isDirectory() || entry.name.startsWith('.') || entry.name === 'node_modules') continue;
     const p = path.join(ROOT, entry.name, 'SKILL.md');
     if (fs.existsSync(p)) out.push(p);
-    // Generated on-demand section files (e.g. ship/sections/review-army.md)
+    // Generated on-demand section files (e.g. ship-pr/sections/review-army.md)
     // carry the same resolver output as SKILL.md bodies — scan them too.
     const sections = path.join(ROOT, entry.name, 'sections');
     if (fs.existsSync(sections)) {

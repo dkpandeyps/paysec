@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 /**
- * gstack-issue-guard — fetch tracker text and emit it inside the untrusted
+ * paysec-issue-guard — fetch tracker text and emit it inside the untrusted
  * trust envelope (lib/tracker-guard.ts). The ONLY sanctioned path for reading
  * PR/issue body text into an agent's context — the wiring scanner
  * (test/tracker-guard-wiring.test.ts) fails CI on raw reads outside it.
  *
- *   gstack-issue-guard issue <n>       # gh issue: title + body + comments
- *   gstack-issue-guard pr-body         # gh: current PR body
- *   gstack-issue-guard pr-comments     # gh: current PR issue-comments
- *   gstack-issue-guard --stdin [--source <label>]   # envelope stdin (works for glab too)
+ *   paysec-issue-guard issue <n>       # gh issue: title + body + comments
+ *   paysec-issue-guard pr-body         # gh: current PR body
+ *   paysec-issue-guard pr-comments     # gh: current PR issue-comments
+ *   paysec-issue-guard --stdin [--source <label>]   # envelope stdin (works for glab too)
  *
  * Failure polarity: a gh/glab fetch failure exits NON-ZERO with NO envelope on
  * stdout — never emit a fake-trusted empty envelope. Callers own their error
@@ -33,7 +33,7 @@ function gh(args: string[]): { ok: boolean; out: string; err: string } {
 }
 
 function fail(msg: string): never {
-  console.error(`gstack-issue-guard: ${msg}`);
+  console.error(`paysec-issue-guard: ${msg}`);
   process.exit(1);
 }
 
@@ -95,4 +95,4 @@ if (mode === "pr-comments") {
   process.exit(0);
 }
 
-fail("usage: gstack-issue-guard issue <n> | pr-body | pr-comments | --stdin [--source <label>]");
+fail("usage: paysec-issue-guard issue <n> | pr-body | pr-comments | --stdin [--source <label>]");

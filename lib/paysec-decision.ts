@@ -1,5 +1,5 @@
 /**
- * gstack-decision — event-sourced institutional decision memory.
+ * paysec-decision — event-sourced institutional decision memory.
  *
  * decisions.jsonl is an APPEND-ONLY EVENT LOG (not mutable rows): `decide`,
  * `supersede`, and `redact` events. "Active" is COMPUTED — a `decide` whose id is
@@ -55,9 +55,9 @@ export interface DecisionPaths {
   archive: string;
 }
 
-/** Resolve the per-project decision store paths. Bins pass slug + GSTACK_HOME. */
-export function decisionPaths(slug: string, gstackHome?: string): DecisionPaths {
-  const home = gstackHome || process.env.GSTACK_HOME || join(homedir(), ".gstack");
+/** Resolve the per-project decision store paths. Bins pass slug + PAYSEC_HOME. */
+export function decisionPaths(slug: string, paysecHome?: string): DecisionPaths {
+  const home = paysecHome || process.env.PAYSEC_HOME || join(homedir(), ".paysec");
   const dir = join(home, "projects", slug || "unknown");
   return {
     log: join(dir, "decisions.jsonl"),

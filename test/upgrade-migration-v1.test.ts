@@ -1,5 +1,5 @@
 /**
- * gstack-upgrade/migrations/v1.0.0.0.sh — writing style migration.
+ * paysec-upgrade/migrations/v1.0.0.0.sh — writing style migration.
  *
  * Coverage:
  * - Fresh state: writes the pending-prompt flag
@@ -13,12 +13,12 @@ import * as os from 'os';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const MIGRATION = path.join(ROOT, 'gstack-upgrade', 'migrations', 'v1.0.0.0.sh');
+const MIGRATION = path.join(ROOT, 'paysec-upgrade', 'migrations', 'v1.0.0.0.sh');
 
 let tmpHome: string;
 
 beforeEach(() => {
-  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-mig-test-'));
+  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-mig-test-'));
 });
 
 afterEach(() => {
@@ -26,13 +26,13 @@ afterEach(() => {
 });
 
 function run(): { stdout: string; stderr: string; status: number } {
-  // Override HOME too — the migration reads `${HOME}/.claude/skills/gstack/bin/gstack-config`,
+  // Override HOME too — the migration reads `${HOME}/.claude/skills/paysec/bin/paysec-config`,
   // and the developer's real config may have `explain_level` set, which the
   // migration interprets as "user already decided" and short-circuits without
   // writing the pending-prompt flag (breaking these tests).
   const res = spawnSync('bash', [MIGRATION], {
     encoding: 'utf-8',
-    env: { ...process.env, GSTACK_HOME: tmpHome, HOME: tmpHome },
+    env: { ...process.env, PAYSEC_HOME: tmpHome, HOME: tmpHome },
   });
   return {
     stdout: (res.stdout ?? '').trim(),

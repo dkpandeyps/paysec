@@ -12,9 +12,9 @@ import * as os from 'os';
 import { getProjectEvalDir } from './eval-store';
 import { hermeticChildEnv, isHermeticEnabled } from './hermetic-env';
 
-const GSTACK_DEV_DIR = path.join(os.homedir(), '.gstack-dev');
-const HEARTBEAT_PATH = path.join(GSTACK_DEV_DIR, 'e2e-live.json'); // heartbeat stays global
-const PROJECT_DIR = path.dirname(getProjectEvalDir()); // ~/.gstack/projects/$SLUG/
+const PAYSEC_DEV_DIR = path.join(os.homedir(), '.paysec-dev');
+const HEARTBEAT_PATH = path.join(PAYSEC_DEV_DIR, 'e2e-live.json'); // heartbeat stays global
+const PROJECT_DIR = path.dirname(getProjectEvalDir()); // ~/.paysec/projects/$SLUG/
 
 /** Sanitize test name for use as filename: strip leading slashes, replace / with - */
 export function sanitizeTestName(name: string): string {
@@ -128,7 +128,7 @@ export async function runSkillTest(options: {
   /** Model to use. Defaults to claude-sonnet-4-6 (overridable via EVALS_MODEL env). */
   model?: string;
   /** Extra env vars merged into the spawned claude -p process. Useful for
-   *  per-test GSTACK_HOME overrides so the test doesn't have to spell out
+   *  per-test PAYSEC_HOME overrides so the test doesn't have to spell out
    *  env setup in the prompt itself. */
   env?: Record<string, string>;
 }): Promise<SkillTestResult> {
@@ -178,13 +178,13 @@ export async function runSkillTest(options: {
   const proc = Bun.spawn(['claude', ...args], {
     cwd: workingDirectory,
     // Hermetic by default (see test/helpers/hermetic-env.ts): operator
-    // session context (CONDUCTOR_*, CLAUDECODE, ~/.claude config, ~/.gstack)
+    // session context (CONDUCTOR_*, CLAUDECODE, ~/.claude config, ~/.paysec)
     // never reaches the child; EVALS_HERMETIC=0 restores the legacy env.
-    // Default GSTACK_HEADLESS=1 so eval/E2E runs classify as headless (BLOCK on an
+    // Default PAYSEC_HEADLESS=1 so eval/E2E runs classify as headless (BLOCK on an
     // AskUserQuestion failure rather than emit a prose question no human reads). A
     // suite exercising the INTERACTIVE prose-fallback path opts out by passing
-    // `env: { GSTACK_HEADLESS: '' }` — extraEnv wins because it spreads last.
-    env: hermeticChildEnv({ GSTACK_HEADLESS: '1', ...extraEnv }),
+    // `env: { PAYSEC_HEADLESS: '' }` — extraEnv wins because it spreads last.
+    env: hermeticChildEnv({ PAYSEC_HEADLESS: '1', ...extraEnv }),
     stdin: new Blob([prompt]),
     stdout: 'pipe',
     stderr: 'pipe',
@@ -352,7 +352,7 @@ export async function runSkillTest(options: {
   // Save failure transcript to persistent run directory (or fallback to workingDirectory)
   if (browseErrors.length > 0 || exitReason !== 'success') {
     try {
-      const failureDir = runDir || path.join(workingDirectory, '.gstack', 'test-transcripts');
+      const failureDir = runDir || path.join(workingDirectory, '.paysec', 'test-transcripts');
       fs.mkdirSync(failureDir, { recursive: true });
       const failureName = safeName
         ? `${safeName}-failure.json`

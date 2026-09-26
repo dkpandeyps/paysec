@@ -1,5 +1,5 @@
 // Swift-build invariant tests. Runs against the fixture iOS app at
-// test/fixtures/ios-qa/FixtureApp/. Requires the Swift toolchain
+// test/fixtures/ios-device-qa/FixtureApp/. Requires the Swift toolchain
 // (Xcode CLI tools or stand-alone Swift). Skipped if swift is not on PATH.
 //
 // Two invariants:
@@ -23,9 +23,9 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 const ROOT = join(import.meta.dir, '..');
-const FIXTURE_PATH = join(ROOT, 'test/fixtures/ios-qa/FixtureApp');
-const TEMPLATES_PATH = join(ROOT, 'ios-qa/templates');
-const GEN_ACCESSORS_PACKAGE = join(ROOT, 'ios-qa/scripts/gen-accessors-tool/Package.swift');
+const FIXTURE_PATH = join(ROOT, 'test/fixtures/ios-device-qa/FixtureApp');
+const TEMPLATES_PATH = join(ROOT, 'ios-device-qa/templates');
+const GEN_ACCESSORS_PACKAGE = join(ROOT, 'ios-device-qa/scripts/gen-accessors-tool/Package.swift');
 
 const COPIED_BRIDGE_TEMPLATES = [
   ['StateServer.swift.template', 'Sources/DebugBridgeCore/StateServer.swift'],
@@ -85,7 +85,7 @@ function bracedBlock(source: string, openBraceOffset: number): string {
 
 // The fixture is where the bridge is compiled and exercised end-to-end. Every
 // source copied into consuming apps must therefore be the canonical template,
-// or device QA can pass against code that /ios-qa never installs.
+// or device QA can pass against code that /ios-device-qa never installs.
 describe('template ↔ fixture parity', () => {
   for (const [templateName, fixtureDestination] of COPIED_BRIDGE_TEMPLATES) {
     test(`${templateName} matches ${fixtureDestination}`, () => {

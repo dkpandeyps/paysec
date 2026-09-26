@@ -8,7 +8,7 @@ import fs from "fs";
 import path from "path";
 
 export interface GalleryOptions {
-  designsDir: string; // ~/.gstack/projects/$SLUG/designs/
+  designsDir: string; // ~/.paysec/projects/$SLUG/designs/
   output: string;
 }
 
@@ -229,7 +229,7 @@ function generateEmptyGallery(): string {
 <body>
 <div class="empty">
   <h2>No design history yet</h2>
-  <p>Run <code>/design-shotgun</code> to start exploring design directions.</p>
+  <p>Run <code>/design-variants</code> to start exploring design directions.</p>
 </div>
 </body>
 </html>`;

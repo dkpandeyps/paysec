@@ -17,7 +17,7 @@
  * stale blocks kept "passing" only because a teardown bug made `bun test`
  * exit 0 before reporting; once that was fixed (PR #2172) they surfaced as
  * failures and were removed. The rip itself is pinned as absence tests in
- * browse/test/sidebar-tabs.test.ts.
+ * browser/test/sidebar-tabs.test.ts.
  */
 
 import { describe, test, expect } from 'bun:test';
@@ -272,13 +272,13 @@ describe('cleanup and screenshot buttons', () => {
 
   test('cleanup button injects smart prompt into the live PTY (not just deterministic selectors)', () => {
     // Cleanup pipes a prompt into the running claude PTY via
-    // gstackInjectToTerminal (the chat-queue POST to /sidebar-command was
+    // paysecInjectToTerminal (the chat-queue POST to /sidebar-command was
     // ripped in PR #1216 — the live REPL is the only execution surface).
     const cleanupFn = js.slice(
       js.indexOf('async function runCleanup('),
       js.indexOf('async function runScreenshot('),
     );
-    expect(cleanupFn).toContain('gstackInjectToTerminal');
+    expect(cleanupFn).toContain('paysecInjectToTerminal');
     expect(cleanupFn).toContain('cleanupPrompt');
     // Should include both deterministic first pass AND agent snapshot analysis
     expect(cleanupFn).toContain('cleanup --all');
@@ -377,8 +377,8 @@ describe('cleanup heuristics (write-commands.ts)', () => {
     expect(wcSrc).toContain('text.length < 20');
   });
 
-  test('sticky cleanup skips gstack control indicator', () => {
-    expect(wcSrc).toContain("gstack-ctrl");
+  test('sticky cleanup skips paysec control indicator', () => {
+    expect(wcSrc).toContain("paysec-ctrl");
   });
 
   test('CLEANUP_SELECTORS has clutter category', () => {
@@ -637,16 +637,16 @@ describe('welcome page', () => {
   const welcomeExists = fs.existsSync(welcomePath);
   const welcomeSrc = welcomeExists ? fs.readFileSync(welcomePath, 'utf-8') : '';
 
-  test('welcome.html exists in browse/src/', () => {
+  test('welcome.html exists in browser/src/', () => {
     expect(welcomeExists).toBe(true);
   });
 
-  test('welcome page has GStack Browser branding', () => {
-    expect(welcomeSrc).toContain('GStack Browser');
+  test('welcome page has PaySec Browser branding', () => {
+    expect(welcomeSrc).toContain('PaySec Browser');
   });
 
   test('welcome page has extension-ready listener to hide prompt', () => {
-    expect(welcomeSrc).toContain('gstack-extension-ready');
+    expect(welcomeSrc).toContain('paysec-extension-ready');
     expect(welcomeSrc).toContain('sidebar-prompt');
   });
 
@@ -690,7 +690,7 @@ describe('server /welcome endpoint', () => {
     );
     // Changed from 302 redirect to about:blank (ERR_UNSAFE_REDIRECT on Windows)
     // to inline HTML fallback page (PR #822)
-    expect(welcomeSection).toContain('GStack Browser ready');
+    expect(welcomeSection).toContain('PaySec Browser ready');
     expect(welcomeSection).toContain('status: 200');
   });
 });
@@ -762,8 +762,8 @@ describe('sidebar arrow hint hide flow (4-step signal chain)', () => {
   // Signal flow:
   //   1. sidepanel.js connects → sends { type: 'sidebarOpened' } to background
   //   2. background.js receives → relays to active tab's content script
-  //   3. content.js receives 'sidebarOpened' → dispatches 'gstack-extension-ready'
-  //   4. welcome.html listens for 'gstack-extension-ready' → hides arrow
+  //   3. content.js receives 'sidebarOpened' → dispatches 'paysec-extension-ready'
+  //   4. welcome.html listens for 'paysec-extension-ready' → hides arrow
   //
   const contentSrc = fs.readFileSync(path.join(ROOT, '..', 'extension', 'content.js'), 'utf-8');
   const bgSrc = fs.readFileSync(path.join(ROOT, '..', 'extension', 'background.js'), 'utf-8');
@@ -775,7 +775,7 @@ describe('sidebar arrow hint hide flow (4-step signal chain)', () => {
     expect(spSrc).toContain("{ type: 'sidebarOpened' }");
     // Should be in updateConnection, after setConnState('connected').
     // Window is generous: updateConnection also exposes the PTY bootstrap
-    // globals (gstackServerPort/gstackAuthToken) before the connected branch.
+    // globals (paysecServerPort/paysecAuthToken) before the connected branch.
     const connectFn = spSrc.slice(
       spSrc.indexOf('function updateConnection('),
       spSrc.indexOf('function updateConnection(') + 2500,
@@ -808,10 +808,10 @@ describe('sidebar arrow hint hide flow (4-step signal chain)', () => {
     expect(handler).toContain("{ type: 'sidebarOpened' }");
   });
 
-  // Step 3: content.js fires gstack-extension-ready ONLY on sidebarOpened
+  // Step 3: content.js fires paysec-extension-ready ONLY on sidebarOpened
   test('step 3: content.js dispatches extension-ready on sidebarOpened message', () => {
     expect(contentSrc).toContain("msg.type === 'sidebarOpened'");
-    expect(contentSrc).toContain("new CustomEvent('gstack-extension-ready')");
+    expect(contentSrc).toContain("new CustomEvent('paysec-extension-ready')");
   });
 
   test('step 3: content.js does NOT auto-fire extension-ready on load', () => {
@@ -819,20 +819,20 @@ describe('sidebar arrow hint hide flow (4-step signal chain)', () => {
     // Now it should only fire when sidebarOpened message arrives.
     // Check there's no top-level dispatchEvent outside the message handler.
     const beforeListener = contentSrc.slice(0, contentSrc.indexOf('chrome.runtime.onMessage'));
-    expect(beforeListener).not.toContain("dispatchEvent(new CustomEvent('gstack-extension-ready'))");
+    expect(beforeListener).not.toContain("dispatchEvent(new CustomEvent('paysec-extension-ready'))");
   });
 
-  // Step 4: welcome page hides arrow on gstack-extension-ready
-  test('step 4: welcome page hides arrow on gstack-extension-ready event', () => {
-    expect(welcomeSrc).toContain("'gstack-extension-ready'");
+  // Step 4: welcome page hides arrow on paysec-extension-ready
+  test('step 4: welcome page hides arrow on paysec-extension-ready event', () => {
+    expect(welcomeSrc).toContain("'paysec-extension-ready'");
     expect(welcomeSrc).toContain("classList.add('hidden')");
   });
 
   test('step 4: welcome page does NOT auto-hide via status pill polling', () => {
-    // The old fallback (checkPill/gstack-status-pill) would hide the arrow
+    // The old fallback (checkPill/paysec-status-pill) would hide the arrow
     // as soon as the content script injected the pill, even without sidebar open.
     expect(welcomeSrc).not.toContain('checkPill');
-    expect(welcomeSrc).not.toContain('gstack-status-pill');
+    expect(welcomeSrc).not.toContain('paysec-status-pill');
   });
 });
 
@@ -916,7 +916,7 @@ describe('BROWSE_NO_AUTOSTART (sidebar headless prevention)', () => {
   });
 
   test('cli.ts shows actionable error message when BROWSE_NO_AUTOSTART blocks', () => {
-    expect(cliSrc).toContain('/open-gstack-browser');
+    expect(cliSrc).toContain('/open-paysec-browser');
     expect(cliSrc).toContain('BROWSE_NO_AUTOSTART is set');
   });
 
@@ -948,7 +948,7 @@ describe('BROWSE_NO_AUTOSTART (sidebar headless prevention)', () => {
 // The original 'idle check skips in headed mode' string-grep test was deleted
 // in v1.42.3.0 — it would have passed even with the dual-instance bug present
 // because it only grepped for "=== 'headed'" + 'return' in the same window.
-// Behavioral coverage lives in browse/test/server-factory.test.ts under the
+// Behavioral coverage lives in browser/test/server-factory.test.ts under the
 // 'idle timer + onDisconnect dual-instance fix' describe block, which
 // exercises the headed/headless/tunnel branches of idleCheckTick directly.
 // The companion '/sidebar-command resets idle timer' test went with the
@@ -963,8 +963,8 @@ describe('shutdown cleanup (server.ts)', () => {
   test('shutdown kills the terminal-agent via identity-based kill (no pkill)', () => {
     // v1.44+ identity-based teardown: only the PID recorded by THIS
     // daemon's agent is signaled. The pre-v1.44 `pkill -f terminal-agent`
-    // regex killed sibling gstack sessions on the same host (also pinned
-    // by browse/test/terminal-agent-pid-identity.test.ts).
+    // regex killed sibling paysec sessions on the same host (also pinned
+    // by browser/test/terminal-agent-pid-identity.test.ts).
     const shutdownFn = serverSrc.slice(
       serverSrc.indexOf('async function shutdown('),
       serverSrc.indexOf('async function shutdown(') + 1200,
@@ -973,7 +973,7 @@ describe('shutdown cleanup (server.ts)', () => {
     expect(shutdownFn).toContain('readAgentRecord');
     // No pkill CALL — the word may appear in the explanatory comment, so
     // match invocation shapes only. The repo-wide reintroduction tripwire
-    // is browse/test/terminal-agent-pid-identity.test.ts.
+    // is browser/test/terminal-agent-pid-identity.test.ts.
     expect(shutdownFn).not.toMatch(/(?:spawnSync|execSync|\$)\(\s*['"`]pkill/);
   });
 });

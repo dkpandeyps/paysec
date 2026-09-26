@@ -15,11 +15,11 @@ import { execSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
 const SETUP = path.join(ROOT, 'setup');
-const GSTACK_CONFIG = path.join(ROOT, 'bin', 'gstack-config');
+const PAYSEC_CONFIG = path.join(ROOT, 'bin', 'paysec-config');
 
 const setupSrc = fs.readFileSync(SETUP, 'utf-8');
 
-describe('setup: plan-tune hooks are non-interactive-safe', () => {
+describe('setup: tune-questions hooks are non-interactive-safe', () => {
   test('exposes --plan-tune-hooks / --no-plan-tune-hooks / =value flags', () => {
     expect(setupSrc).toContain('--plan-tune-hooks)');
     expect(setupSrc).toContain('--no-plan-tune-hooks)');
@@ -27,7 +27,7 @@ describe('setup: plan-tune hooks are non-interactive-safe', () => {
   });
 
   test('resolution falls through env then saved config', () => {
-    expect(setupSrc).toContain('GSTACK_PLAN_TUNE_HOOKS');
+    expect(setupSrc).toContain('PAYSEC_PLAN_TUNE_HOOKS');
     expect(setupSrc).toContain('get plan_tune_hooks');
   });
 
@@ -43,7 +43,7 @@ describe('setup: plan-tune hooks are non-interactive-safe', () => {
   });
 
   test('the interactive prompt is time-bounded (cannot hang)', () => {
-    // No bare blocking read for the plan-tune reply.
+    // No bare blocking read for the tune-questions reply.
     expect(setupSrc).not.toMatch(/read -r PLAN_TUNE_INSTALL_REPLY\b/);
     // It must use a timed read from the controlling tty with an empty fallback.
     // The timeout may be a literal or a named variable (e.g. "$_PT_PROMPT_TIMEOUT").
@@ -74,17 +74,17 @@ describe('dev-setup: never silently mutates global settings.json', () => {
   });
 });
 
-describe('gstack-config: plan_tune_hooks key', () => {
-  // Isolate state: gstack-config reads $GSTACK_HOME/config.yaml. Point it at a
+describe('paysec-config: plan_tune_hooks key', () => {
+  // Isolate state: paysec-config reads $PAYSEC_HOME/config.yaml. Point it at a
   // fresh temp dir so `get` returns the built-in default rather than whatever
-  // the host machine has in ~/.gstack/config.yaml (which would make the
+  // the host machine has in ~/.paysec/config.yaml (which would make the
   // default-value assertion non-deterministic).
   let tmpHome: string;
   let env: NodeJS.ProcessEnv;
 
   beforeAll(() => {
-    tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-cfg-test-'));
-    env = { ...process.env, GSTACK_HOME: tmpHome };
+    tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-cfg-test-'));
+    env = { ...process.env, PAYSEC_HOME: tmpHome };
   });
 
   afterAll(() => {
@@ -92,7 +92,7 @@ describe('gstack-config: plan_tune_hooks key', () => {
   });
 
   test('default is "prompt"', () => {
-    const out = execSync(`${GSTACK_CONFIG} get plan_tune_hooks`, {
+    const out = execSync(`${PAYSEC_CONFIG} get plan_tune_hooks`, {
       encoding: 'utf-8',
       env,
     }).trim();
@@ -100,24 +100,24 @@ describe('gstack-config: plan_tune_hooks key', () => {
   });
 
   test('appears in defaults and list output', () => {
-    const defaults = execSync(`${GSTACK_CONFIG} defaults`, { encoding: 'utf-8', env });
+    const defaults = execSync(`${PAYSEC_CONFIG} defaults`, { encoding: 'utf-8', env });
     expect(defaults).toContain('plan_tune_hooks');
-    const list = execSync(`${GSTACK_CONFIG} list`, { encoding: 'utf-8', env });
+    const list = execSync(`${PAYSEC_CONFIG} list`, { encoding: 'utf-8', env });
     expect(list).toContain('plan_tune_hooks');
   });
 
   test('accepts valid values (round-trips yes/no/prompt)', () => {
     for (const v of ['yes', 'no', 'prompt']) {
-      execSync(`${GSTACK_CONFIG} set plan_tune_hooks ${v}`, { encoding: 'utf-8', env });
-      const got = execSync(`${GSTACK_CONFIG} get plan_tune_hooks`, { encoding: 'utf-8', env }).trim();
+      execSync(`${PAYSEC_CONFIG} set plan_tune_hooks ${v}`, { encoding: 'utf-8', env });
+      const got = execSync(`${PAYSEC_CONFIG} get plan_tune_hooks`, { encoding: 'utf-8', env }).trim();
       expect(got).toBe(v);
     }
   });
 
   test('rejects out-of-domain values (warns + falls back to prompt)', () => {
-    const res = execSync(`${GSTACK_CONFIG} set plan_tune_hooks maybe 2>&1`, { encoding: 'utf-8', env });
+    const res = execSync(`${PAYSEC_CONFIG} set plan_tune_hooks maybe 2>&1`, { encoding: 'utf-8', env });
     expect(res.toLowerCase()).toContain('not recognized');
-    const got = execSync(`${GSTACK_CONFIG} get plan_tune_hooks`, { encoding: 'utf-8', env }).trim();
+    const got = execSync(`${PAYSEC_CONFIG} get plan_tune_hooks`, { encoding: 'utf-8', env }).trim();
     expect(got).toBe('prompt');
   });
 });

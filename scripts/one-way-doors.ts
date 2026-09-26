@@ -17,7 +17,7 @@
  *
  * Ordering
  * --------
- * isOneWayDoor() is called by gstack-question-sensitivity --check in this
+ * isOneWayDoor() is called by paysec-question-sensitivity --check in this
  * order:
  *   1. Look up registry by id → use registry.door_type if found
  *   2. If not in registry: apply keyword patterns below
@@ -85,8 +85,8 @@ const DESTRUCTIVE_PATTERNS: RegExp[] = [
  * inherently high-stakes.
  */
 const ONE_WAY_SKILL_CATEGORIES = new Set<string>([
-  'cso:approval', // security-audit findings
-  'land-and-deploy:approval', // anything /land-and-deploy asks
+  'security-audit:approval', // security-audit findings
+  'merge-and-deploy:approval', // anything /merge-and-deploy asks
 ]);
 
 export interface ClassifyInput {

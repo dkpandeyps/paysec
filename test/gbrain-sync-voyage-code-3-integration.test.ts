@@ -141,7 +141,7 @@ function gbrainEnv(s: SandboxEnv): NodeJS.ProcessEnv {
 
 function runGbrain(s: SandboxEnv, args: string[], opts: { timeout?: number } = {}) {
   // cwd MUST be the sandbox root, not the test's parent CWD. If gbrain runs
-  // from inside the gstack worktree, it picks up the worktree's
+  // from inside the paysec worktree, it picks up the worktree's
   // `.gbrain-source` pin and tries to sync that source too — which won't
   // exist in the sandbox PGLite, and the resulting "not found" exits 1.
   return spawnSync("gbrain", args, {
@@ -290,7 +290,7 @@ describe.skipIf(!shouldRun)(
 
           // code-def is the symbol-aware path. It doesn't strictly need
           // embeddings (symbols are extracted by tree-sitter), but the JSON
-          // shape it returns is the contract gstack's CLAUDE.md guidance
+          // shape it returns is the contract paysec's CLAUDE.md guidance
           // points the agent at. Verify it works against our PGLite + Voyage
           // setup.
           const result = runGbrain(s, ["code-def", "fibonacci"]);

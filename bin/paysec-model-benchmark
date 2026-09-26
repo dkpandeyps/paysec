@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
 /**
- * gstack-model-benchmark — run the same prompt across multiple providers
+ * paysec-model-benchmark — run the same prompt across multiple providers
  * and compare latency, tokens, cost, quality, and tool-call count.
  *
  * Usage:
- *   gstack-model-benchmark <skill-or-prompt-file> [options]
+ *   paysec-model-benchmark <skill-or-prompt-file> [options]
  *
  * Options:
  *   --models claude,gpt,gemini   Comma-separated provider list (default: claude)
@@ -19,9 +19,9 @@
  *   --dry-run                    Validate flags + resolve auth, don't invoke providers
  *
  * Examples:
- *   gstack-model-benchmark --prompt "Write a haiku about databases" --models claude,gpt
- *   gstack-model-benchmark ./test-prompt.txt --models claude,gpt,gemini --judge
- *   gstack-model-benchmark --prompt "hi" --models claude,gpt,gemini --dry-run
+ *   paysec-model-benchmark --prompt "Write a haiku about databases" --models claude,gpt
+ *   paysec-model-benchmark ./test-prompt.txt --models claude,gpt,gemini --judge
+ *   paysec-model-benchmark --prompt "hi" --models claude,gpt,gemini --dry-run
  */
 
 import '../lib/conductor-env-shim';
@@ -170,7 +170,7 @@ async function dryRunReport(opts: {
   doJudge: boolean;
 }): Promise<void> {
   const lines: string[] = [];
-  lines.push('== gstack-model-benchmark --dry-run ==');
+  lines.push('== paysec-model-benchmark --dry-run ==');
   lines.push(`  prompt:     ${opts.prompt.length > 80 ? opts.prompt.slice(0, 80) + '…' : opts.prompt}`);
   lines.push(`  providers:  ${opts.providers.join(', ')}`);
   lines.push(`  workdir:    ${opts.workdir}`);

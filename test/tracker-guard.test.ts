@@ -12,7 +12,7 @@ import {
 } from '../lib/tracker-guard';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const GUARD = path.join(ROOT, 'bin', 'gstack-issue-guard');
+const GUARD = path.join(ROOT, 'bin', 'paysec-issue-guard');
 
 describe('lib/tracker-guard', () => {
   test('clean text is STILL enveloped (a pattern scan is not proof of safety)', () => {
@@ -71,7 +71,7 @@ describe('lib/tracker-guard', () => {
   });
 });
 
-describe('bin/gstack-issue-guard', () => {
+describe('bin/paysec-issue-guard', () => {
   function runGuard(args: string[], input?: string) {
     const r = spawnSync(GUARD, args, { input, encoding: 'utf-8', timeout: 30000 });
     return { status: r.status ?? 1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };

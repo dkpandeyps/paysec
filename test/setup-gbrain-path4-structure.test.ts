@@ -1,4 +1,4 @@
-// setup-gbrain Path 4 structural lint.
+// brain-setup Path 4 structural lint.
 //
 // Verifies the SKILL.md.tmpl has the prose contract that Path 4 (Remote MCP)
 // depends on: STOP gates after verify failures, never-write-token rules,
@@ -6,9 +6,9 @@
 //
 // Why a structural test instead of a full Agent SDK E2E:
 //   - Side effects (claude.json mutation, MCP registration) are covered
-//     by unit tests for gstack-gbrain-mcp-verify and gstack-artifacts-init.
+//     by unit tests for paysec-gbrain-mcp-verify and paysec-artifacts-init.
 //   - The structural prose is the source of regressions for AUQ pacing
-//     (the failure mode the gstack repo has tracked since v1.26.x:
+//     (the failure mode the paysec repo has tracked since v1.26.x:
 //     "wrote_findings_before_asking"). A grep-based regression on the
 //     template prose is fast (<200ms), free, and catches the same drift
 //     as the paid E2E without spending tokens.
@@ -21,11 +21,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const TMPL = path.join(ROOT, 'setup-gbrain', 'SKILL.md.tmpl');
+const TMPL = path.join(ROOT, 'brain-setup', 'SKILL.md.tmpl');
 
 const tmpl = fs.readFileSync(TMPL, 'utf-8');
 
-describe('setup-gbrain Path 4 (Remote MCP) — structural contract', () => {
+describe('brain-setup Path 4 (Remote MCP) — structural contract', () => {
   test('Step 2 lists Path 4 as one of the path options', () => {
     // "4 — Remote gbrain MCP" with em-dash (—, U+2014 — one codepoint).
     expect(tmpl).toMatch(/\*\*4 . Remote gbrain MCP/);
@@ -41,8 +41,8 @@ describe('setup-gbrain Path 4 (Remote MCP) — structural contract', () => {
     expect(tmpl).toContain('read_secret_to_env GBRAIN_MCP_TOKEN');
   });
 
-  test('Step 4c invokes gstack-gbrain-mcp-verify and STOPs on failure', () => {
-    expect(tmpl).toContain('gstack-gbrain-mcp-verify');
+  test('Step 4c invokes paysec-gbrain-mcp-verify and STOPs on failure', () => {
+    expect(tmpl).toContain('paysec-gbrain-mcp-verify');
     // The STOP rule is what prevents partial registration after auth fail.
     const path4Section = tmpl.split('### Path 4')[1] || '';
     expect(path4Section).toMatch(/STOP/);
@@ -65,8 +65,8 @@ describe('setup-gbrain Path 4 (Remote MCP) — structural contract', () => {
     expect(tmpl).toMatch(/claude mcp remove gbrain/);
   });
 
-  test('Step 7 calls gstack-artifacts-init with --url-form-supported flag', () => {
-    expect(tmpl).toMatch(/gstack-artifacts-init.*--url-form-supported/);
+  test('Step 7 calls paysec-artifacts-init with --url-form-supported flag', () => {
+    expect(tmpl).toMatch(/paysec-artifacts-init.*--url-form-supported/);
   });
 
   test('Step 8 CLAUDE.md block branches on mode', () => {
@@ -108,7 +108,7 @@ describe('setup-gbrain Path 4 (Remote MCP) — structural contract', () => {
   });
 });
 
-describe('setup-gbrain Path 4 — token security regressions', () => {
+describe('brain-setup Path 4 — token security regressions', () => {
   test('the template never inlines a real-shaped bearer string', () => {
     // We never want a literal "gbrain_<hex>" token to appear in the
     // template — placeholders only. This catches the failure mode where

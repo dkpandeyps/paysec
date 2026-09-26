@@ -56,7 +56,7 @@ describe('playwright-core windowsHide patch (#2160, #1989)', () => {
     const bundle = fs.readFileSync(
       path.join(ROOT, 'node_modules', 'playwright-core', 'lib', 'coreBundle.js'), 'utf-8',
     );
-    expect(bundle).toContain('gstack patch (#2160/#1989)');
+    expect(bundle).toContain('paysec patch (#2160/#1989)');
     expect(bundle).toContain('shell: true, windowsHide: true');
   });
 });

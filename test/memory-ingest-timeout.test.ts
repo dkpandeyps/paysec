@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
-import { resolveImportTimeoutMs } from "../bin/gstack-memory-ingest";
+import { resolveImportTimeoutMs } from "../bin/paysec-memory-ingest";
 
-// #1611: the gbrain import timeout is configurable via GSTACK_INGEST_TIMEOUT_MS
+// #1611: the gbrain import timeout is configurable via PAYSEC_INGEST_TIMEOUT_MS
 // (default 30 min) so big-brain --full ingests aren't SIGTERM'd mid-import.
 const DEFAULT = 30 * 60 * 1000;
 

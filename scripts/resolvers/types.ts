@@ -20,17 +20,17 @@ export interface HostPaths {
  * Make a host path safe to interpolate INSIDE DOUBLE QUOTES in generated bash.
  *
  * Tilde-based hosts (Claude, factory) resolve to paths like
- * `~/.claude/skills/gstack/bin`. Bash only performs tilde expansion when the
+ * `~/.claude/skills/paysec/bin`. Bash only performs tilde expansion when the
  * `~` is UNQUOTED, so `"~/.claude/..."` is a literal relative path that never
  * resolves. A `[ -x "~/..." ]` test is therefore always false and a
  * `"~/..." --flag` invocation always fails — the surrounding block silently
  * becomes dead code rather than erroring.
  *
- * Env-var hosts already use `$GSTACK_BIN`, which expands correctly when
+ * Env-var hosts already use `$PAYSEC_BIN`, which expands correctly when
  * quoted, so they pass through untouched.
  *
  * Use this ONLY where the path lands inside double quotes. Unquoted
- * interpolations (`${ctx.paths.binDir}/gstack-slug`) expand fine as-is and are
+ * interpolations (`${ctx.paths.binDir}/paysec-slug`) expand fine as-is and are
  * left alone so generated docs keep the more readable `~`.
  */
 export function quoteSafePath(hostPath: string): string {
@@ -40,19 +40,19 @@ export function quoteSafePath(hostPath: string): string {
 /**
  * HOST_PATHS — derived from host configs.
  * Each config's globalRoot/localSkillRoot determines the path structure.
- * Non-Claude hosts use $GSTACK_ROOT env vars (set by preamble).
+ * Non-Claude hosts use $PAYSEC_ROOT env vars (set by preamble).
  */
 function buildHostPaths(): Record<string, HostPaths> {
   const paths: Record<string, HostPaths> = {};
   for (const config of ALL_HOST_CONFIGS) {
     if (config.usesEnvVars) {
       paths[config.name] = {
-        skillRoot: '$GSTACK_ROOT',
+        skillRoot: '$PAYSEC_ROOT',
         localSkillRoot: config.localSkillRoot,
-        binDir: '$GSTACK_BIN',
-        browseDir: '$GSTACK_BROWSE',
-        designDir: '$GSTACK_DESIGN',
-        makePdfDir: '$GSTACK_MAKE_PDF',
+        binDir: '$PAYSEC_BIN',
+        browseDir: '$PAYSEC_BROWSE',
+        designDir: '$PAYSEC_DESIGN',
+        makePdfDir: '$PAYSEC_MAKE_PDF',
       };
     } else {
       const root = `~/${config.globalRoot}`;
@@ -60,9 +60,9 @@ function buildHostPaths(): Record<string, HostPaths> {
         skillRoot: root,
         localSkillRoot: config.localSkillRoot,
         binDir: `${root}/bin`,
-        browseDir: `${root}/browse/dist`,
+        browseDir: `${root}/browser/dist`,
         designDir: `${root}/design/dist`,
-        makePdfDir: `${root}/make-pdf/dist`,
+        makePdfDir: `${root}/md-to-pdf/dist`,
       };
     }
   }
@@ -73,8 +73,8 @@ export const HOST_PATHS: Record<string, HostPaths> = buildHostPaths();
 
 /**
  * Render a HostPaths binary dir as a shell-expandable absolute path.
- * Claude-style dirs are `~`-rooted (e.g. `~/.claude/skills/gstack/browse/dist`)
- * and expand via `$HOME`; env-var hosts already carry an absolute `$GSTACK_*`
+ * Claude-style dirs are `~`-rooted (e.g. `~/.claude/skills/paysec/browser/dist`)
+ * and expand via `$HOME`; env-var hosts already carry an absolute `$PAYSEC_*`
  * value, so they pass through untouched — prepending `$HOME` would double it.
  */
 export function toShellPath(dir: string): string {

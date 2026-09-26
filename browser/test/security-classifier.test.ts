@@ -1,5 +1,5 @@
 /**
- * Unit tests for browse/src/security-classifier.ts pure functions.
+ * Unit tests for browser/src/security-classifier.ts pure functions.
  *
  * Scope: functions that do NOT require model download or network access.
  * Model-dependent behavior (loadTestsavant inference via scanPageContent)

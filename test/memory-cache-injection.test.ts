@@ -1,7 +1,7 @@
 /**
- * Layer 8 memory cache + injection (plan-tune cathedral T12).
+ * Layer 8 memory cache + injection (tune-questions cathedral T12).
  *
- * Verifies the PreToolUse hook reads ~/.gstack/free-text-memory.json and
+ * Verifies the PreToolUse hook reads ~/.paysec/free-text-memory.json and
  * surfaces matching nuggets via additionalContext-only output (#2035: never a permissionDecision).
  * Cache: per-session memory-cache.json populated on first read, sub-1ms
  * thereafter (D13 perf).
@@ -21,7 +21,7 @@ let fixtureCwd: string;
 let cwdSlug: string;
 
 beforeEach(() => {
-  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-memcache-'));
+  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-memcache-'));
   cwdSlug = 'memcache-fixture';
   fixtureCwd = path.join(stateRoot, cwdSlug);
   fs.mkdirSync(fixtureCwd, { recursive: true });
@@ -40,9 +40,9 @@ function runHook(stdin: object): { stdout: string; stderr: string; status: numbe
   for (const [k, v] of Object.entries(process.env)) {
     if (v !== undefined) env[k] = v;
   }
-  env.GSTACK_STATE_ROOT = stateRoot;
-  env.GSTACK_QUESTION_LOG_NO_DERIVE = '1';
-  delete env.GSTACK_HOME;
+  env.PAYSEC_STATE_ROOT = stateRoot;
+  env.PAYSEC_QUESTION_LOG_NO_DERIVE = '1';
+  delete env.PAYSEC_HOME;
   // These cases assert the pass-through memoryContext injection. Strip ambient
   // Conductor markers so running inside Conductor (CONDUCTOR_WORKSPACE_PATH/PORT
   // set) doesn't flip the hook into the [conductor] prose deny instead of pass-through.
@@ -85,7 +85,7 @@ describe('memory injection', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-todos-reorganize> Reorganize?',
+            question: '<paysec-qid:ship-todos-reorganize> Reorganize?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
@@ -112,7 +112,7 @@ describe('memory injection', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-todos-reorganize> Reorganize?',
+            question: '<paysec-qid:ship-todos-reorganize> Reorganize?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
@@ -138,7 +138,7 @@ describe('memory injection', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-todos-reorganize> Reorganize?',
+            question: '<paysec-qid:ship-todos-reorganize> Reorganize?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
@@ -172,7 +172,7 @@ describe('memory injection', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-todos-reorganize> Reorganize?',
+            question: '<paysec-qid:ship-todos-reorganize> Reorganize?',
             options: ['A) Accept (recommended)', 'B) Skip'],
           },
         ],
@@ -180,7 +180,7 @@ describe('memory injection', () => {
     });
     // ship-todos-reorganize is two-way per registry — enforcement should fire.
     expect(r.parsed?.hookSpecificOutput?.permissionDecision).toBe('deny');
-    expect(r.parsed?.hookSpecificOutput?.permissionDecisionReason).toContain('plan-tune auto-decide');
+    expect(r.parsed?.hookSpecificOutput?.permissionDecisionReason).toContain('tune-questions auto-decide');
     // Memory context isn't injected on deny path (it's already in the reason),
     // but the deny reason should mention the auto-decision clearly.
   });
@@ -201,7 +201,7 @@ describe('per-session memory cache', () => {
       tool_use_id: 'tu-c1',
       tool_input: {
         questions: [
-          { question: '<gstack-qid:ship-todos-reorganize> Q', options: ['A', 'B'] },
+          { question: '<paysec-qid:ship-todos-reorganize> Q', options: ['A', 'B'] },
         ],
       },
     });
@@ -219,7 +219,7 @@ describe('per-session memory cache', () => {
       tool_use_id: 'tu-e',
       tool_input: {
         questions: [
-          { question: '<gstack-qid:ship-todos-reorganize> Q', options: ['A', 'B'] },
+          { question: '<paysec-qid:ship-todos-reorganize> Q', options: ['A', 'B'] },
         ],
       },
     });

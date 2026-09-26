@@ -1,5 +1,5 @@
 /**
- * _gstack_codex_model_probe — round-trip model readiness (#2477).
+ * _paysec_codex_model_probe — round-trip model readiness (#2477).
  *
  * The auth probe accepts "auth exists" as readiness, but a ChatGPT account
  * with a stale `model = "..."` pin in ~/.codex/config.toml passes auth and
@@ -25,7 +25,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const PROBE = path.join(ROOT, 'bin', 'gstack-codex-probe');
+const PROBE = path.join(ROOT, 'bin', 'paysec-codex-probe');
 
 const STUB = `#!/usr/bin/env bash
 echo "invoked" >> "$STUB_LOG"
@@ -43,35 +43,35 @@ interface Fixture {
   home: string;
   stubDir: string;
   codexHome: string;
-  gstackHome: string;
+  paysecHome: string;
   stubLog: string;
 }
 
 function makeFixture(): Fixture {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-model-probe-'));
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-model-probe-'));
   const stubDir = path.join(home, 'stub-bin');
   const codexHome = path.join(home, '.codex');
-  const gstackHome = path.join(home, '.gstack');
+  const paysecHome = path.join(home, '.paysec');
   fs.mkdirSync(stubDir, { recursive: true });
   fs.mkdirSync(codexHome, { recursive: true });
-  fs.mkdirSync(gstackHome, { recursive: true });
+  fs.mkdirSync(paysecHome, { recursive: true });
   fs.writeFileSync(path.join(stubDir, 'codex'), STUB, { mode: 0o755 });
   fs.writeFileSync(path.join(codexHome, 'config.toml'), 'model = "gpt-5.4"\n');
   fs.writeFileSync(path.join(codexHome, 'auth.json'), '{}');
   const stubLog = path.join(home, 'stub.log');
-  return { home, stubDir, codexHome, gstackHome, stubLog };
+  return { home, stubDir, codexHome, paysecHome, stubLog };
 }
 
 function runProbe(f: Fixture, stubMode: string): { stdout: string; status: number } {
   const result = spawnSync(
     'bash',
-    ['-c', `set +e\nsource "${PROBE}"\n_gstack_codex_model_probe`],
+    ['-c', `set +e\nsource "${PROBE}"\n_paysec_codex_model_probe`],
     {
       env: {
         PATH: `${f.stubDir}:${process.env.PATH ?? ''}`,
         HOME: f.home,
         CODEX_HOME: f.codexHome,
-        GSTACK_HOME: f.gstackHome,
+        PAYSEC_HOME: f.paysecHome,
         STUB_MODE: stubMode,
         STUB_LOG: f.stubLog,
         _TEL: 'off',
@@ -98,7 +98,7 @@ describe('codex model probe (#2477)', () => {
       expect(first.stdout.trim()).toBe('MODEL_OK');
       expect(first.status).toBe(0);
       expect(invocations(f)).toBe(1);
-      expect(fs.existsSync(path.join(f.gstackHome, '.codex-model-probe'))).toBe(true);
+      expect(fs.existsSync(path.join(f.paysecHome, '.codex-model-probe'))).toBe(true);
 
       const second = runProbe(f, 'ok');
       expect(second.stdout.trim()).toBe('MODEL_OK (cached)');
@@ -171,7 +171,7 @@ describe('codex model probe (#2477)', () => {
       expect(invocations(f)).toBe(1);
       // Backdate the cache line's timestamp past the 1h TTL, keeping the
       // signature valid — TTL alone must force the re-probe.
-      const cachePath = path.join(f.gstackHome, '.codex-model-probe');
+      const cachePath = path.join(f.paysecHome, '.codex-model-probe');
       const [status, ts, sig] = fs.readFileSync(cachePath, 'utf-8').trim().split(' ');
       expect(status).toBe('MODEL_OK');
       fs.writeFileSync(cachePath, `MODEL_OK ${Number(ts) - 3700} ${sig}\n`);

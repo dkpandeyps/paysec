@@ -3,7 +3,7 @@
 #
 # What changed: tier-≥2 skills default to ELI10 writing style (jargon glossed on
 # first use, outcome-framed questions, short sentences). Power users who prefer
-# the older V0 prose can set `gstack-config set explain_level terse`.
+# the older V0 prose can set `paysec-config set explain_level terse`.
 #
 # What this does: writes a "pending prompt" flag file. On the first tier-≥2 skill
 # invocation after upgrade, the preamble reads the flag and asks the user once
@@ -13,11 +13,11 @@
 # Affected: every user on v0.19.x and below who upgrades to v1.x
 set -euo pipefail
 
-GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
-PROMPTED_FLAG="$GSTACK_HOME/.writing-style-prompted"
-PENDING_FLAG="$GSTACK_HOME/.writing-style-prompt-pending"
+PAYSEC_HOME="${PAYSEC_HOME:-$HOME/.paysec}"
+PROMPTED_FLAG="$PAYSEC_HOME/.writing-style-prompted"
+PENDING_FLAG="$PAYSEC_HOME/.writing-style-prompt-pending"
 
-mkdir -p "$GSTACK_HOME"
+mkdir -p "$PAYSEC_HOME"
 
 # If the user has already answered the prompt at any point, skip.
 if [ -f "$PROMPTED_FLAG" ]; then
@@ -26,7 +26,7 @@ fi
 
 # If the user has already explicitly set explain_level (either way), count that
 # as an answer — they've made their choice, don't ask again.
-EXPLAIN_LEVEL_SET="$("${HOME}/.claude/skills/gstack/bin/gstack-config" get explain_level 2>/dev/null || true)"
+EXPLAIN_LEVEL_SET="$("${HOME}/.claude/skills/paysec/bin/paysec-config" get explain_level 2>/dev/null || true)"
 if [ -n "$EXPLAIN_LEVEL_SET" ]; then
   touch "$PROMPTED_FLAG"
   exit 0

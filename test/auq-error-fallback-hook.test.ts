@@ -91,7 +91,7 @@ describe('hook integration — invoked as PostToolUse', () => {
   test('error result + headless env → injects BLOCK directive', () => {
     const out = runHook(
       { tool_name: 'mcp__conductor__AskUserQuestion', tool_response: '[Tool result missing due to internal error]' },
-      { GSTACK_HEADLESS: '1' },
+      { PAYSEC_HEADLESS: '1' },
     );
     expect(out.additionalContext).toMatch(/BLOCKED — AskUserQuestion unavailable/);
   });
@@ -116,7 +116,7 @@ describe('hook integration — invoked as PostToolUse', () => {
   test('SUCCESSFUL answer → no injection (inert on real answers)', () => {
     const out = runHook(
       { tool_name: 'AskUserQuestion', tool_response: { answers: [{ option_label: 'A' }] } },
-      { GSTACK_HEADLESS: '1' },
+      { PAYSEC_HEADLESS: '1' },
     );
     expect(out.additionalContext).toBeUndefined();
   });
@@ -124,7 +124,7 @@ describe('hook integration — invoked as PostToolUse', () => {
   test('non-AUQ tool → defers (no injection)', () => {
     const out = runHook(
       { tool_name: 'Bash', tool_response: null },
-      { GSTACK_HEADLESS: '1' },
+      { PAYSEC_HEADLESS: '1' },
     );
     expect(out.additionalContext).toBeUndefined();
   });

@@ -1,6 +1,6 @@
 /**
- * Static invariant: every gstackInjectToTerminal call in extension/*.js
- * must be preceded by an await on gstackScanForPTYInject on the same code
+ * Static invariant: every paysecInjectToTerminal call in extension/*.js
+ * must be preceded by an await on paysecScanForPTYInject on the same code
  * path (#1370 / D6).
  *
  * Why static, not runtime: extension/ runs in the chrome-extension origin;
@@ -11,11 +11,11 @@
  * The rules (kept simple — false positives are worse than false
  * negatives here since the wave has only two callers):
  *
- *   Rule 1: every file that calls gstackInjectToTerminal must also call
- *           gstackScanForPTYInject.
+ *   Rule 1: every file that calls paysecInjectToTerminal must also call
+ *           paysecScanForPTYInject.
  *
- *   Rule 2: in any function that calls gstackInjectToTerminal, an
- *           `await ... gstackScanForPTYInject` MUST appear before the
+ *   Rule 2: in any function that calls paysecInjectToTerminal, an
+ *           `await ... paysecScanForPTYInject` MUST appear before the
  *           inject call when measured by source position (same function
  *           body).
  *
@@ -29,8 +29,8 @@ import { readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 
 const EXTENSION_DIR = join(import.meta.dir, '..', 'extension');
-const INJECT_FN = 'gstackInjectToTerminal';
-const SCAN_FN = 'gstackScanForPTYInject';
+const INJECT_FN = 'paysecInjectToTerminal';
+const SCAN_FN = 'paysecScanForPTYInject';
 
 function listJsFiles(dir: string): string[] {
   const out: string[] = [];
@@ -47,17 +47,17 @@ function listJsFiles(dir: string): string[] {
 }
 
 function findInjectCallSites(content: string): number[] {
-  // Find positions of `gstackInjectToTerminal(` or `gstackInjectToTerminal?.(`
-  // — but exclude the function DEFINITION (window.gstackInjectToTerminal = ).
+  // Find positions of `paysecInjectToTerminal(` or `paysecInjectToTerminal?.(`
+  // — but exclude the function DEFINITION (window.paysecInjectToTerminal = ).
   const sites: number[] = [];
-  const callRe = /window\.gstackInjectToTerminal\s*\??\.?\s*\(/g;
+  const callRe = /window\.paysecInjectToTerminal\s*\??\.?\s*\(/g;
   let match: RegExpExecArray | null;
   while ((match = callRe.exec(content)) !== null) {
-    // Look back ~30 chars; if "window.gstackInjectToTerminal =" appears
+    // Look back ~30 chars; if "window.paysecInjectToTerminal =" appears
     // right before, it's the definition, not a call.
     const back = Math.max(0, match.index - 30);
     const window30 = content.slice(back, match.index);
-    if (window30.includes('gstackInjectToTerminal =')) continue;
+    if (window30.includes('paysecInjectToTerminal =')) continue;
     sites.push(match.index);
   }
   return sites;
@@ -122,11 +122,11 @@ describe('extension/* PTY injection invariant (#1370 / D6)', () => {
     expect(offenders).toHaveLength(0);
   });
 
-  test('sidepanel-terminal.js defines both gstackInjectToTerminal and gstackScanForPTYInject', () => {
+  test('sidepanel-terminal.js defines both paysecInjectToTerminal and paysecScanForPTYInject', () => {
     const file = join(EXTENSION_DIR, 'sidepanel-terminal.js');
     const content = readFileSync(file, 'utf-8');
-    expect(content).toContain('window.gstackInjectToTerminal');
-    expect(content).toContain('window.gstackScanForPTYInject');
+    expect(content).toContain('window.paysecInjectToTerminal');
+    expect(content).toContain('window.paysecScanForPTYInject');
   });
 
   test('inject function stays synchronous (D6 contract preservation)', () => {
@@ -134,7 +134,7 @@ describe('extension/* PTY injection invariant (#1370 / D6)', () => {
     const content = readFileSync(file, 'utf-8');
     // The definition line should NOT contain "async" — async inject would
     // break every existing caller using `const ok = ...?.()` pattern.
-    const match = content.match(/window\.gstackInjectToTerminal\s*=\s*(async\s+)?function/);
+    const match = content.match(/window\.paysecInjectToTerminal\s*=\s*(async\s+)?function/);
     expect(match).not.toBeNull();
     expect(match?.[1]).toBeUndefined(); // no `async` modifier
   });

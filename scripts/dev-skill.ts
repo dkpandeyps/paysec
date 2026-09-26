@@ -53,17 +53,17 @@ function regenerateAndValidate() {
 
   // Dev workspace render isolation: the default in-place regen above keeps the
   // worktree canonical. If bin/dev-setup set up an untracked brain-aware render
-  // (.claude/gstack-rendered), refresh it too so live template edits reflect at
+  // (.claude/paysec-rendered), refresh it too so live template edits reflect at
   // this workspace's runtime. Only runs when the render dir already exists — we
   // never create it during plain template dev.
-  const RENDER_DIR = path.join(ROOT, '.claude', 'gstack-rendered');
+  const RENDER_DIR = path.join(ROOT, '.claude', 'paysec-rendered');
   if (fs.existsSync(RENDER_DIR)) {
     try {
       execSync(
         `bun run scripts/gen-skill-docs.ts --respect-detection --host claude --out-dir ${JSON.stringify(RENDER_DIR)}`,
         { cwd: ROOT, stdio: 'pipe' },
       );
-      console.log('  [render] refreshed .claude/gstack-rendered (brain-aware workspace copy)');
+      console.log('  [render] refreshed .claude/paysec-rendered (brain-aware workspace copy)');
     } catch (err: any) {
       console.log(`  [render] ERROR: ${err.stderr?.toString().trim() || err.message}`);
     }
@@ -85,8 +85,8 @@ for (const { tmpl } of TEMPLATES) {
 
 // Also watch commands.ts and snapshot.ts (source of truth changes)
 const SOURCE_FILES = [
-  path.join(ROOT, 'browse', 'src', 'commands.ts'),
-  path.join(ROOT, 'browse', 'src', 'snapshot.ts'),
+  path.join(ROOT, 'browser', 'src', 'commands.ts'),
+  path.join(ROOT, 'browser', 'src', 'snapshot.ts'),
 ];
 
 for (const src of SOURCE_FILES) {

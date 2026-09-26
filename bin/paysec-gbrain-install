@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# gstack-gbrain-install — install the gbrain CLI on a local Mac.
+# paysec-gbrain-install — install the gbrain CLI on a local Mac.
 #
 # Usage:
-#   gstack-gbrain-install [--install-dir <dir>] [--pinned-commit <sha>] [--dry-run]
+#   paysec-gbrain-install [--install-dir <dir>] [--pinned-commit <sha>] [--dry-run]
 #
 # D5 detect-first: before cloning anywhere, probe likely pre-existing
 # locations (~/git/gbrain and ~/gbrain) and reuse a working clone if one
@@ -23,7 +23,7 @@
 # was removed in #1744 (it had drifted ~23 versions behind). Pass
 # --pinned-commit <sha> to install a specific commit for reproducibility. A
 # minimum-version floor (MIN_GBRAIN_VERSION) hard-fails the install when the
-# resulting gbrain is too old for gstack's sync integration, and a fast
+# resulting gbrain is too old for paysec's sync integration, and a fast
 # `gbrain doctor` self-test hard-fails a broken install when gbrain is already
 # configured. This keeps the version gate that the pin used to provide without
 # freezing users 23 releases behind.
@@ -42,9 +42,9 @@ set -euo pipefail
 # --pinned-commit <sha> overrides for reproducibility.
 PINNED_COMMIT=""
 PINNED_TAG=""
-# Minimum gbrain version gstack's integration is known to work with. The
+# Minimum gbrain version paysec's integration is known to work with. The
 # `sources list --json` wrapped-object shape + federated sources landed by 0.20;
-# older predates the surface gstack drives. Hard-fail below this floor (#1744).
+# older predates the surface paysec drives. Hard-fail below this floor (#1744).
 MIN_GBRAIN_VERSION="0.20.0"
 GBRAIN_REPO_URL="https://github.com/garrytan/gbrain.git"
 DEFAULT_INSTALL_DIR="${GBRAIN_INSTALL_DIR:-$HOME/gbrain}"
@@ -52,9 +52,9 @@ INSTALL_DIR="$DEFAULT_INSTALL_DIR"
 DRY_RUN=false
 VALIDATE_ONLY=false
 
-die() { echo "gstack-gbrain-install: $*" >&2; exit 2; }
-fail() { echo "gstack-gbrain-install: $*" >&2; exit 3; }
-log()  { echo "gstack-gbrain-install: $*"; }
+die() { echo "paysec-gbrain-install: $*" >&2; exit 2; }
+fail() { echo "paysec-gbrain-install: $*" >&2; exit 3; }
+log()  { echo "paysec-gbrain-install: $*"; }
 
 # --- parse args ---
 while [ $# -gt 0 ]; do
@@ -221,7 +221,7 @@ actual_norm="${actual_version#v}"
 
 if [ "$actual_norm" != "$expected_norm" ]; then
   echo "" >&2
-  echo "gstack-gbrain-install: PATH SHADOWING DETECTED" >&2
+  echo "paysec-gbrain-install: PATH SHADOWING DETECTED" >&2
   echo "" >&2
   echo "  We just linked gbrain $expected_version from $INSTALL_DIR," >&2
   echo "  but PATH is returning gbrain $actual_version." >&2
@@ -229,7 +229,7 @@ if [ "$actual_norm" != "$expected_norm" ]; then
   echo "  All gbrain binaries on PATH:" >&2
   type -a gbrain 2>&1 | sed 's/^/    /' >&2 || true
   echo "" >&2
-  echo "  Fix one of the following, then re-run /setup-gbrain:" >&2
+  echo "  Fix one of the following, then re-run /brain-setup:" >&2
   echo "    a) rm the shadowing binary: rm \$(which gbrain)" >&2
   echo "    b) prepend ~/.bun/bin to PATH in your shell rc" >&2
   echo "    c) point GBRAIN_INSTALL_DIR at the shadowing binary's install dir" >&2
@@ -241,7 +241,7 @@ log "installed gbrain $actual_version from $INSTALL_DIR"
 
 # --- minimum-version floor (#1744) ---
 # Unpinning means new installs track gbrain HEAD. Hard-fail if the resulting
-# version is below the floor gstack's sync integration needs — same exit-3 posture
+# version is below the floor paysec's sync integration needs — same exit-3 posture
 # as the PATH-shadow / version-mismatch failures above. A warning here is exactly
 # how the data-loss class slipped through, so this gate fails closed.
 version_lt() {
@@ -251,10 +251,10 @@ version_lt() {
 }
 if version_lt "$actual_norm" "$MIN_GBRAIN_VERSION"; then
   echo "" >&2
-  echo "gstack-gbrain-install: gbrain $actual_version is below the minimum gstack-tested version ($MIN_GBRAIN_VERSION)." >&2
-  echo "  gstack's sync integration needs the v0.20+ source/list surface." >&2
+  echo "paysec-gbrain-install: gbrain $actual_version is below the minimum paysec-tested version ($MIN_GBRAIN_VERSION)." >&2
+  echo "  paysec's sync integration needs the v0.20+ source/list surface." >&2
   echo "  Fix: update the gbrain clone at $INSTALL_DIR to a newer release (git pull), then" >&2
-  echo "  re-run /setup-gbrain. Or pass --pinned-commit <sha> to install a specific newer commit." >&2
+  echo "  re-run /brain-setup. Or pass --pinned-commit <sha> to install a specific newer commit." >&2
   echo "" >&2
   exit 3
 fi
@@ -263,7 +263,7 @@ fi
 # When a brain config exists (re-install / detected clone), run a fast doctor as
 # a hard gate so a broken gbrain is caught at setup, not at data-loss time.
 # Pre-init installs skip this (config not written yet); the full
-# `/sync-gbrain --dry-run` self-test runs from /setup-gbrain after `gbrain init`.
+# `/brain-sync --dry-run` self-test runs from /brain-setup after `gbrain init`.
 # #2521: GBRAIN_HOME is a PARENT dir per gbrain's configDir() contract —
 # gbrain appends `.gbrain` itself, so the config lives at
 # $GBRAIN_HOME/.gbrain/config.json (or ~/.gbrain/config.json when unset).
@@ -275,9 +275,9 @@ fi
 if [ -f "$_GBRAIN_HOME_CHECK/config.json" ]; then
   if ! gbrain doctor --fast >/dev/null 2>&1; then
     echo "" >&2
-    echo "gstack-gbrain-install: gbrain $actual_version installed but 'gbrain doctor --fast' failed." >&2
+    echo "paysec-gbrain-install: gbrain $actual_version installed but 'gbrain doctor --fast' failed." >&2
     echo "  Refusing to leave a broken gbrain in place. Run 'gbrain doctor' to see what's wrong," >&2
-    echo "  fix it, then re-run /setup-gbrain." >&2
+    echo "  fix it, then re-run /brain-setup." >&2
     echo "" >&2
     exit 3
   fi
@@ -293,14 +293,14 @@ fi
 # the user may still be able to use other commands.
 if ! gbrain sources --help >/dev/null 2>&1; then
   echo "" >&2
-  echo "gstack-gbrain-install: WARNING — gbrain installed but 'gbrain sources --help' did not exit 0." >&2
+  echo "paysec-gbrain-install: WARNING — gbrain installed but 'gbrain sources --help' did not exit 0." >&2
   if [ "$IS_WINDOWS" -eq 1 ]; then
     echo "  Windows shells skip bun postinstall scripts; some gbrain features may need native build tools." >&2
-    echo "  If /sync-gbrain fails to find subcommands, install gbrain from a non-MSYS shell," >&2
+    echo "  If /brain-sync fails to find subcommands, install gbrain from a non-MSYS shell," >&2
     echo "  or run: cd $INSTALL_DIR && bun install   (without --ignore-scripts)" >&2
   else
     echo "  This may be a transient gbrain CLI issue or a missing native dependency." >&2
-    echo "  If /sync-gbrain fails, re-run: cd $INSTALL_DIR && bun install" >&2
+    echo "  If /brain-sync fails, re-run: cd $INSTALL_DIR && bun install" >&2
   fi
   echo "" >&2
 fi
@@ -308,9 +308,9 @@ fi
 echo ""
 if [ -n "${VOYAGE_API_KEY:-}" ]; then
   echo "Next: gbrain init --pglite --embedding-model voyage:voyage-code-3 --embedding-dimensions 1024"
-  echo "      (or run /setup-gbrain for the full setup flow)"
+  echo "      (or run /brain-setup for the full setup flow)"
 else
-  echo "Next: gbrain init --pglite   (or run /setup-gbrain for the full setup flow)"
+  echo "Next: gbrain init --pglite   (or run /brain-setup for the full setup flow)"
   echo ""
   echo "Tip: set VOYAGE_API_KEY before init to use voyage-code-3 (best embedding"
   echo "model for code retrieval on Voyage). Without it, gbrain falls back to its"

@@ -6,18 +6,18 @@
  * for v1.50.0.0: "is the data we hope to save actually being saved?"
  *
  * What this proves:
- *   - The gbrain CLI subcommand shape gstack ships (`gbrain put <slug>
+ *   - The gbrain CLI subcommand shape paysec ships (`gbrain put <slug>
  *     --content "<markdown with frontmatter>"`) actually persists to a
  *     real PGLite store.
  *   - The page is retrievable via `gbrain get <slug>` with body + title
  *     intact (frontmatter is allowed to be reformatted by gbrain — we
  *     check semantic fields, not byte-exact YAML).
- *   - The `office-hours/<slug>` slug namespace works (no rejection,
+ *   - The `idea-review/<slug>` slug namespace works (no rejection,
  *     no auto-rewrite).
  *
  * What this does NOT prove (out of scope, owned elsewhere):
  *   - Agent obedience to the resolver instructions — that's the
- *     fake-CLI E2E (test/skill-e2e-office-hours-brain-writeback.test.ts).
+ *     fake-CLI E2E (test/skill-e2e-idea-review-brain-writeback.test.ts).
  *   - Remote-MCP persistence — that's the write-shape E2E
  *     (test/skill-e2e-gbrain-roundtrip-remote.test.ts).
  *   - gbrain's own internal correctness — gbrain has its own test suite;
@@ -60,10 +60,10 @@ describeIfSelected(
   ['gbrain-roundtrip-local'],
   () => {
     let tmpHome: string;
-    const slug = `office-hours/roundtrip-test-${Date.now()}`;
+    const slug = `idea-review/roundtrip-test-${Date.now()}`;
     const body = `# Roundtrip test
 
-This is a deterministic round-trip test page used by the gstack v1.50.0.0
+This is a deterministic round-trip test page used by the paysec v1.50.0.0
 brain-writeback verification. Generated at ${new Date().toISOString()}.
 
 If gbrain persisted this correctly, you should see this exact body when
@@ -107,7 +107,7 @@ you run \`gbrain get "${slug}"\`.`;
         if (!SHOULD_RUN_GUARDS_OK) {
           console.log(
             '[skip] gbrain CLI not on PATH or VOYAGE_API_KEY unset; ' +
-              'this E2E proves the gbrain CLI persistence contract gstack relies on. ' +
+              'this E2E proves the gbrain CLI persistence contract paysec relies on. ' +
               'Run locally with `VOYAGE_API_KEY=... bun test ...` to verify before shipping.',
           );
           return;

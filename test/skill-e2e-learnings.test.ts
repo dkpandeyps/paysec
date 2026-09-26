@@ -13,15 +13,15 @@ import * as os from 'os';
 
 const evalCollector = createEvalCollector('e2e-learnings');
 
-// --- Learnings E2E: seed learnings, run /learn, verify output ---
+// --- Learnings E2E: seed learnings, run /learnings, verify output ---
 
 describeIfSelected('Learnings E2E', ['learnings-show'], () => {
   let workDir: string;
-  let gstackHome: string;
+  let paysecHome: string;
 
   beforeAll(() => {
     workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-learnings-'));
-    gstackHome = path.join(workDir, '.gstack-home');
+    paysecHome = path.join(workDir, '.paysec-home');
 
     // Init git repo
     const run = (cmd: string, args: string[]) =>
@@ -33,21 +33,21 @@ describeIfSelected('Learnings E2E', ['learnings-show'], () => {
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'initial']);
 
-    // Copy the /learn skill
-    copyDirSync(path.join(ROOT, 'learn'), path.join(workDir, 'learn'));
+    // Copy the /learnings skill
+    copyDirSync(path.join(ROOT, 'learnings'), path.join(workDir, 'learn'));
 
-    // Copy bin scripts needed by /learn
+    // Copy bin scripts needed by /learnings
     const binDir = path.join(workDir, 'bin');
     fs.mkdirSync(binDir, { recursive: true });
-    for (const script of ['gstack-learnings-search', 'gstack-learnings-log', 'gstack-slug']) {
+    for (const script of ['paysec-learnings-search', 'paysec-learnings-log', 'paysec-slug']) {
       fs.copyFileSync(path.join(ROOT, 'bin', script), path.join(binDir, script));
       fs.chmodSync(path.join(binDir, script), 0o755);
     }
 
-    // Seed learnings JSONL — slug must match what gstack-slug computes.
-    // With no git remote, gstack-slug falls back to basename(workDir).
+    // Seed learnings JSONL — slug must match what paysec-slug computes.
+    // With no git remote, paysec-slug falls back to basename(workDir).
     const slug = path.basename(workDir).replace(/[^a-zA-Z0-9._-]/g, '');
-    const projectDir = path.join(gstackHome, 'projects', slug);
+    const projectDir = path.join(paysecHome, 'projects', slug);
     fs.mkdirSync(projectDir, { recursive: true });
 
     const learnings = [
@@ -88,15 +88,15 @@ describeIfSelected('Learnings E2E', ['learnings-show'], () => {
 
   testConcurrentIfSelected('learnings-show', async () => {
     const result = await runSkillTest({
-      prompt: `Read the file learn/SKILL.md for the /learn skill instructions.
+      prompt: `Read the file learnings/SKILL.md for the /learnings skill instructions.
 
-Run the /learn command (no arguments — show recent learnings).
+Run the /learnings command (no arguments — show recent learnings).
 
 IMPORTANT:
-- Use GSTACK_HOME="${gstackHome}" as an environment variable when running bin scripts.
-- The bin scripts are at ./bin/ (relative to this directory), not at ~/.claude/skills/gstack/bin/.
-  Replace any references to ~/.claude/skills/gstack/bin/ with ./bin/ when running commands.
-- Replace any references to ~/.claude/skills/gstack/bin/gstack-slug with ./bin/gstack-slug.
+- Use PAYSEC_HOME="${paysecHome}" as an environment variable when running bin scripts.
+- The bin scripts are at ./bin/ (relative to this directory), not at ~/.claude/skills/paysec/bin/.
+  Replace any references to ~/.claude/skills/paysec/bin/ with ./bin/ when running commands.
+- Replace any references to ~/.claude/skills/paysec/bin/paysec-slug with ./bin/paysec-slug.
 - Do NOT use AskUserQuestion.
 - Do NOT implement code changes.
 - Just show the learnings and summarize what you found.`,
@@ -108,7 +108,7 @@ IMPORTANT:
       runId,
     });
 
-    logCost('/learn show', result);
+    logCost('/learnings show', result);
 
     const output = result.output.toLowerCase();
 
@@ -122,7 +122,7 @@ IMPORTANT:
 
     const exitOk = ['success', 'error_max_turns'].includes(result.exitReason);
 
-    recordE2E(evalCollector, '/learn', 'Learnings show E2E', result, {
+    recordE2E(evalCollector, '/learnings', 'Learnings show E2E', result, {
       passed: exitOk && foundCount >= 2,
     });
 

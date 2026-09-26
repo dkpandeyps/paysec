@@ -2,12 +2,12 @@
 
 **Status:** P3 research / early prototype
 **Branch:** `garrytan/prompt-injection-guard`
-**Skeleton:** `browse/src/security-bunnative.ts`
+**Skeleton:** `browser/src/security-bunnative.ts`
 **TODOS anchor:** "Bun-native 5ms DeBERTa inference (XL, P3 / research)"
 
 ## The problem this solves
 
-The compiled `browse/dist/browse` binary cannot link `onnxruntime-node`
+The compiled `browser/dist/browse` binary cannot link `onnxruntime-node`
 because Bun's `--compile` produces a single-file executable that
 dlopens dependencies from a temp extract dir, and native .dylib loading
 fails from that dir (documented oven-sh/bun#3574, #18079 + verified in
@@ -53,7 +53,7 @@ skips the Tensor-allocation overhead. Modest speedup (~5x tokenizer
 alone), but more importantly: removes the async boundary, so the cold
 path starts with zero dynamic imports.
 
-**Test coverage:** `browse/test/security-bunnative.test.ts` asserts
+**Test coverage:** `browser/test/security-bunnative.test.ts` asserts
 our `input_ids` matches transformers.js output on 20 fixture strings.
 
 ### 2. Forward pass (RESEARCH — multi-week)
@@ -94,7 +94,7 @@ At seq_len=128 that's ~100 matmuls of shape (128, 512) @ (512, 512).
   * Latency estimate: 3-6ms p50 (meets target).
   * RISK: macOS-only. Linux would need OpenBLAS via FFI (different
     symbol layout). Windows is a whole separate story.
-  * VERDICT: viable for macOS-first gstack. Matches our existing ship
+  * VERDICT: viable for macOS-first paysec. Matches our existing ship
     posture (compiled binaries only for Darwin arm64).
 
 **Approach C: WebGPU in Bun**
@@ -151,7 +151,7 @@ PR with its own correctness-regression test suite.
 
 ## Benchmark
 
-Current baseline (from `browse/test/security-bunnative.test.ts`
+Current baseline (from `browser/test/security-bunnative.test.ts`
 benchmark mode, measured on Apple M-series — YMMV on other hardware):
 
 | Backend | p50 | p95 | p99 | Notes |

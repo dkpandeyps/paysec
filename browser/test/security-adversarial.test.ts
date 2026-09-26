@@ -7,7 +7,7 @@
  * attack patterns derived from the BrowseSafe-Bench categories (Perplexity
  * 3,680 cases, 11 attack types, 9 injection strategies).
  *
- * Run: bun test browse/test/security-adversarial.test.ts
+ * Run: bun test browser/test/security-adversarial.test.ts
  */
 
 import { describe, test, expect } from 'bun:test';

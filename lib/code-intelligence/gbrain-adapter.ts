@@ -62,7 +62,7 @@ const ENVIRONMENTAL_ERROR_RE =
 /**
  * Parse `gbrain search` text output (`[score] slug -- snippet`) into hits.
  * gbrain's search prints text, not JSON (verified in
- * lib/gstack-decision-semantic.ts). Exported for deterministic unit testing.
+ * lib/paysec-decision-semantic.ts). Exported for deterministic unit testing.
  */
 export function parseGbrainSearch(stdout: string, minScore: number, limit: number): CodeSearchHit[] {
   const hits: CodeSearchHit[] = [];

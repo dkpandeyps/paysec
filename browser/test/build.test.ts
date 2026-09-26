@@ -9,7 +9,7 @@ const SERVER_NODE = path.join(DIST_DIR, 'server-node.mjs');
 describe('build: server-node.mjs', () => {
   test('passes node --check if present', () => {
     if (!fs.existsSync(SERVER_NODE)) {
-      // browse/dist is gitignored; no build has run in this checkout.
+      // browser/dist is gitignored; no build has run in this checkout.
       // Skip rather than fail so plain `bun test` without a prior build passes.
       return;
     }

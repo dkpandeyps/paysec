@@ -3,12 +3,12 @@
  *
  * Portions copyright (c) 2026 Sina Matian, time-attack/gstack (GStack 2), MIT.
  *
- * gstack does not maintain a home-grown indexer. It defines this small contract
+ * paysec does not maintain a home-grown indexer. It defines this small contract
  * and external providers (GBrain, Sourcebot, Graphify) implement it. The whole
  * contract is OPTIONAL: when no provider is available/consented,
  * `resolveCodeProvider()` returns null and callers degrade to grep / the
  * file-only decision store. Never a dependency, always an enhancement — the same
- * reliability contract as lib/gstack-decision-semantic.ts.
+ * reliability contract as lib/paysec-decision-semantic.ts.
  *
  * Repo-oriented, not document-store (settled): register_source / refresh /
  * search / status are required; add / delete / export are optional capabilities
@@ -23,7 +23,7 @@ export type CodeProviderId = "gbrain" | "sourcebot" | "graphify";
  * Policy op classification for the per-remote trust-tier veto (selection.ts).
  * Write-class ops (register_source / index / refresh / add / delete) cause
  * pages to be written, so BOTH `deny` and `read-only` tiers veto them — the
- * same semantics as runCodeImport in bin/gstack-gbrain-sync.ts ("code ingest
+ * same semantics as runCodeImport in bin/paysec-gbrain-sync.ts ("code ingest
  * writes pages"). Read-class ops (search / export / status) write nothing, so
  * only `deny` vetoes them. Callers that don't say get "write" — fail-closed.
  */
@@ -86,7 +86,7 @@ export interface OpOptions {
   /**
    * Env override for spawned processes and egress-receipt home resolution.
    * Production callers leave this unset; tests inject a synthetic env (fake
-   * CLI on PATH, temp GSTACK_HOME). Matches the existing gbrain helpers.
+   * CLI on PATH, temp PAYSEC_HOME). Matches the existing gbrain helpers.
    */
   env?: NodeJS.ProcessEnv;
   /** Timeout in ms for the underlying op. */

@@ -1,5 +1,5 @@
 ---
-name: canary
+name: post-deploy-monitor
 preamble-tier: 2
 version: 1.0.0
 description: |
@@ -7,7 +7,7 @@ description: |
   performance regressions, and page failures using the browse daemon. Takes
   periodic screenshots, compares against pre-deploy baselines, and alerts
   on anomalies. Use when: "monitor deploy", "canary", "post-deploy check",
-  "watch production", "verify deploy". (gstack)
+  "watch production", "verify deploy". (paysec)
 allowed-tools:
   - Bash
   - Read
@@ -26,31 +26,31 @@ triggers:
 
 {{BASE_BRANCH_DETECT}}
 
-# /canary — Post-Deploy Visual Monitor
+# /post-deploy-monitor — Post-Deploy Visual Monitor
 
 You are a **Release Reliability Engineer** watching production after a deploy. You've seen deploys that pass CI but break in production — a missing environment variable, a CDN cache serving stale assets, a database migration that's slower than expected on real data. Your job is to catch these in the first 10 minutes, not 10 hours.
 
 You use the browse daemon to watch the live app, take screenshots, check console errors, and compare against baselines. You are the safety net between "shipped" and "verified."
 
 ## User-invocable
-When the user types `/canary`, run this skill.
+When the user types `/post-deploy-monitor`, run this skill.
 
 ## Arguments
-- `/canary <url>` — monitor a URL for 10 minutes after deploy
-- `/canary <url> --duration 5m` — custom monitoring duration (1m to 30m)
-- `/canary <url> --baseline` — capture baseline screenshots (run BEFORE deploying)
-- `/canary <url> --pages /,/dashboard,/settings` — specify pages to monitor
-- `/canary <url> --quick` — single-pass health check (no continuous monitoring)
+- `/post-deploy-monitor <url>` — monitor a URL for 10 minutes after deploy
+- `/post-deploy-monitor <url> --duration 5m` — custom monitoring duration (1m to 30m)
+- `/post-deploy-monitor <url> --baseline` — capture baseline screenshots (run BEFORE deploying)
+- `/post-deploy-monitor <url> --pages /,/dashboard,/settings` — specify pages to monitor
+- `/post-deploy-monitor <url> --quick` — single-pass health check (no continuous monitoring)
 
 ## Instructions
 
 ### Phase 1: Setup
 
 ```bash
-eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null || echo "SLUG=unknown")"
-mkdir -p .gstack/canary-reports
-mkdir -p .gstack/canary-reports/baselines
-mkdir -p .gstack/canary-reports/screenshots
+eval "$(~/.claude/skills/paysec/bin/paysec-slug 2>/dev/null || echo "SLUG=unknown")"
+mkdir -p .paysec/canary-reports
+mkdir -p .paysec/canary-reports/baselines
+mkdir -p .paysec/canary-reports/screenshots
 ```
 
 Parse the user's arguments. Default duration is 10 minutes. Default pages: auto-discover from the app's navigation.
@@ -63,7 +63,7 @@ For each page (either from `--pages` or the homepage):
 
 ```bash
 $B goto <page-url>
-$B snapshot -i -a -o ".gstack/canary-reports/baselines/<page-name>.png"
+$B snapshot -i -a -o ".paysec/canary-reports/baselines/<page-name>.png"
 $B console --errors
 $B perf
 $B text
@@ -71,7 +71,7 @@ $B text
 
 Collect for each page: screenshot path, console error count, page load time from `perf`, and a text content snapshot.
 
-Save the baseline manifest to `.gstack/canary-reports/baseline.json`:
+Save the baseline manifest to `.paysec/canary-reports/baseline.json`:
 
 ```json
 {
@@ -88,7 +88,7 @@ Save the baseline manifest to `.gstack/canary-reports/baseline.json`:
 }
 ```
 
-Then STOP and tell the user: "Baseline captured. Deploy your changes, then run `/canary <url>` to monitor."
+Then STOP and tell the user: "Baseline captured. Deploy your changes, then run `/post-deploy-monitor <url>` to monitor."
 
 ### Phase 3: Page Discovery
 
@@ -117,7 +117,7 @@ For each page to monitor:
 
 ```bash
 $B goto <page-url>
-$B snapshot -i -a -o ".gstack/canary-reports/screenshots/pre-<page-name>.png"
+$B snapshot -i -a -o ".paysec/canary-reports/screenshots/pre-<page-name>.png"
 $B console --errors
 $B perf
 ```
@@ -130,7 +130,7 @@ Monitor for the specified duration. Every 60 seconds, check each page:
 
 ```bash
 $B goto <page-url>
-$B snapshot -i -a -o ".gstack/canary-reports/screenshots/<page-name>-<check-number>.png"
+$B snapshot -i -a -o ".paysec/canary-reports/screenshots/<page-name>-<check-number>.png"
 $B console --errors
 $B perf
 ```
@@ -187,18 +187,18 @@ Per-Page Results:
   /settings       HEALTHY     0         380ms
 
 Alerts Fired:  [N] (X critical, Y high, Z medium)
-Screenshots:   .gstack/canary-reports/screenshots/
+Screenshots:   .paysec/canary-reports/screenshots/
 
 VERDICT: [DEPLOY IS HEALTHY / DEPLOY HAS ISSUES — details above]
 ```
 
-Save report to `.gstack/canary-reports/{date}-canary.md` and `.gstack/canary-reports/{date}-canary.json`.
+Save report to `.paysec/canary-reports/{date}-canary.md` and `.paysec/canary-reports/{date}-canary.json`.
 
 Log the result for the review dashboard:
 
 ```bash
 {{SLUG_EVAL}}
-mkdir -p ~/.gstack/projects/$SLUG
+mkdir -p ~/.paysec/projects/$SLUG
 ```
 
 Write a JSONL entry: `{"skill":"canary","timestamp":"<ISO>","status":"<HEALTHY/DEGRADED/BROKEN>","url":"<url>","duration_min":<N>,"alerts":<N>}`

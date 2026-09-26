@@ -1,12 +1,12 @@
 /**
  * redact-patterns — the canonical redaction taxonomy.
  *
- * Single source of truth shared by `lib/redact-engine.ts`, `bin/gstack-redact`,
- * `bin/gstack-redact-prepush`, and (via `scripts/resolvers/redact-doc.ts`) the
- * generated SKILL.md docs for /spec, /ship, /cso, /document-release, and
- * /document-generate.
+ * Single source of truth shared by `lib/redact-engine.ts`, `bin/paysec-redact`,
+ * `bin/paysec-redact-prepush`, and (via `scripts/resolvers/redact-doc.ts`) the
+ * generated SKILL.md docs for /write-spec, /ship-pr, /security-audit, /docs-release-update, and
+ * /docs-generate.
  *
- * Design notes (locked in /plan-eng-review + two Codex passes):
+ * Design notes (locked in /plan-tech-review + two Codex passes):
  *
  *   - Three tiers. HIGH = genuinely-secret credentials (block). MEDIUM = PII,
  *     legal/damaging, internal-leak, plus credential-shaped patterns that have
@@ -435,7 +435,7 @@ export const PATTERNS: RedactPattern[] = [
     category: "secret",
     description: "GitLab token (personal/pipeline-trigger/deploy)",
     // glpat- personal access, glptt- pipeline trigger, gldt- deploy token.
-    // gstack drives glab first-class — these were a coverage gap (#1946).
+    // paysec drives glab first-class — these were a coverage gap (#1946).
     regex: /\b(gl(?:pat|ptt|dt)-[A-Za-z0-9_-]{20,})\b/,
   },
   {

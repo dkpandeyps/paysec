@@ -1,5 +1,5 @@
 /**
- * gstack-session-kind — classifies the session so skills know whether a human can
+ * paysec-session-kind — classifies the session so skills know whether a human can
  * answer an AskUserQuestion. Drives the AUQ-failure fallback branch:
  *   spawned     → auto-choose (orchestrator)
  *   headless    → BLOCK on AUQ failure
@@ -15,7 +15,7 @@ import { describe, test, expect } from 'bun:test';
 import { execFileSync } from 'child_process';
 import * as path from 'path';
 
-const BIN = path.resolve(__dirname, '..', 'bin', 'gstack-session-kind');
+const BIN = path.resolve(__dirname, '..', 'bin', 'paysec-session-kind');
 
 /** Run the helper with ONLY the supplied env (plus PATH so bash resolves). */
 function kind(env: Record<string, string>): string {
@@ -25,15 +25,15 @@ function kind(env: Record<string, string>): string {
   }).trim();
 }
 
-describe('gstack-session-kind', () => {
+describe('paysec-session-kind', () => {
   test('OPENCLAW_SESSION → spawned (highest precedence)', () => {
     expect(kind({ OPENCLAW_SESSION: '1' })).toBe('spawned');
     // spawned wins even when other markers are also present
-    expect(kind({ OPENCLAW_SESSION: '1', GSTACK_HEADLESS: '1', CONDUCTOR_PORT: '5' })).toBe('spawned');
+    expect(kind({ OPENCLAW_SESSION: '1', PAYSEC_HEADLESS: '1', CONDUCTOR_PORT: '5' })).toBe('spawned');
   });
 
-  test('GSTACK_HEADLESS → headless', () => {
-    expect(kind({ GSTACK_HEADLESS: '1' })).toBe('headless');
+  test('PAYSEC_HEADLESS → headless', () => {
+    expect(kind({ PAYSEC_HEADLESS: '1' })).toBe('headless');
   });
 
   test('CONDUCTOR_* → interactive (a human host is present)', () => {
@@ -54,17 +54,17 @@ describe('gstack-session-kind', () => {
     expect(kind({ GITHUB_ACTIONS: 'true' })).toBe('headless');
   });
 
-  test('GSTACK_HEADLESS beats CONDUCTOR (explicit override wins)', () => {
-    expect(kind({ GSTACK_HEADLESS: '1', CONDUCTOR_PORT: '5' })).toBe('headless');
+  test('PAYSEC_HEADLESS beats CONDUCTOR (explicit override wins)', () => {
+    expect(kind({ PAYSEC_HEADLESS: '1', CONDUCTOR_PORT: '5' })).toBe('headless');
   });
 
   test('bare env → interactive (degrade-safe default)', () => {
     expect(kind({})).toBe('interactive');
   });
 
-  test('empty GSTACK_HEADLESS is treated as unset (interactive)', () => {
+  test('empty PAYSEC_HEADLESS is treated as unset (interactive)', () => {
     // The resolver/helper guard on -n, so an empty string must NOT mean headless —
     // this is the opt-out path harness suites use to exercise the interactive branch.
-    expect(kind({ GSTACK_HEADLESS: '' })).toBe('interactive');
+    expect(kind({ PAYSEC_HEADLESS: '' })).toBe('interactive');
   });
 });

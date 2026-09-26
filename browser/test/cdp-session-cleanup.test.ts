@@ -14,8 +14,8 @@ import { withCdpSession, getOrCreateCdpSession } from '../src/cdp-bridge';
 // if any source file calls `newCDPSession(` outside `cdp-bridge.ts`
 // (the file that owns the helpers).
 //
-// Pattern mirrors browse/test/terminal-agent-pid-identity.test.ts and
-// browse/test/server-sanitize-surrogates.test.ts: read source files
+// Pattern mirrors browser/test/terminal-agent-pid-identity.test.ts and
+// browser/test/server-sanitize-surrogates.test.ts: read source files
 // directly, assert an invariant on their contents.
 
 const SRC_DIR = path.resolve(import.meta.path, '..', '..', 'src');

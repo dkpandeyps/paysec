@@ -1,5 +1,5 @@
 // Post-rename doc-regen regression: after `bun run gen:skill-docs`, no
-// `gstack-brain-init` or `gbrain_sync_mode` strings appear in any of the
+// `paysec-brain-init` or `gbrain_sync_mode` strings appear in any of the
 // generated SKILL.md files (the cross-product blind spot codex
 // Finding #12 flagged).
 //
@@ -18,12 +18,12 @@ const ROOT = path.resolve(import.meta.dir, '..');
 const FORBIDDEN_PATTERNS = [
   // Bare identifier — should NEVER appear in generated docs (if it does,
   // a template still has the old call site).
-  /^.*\bgstack-brain-init\b.*$/m,
+  /^.*\bpaysec-brain-init\b.*$/m,
   /^.*\bgbrain_sync_mode\b.*$/m,
 ];
 
 // Per the preamble resolver: generated docs DO contain the
-// "~/.gstack-brain-remote.txt" string in the migration-window fallback. We
+// "~/.paysec-brain-remote.txt" string in the migration-window fallback. We
 // don't grep for that — it's intentional. We grep for the call-site
 // identifiers only.
 
@@ -42,15 +42,15 @@ function findSkillMdFiles(): string[] {
 }
 
 describe('post-rename doc-regen regression (codex Finding #12)', () => {
-  test('no generated SKILL.md contains "gstack-brain-init"', () => {
+  test('no generated SKILL.md contains "paysec-brain-init"', () => {
     const offenders: string[] = [];
     for (const file of findSkillMdFiles()) {
       const content = fs.readFileSync(file, 'utf-8');
-      const m = content.match(/^.*\bgstack-brain-init\b.*$/m);
+      const m = content.match(/^.*\bpaysec-brain-init\b.*$/m);
       if (m) offenders.push(`${path.relative(ROOT, file)}: ${m[0].slice(0, 100)}`);
     }
     if (offenders.length > 0) {
-      console.error(`Stale "gstack-brain-init" in generated SKILL.md files:\n${offenders.map((o) => '  ' + o).join('\n')}`);
+      console.error(`Stale "paysec-brain-init" in generated SKILL.md files:\n${offenders.map((o) => '  ' + o).join('\n')}`);
     }
     expect(offenders).toEqual([]);
   });

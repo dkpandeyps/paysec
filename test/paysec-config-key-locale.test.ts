@@ -1,5 +1,5 @@
 /**
- * Locale-independent key validation tests for bin/gstack-config.
+ * Locale-independent key validation tests for bin/paysec-config.
  *
  * POSIX bracket ranges such as a-z follow the active collation order. Under
  * GNU grep with tr_TR.UTF-8, that excludes the ASCII letter i and silently
@@ -13,21 +13,21 @@ import * as os from "os";
 import * as path from "path";
 
 const ROOT = path.resolve(import.meta.dir, "..");
-const CONFIG = path.join(ROOT, "bin", "gstack-config");
+const CONFIG = path.join(ROOT, "bin", "paysec-config");
 
 let stateRoot: string;
 
 function run(args: string[]) {
   const result = spawnSync(CONFIG, args, {
     encoding: "utf8",
-    // GSTACK_SETUP_RUNNING suppresses `set skill_prefix`'s auto-relink side
-    // effect. Without it, this test invokes the REPO's gstack-config, whose
+    // PAYSEC_SETUP_RUNNING suppresses `set skill_prefix`'s auto-relink side
+    // effect. Without it, this test invokes the REPO's paysec-config, whose
     // auto-relink resolves the install dir from its own path — i.e. the repo —
-    // and gstack-patch-names rewrites all 52 tracked SKILL.md files to
-    // gstack-prefixed names, poisoning every downstream test that reads the
+    // and paysec-patch-names rewrites all 52 tracked SKILL.md files to
+    // paysec-prefixed names, poisoning every downstream test that reads the
     // live tree (observed in the free-tests CI job). Relink behavior itself is
     // covered in isolation by test/relink.test.ts's mock install.
-    env: { ...process.env, GSTACK_STATE_ROOT: stateRoot, GSTACK_SETUP_RUNNING: "1" },
+    env: { ...process.env, PAYSEC_STATE_ROOT: stateRoot, PAYSEC_SETUP_RUNNING: "1" },
   });
 
   return {
@@ -38,14 +38,14 @@ function run(args: string[]) {
 }
 
 beforeEach(() => {
-  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), "gstack-config-locale-"));
+  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paysec-config-locale-"));
 });
 
 afterEach(() => {
   fs.rmSync(stateRoot, { recursive: true, force: true });
 });
 
-describe("gstack-config key validation is locale-independent", () => {
+describe("paysec-config key validation is locale-independent", () => {
   test("both get and set validate ASCII ranges under the C locale", () => {
     const source = fs.readFileSync(CONFIG, "utf8");
     const guardedValidators = source.match(

@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
-# gstack-gbrain-repo-policy — per-remote trust tier for gbrain repo ingest.
+# paysec-gbrain-repo-policy — per-remote trust tier for gbrain repo ingest.
 #
 # Usage:
-#   gstack-gbrain-repo-policy get [<remote-url>]
+#   paysec-gbrain-repo-policy get [<remote-url>]
 #     Print the tier for the given remote, or the current repo's origin
 #     if no URL is passed. Exits 0 with one of: read-write, read-only,
 #     deny, unset.
 #
-#   gstack-gbrain-repo-policy set <remote-url> <read-write|read-only|deny>
+#   paysec-gbrain-repo-policy set <remote-url> <read-write|read-only|deny>
 #     Persist a tier for the given remote. Exits 0 on success.
 #
-#   gstack-gbrain-repo-policy list
+#   paysec-gbrain-repo-policy list
 #     Print every entry as "<key>\t<tier>", sorted by key.
 #
-#   gstack-gbrain-repo-policy normalize <url>
+#   paysec-gbrain-repo-policy normalize <url>
 #     Print the normalized (canonical) key for a given remote URL.
 #     Use this when other skills or tests need the same collapsing logic.
 #
-#   gstack-gbrain-repo-policy --help
+#   paysec-gbrain-repo-policy --help
 #
 # Storage:
-#   ~/.gstack/gbrain-repo-policy.json, mode 0600.
+#   ~/.paysec/gbrain-repo-policy.json, mode 0600.
 #
 # File format:
 #   {
@@ -43,15 +43,15 @@
 #   migration actually changes anything. Idempotent: running twice is safe.
 #
 # Env:
-#   GSTACK_HOME — override ~/.gstack state directory (aligns with other
-#                 gstack-* bins; used heavily in tests).
+#   PAYSEC_HOME — override ~/.paysec state directory (aligns with other
+#                 paysec-* bins; used heavily in tests).
 set -euo pipefail
 
-STATE_DIR="${GSTACK_HOME:-$HOME/.gstack}"
+STATE_DIR="${PAYSEC_HOME:-$HOME/.paysec}"
 POLICY_FILE="$STATE_DIR/gbrain-repo-policy.json"
 SCHEMA_VERSION=2
 
-die() { echo "gstack-gbrain-repo-policy: $*" >&2; exit 2; }
+die() { echo "paysec-gbrain-repo-policy: $*" >&2; exit 2; }
 
 require_jq() {
   if ! command -v jq >/dev/null 2>&1; then
@@ -124,7 +124,7 @@ ensure_file() {
     ts=$(date +%Y%m%d-%H%M%S)
     local quarantine="$POLICY_FILE.corrupt-$ts"
     mv "$POLICY_FILE" "$quarantine"
-    echo "gstack-gbrain-repo-policy: corrupt policy file quarantined to $quarantine; starting fresh" >&2
+    echo "paysec-gbrain-repo-policy: corrupt policy file quarantined to $quarantine; starting fresh" >&2
     local tmp
     tmp=$(mktemp "$POLICY_FILE.tmp.XXXXXX")
     printf '{"_schema_version":%d}\n' "$SCHEMA_VERSION" > "$tmp"
@@ -157,7 +157,7 @@ ensure_file() {
   mv "$tmp" "$POLICY_FILE"
   chmod 0600 "$POLICY_FILE"
   if [ "$allow_count" -gt 0 ]; then
-    echo "[gstack-gbrain-repo-policy] Migrated $allow_count legacy allow entries to read-write" >&2
+    echo "[paysec-gbrain-repo-policy] Migrated $allow_count legacy allow entries to read-write" >&2
   fi
 }
 
@@ -222,6 +222,6 @@ case "${1:-}" in
   list) shift; cmd_list "$@" ;;
   normalize) shift; cmd_normalize "$@" ;;
   --help|-h|help) sed -n '2,47p' "$0" | sed 's/^# \{0,1\}//' ;;
-  "") die "usage: gstack-gbrain-repo-policy {get|set|list|normalize|--help}" ;;
+  "") die "usage: paysec-gbrain-repo-policy {get|set|list|normalize|--help}" ;;
   *) die "unknown subcommand: $1" ;;
 esac

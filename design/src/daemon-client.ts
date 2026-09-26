@@ -6,7 +6,7 @@
  *
  *   ensureDaemon() → publishBoard(html, opts) → openBrowser(url) → exit 0
  *
- * Mirrors browse/src/cli.ts:317-415 — same health-check-first attach
+ * Mirrors browser/src/cli.ts:317-415 — same health-check-first attach
  * decision, same fs.openSync('wx') lock, same re-read-under-lock guard.
  * Adds two design-specific safety properties Codex flagged on the daemon
  * plan:
@@ -22,7 +22,7 @@
  *
  * Spawn uses Node's child_process.spawn with detached: true + stdio
  * pointed at a log file. Bun.spawn().unref() has macOS session-detach
- * quirks browse already discovered (browse/src/cli.ts:225-275).
+ * quirks browse already discovered (browser/src/cli.ts:225-275).
  */
 
 import { spawn as nodeSpawn } from "child_process";
@@ -61,7 +61,7 @@ export interface EnsureDaemonOptions {
   verbose?: boolean;
   /**
    * Override the state-file path. Default: resolveStateFilePath() (env
-   * DESIGN_DAEMON_STATE_FILE or .gstack/design.json under the git root /
+   * DESIGN_DAEMON_STATE_FILE or .paysec/design.json under the git root /
    * cwd). Tests inject a per-test path; the same path is forwarded to the
    * spawned daemon via env so client + daemon agree.
    */
@@ -104,7 +104,7 @@ export async function ensureDaemon(
       // Version mismatch: refuse if active boards exist (Codex finding).
       if (health.activeBoards > 0) {
         process.stderr.write(
-          `[design-daemon] WARNING: existing daemon is gstack ${health.version}; this CLI is ${expectedVersion}.\n` +
+          `[design-daemon] WARNING: existing daemon is paysec ${health.version}; this CLI is ${expectedVersion}.\n` +
             `[design-daemon] ${health.activeBoards} active board(s) detected. Refusing to auto-kill.\n` +
             `[design-daemon] Submit or close the open boards, then re-run.\n` +
             `[design-daemon] Or force restart: $D daemon stop (will drop in-memory history).\n`,

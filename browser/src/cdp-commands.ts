@@ -30,7 +30,7 @@ export async function handleCdpCommand(args: string[], bm: BrowserManager): Prom
       '',
       'Usage: $B cdp <Domain.method> [json-params]',
       '',
-      'Allowed methods are listed in browse/src/cdp-allowlist.ts. To add one,',
+      'Allowed methods are listed in browser/src/cdp-allowlist.ts. To add one,',
       'open a PR with a one-line justification and the (scope, output) tags.',
       'Examples:',
       '  $B cdp Accessibility.getFullAXTree {}',

@@ -8,11 +8,11 @@ import * as os from 'os';
 const ROOT = path.resolve(import.meta.dir, '..');
 
 // Render the gbrain `:user` variant into a temp out-dir, forcing detection ON
-// via a crafted GSTACK_HOME so the test is deterministic regardless of whether
+// via a crafted PAYSEC_HOME so the test is deterministic regardless of whether
 // the dev machine actually has gbrain installed. Asserts the B2 contract:
 //   (a) the worktree SKILL.md is byte-unchanged (source stays canonical),
 //   (b) the out-dir SKILL.md gained the inline Brain Context Load block,
-//   (c) its section refs point at the out-dir, not ~/.claude/skills/gstack,
+//   (c) its section refs point at the out-dir, not ~/.claude/skills/paysec,
 //   (d) bin/ refs are left pointing at the global install,
 //   (e) the out-dir section file gained the Save Results to Brain block.
 describe('gen-skill-docs --out-dir (B2 render isolation)', () => {
@@ -26,9 +26,9 @@ describe('gen-skill-docs --out-dir (B2 render isolation)', () => {
   }
 
   test('renders :user to out-dir, rewrites section paths, leaves worktree canonical', () => {
-    const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-home-'));
-    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-out-'));
-    const worktreeSkill = path.join(ROOT, 'ship', 'SKILL.md');
+    const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-home-'));
+    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-out-'));
+    const worktreeSkill = path.join(ROOT, 'ship-pr', 'SKILL.md');
     const beforeHash = hashFile(worktreeSkill);
     const beforePorcelain = porcelain();
     try {
@@ -41,12 +41,12 @@ describe('gen-skill-docs --out-dir (B2 render isolation)', () => {
       const res = spawnSync(
         'bun',
         ['run', 'scripts/gen-skill-docs.ts', '--respect-detection', '--host', 'claude', '--out-dir', outDir],
-        { cwd: ROOT, encoding: 'utf-8', timeout: 120_000, env: { ...process.env, GSTACK_HOME: tmpHome } },
+        { cwd: ROOT, encoding: 'utf-8', timeout: 120_000, env: { ...process.env, PAYSEC_HOME: tmpHome } },
       );
       expect(res.status).toBe(0);
 
-      const outSkill = path.join(outDir, 'ship', 'SKILL.md');
-      const outSection = path.join(outDir, 'ship', 'sections', 'adversarial.md');
+      const outSkill = path.join(outDir, 'ship-pr', 'SKILL.md');
+      const outSection = path.join(outDir, 'ship-pr', 'sections', 'adversarial.md');
       expect(fs.existsSync(outSkill)).toBe(true);
       const skillContent = fs.readFileSync(outSkill, 'utf-8');
 
@@ -62,11 +62,11 @@ describe('gen-skill-docs --out-dir (B2 render isolation)', () => {
       expect(skillContent).toContain('Brain Context Load');
 
       // (c) section refs repointed to the out-dir; none left pointing at the install
-      expect(skillContent).toContain(`${outDir}/ship/sections/`);
-      expect(skillContent).not.toContain('~/.claude/skills/gstack/ship/sections/');
+      expect(skillContent).toContain(`${outDir}/ship-pr/sections/`);
+      expect(skillContent).not.toContain('~/.claude/skills/paysec/ship-pr/sections/');
 
       // (d) bin refs are NOT rewritten — they still resolve to the global install
-      expect(skillContent).toContain('~/.claude/skills/gstack/bin/');
+      expect(skillContent).toContain('~/.claude/skills/paysec/bin/');
 
       // (e) the SAVE block landed in the rendered section file
       expect(fs.existsSync(outSection)).toBe(true);
@@ -78,7 +78,7 @@ describe('gen-skill-docs --out-dir (B2 render isolation)', () => {
   });
 
   test('retired global extras (proactive-suggestions.json) are not written anywhere', () => {
-    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-out-'));
+    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-out-'));
     try {
       const res = spawnSync(
         'bun',

@@ -50,13 +50,13 @@ describe("generateVariant Retry-After handling", () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "variants-retry-after-"));
     outputPath = path.join(tmpDir, "variant.png");
     // The fetch path now writes egress receipts — keep them in the temp home.
-    savedHome = process.env.GSTACK_HOME;
-    process.env.GSTACK_HOME = tmpDir;
+    savedHome = process.env.PAYSEC_HOME;
+    process.env.PAYSEC_HOME = tmpDir;
   });
 
   afterEach(() => {
-    if (savedHome === undefined) delete process.env.GSTACK_HOME;
-    else process.env.GSTACK_HOME = savedHome;
+    if (savedHome === undefined) delete process.env.PAYSEC_HOME;
+    else process.env.PAYSEC_HOME = savedHome;
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 

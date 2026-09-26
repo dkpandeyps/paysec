@@ -5,12 +5,12 @@
  * applyCatalogTrim — these handle every skill's frontmatter rewrite at gen
  * time. Two bugs already shipped here:
  *
- *   v1.45.0.0 design-consultation: when the first sentence exceeded 200 chars,
- *   the routing-prose extraction lost the entire tail. design-consultation's
+ *   v1.45.0.0 design-system: when the first sentence exceeded 200 chars,
+ *   the routing-prose extraction lost the entire tail. design-system's
  *   "Use when asked to..." silently disappeared from the body section.
  *
  *   v1.45.0.0 CI freshness: the root-skill key leaked the checkout directory
- *   name ("seville-v3" vs "gstack") and aggregate order was filesystem-
+ *   name ("seville-v3" vs "paysec") and aggregate order was filesystem-
  *   iteration order. Two machines produced two different JSON files.
  *
  * Both are regression-tested here. Future bugs in these functions surface as
@@ -30,7 +30,7 @@ describe('toYamlInlineScalar', () => {
   const parses = (out: string) => Bun.YAML.parse(`d: ${out}`);
 
   test("scalar containing '...' (YAML document-end marker) is quoted and round-trips", () => {
-    const out = toYamlInlineScalar('Truncated lead ends with... more (gstack)');
+    const out = toYamlInlineScalar('Truncated lead ends with... more (paysec)');
     expect(out.startsWith('"')).toBe(true);
     expect((parses(out) as { d: string }).d).toContain('...');
   });
@@ -60,21 +60,21 @@ describe('splitCatalogDescription', () => {
       'Pre-landing PR review. Analyzes diff against the base branch for SQL safety, LLM trust\n' +
       'boundary violations, conditional side effects, and other structural issues. Use when\n' +
       'asked to "review this PR", "code review", "pre-landing review", or "check my diff".\n' +
-      'Proactively suggest when the user is about to merge or land code changes. (gstack)';
+      'Proactively suggest when the user is about to merge or land code changes. (paysec)';
 
     const parts = splitCatalogDescription(desc);
 
     expect(parts.lead).toBe('Pre-landing PR review.');
-    expect(parts.hasGstackTag).toBe(true);
+    expect(parts.hasPaysecTag).toBe(true);
     expect(parts.voiceLine).toBeNull();
     expect(parts.routingProse).toContain('Use when');
     expect(parts.routingProse).toContain('Proactively suggest');
     expect(parts.routingProse).toContain('Analyzes diff');
-    // (gstack) tag stripped from routingProse
-    expect(parts.routingProse).not.toContain('(gstack)');
+    // (paysec) tag stripped from routingProse
+    expect(parts.routingProse).not.toContain('(paysec)');
   });
 
-  test('REGRESSION (design-consultation v1.45.0.0): >200 char first sentence keeps routing', () => {
+  test('REGRESSION (design-system v1.45.0.0): >200 char first sentence keeps routing', () => {
     // This is the exact shape that broke. First sentence (with embedded periods)
     // is 207 chars. Original bug: routing extraction ran AFTER lead truncation,
     // so collapsed.indexOf(lead) returned -1 (lead ended in "...") and the
@@ -84,10 +84,10 @@ describe('splitCatalogDescription', () => {
       'proposes a complete design system (aesthetic, typography, color, layout, ' +
       'spacing, motion), and generates font+color preview pages. ' +
       'Creates DESIGN.md as your project\'s design source of truth. ' +
-      'For existing sites, use /plan-design-review to infer the system instead. ' +
+      'For existing sites, use /plan-ux-review to infer the system instead. ' +
       'Use when asked to "design system", "brand guidelines", or "create DESIGN.md". ' +
       'Proactively suggest when starting a new project\'s UI with no existing ' +
-      'design system or DESIGN.md. (gstack)';
+      'design system or DESIGN.md. (paysec)';
 
     const parts = splitCatalogDescription(desc);
 
@@ -104,7 +104,7 @@ describe('splitCatalogDescription', () => {
     const desc =
       'Quick fix. Use when asked to fix the bug. ' +
       'Voice triggers (speech-to-text aliases): "fix it", "patch this", "make it work". ' +
-      '(gstack)';
+      '(paysec)';
 
     const parts = splitCatalogDescription(desc);
 
@@ -116,11 +116,11 @@ describe('splitCatalogDescription', () => {
     expect(parts.routingProse).not.toContain('speech-to-text');
   });
 
-  test('handles description without (gstack) tag', () => {
+  test('handles description without (paysec) tag', () => {
     const desc = 'Single sentence description. With routing prose afterward.';
     const parts = splitCatalogDescription(desc);
     expect(parts.lead).toBe('Single sentence description.');
-    expect(parts.hasGstackTag).toBe(false);
+    expect(parts.hasPaysecTag).toBe(false);
     expect(parts.routingProse).toBe('With routing prose afterward.');
   });
 
@@ -144,12 +144,12 @@ describe('splitCatalogDescription', () => {
     const desc =
       'Drive an approved plan to completion on a TODOS.md backlog. ' +
       'Use when asked to "autobuilder" or "run the build loop". ' +
-      'Proactively suggest after a plan is approved. (gstack)';
+      'Proactively suggest after a plan is approved. (paysec)';
     const parts = splitCatalogDescription(desc);
     expect(parts.lead).toBe('Drive an approved plan to completion on a TODOS.md backlog.');
     expect(parts.routingProse).toContain('Use when asked to "autobuilder"');
     expect(parts.routingProse).toContain('Proactively suggest');
-    expect(parts.hasGstackTag).toBe(true);
+    expect(parts.hasPaysecTag).toBe(true);
   });
 
   test('URL in first sentence does not end the lead early', () => {
@@ -168,7 +168,7 @@ describe('splitCatalogDescription', () => {
       'compatibility shims, custom entitlements, and the long tail of per-target ' +
       'build settings nobody remembers configuring.';
     expect(firstSentence.length).toBeGreaterThan(200);
-    const desc = firstSentence + ' Use when asked to resync the bridge. (gstack)';
+    const desc = firstSentence + ' Use when asked to resync the bridge. (paysec)';
     const parts = splitCatalogDescription(desc);
     // Lead is the truncated first sentence (ellipsis path), not a 20-word cut.
     expect(parts.lead.endsWith('...')).toBe(true);
@@ -176,7 +176,7 @@ describe('splitCatalogDescription', () => {
     expect(parts.lead).toContain('TODOS.md');
     // Routing prose survives intact.
     expect(parts.routingProse).toContain('Use when asked to resync the bridge.');
-    expect(parts.hasGstackTag).toBe(true);
+    expect(parts.hasPaysecTag).toBe(true);
   });
 
   test('description without a period uses first ~20 words as lead', () => {
@@ -187,33 +187,33 @@ describe('splitCatalogDescription', () => {
   });
 
   test('idempotent: calling on already-trimmed output returns the same parts', () => {
-    const desc = 'Already trimmed. (gstack)';
+    const desc = 'Already trimmed. (paysec)';
     const parts1 = splitCatalogDescription(desc);
     const parts2 = splitCatalogDescription(buildTrimmedDescription(parts1));
     // Re-split of a one-line trimmed result keeps lead identical, routing empty.
     expect(parts2.lead).toBe(parts1.lead);
-    expect(parts2.hasGstackTag).toBe(true);
+    expect(parts2.hasPaysecTag).toBe(true);
     expect(parts2.routingProse).toBe('');
   });
 });
 
 describe('buildTrimmedDescription', () => {
-  test('appends (gstack) when hasGstackTag is true', () => {
+  test('appends (paysec) when hasPaysecTag is true', () => {
     const out = buildTrimmedDescription({
       lead: 'Some lead.',
       routingProse: 'routing',
       voiceLine: null,
-      hasGstackTag: true,
+      hasPaysecTag: true,
     });
-    expect(out).toBe('Some lead. (gstack)');
+    expect(out).toBe('Some lead. (paysec)');
   });
 
-  test('omits (gstack) when hasGstackTag is false', () => {
+  test('omits (paysec) when hasPaysecTag is false', () => {
     const out = buildTrimmedDescription({
       lead: 'No tag.',
       routingProse: '',
       voiceLine: null,
-      hasGstackTag: false,
+      hasPaysecTag: false,
     });
     expect(out).toBe('No tag.');
   });
@@ -223,9 +223,9 @@ describe('buildTrimmedDescription', () => {
       lead: '   Lead with whitespace.   ',
       routingProse: '',
       voiceLine: null,
-      hasGstackTag: true,
+      hasPaysecTag: true,
     });
-    expect(out).toBe('Lead with whitespace. (gstack)');
+    expect(out).toBe('Lead with whitespace. (paysec)');
   });
 });
 
@@ -235,7 +235,7 @@ describe('buildWhenToInvokeSection', () => {
       lead: 'Lead.',
       routingProse: 'Use when asked to ship.',
       voiceLine: 'Voice triggers (speech-to-text aliases): "ship it".',
-      hasGstackTag: true,
+      hasPaysecTag: true,
     });
     expect(out).toContain('## When to invoke this skill');
     expect(out).toContain('Use when asked to ship.');
@@ -247,7 +247,7 @@ describe('buildWhenToInvokeSection', () => {
       lead: 'Lead.',
       routingProse: '',
       voiceLine: null,
-      hasGstackTag: true,
+      hasPaysecTag: true,
     });
     expect(out).toContain('## When to invoke this skill');
     expect(out).not.toContain('Use when');
@@ -258,7 +258,7 @@ describe('buildWhenToInvokeSection', () => {
       lead: 'Lead.',
       routingProse: '',
       voiceLine: 'Voice triggers: x.',
-      hasGstackTag: true,
+      hasPaysecTag: true,
     });
     expect(out).toContain('Voice triggers: x.');
   });
@@ -270,7 +270,7 @@ name: example
 description: |
   Example skill: this is the first sentence of the description, intended to be
   the lead displayed in the catalog. Use when asked to do an example task.
-  Proactively suggest when the user mentions examples. (gstack)
+  Proactively suggest when the user mentions examples. (paysec)
 preamble-tier: 2
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
@@ -284,10 +284,10 @@ Original body content here.
     const result = applyCatalogTrim(minimalSkill, 'example');
     expect(result).not.toBeNull();
     const { content, parts } = result!;
-    // Frontmatter description is now ONE line ending with (gstack). #1778: a
+    // Frontmatter description is now ONE line ending with (paysec). #1778: a
     // description with an interior colon ("Example skill:") is YAML-quoted, so
     // the value is wrapped in double quotes — tolerate the optional quotes.
-    expect(content).toMatch(/^description: "?Example skill:[^\n]*\(gstack\)"?\n/m);
+    expect(content).toMatch(/^description: "?Example skill:[^\n]*\(paysec\)"?\n/m);
     // Body has the When to invoke section
     expect(content).toContain('## When to invoke this skill');
     expect(content).toContain('Use when asked to do an example task.');
@@ -297,13 +297,13 @@ Original body content here.
     expect(content).toContain('Original body content here.');
     // parts is populated for the aggregator
     expect(parts.lead).toContain('Example skill');
-    expect(parts.hasGstackTag).toBe(true);
+    expect(parts.hasPaysecTag).toBe(true);
   });
 
   test('returns null for already-short descriptions (no-op)', () => {
     const shortSkill = minimalSkill.replace(
       /description: \|[\s\S]*?(?=preamble-tier:)/,
-      'description: Already short. (gstack)\n',
+      'description: Already short. (paysec)\n',
     );
     const result = applyCatalogTrim(shortSkill, 'example');
     expect(result).toBeNull();
@@ -311,13 +311,13 @@ Original body content here.
 
   test('keeps the newline between description and next YAML field (no field collision)', () => {
     // Bug shape from v1.45.0.0 first attempt: produced
-    // `description: ... (gstack)preamble-tier:` with no newline.
+    // `description: ... (paysec)preamble-tier:` with no newline.
     const result = applyCatalogTrim(minimalSkill, 'example');
     expect(result).not.toBeNull();
-    expect(result!.content).not.toMatch(/\(gstack\)preamble-tier/);
-    expect(result!.content).not.toMatch(/\(gstack\)allowed-tools/);
+    expect(result!.content).not.toMatch(/\(paysec\)preamble-tier/);
+    expect(result!.content).not.toMatch(/\(paysec\)allowed-tools/);
     // #1778: optional closing quote when the description was YAML-quoted.
-    expect(result!.content).toMatch(/\(gstack\)"?\n[a-z-]+:/);
+    expect(result!.content).toMatch(/\(paysec\)"?\n[a-z-]+:/);
   });
 
   test('returns null on content without proper frontmatter', () => {
@@ -331,7 +331,7 @@ describe('proactive-suggestions.json stays retired', () => {
     // The aggregated routing registry was removed (no consumer ever read it).
     // If someone re-adds the emitter, this pins the decision to delete it —
     // reintroduce only with an actual consumer, and restore the determinism
-    // tests (sorted keys, root keyed as "gstack", no timestamp fields) that
+    // tests (sorted keys, root keyed as "paysec", no timestamp fields) that
     // lived here before.
     const fs = require('fs');
     const path = require('path');

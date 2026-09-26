@@ -148,7 +148,7 @@ describe('generateAskUserFormat — 5+ option split rule (slim inline + docs poi
   });
 
   test('AUTO_DECIDE is gated at runtime, not just collision-resistance', () => {
-    expect(out).toContain('bin/gstack-question-preference');
+    expect(out).toContain('bin/paysec-question-preference');
     expect(out).toContain('*-split-*');
     expect(out).toContain('never AUTO_DECIDE-eligible');
   });
@@ -172,7 +172,7 @@ describe('generateAskUserFormat — runtime-failure prose fallback', () => {
   });
 
   test('carves out the auto-decide denial as NOT a failure', () => {
-    expect(out).toContain('[plan-tune auto-decide]');
+    expect(out).toContain('[tune-questions auto-decide]');
     expect(out).toMatch(/NOT a failure/i);
     // and explicitly: do not fall back to prose on an auto-decide denial
     expect(out).toMatch(/Do NOT[\s\S]{0,40}fall back to prose|never prose/i);
@@ -237,7 +237,7 @@ describe('generateAskUserFormat — runtime-failure prose fallback', () => {
     expect(out).toMatch(/CONDUCTOR_SESSION: true/);
     expect(out).toMatch(/do NOT call AskUserQuestion at all/);
     expect(out).toMatch(/Auto-decide preferences still apply first/);
-    expect(out).toMatch(/gstack-question-log/);
+    expect(out).toMatch(/paysec-question-log/);
   });
 
   test('Conductor: one-way prose rule + continuation protocol present', () => {
@@ -254,14 +254,14 @@ describe('CQ2 — cross-file invariant: auto-decide prefix matches the hook', ()
     'utf-8',
   );
 
-  test('the hook actually emits the [plan-tune auto-decide] prefix', () => {
-    expect(hookSrc).toContain('[plan-tune auto-decide]');
+  test('the hook actually emits the [tune-questions auto-decide] prefix', () => {
+    expect(hookSrc).toContain('[tune-questions auto-decide]');
   });
 
   test('the resolver references the exact same prefix the hook emits', () => {
     // If a future edit reworded the hook reason, this catches the drift: the prose
     // fallback would stop recognizing the auto-decide denial as not-a-failure.
-    const PREFIX = '[plan-tune auto-decide]';
+    const PREFIX = '[tune-questions auto-decide]';
     expect(hookSrc.includes(PREFIX) && out.includes(PREFIX)).toBe(true);
   });
 });

@@ -1,13 +1,13 @@
 /**
  * Concurrent-refresh lockfile dedup (T15 / D3).
  *
- * When autoplan dispatches 4 planning skills back-to-back and they all hit a
+ * When auto-plan-review dispatches 4 planning skills back-to-back and they all hit a
  * cold-miss on the same digest, only ONE should actually fetch from the brain;
  * the rest dedup via the project-scoped lockfile at
- * ~/.gstack/projects/<slug>/brain-cache/.refresh.lock. Stale locks (process
+ * ~/.paysec/projects/<slug>/brain-cache/.refresh.lock. Stale locks (process
  * dead, or older than CACHE_REFRESH_LOCK_TIMEOUT_MS) are taken over.
  *
- * Gate-tier, free, pure file-IO. Uses tmp GSTACK_HOME.
+ * Gate-tier, free, pure file-IO. Uses tmp PAYSEC_HOME.
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
@@ -16,22 +16,22 @@ import { join } from 'path';
 import { tmpdir, hostname } from 'os';
 
 let TMP_HOME: string;
-const ORIGINAL_HOME = process.env.GSTACK_HOME;
+const ORIGINAL_HOME = process.env.PAYSEC_HOME;
 
 beforeEach(() => {
-  TMP_HOME = mkdtempSync(join(tmpdir(), 'gstack-lock-test-'));
-  process.env.GSTACK_HOME = TMP_HOME;
-  delete require.cache[require.resolve('../bin/gstack-brain-cache')];
+  TMP_HOME = mkdtempSync(join(tmpdir(), 'paysec-lock-test-'));
+  process.env.PAYSEC_HOME = TMP_HOME;
+  delete require.cache[require.resolve('../bin/paysec-brain-cache')];
 });
 
 afterEach(() => {
-  if (ORIGINAL_HOME) process.env.GSTACK_HOME = ORIGINAL_HOME;
-  else delete process.env.GSTACK_HOME;
+  if (ORIGINAL_HOME) process.env.PAYSEC_HOME = ORIGINAL_HOME;
+  else delete process.env.PAYSEC_HOME;
   try { rmSync(TMP_HOME, { recursive: true, force: true }); } catch { /* best effort */ }
 });
 
-async function importCache(): Promise<typeof import('../bin/gstack-brain-cache')> {
-  return (await import('../bin/gstack-brain-cache')) as typeof import('../bin/gstack-brain-cache');
+async function importCache(): Promise<typeof import('../bin/paysec-brain-cache')> {
+  return (await import('../bin/paysec-brain-cache')) as typeof import('../bin/paysec-brain-cache');
 }
 
 describe('concurrent-refresh lockfile dedup', () => {
@@ -140,7 +140,7 @@ describe('concurrent-refresh lockfile dedup', () => {
     expect(result).toBe('recovered');
   });
 
-  test('cross-project lock uses ~/.gstack/brain-cache/.refresh.lock', async () => {
+  test('cross-project lock uses ~/.paysec/brain-cache/.refresh.lock', async () => {
     const mod = await importCache();
     mkdirSync(join(TMP_HOME, 'brain-cache'), { recursive: true });
     const lockFile = join(TMP_HOME, 'brain-cache', '.refresh.lock');

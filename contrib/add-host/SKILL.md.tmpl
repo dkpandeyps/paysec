@@ -1,17 +1,17 @@
 ---
-name: gstack-contrib-add-host
+name: paysec-contrib-add-host
 description: |
-  Contributor-only skill: create a new host config for gstack's multi-host system.
-  NOT installed for end users. Only usable from the gstack source repo.
+  Contributor-only skill: create a new host config for paysec's multi-host system.
+  NOT installed for end users. Only usable from the paysec source repo.
 triggers:
   - add new host
   - create host config
   - contribute new agent host
 ---
 
-# /gstack-contrib-add-host — Add a New Host
+# /paysec-contrib-add-host — Add a New Host
 
-This skill helps contributors add support for a new AI coding agent to gstack.
+This skill helps contributors add support for a new AI coding agent to paysec.
 
 ## What you'll create
 
@@ -54,7 +54,7 @@ bun run gen:skill-docs --host <name>
 ```
 
 Check:
-- Output exists at `.<name>/skills/gstack-*/SKILL.md`
+- Output exists at `.<name>/skills/paysec-*/SKILL.md`
 - No `.claude/skills` path leakage
 - Frontmatter matches expected format
 

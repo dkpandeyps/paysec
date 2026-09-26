@@ -38,9 +38,9 @@ Redis cache. The team "feels like" it should be cheaper; no developer was asked.
 `;
 
 describeE2E('Conductor renders decisions as prose (periodic)', () => {
-  test('plan-eng-review in a Conductor session surfaces a PROSE decision brief, not a silent skip', async () => {
+  test('plan-tech-review in a Conductor session surfaces a PROSE decision brief, not a silent skip', async () => {
     const obs = await runPlanSkillObservation({
-      skillName: 'plan-eng-review',
+      skillName: 'plan-tech-review',
       inPlanMode: true,
       // Mimic Conductor: native AUQ disabled + the Conductor env signal present.
       extraArgs: ['--disallowedTools', 'AskUserQuestion'],

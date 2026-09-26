@@ -1,7 +1,7 @@
 /**
- * gstack-gbrain-source-wireup — unit tests with mocked gbrain CLI.
+ * paysec-gbrain-source-wireup — unit tests with mocked gbrain CLI.
  *
- * The helper registers the gstack brain repo as a gbrain federated source
+ * The helper registers the paysec brain repo as a gbrain federated source
  * via `git worktree`, runs an initial sync, and exposes --uninstall + --probe.
  *
  * Strategy: put a fake `gbrain` binary on PATH that records every call into
@@ -18,10 +18,10 @@ import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
 const BIN_DIR = path.join(ROOT, 'bin');
-const WIREUP_BIN = path.join(BIN_DIR, 'gstack-gbrain-source-wireup');
+const WIREUP_BIN = path.join(BIN_DIR, 'paysec-gbrain-source-wireup');
 
 let tmpHome: string;
-let gstackHome: string;
+let paysecHome: string;
 let worktreeDir: string;
 let fakeBinDir: string;
 let gbrainCallLog: string;
@@ -115,9 +115,9 @@ function run(
   const env = {
     PATH: `${fakeBinDir}:${process.env.PATH || '/usr/bin:/bin:/opt/homebrew/bin'}`,
     HOME: tmpHome,
-    GSTACK_HOME: gstackHome,
-    GSTACK_BRAIN_WORKTREE: worktreeDir,
-    GSTACK_BRAIN_NO_SYNC: '0',
+    PAYSEC_HOME: paysecHome,
+    PAYSEC_BRAIN_WORKTREE: worktreeDir,
+    PAYSEC_BRAIN_NO_SYNC: '0',
     ...(opts.env || {}),
   };
   return spawnSync(WIREUP_BIN, argv, {
@@ -139,22 +139,22 @@ function gbrainCalls(): string[] {
     .filter((l) => l.trim());
 }
 
-function setupGstackRepo(remoteUrl: string) {
-  // Real git repo at gstackHome with at least one commit + an origin remote.
-  fs.mkdirSync(gstackHome, { recursive: true });
-  spawnSync('git', ['-C', gstackHome, 'init', '-q', '-b', 'main'], { stdio: 'pipe' });
-  spawnSync('git', ['-C', gstackHome, 'config', 'user.email', 'test@example.com'], { stdio: 'pipe' });
-  spawnSync('git', ['-C', gstackHome, 'config', 'user.name', 'test'], { stdio: 'pipe' });
-  fs.writeFileSync(path.join(gstackHome, '.brain-allowlist'), '# allowlist\n');
-  spawnSync('git', ['-C', gstackHome, 'add', '.'], { stdio: 'pipe' });
-  spawnSync('git', ['-C', gstackHome, 'commit', '-q', '-m', 'init'], { stdio: 'pipe' });
-  spawnSync('git', ['-C', gstackHome, 'remote', 'add', 'origin', remoteUrl], { stdio: 'pipe' });
+function setupPaysecRepo(remoteUrl: string) {
+  // Real git repo at paysecHome with at least one commit + an origin remote.
+  fs.mkdirSync(paysecHome, { recursive: true });
+  spawnSync('git', ['-C', paysecHome, 'init', '-q', '-b', 'main'], { stdio: 'pipe' });
+  spawnSync('git', ['-C', paysecHome, 'config', 'user.email', 'test@example.com'], { stdio: 'pipe' });
+  spawnSync('git', ['-C', paysecHome, 'config', 'user.name', 'test'], { stdio: 'pipe' });
+  fs.writeFileSync(path.join(paysecHome, '.brain-allowlist'), '# allowlist\n');
+  spawnSync('git', ['-C', paysecHome, 'add', '.'], { stdio: 'pipe' });
+  spawnSync('git', ['-C', paysecHome, 'commit', '-q', '-m', 'init'], { stdio: 'pipe' });
+  spawnSync('git', ['-C', paysecHome, 'remote', 'add', 'origin', remoteUrl], { stdio: 'pipe' });
 }
 
 beforeEach(() => {
-  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-wireup-test-'));
-  gstackHome = path.join(tmpHome, '.gstack');
-  worktreeDir = path.join(tmpHome, '.gstack-brain-worktree');
+  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-wireup-test-'));
+  paysecHome = path.join(tmpHome, '.paysec');
+  worktreeDir = path.join(tmpHome, '.paysec-brain-worktree');
   fakeBinDir = path.join(tmpHome, 'fake-bin');
   fs.mkdirSync(fakeBinDir, { recursive: true });
   gbrainCallLog = path.join(tmpHome, 'gbrain-calls.log');
@@ -167,52 +167,52 @@ afterEach(() => {
   } catch {}
 });
 
-describe('gstack-gbrain-source-wireup — wireup mode', () => {
+describe('paysec-gbrain-source-wireup — wireup mode', () => {
   test('fresh state: registers source + creates worktree + syncs', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({});
-    const r = run([], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    const r = run([], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     expect(r.status).toBe(0);
     expect(fs.existsSync(worktreeDir)).toBe(true);
     const state = readState();
     expect(state.sources).toHaveLength(1);
-    expect(state.sources[0].id).toBe('gstack-brain-user');
+    expect(state.sources[0].id).toBe('paysec-brain-user');
     expect(state.sources[0].local_path).toBe(worktreeDir);
     expect(state.sources[0].federated).toBe(true);
   });
 
   test('idempotent re-run after success: no new sources add call', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({});
-    run([], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    run([], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     const callsAfterFirst = gbrainCalls().filter((c) => c.startsWith('gbrain sources add')).length;
     expect(callsAfterFirst).toBe(1);
-    run([], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    run([], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     const callsAfterSecond = gbrainCalls().filter((c) => c.startsWith('gbrain sources add')).length;
     expect(callsAfterSecond).toBe(1); // no new add
   });
 
   test('drift recovery: existing source with different path triggers remove + add', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({});
     // Pre-seed the fake gbrain state with a source at the wrong path
     fs.writeFileSync(
       gbrainStateFile,
       JSON.stringify({
-        sources: [{ id: 'gstack-brain-user', local_path: '/old/stale/path', federated: true }],
+        sources: [{ id: 'paysec-brain-user', local_path: '/old/stale/path', federated: true }],
       })
     );
-    const r = run([], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    const r = run([], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     expect(r.status).toBe(0);
     const calls = gbrainCalls();
-    expect(calls.some((c) => c.startsWith('gbrain sources remove gstack-brain-user'))).toBe(true);
-    expect(calls.some((c) => c.includes(`gbrain sources add gstack-brain-user --path ${worktreeDir}`))).toBe(true);
+    expect(calls.some((c) => c.startsWith('gbrain sources remove paysec-brain-user'))).toBe(true);
+    expect(calls.some((c) => c.includes(`gbrain sources add paysec-brain-user --path ${worktreeDir}`))).toBe(true);
     const state = readState();
     expect(state.sources[0].local_path).toBe(worktreeDir);
   });
 
   test('--strict + gbrain too old: exits 2', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({ version: '0.17.0' });
     const r = run(['--strict']);
     expect(r.status).toBe(2);
@@ -220,7 +220,7 @@ describe('gstack-gbrain-source-wireup — wireup mode', () => {
   });
 
   test('non-strict + gbrain too old: warn + exit 0', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({ version: '0.17.0' });
     const r = run([]);
     expect(r.status).toBe(0);
@@ -228,7 +228,7 @@ describe('gstack-gbrain-source-wireup — wireup mode', () => {
   });
 
   test('--strict + gbrain missing on PATH: exits 2', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     // Don't make a fake gbrain — fakeBinDir is empty. Keep system dirs on PATH
     // so basic commands (git, awk, sed, etc.) work; only `gbrain` is absent.
     const r = run(['--strict'], {
@@ -238,41 +238,41 @@ describe('gstack-gbrain-source-wireup — wireup mode', () => {
   });
 
   test('source-id derived from origin URL', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-alice.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-alice.git');
     makeFakeGbrain({});
-    const r = run([], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    const r = run([], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     expect(r.status).toBe(0);
-    expect(readState().sources[0].id).toBe('gstack-brain-alice');
+    expect(readState().sources[0].id).toBe('paysec-brain-alice');
   });
 
-  test('source-id fallback to ~/.gstack-brain-remote.txt when .git is gone', () => {
-    // No git repo at gstackHome; just the remote-file
+  test('source-id fallback to ~/.paysec-brain-remote.txt when .git is gone', () => {
+    // No git repo at paysecHome; just the remote-file
     fs.mkdirSync(tmpHome, { recursive: true });
     fs.writeFileSync(
-      path.join(tmpHome, '.gstack-brain-remote.txt'),
-      'git@github.com:user/gstack-brain-bob.git\n'
+      path.join(tmpHome, '.paysec-brain-remote.txt'),
+      'git@github.com:user/paysec-brain-bob.git\n'
     );
     makeFakeGbrain({});
-    // No --strict: helper should benign-skip because .gstack/.git is missing
+    // No --strict: helper should benign-skip because .paysec/.git is missing
     const r = run([]);
     // ensure_worktree returns 2 → benign skip, exit 0
     expect(r.status).toBe(0);
   });
 
   test('source-id from --source-id flag overrides everything', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-different.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-different.git');
     makeFakeGbrain({});
-    run(['--source-id', 'custom-id'], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    run(['--source-id', 'custom-id'], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     const state = readState();
     expect(state.sources[0].id).toBe('custom-id');
   });
 
   test('--probe: read-only, prints state without mutating', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({});
     const r = run(['--probe']);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain('source_id=gstack-brain-user');
+    expect(r.stdout).toContain('source_id=paysec-brain-user');
     expect(r.stdout).toContain('worktree=');
     expect(r.stdout).toContain('gbrain=ok');
     expect(r.stdout).toContain('source_status=absent');
@@ -283,7 +283,7 @@ describe('gstack-gbrain-source-wireup — wireup mode', () => {
   });
 
   test('gbrain sync failure: exits 1 with stderr', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({ syncFails: true });
     const r = run([]);
     expect(r.status).toBe(1);
@@ -291,12 +291,12 @@ describe('gstack-gbrain-source-wireup — wireup mode', () => {
   });
 });
 
-describe('gstack-gbrain-source-wireup — --database-url lock (defends against external config rewrites)', () => {
+describe('paysec-gbrain-source-wireup — --database-url lock (defends against external config rewrites)', () => {
   test('--database-url flag is exported as GBRAIN_DATABASE_URL to child gbrain calls', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({});
     const TARGET = 'postgresql://postgres.abc:pw@aws.pooler.supabase.com:5432/postgres';
-    const r = run(['--database-url', TARGET], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    const r = run(['--database-url', TARGET], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     expect(r.status).toBe(0);
     const calls = gbrainCalls();
     // every gbrain invocation should carry the locked URL
@@ -308,7 +308,7 @@ describe('gstack-gbrain-source-wireup — --database-url lock (defends against e
   });
 
   test('falls back to ~/.gbrain/config.json database_url when no flag and no env', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({});
     const FILE_URL = 'postgresql://postgres.xyz:pw@aws.pooler.supabase.com:5432/postgres';
     fs.mkdirSync(path.join(tmpHome, '.gbrain'), { recursive: true });
@@ -320,7 +320,7 @@ describe('gstack-gbrain-source-wireup — --database-url lock (defends against e
     // should read from $HOME/.gbrain/config.json (HOME is tmpHome here).
     const r = run([], {
       env: {
-        GSTACK_BRAIN_NO_SYNC: '1',
+        PAYSEC_BRAIN_NO_SYNC: '1',
         GBRAIN_DATABASE_URL: '',
         DATABASE_URL: '',
       },
@@ -333,7 +333,7 @@ describe('gstack-gbrain-source-wireup — --database-url lock (defends against e
   });
 
   test('--database-url overrides env GBRAIN_DATABASE_URL and config.json', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({});
     const FLAG_URL = 'postgresql://postgres.flag:pw@a.b:5432/postgres';
     const ENV_URL = 'postgresql://postgres.env:pw@x.y:5432/postgres';
@@ -345,7 +345,7 @@ describe('gstack-gbrain-source-wireup — --database-url lock (defends against e
     );
     const r = run(['--database-url', FLAG_URL], {
       env: {
-        GSTACK_BRAIN_NO_SYNC: '1',
+        PAYSEC_BRAIN_NO_SYNC: '1',
         GBRAIN_DATABASE_URL: ENV_URL,
       },
     });
@@ -359,11 +359,11 @@ describe('gstack-gbrain-source-wireup — --database-url lock (defends against e
   });
 });
 
-describe('gstack-gbrain-source-wireup — uninstall mode', () => {
+describe('paysec-gbrain-source-wireup — uninstall mode', () => {
   test('after wireup: removes source + worktree', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({});
-    run([], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    run([], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     expect(readState().sources).toHaveLength(1);
     expect(fs.existsSync(worktreeDir)).toBe(true);
     const r = run(['--uninstall']);
@@ -381,10 +381,10 @@ describe('gstack-gbrain-source-wireup — uninstall mode', () => {
   });
 
   test('--uninstall when gbrain is missing: exits 0 (best-effort), still removes worktree', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     // First wireup with fake gbrain to create the worktree + register source
     makeFakeGbrain({});
-    run([], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    run([], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     expect(fs.existsSync(worktreeDir)).toBe(true);
     // Now remove the fake gbrain so uninstall sees gbrain missing
     fs.rmSync(path.join(fakeBinDir, 'gbrain'), { force: true });
@@ -396,17 +396,17 @@ describe('gstack-gbrain-source-wireup — uninstall mode', () => {
   });
 });
 
-describe('gstack-gbrain-source-wireup — defensive paths', () => {
+describe('paysec-gbrain-source-wireup — defensive paths', () => {
   test('--no-pull skips HEAD advance on existing worktree', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({});
     // First run to create worktree
-    run([], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    run([], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     // Make a new commit on parent so worktree HEAD is "behind"
-    fs.writeFileSync(path.join(gstackHome, 'newfile.md'), 'new');
-    spawnSync('git', ['-C', gstackHome, 'add', '.'], { stdio: 'pipe' });
-    spawnSync('git', ['-C', gstackHome, 'commit', '-q', '-m', 'second commit'], { stdio: 'pipe' });
-    const parentHeadAfter = spawnSync('git', ['-C', gstackHome, 'rev-parse', 'HEAD'], {
+    fs.writeFileSync(path.join(paysecHome, 'newfile.md'), 'new');
+    spawnSync('git', ['-C', paysecHome, 'add', '.'], { stdio: 'pipe' });
+    spawnSync('git', ['-C', paysecHome, 'commit', '-q', '-m', 'second commit'], { stdio: 'pipe' });
+    const parentHeadAfter = spawnSync('git', ['-C', paysecHome, 'rev-parse', 'HEAD'], {
       encoding: 'utf-8',
     }).stdout.trim();
     const worktreeHeadBefore = spawnSync('git', ['-C', worktreeDir, 'rev-parse', 'HEAD'], {
@@ -414,7 +414,7 @@ describe('gstack-gbrain-source-wireup — defensive paths', () => {
     }).stdout.trim();
     expect(parentHeadAfter).not.toBe(worktreeHeadBefore); // sanity: parent advanced
     // --no-pull should leave worktree HEAD where it was
-    const r = run(['--no-pull'], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    const r = run(['--no-pull'], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     expect(r.status).toBe(0);
     const worktreeHeadAfter = spawnSync('git', ['-C', worktreeDir, 'rev-parse', 'HEAD'], {
       encoding: 'utf-8',
@@ -424,7 +424,7 @@ describe('gstack-gbrain-source-wireup — defensive paths', () => {
   });
 
   test('stray non-git directory at worktree path is cleaned up + worktree created', () => {
-    setupGstackRepo('git@github.com:user/gstack-brain-user.git');
+    setupPaysecRepo('git@github.com:user/paysec-brain-user.git');
     makeFakeGbrain({});
     // Plant a stray non-git directory at the worktree path
     fs.mkdirSync(worktreeDir, { recursive: true });
@@ -432,7 +432,7 @@ describe('gstack-gbrain-source-wireup — defensive paths', () => {
     expect(fs.existsSync(path.join(worktreeDir, 'unrelated.txt'))).toBe(true);
     expect(fs.existsSync(path.join(worktreeDir, '.git'))).toBe(false);
     // Helper should remove the stray dir + create a real worktree
-    const r = run([], { env: { GSTACK_BRAIN_NO_SYNC: '1' } });
+    const r = run([], { env: { PAYSEC_BRAIN_NO_SYNC: '1' } });
     expect(r.status).toBe(0);
     expect(fs.existsSync(path.join(worktreeDir, '.git'))).toBe(true); // real worktree
     expect(fs.existsSync(path.join(worktreeDir, 'unrelated.txt'))).toBe(false); // stray gone

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
 
 // pty-session-lease registers a sessionId space distinct from the pre-v1.44
-// attach-token space (browse/src/pty-session-cookie.ts). These tests pin
+// attach-token space (browser/src/pty-session-cookie.ts). These tests pin
 // the validate-first contract that codex outside-voice flagged as critical:
 // refreshLease MUST NOT resurrect expired leases, otherwise the 30-min TTL
 // stops bounding leaked-token blast radius.

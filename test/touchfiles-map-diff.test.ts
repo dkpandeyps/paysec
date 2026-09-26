@@ -154,7 +154,7 @@ describe('selectTests map-diff wiring', () => {
 
   test('map-diff result unions with pattern matching for other changed files', () => {
     const result = selectTests(
-      [TOUCHFILES_DATA_PATH, 'retro/SKILL.md'],
+      [TOUCHFILES_DATA_PATH, 'weekly-retro/SKILL.md'],
       E2E_TOUCHFILES,
       GLOBAL_TOUCHFILES,
       { mapDiff: okOutcome(['browse-basic']) },
@@ -222,7 +222,7 @@ describe('selectTests map-diff wiring', () => {
   });
 
   test('no data-file change → classic diff behavior, no map-diff consulted', () => {
-    const result = selectTests(['retro/SKILL.md'], E2E_TOUCHFILES, GLOBAL_TOUCHFILES, {
+    const result = selectTests(['weekly-retro/SKILL.md'], E2E_TOUCHFILES, GLOBAL_TOUCHFILES, {
       // Poison injection: if the wiring consulted this, the test would fail.
       mapDiff: { ok: false, cause: 'import-failed' },
     });

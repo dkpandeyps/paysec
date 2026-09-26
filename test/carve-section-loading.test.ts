@@ -10,12 +10,12 @@
  * Per codex refined-plan pass:
  *   #2 — ONE test() per skill, each with its own timeout + named failure output;
  *        a hung claude -p fails only its skill, not the whole file.
- *   #3 / D-CODEX(A) — GSTACK_CARVE_SKILL=<name> runs only that skill's case, so
+ *   #3 / D-CODEX(A) — PAYSEC_CARVE_SKILL=<name> runs only that skill's case, so
  *        the touchfile selector can scope cost to the changed skill; unset runs all.
  *   #7 — each case drives the run with the registry's `scenario` (built to force
  *        the STOP-Read path) and asserts the required sections were Read.
  *
- * 'external' skills (ship, plan-ceo-review) have bespoke fixtures (git state,
+ * 'external' skills (ship, plan-business-review) have bespoke fixtures (git state,
  * Step-0 mode loop) and keep their dedicated tests; E1 asserts those exist.
  */
 
@@ -26,7 +26,7 @@ import { CARVE_GUARDS } from './helpers/carve-guards';
 
 const describeE2E = describeE2ETier('periodic');
 const runId = `carve-section-loading-${process.env.EVALS_RUN_ID ?? 'local'}`;
-const only = process.env.GSTACK_CARVE_SKILL?.trim();
+const only = process.env.PAYSEC_CARVE_SKILL?.trim();
 
 // A generic plan fixture for 'plan' behavioral skills (the review family).
 const PLAN_MD = [
@@ -49,7 +49,7 @@ describeE2E('carve behavioral section-loading (periodic, SDK capture)', () => {
   for (const guard of Object.values(CARVE_GUARDS)) {
     // 'external' carves keep their dedicated bespoke tests (E1 verifies those exist).
     if (guard.behavioral === 'external') continue;
-    // Cost-scoped selection: when GSTACK_CARVE_SKILL is set, run only that skill.
+    // Cost-scoped selection: when PAYSEC_CARVE_SKILL is set, run only that skill.
     if (only && only !== guard.skill) continue;
 
     test(
@@ -62,7 +62,7 @@ describeE2E('carve behavioral section-loading (periodic, SDK capture)', () => {
           skillMd,
           sectionsFrom,
           fixtures,
-          tmpPrefix: `gstack-${guard.skill}-secload-`,
+          tmpPrefix: `paysec-${guard.skill}-secload-`,
         });
 
         const { readSections, reportProduced, output } = await captureSectionReads({

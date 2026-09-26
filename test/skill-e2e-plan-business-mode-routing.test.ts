@@ -1,7 +1,7 @@
 /**
- * /plan-ceo-review mode-routing E2E (periodic, paid, real-PTY).
+ * /plan-business-review mode-routing E2E (periodic, paid, real-PTY).
  *
- * Asserts: when /plan-ceo-review reaches its Step 0F mode-selection
+ * Asserts: when /plan-business-review reaches its Step 0F mode-selection
  * AskUserQuestion and the user picks HOLD SCOPE or SCOPE EXPANSION,
  * the downstream rendered output reflects that mode's distinctive
  * posture language.
@@ -12,7 +12,7 @@
  * to EXPANSION) would not be caught by any prior test.
  *
  * Tier: periodic (not gate). Each run navigates 8-12 prior AskUserQuestions (telemetry,
- * proactive, routing, vendoring, brain, office-hours, premise×3, approach)
+ * proactive, routing, vendoring, brain, idea-review, premise×3, approach)
  * before reaching Step 0F. At ~30s per AskUserQuestion that's a 4-6 min navigation
  * phase per case. The full 2-case suite runs ~12-15 min, $3-4. Too slow
  * for gate-tier; weekly is fine.
@@ -71,9 +71,9 @@ async function navigateToModeAskUserQuestion(
   targetMode: ModeCase['mode'],
   opts: { maxNav?: number; budgetMs?: number } = {},
 ): Promise<{ modeIndex: number; visibleAtMode: string }> {
-  // /plan-ceo-review's mode AskUserQuestion (Step 0F) sits behind several preamble
+  // /plan-business-review's mode AskUserQuestion (Step 0F) sits behind several preamble
   // and Step 0A-0C-bis gates: telemetry, proactive, routing, vendoring,
-  // brain privacy, office-hours offer, premise challenge (3 questions),
+  // brain privacy, idea-review offer, premise challenge (3 questions),
   // approach selection. 12 hops is the conservative ceiling.
   const maxNav = opts.maxNav ?? 12;
   const budgetMs = opts.budgetMs ?? 420_000;
@@ -144,7 +144,7 @@ async function navigateToModeAskUserQuestion(
   throw new Error(`Mode AskUserQuestion not reached within ${budgetMs}ms`);
 }
 
-describeE2E('/plan-ceo-review mode routing (gate)', () => {
+describeE2E('/plan-business-review mode routing (gate)', () => {
   for (const c of CASES) {
     test(
       `mode "${c.mode}" routes to its distinctive posture`,
@@ -157,7 +157,7 @@ describeE2E('/plan-ceo-review mode routing (gate)', () => {
         try {
           await Bun.sleep(8000);
           const since = session.mark();
-          session.send('/plan-ceo-review\r');
+          session.send('/plan-business-review\r');
 
           const { modeIndex } = await navigateToModeAskUserQuestion(session, since, c.mode);
 

@@ -3,7 +3,7 @@
  *
  * Shared between daemon.ts (writes/removes the state file) and
  * daemon-client.ts (reads state, decides spawn-vs-attach). Mirrors
- * browse/src/cli.ts:109-315 — same atomic-write + fs.openSync 'wx' lock
+ * browser/src/cli.ts:109-315 — same atomic-write + fs.openSync 'wx' lock
  * pattern, with an added cmdline-based identity check to guard against
  * SIGTERM hitting a reused PID (Codex finding on the daemon plan).
  */
@@ -24,7 +24,7 @@ export interface DaemonState {
 
 // String we grep for in the spawned daemon's cmdline to confirm a pid is
 // ours before sending any signal. Must appear in argv at spawn time.
-export const CMDLINE_MARKER = "gstack-design-daemon";
+export const CMDLINE_MARKER = "paysec-design-daemon";
 
 export function resolveStateFilePath(): string {
   // Env override has highest precedence so tests can point both client and
@@ -36,11 +36,11 @@ export function resolveStateFilePath(): string {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
     }).trim();
-    if (root) return path.join(root, ".gstack", "design.json");
+    if (root) return path.join(root, ".paysec", "design.json");
   } catch {
     // not in a git repo — fall through
   }
-  return path.join(process.cwd(), ".gstack", "design.json");
+  return path.join(process.cwd(), ".paysec", "design.json");
 }
 
 export function resolveLockFilePath(stateFile: string = resolveStateFilePath()): string {
@@ -48,15 +48,15 @@ export function resolveLockFilePath(stateFile: string = resolveStateFilePath()):
 }
 
 export function resolveDaemonLogPath(): string {
-  return path.join(os.homedir(), ".gstack", "design-daemon.log");
+  return path.join(os.homedir(), ".paysec", "design-daemon.log");
 }
 
 export function resolveStartupLogPath(): string {
-  return path.join(os.homedir(), ".gstack", "design-daemon-startup.log");
+  return path.join(os.homedir(), ".paysec", "design-daemon-startup.log");
 }
 
 /**
- * Read the gstack version both client and daemon should agree on. Looks
+ * Read the paysec version both client and daemon should agree on. Looks
  * (in order): DESIGN_DAEMON_VERSION env, design/dist/.version baked at
  * build time, VERSION at the source-tree root (dev), then "unknown".
  *

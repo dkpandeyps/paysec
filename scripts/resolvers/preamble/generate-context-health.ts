@@ -6,7 +6,7 @@ export function generateContextHealth(ctx?: TemplateContext): string {
 
 During long-running skill sessions, periodically write a brief \`[PROGRESS]\` summary: done, next, surprises.
 
-If you are looping on the same diagnostic, same file, or failed fix variants, STOP and reassess. Consider escalation or /context-save. Progress summaries must NEVER mutate git state.`;
+If you are looping on the same diagnostic, same file, or failed fix variants, STOP and reassess. Consider escalation or /save-context. Progress summaries must NEVER mutate git state.`;
 }
 
 // Preamble Composition (tier → sections)
@@ -18,6 +18,6 @@ If you are looping on the same diagnostic, same file, or failed fix variants, ST
 //
 // Skills by tier:
 //   T1: browse, setup-cookies, benchmark
-//   T2: investigate, cso, retro, doc-release, setup-deploy, canary, checkpoint, health
-//   T3: autoplan, codex, design-consult, office-hours, ceo/design/eng-review
-//   T4: ship, review, qa, qa-only, design-review, land-deploy
+//   T2: investigate, security-audit, retro, doc-release, deploy-setup, canary, checkpoint, health
+//   T3: auto-plan-review, codex, design-consult, idea-review, ceo/design/eng-review
+//   T4: ship, review, qa, qa-report, design-qa, land-deploy

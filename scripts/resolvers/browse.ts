@@ -1,6 +1,6 @@
 import { type TemplateContext, toShellPath } from './types';
-import { COMMAND_DESCRIPTIONS } from '../../browse/src/commands';
-import { SNAPSHOT_FLAGS } from '../../browse/src/snapshot';
+import { COMMAND_DESCRIPTIONS } from '../../browser/src/commands';
+import { SNAPSHOT_FLAGS } from '../../browser/src/snapshot';
 
 export function generateCommandReference(_ctx: TemplateContext): string {
   // Group commands by category
@@ -54,7 +54,7 @@ export function generateCommandReference(_ctx: TemplateContext): string {
 export function generateSnapshotFlags(_ctx: TemplateContext): string {
   const lines: string[] = [
     'The snapshot is your primary tool for understanding and interacting with pages.',
-    '`$B` is the browse binary (resolved from `$_ROOT/.claude/skills/gstack/browse/dist/browse` or `~/.claude/skills/gstack/browse/dist/browse`).',
+    '`$B` is the browse binary (resolved from `$_ROOT/.claude/skills/paysec/browser/dist/browse` or `~/.claude/skills/paysec/browser/dist/browse`).',
     '',
     '**Syntax:** `$B snapshot [flags]`',
     '',
@@ -105,7 +105,7 @@ export function generateBrowseSetup(ctx: TemplateContext): string {
 \`\`\`bash
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 B=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/${ctx.paths.localSkillRoot}/browse/dist/browse" ] && B="$_ROOT/${ctx.paths.localSkillRoot}/browse/dist/browse"
+[ -n "$_ROOT" ] && [ -x "$_ROOT/${ctx.paths.localSkillRoot}/browser/dist/browse" ] && B="$_ROOT/${ctx.paths.localSkillRoot}/browser/dist/browse"
 [ -z "$B" ] && B="${toShellPath(ctx.paths.browseDir)}/browse"
 if [ -x "$B" ]; then
   echo "READY: $B"
@@ -115,7 +115,7 @@ fi
 \`\`\`
 
 If \`NEEDS_SETUP\`:
-1. Tell the user: "gstack browse needs a one-time build (~10 seconds). OK to proceed?" Then STOP and wait.
+1. Tell the user: "paysec browse needs a one-time build (~10 seconds). OK to proceed?" Then STOP and wait.
 2. Run: \`cd <SKILL_DIR> && ./setup\`
 3. If \`bun\` is not installed:
    \`\`\`bash

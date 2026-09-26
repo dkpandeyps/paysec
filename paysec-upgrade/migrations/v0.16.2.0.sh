@@ -8,14 +8,14 @@
 # their URLs into a stub builder-profile entry so existing users don't lose
 # their dedup history. Idempotent — safe to run multiple times.
 #
-# Affected: users who ran /office-hours before this version
+# Affected: users who ran /idea-review before this version
 set -euo pipefail
 
-GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
-PROFILE_FILE="$GSTACK_HOME/builder-profile.jsonl"
+PAYSEC_HOME="${PAYSEC_HOME:-$HOME/.paysec}"
+PROFILE_FILE="$PAYSEC_HOME/builder-profile.jsonl"
 
 # Find all per-project resource logs
-RESOURCE_FILES=$(find "$GSTACK_HOME/projects" -name "resources-shown.jsonl" 2>/dev/null || true)
+RESOURCE_FILES=$(find "$PAYSEC_HOME/projects" -name "resources-shown.jsonl" 2>/dev/null || true)
 
 if [ -z "$RESOURCE_FILES" ]; then
   # No per-project resource files exist — clean install, nothing to migrate
@@ -48,7 +48,7 @@ fi
 URL_ARRAY=$(echo "$ALL_URLS" | awk 'BEGIN{printf "["} NR>1{printf ","} {printf "\"%s\"", $0} END{printf "]"}')
 
 # Append a migration stub entry to the builder profile
-mkdir -p "$GSTACK_HOME"
+mkdir -p "$PAYSEC_HOME"
 echo "{\"date\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"mode\":\"migration\",\"project_slug\":\"_migrated\",\"signal_count\":0,\"signals\":[],\"design_doc\":\"\",\"assignment\":\"\",\"resources_shown\":$URL_ARRAY,\"topics\":[]}" >> "$PROFILE_FILE"
 
 echo "  [v0.16.2.0] Migrated $(echo "$ALL_URLS" | wc -l | tr -d ' ') resource URLs to builder profile."

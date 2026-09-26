@@ -22,7 +22,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 const ROOT = path.resolve(import.meta.dir, "..", "..");
-const CLI = path.join(ROOT, "browse", "src", "cli.ts");
+const CLI = path.join(ROOT, "browser", "src", "cli.ts");
 
 function read(): string {
   return fs.readFileSync(CLI, "utf-8");

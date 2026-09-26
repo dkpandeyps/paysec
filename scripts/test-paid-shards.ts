@@ -20,7 +20,7 @@
  *   2. No never-started taxonomy. A run that aborts partway reports only what
  *      executed — the shards that never ran are invisible, which is exactly
  *      the 26%-execution-looks-like-a-pass bug.
- *   3. No per-shard env / eval dir. Each shard needs its own GSTACK_EVAL_DIR
+ *   3. No per-shard env / eval dir. Each shard needs its own PAYSEC_EVAL_DIR
  *      so eval baselines are per-test-file instead of last-flush-wins.
  *
  * Worst-case wall clock = ceil(shards / jobs) × shard timeout. Shard counts
@@ -361,7 +361,7 @@ export interface RunShardsOptions {
   withinShardConcurrency?: number;
   rootDir?: string;
   env?: NodeJS.ProcessEnv;
-  /** When set, each shard child gets GSTACK_EVAL_DIR=<evalDirBase>/shards/<slug>/. */
+  /** When set, each shard child gets PAYSEC_EVAL_DIR=<evalDirBase>/shards/<slug>/. */
   evalDirBase?: string;
   /** Override the spawned command. Tests inject fake slow/spinning commands. */
   commandFor?: (files: string[]) => ShardCommand;
@@ -394,7 +394,7 @@ export async function runPaidShard(
 
   const env = { ...(options.env ?? process.env) };
   if (options.evalDirBase) {
-    env.GSTACK_EVAL_DIR = path.join(options.evalDirBase, 'shards', shardSlug(files));
+    env.PAYSEC_EVAL_DIR = path.join(options.evalDirBase, 'shards', shardSlug(files));
   }
 
   const startedAt = Date.now();
@@ -677,7 +677,7 @@ async function main(): Promise<number> {
     jobs: options.jobs,
     withinShardConcurrency: options.withinShardConcurrency,
     env: { ...process.env, EVALS: '1', EVALS_TIER: options.tier, EVALS_PREFLIGHT_OK: '1' },
-    evalDirBase: process.env.GSTACK_EVAL_DIR || getProjectEvalDir(),
+    evalDirBase: process.env.PAYSEC_EVAL_DIR || getProjectEvalDir(),
   });
   const skippedOutcomes: ShardOutcome[] = skipped.map((s, index) => ({
     shard: runnable.length + index + 1,

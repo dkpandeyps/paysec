@@ -2,7 +2,7 @@
 // remote agent on the tailnet can self-service mint a session token via
 // POST /auth/mint. Never auto-allowlists; explicit user intent only.
 //
-// Invoked from bin/gstack-ios-qa-mint.
+// Invoked from bin/paysec-ios-qa-mint.
 
 import { grantIdentity, revokeIdentity, loadAllowlist, defaultAllowlistPath } from './allowlist';
 import type { Capability } from './types';
@@ -66,12 +66,12 @@ function parseArgs(argv: string[]): ParsedArgs {
 }
 
 function printHelp() {
-  const help = `gstack-ios-qa-mint — manage the tailnet allowlist for remote iOS QA agents
+  const help = `paysec-ios-qa-mint — manage the tailnet allowlist for remote iOS QA agents
 
 USAGE
-  gstack-ios-qa-mint grant  --remote <identity> [--capability <tier>] [--ttl <seconds>] [--note <text>]
-  gstack-ios-qa-mint revoke --remote <identity>
-  gstack-ios-qa-mint list
+  paysec-ios-qa-mint grant  --remote <identity> [--capability <tier>] [--ttl <seconds>] [--note <text>]
+  paysec-ios-qa-mint revoke --remote <identity>
+  paysec-ios-qa-mint list
 
 ARGUMENTS
   --remote <identity>     Canonical tailnet identity (e.g. user@example.com or tag:ci).
@@ -81,12 +81,12 @@ ARGUMENTS
   --allowlist-path <path> Override the allowlist file location.
 
 EXAMPLES
-  gstack-ios-qa-mint grant --remote 'alice@example.com' --capability interact
-  gstack-ios-qa-mint grant --remote 'tag:ci' --capability mutate --ttl 86400 --note 'nightly run'
-  gstack-ios-qa-mint revoke --remote 'alice@example.com'
-  gstack-ios-qa-mint list
+  paysec-ios-qa-mint grant --remote 'alice@example.com' --capability interact
+  paysec-ios-qa-mint grant --remote 'tag:ci' --capability mutate --ttl 86400 --note 'nightly run'
+  paysec-ios-qa-mint revoke --remote 'alice@example.com'
+  paysec-ios-qa-mint list
 
-The allowlist lives at ~/.gstack/ios-qa-allowlist.json (mode 0600). The daemon's
+The allowlist lives at ~/.paysec/ios-qa-allowlist.json (mode 0600). The daemon's
 self-service /auth/mint endpoint reads this file on every request.
 `;
   process.stdout.write(help);
@@ -143,7 +143,7 @@ async function main(): Promise<void> {
 
 if (import.meta.main) {
   main().catch((err) => {
-    process.stderr.write(`gstack-ios-qa-mint: ${(err as Error).message}\n`);
+    process.stderr.write(`paysec-ios-qa-mint: ${(err as Error).message}\n`);
     process.exit(1);
   });
 }

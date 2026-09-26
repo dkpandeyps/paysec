@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 
 /**
- * Guard the core refactor invariant: importing browse/src/server.ts must NOT
+ * Guard the core refactor invariant: importing browser/src/server.ts must NOT
  * auto-start. Before this PR, the module called `start().catch(...)` at module
  * load time, which made the file impossible for embedders (gbrowser phoenix
  * overlay) to import without spawning a daemon. The fix wraps that kickoff in
@@ -14,14 +14,14 @@ import * as fs from 'fs';
  * Approach: spawn a fresh Bun subprocess that imports the module and emits a
  * structured snapshot (initial vs post-import process state). Parent asserts
  * that no listeners were bound, no Bun.serve started, and no SIGINT handlers
- * were registered. The subprocess uses HOME=tmp + GSTACK_HOME=tmp so any
+ * were registered. The subprocess uses HOME=tmp + PAYSEC_HOME=tmp so any
  * accidental state-dir write lands in a place we can verify is empty.
  */
 describe('server.ts module import has no auto-start side effects', () => {
   test('importing server.ts does not bind Bun.serve, register signal handlers, or write state', async () => {
     const tmpHome = path.join(os.tmpdir(), `browse-no-sfx-${Date.now()}-${process.pid}`);
     fs.mkdirSync(tmpHome, { recursive: true });
-    const tmpGstack = path.join(tmpHome, '.gstack');
+    const tmpPaysec = path.join(tmpHome, '.paysec');
 
     const childScript = `
 const sigintBefore = process.listenerCount('SIGINT');
@@ -41,15 +41,15 @@ const sigintAfter = process.listenerCount('SIGINT');
 const sigtermAfter = process.listenerCount('SIGTERM');
 const uncaughtAfter = process.listenerCount('uncaughtException');
 
-// Check that the gstack home directory wasn't populated as a side effect.
+// Check that the paysec home directory wasn't populated as a side effect.
 // A lone \`.gitignore\` (the state-dir ignore guard, contents "*") is expected
 // and is NOT leaked state — ensureStateDir writes it so persisted cookies/logs
 // can never be git-committed. Any OTHER entry (browse.json, session-state.json,
 // logs) would be a real auto-start write and must still fail the guard.
-let gstackPopulated = false;
+let paysecPopulated = false;
 try {
-  const entries = fs.readdirSync(${JSON.stringify(tmpGstack)}).filter(e => e !== '.gitignore');
-  gstackPopulated = entries.length > 0;
+  const entries = fs.readdirSync(${JSON.stringify(tmpPaysec)}).filter(e => e !== '.gitignore');
+  paysecPopulated = entries.length > 0;
 } catch {
   // Doesn't exist — that's the win we want.
 }
@@ -58,7 +58,7 @@ console.log(JSON.stringify({
   sigintBefore, sigintAfter,
   sigtermBefore, sigtermAfter,
   uncaughtBefore, uncaughtAfter,
-  gstackPopulated,
+  paysecPopulated,
 }));
 // Force exit so any background intervals don't keep this child alive
 // (the test framework would see a hang otherwise — which itself is a
@@ -70,12 +70,12 @@ process.exit(0);
       env: {
         ...process.env,
         HOME: tmpHome,
-        GSTACK_HOME: tmpGstack,
+        PAYSEC_HOME: tmpPaysec,
         // Empty so the AUTH_TOKEN env path doesn't deterministically set a token.
         AUTH_TOKEN: '',
         // Force a stub state file so resolveConfig() at module load (if it
-        // happens) won't crawl the host's real .gstack/.
-        BROWSE_STATE_FILE: path.join(tmpGstack, 'browse.json'),
+        // happens) won't crawl the host's real .paysec/.
+        BROWSE_STATE_FILE: path.join(tmpPaysec, 'browse.json'),
       },
       stdout: 'pipe',
       stderr: 'pipe',
@@ -97,12 +97,12 @@ process.exit(0);
     expect(snapshot.sigtermAfter).toBe(snapshot.sigtermBefore);
     expect(snapshot.uncaughtAfter).toBe(snapshot.uncaughtBefore);
 
-    // gstack home should remain empty — initRegistry/initAuditLog/etc. side
+    // paysec home should remain empty — initRegistry/initAuditLog/etc. side
     // effects from module load are acceptable (they happen at module level),
     // but only insofar as they don't bind listeners or write project state.
     // The presence/absence test here proves we didn't bind Bun.serve (which
     // would also try to write the state file).
-    expect(snapshot.gstackPopulated).toBe(false);
+    expect(snapshot.paysecPopulated).toBe(false);
 
     // Cleanup
     try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch { /* best effort */ }

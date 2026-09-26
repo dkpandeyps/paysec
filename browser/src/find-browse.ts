@@ -1,7 +1,7 @@
 /**
- * find-browse — locate the gstack browse binary.
+ * find-browse — locate the paysec browse binary.
  *
- * Compiled to browse/dist/find-browse (standalone binary, no bun runtime needed).
+ * Compiled to browser/dist/find-browse (standalone binary, no bun runtime needed).
  * Outputs the absolute path to the browse binary on stdout, or exits 1 if not found.
  */
 
@@ -26,8 +26,8 @@ function getGitRoot(): string | null {
 
 // Probe a path for executability. accessSync(X_OK) checks the executable
 // bit on Linux/macOS and degrades to an existence check on Windows (no
-// true execute bit). Mirrors make-pdf/src/browseClient.ts:159 /
-// make-pdf/src/pdftotext.ts:117.
+// true execute bit). Mirrors md-to-pdf/src/browseClient.ts:159 /
+// md-to-pdf/src/pdftotext.ts:117.
 function isExecutable(p: string): boolean {
   try {
     accessSync(p, constants.X_OK);
@@ -41,7 +41,7 @@ function isExecutable(p: string): boolean {
 // build --compile` appends `.exe` to the output filename, so `browse` on
 // disk is actually `browse.exe`. After a bare-path probe, try the Windows
 // extensions. Linux/macOS behavior is unchanged. Mirrors the helper in
-// make-pdf/src/browseClient.ts:89 and make-pdf/src/pdftotext.ts:52.
+// md-to-pdf/src/browseClient.ts:89 and md-to-pdf/src/pdftotext.ts:52.
 function findExecutable(base: string): string | null {
   if (isExecutable(base)) return base;
   if (process.platform === 'win32') {
@@ -61,25 +61,25 @@ export function locateBinary(): string | null {
   // Workspace-local takes priority (for development)
   if (root) {
     for (const m of markers) {
-      const local = join(root, m, 'skills', 'gstack', 'browse', 'dist', 'browse');
+      const local = join(root, m, 'skills', 'paysec', 'browser', 'dist', 'browse');
       const found = findExecutable(local);
       if (found) return found;
     }
 
     // Source-checkout fallback (no installed skill layout — the binary
-    // lives directly at <repo>/browse/dist/browse[.exe]). Hit by:
-    // - gstack repo dev workflow before `./setup` runs
+    // lives directly at <repo>/browser/dist/browse[.exe]). Hit by:
+    // - paysec repo dev workflow before `./setup` runs
     // - the windows-setup-e2e.yml CI workflow which builds binaries
     //   in place but never installs them under a marker dir
-    // - make-pdf consumers running from a sibling source checkout
-    const sourceCheckout = join(root, 'browse', 'dist', 'browse');
+    // - md-to-pdf consumers running from a sibling source checkout
+    const sourceCheckout = join(root, 'browser', 'dist', 'browse');
     const sourceFound = findExecutable(sourceCheckout);
     if (sourceFound) return sourceFound;
   }
 
   // Global fallback
   for (const m of markers) {
-    const global = join(home, m, 'skills', 'gstack', 'browse', 'dist', 'browse');
+    const global = join(home, m, 'skills', 'paysec', 'browser', 'dist', 'browse');
     const found = findExecutable(global);
     if (found) return found;
   }

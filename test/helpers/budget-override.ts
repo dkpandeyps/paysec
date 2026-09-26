@@ -1,9 +1,9 @@
 /**
  * Budget override audit trail (v1.45.0.0 T5).
  *
- * Records uses of GSTACK_SIZE_BUDGET_OVERRIDE_REASON or
+ * Records uses of PAYSEC_SIZE_BUDGET_OVERRIDE_REASON or
  * EVALS_BUDGET_OVERRIDE_REASON so a reviewer can see what was waived,
- * by whom, and why. Append-only JSONL at ~/.gstack/analytics/spend-overrides.jsonl.
+ * by whom, and why. Append-only JSONL at ~/.paysec/analytics/spend-overrides.jsonl.
  *
  * Why audit: a hard cap with no escape valve becomes operationally hostile
  * (legit price changes, longer transcripts, new required evals can all
@@ -22,7 +22,7 @@ export interface BudgetOverrideEntry {
 }
 
 function getAuditPath(): string {
-  const base = process.env.GSTACK_HOME || path.join(os.homedir(), '.gstack');
+  const base = process.env.PAYSEC_HOME || path.join(os.homedir(), '.paysec');
   return path.join(base, 'analytics', 'spend-overrides.jsonl');
 }
 

@@ -6,8 +6,8 @@ import * as os from 'os';
 import { gitArgvIn } from './helpers/scratch-repo';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const CAREFUL_SCRIPT = path.join(ROOT, 'careful', 'bin', 'check-careful.sh');
-const FREEZE_SCRIPT = path.join(ROOT, 'freeze', 'bin', 'check-freeze.sh');
+const CAREFUL_SCRIPT = path.join(ROOT, 'safe-mode', 'bin', 'check-careful.sh');
+const FREEZE_SCRIPT = path.join(ROOT, 'lock-edits', 'bin', 'check-freeze.sh');
 
 function runHook(scriptPath: string, input: object, env?: Record<string, string>, cwd?: string): { exitCode: number; output: any; raw: string } {
   const result = spawnSync('bash', [scriptPath], {
@@ -29,7 +29,7 @@ function runHook(scriptPath: string, input: object, env?: Record<string, string>
 // force-push check reads `git symbolic-ref refs/remotes/origin/HEAD` from the
 // hook's cwd, and Conductor worktrees don't reliably carry that ref.
 function withGitRepo(defaultBranch: string, currentBranch: string, fn: (repoDir: string) => void) {
-  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-careful-git-'));
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-careful-git-'));
   try {
     const git = (args: string[]) => gitArgvIn(repoDir, args);
     git(['init', '-q', '-b', defaultBranch]);
@@ -67,7 +67,7 @@ function freezeInput(filePath: string) {
 }
 
 function withFreezeDir(freezePath: string, fn: (stateDir: string) => void) {
-  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-freeze-test-'));
+  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-freeze-test-'));
   fs.writeFileSync(path.join(stateDir, 'freeze-dir.txt'), freezePath);
   try {
     fn(stateDir);
@@ -83,7 +83,7 @@ function withFreezeDir(freezePath: string, fn: (stateDir: string) => void) {
 // ${CLAUDE_SKILL_DIR}-relative command silently never resolves and the guard
 // never fires. Every command: line must anchor on $HOME like careful/freeze.
 describe('frontmatter hook command paths', () => {
-  test.each(['investigate/SKILL.md', 'careful/SKILL.md', 'freeze/SKILL.md', 'guard/SKILL.md'])(
+  test.each(['debug-root-cause/SKILL.md', 'safe-mode/SKILL.md', 'lock-edits/SKILL.md', 'full-guard/SKILL.md'])(
     '%s hook commands are $HOME-anchored, never CLAUDE_SKILL_DIR',
     (rel) => {
       const content = fs.readFileSync(path.join(ROOT, rel), 'utf-8');
@@ -91,7 +91,7 @@ describe('frontmatter hook command paths', () => {
       expect(commandLines.length).toBeGreaterThan(0);
       for (const line of commandLines) {
         expect(line).not.toContain('CLAUDE_SKILL_DIR');
-        expect(line).toContain('$HOME/.claude/skills/gstack/');
+        expect(line).toContain('$HOME/.claude/skills/paysec/');
       }
     },
   );
@@ -475,7 +475,7 @@ describe('check-careful.sh', () => {
 
   // --- HIGH tier (hard deny) ---
   // A tiny set of catastrophic SIMPLE commands is denied outright while
-  // /careful is active. Best-effort advisory hard-stop, not a policy boundary:
+  // /safe-mode is active. Best-effort advisory hard-stop, not a policy boundary:
   // compound commands always fall through to the MEDIUM ask.
 
   describe('HIGH tier (hard deny)', () => {
@@ -599,7 +599,7 @@ describe('check-careful.sh', () => {
     });
 
     test('missing origin/HEAD symbolic ref falls back to origin/main probe (Conductor worktrees)', () => {
-      const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-careful-nohead-'));
+      const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-careful-nohead-'));
       try {
         const git = (args: string[]) => gitArgvIn(repoDir, args);
         git(['init', '-q', '-b', 'main']);
@@ -629,19 +629,19 @@ describe('check-careful.sh', () => {
   // families, so no file content can suppress a baseline match.
 
   describe('additive project patterns', () => {
-    function withPatternFile(content: string, fn: (gstackHome: string) => void) {
-      const gstackHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-careful-pat-'));
-      fs.writeFileSync(path.join(gstackHome, 'careful-patterns.txt'), content);
+    function withPatternFile(content: string, fn: (paysecHome: string) => void) {
+      const paysecHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-careful-pat-'));
+      fs.writeFileSync(path.join(paysecHome, 'careful-patterns.txt'), content);
       try {
-        fn(gstackHome);
+        fn(paysecHome);
       } finally {
-        fs.rmSync(gstackHome, { recursive: true, force: true });
+        fs.rmSync(paysecHome, { recursive: true, force: true });
       }
     }
 
     test('a project pattern adds an ask rule', () => {
-      withPatternFile('# infra safety\nterraform\\s+destroy\n', (gstackHome) => {
-        const { exitCode, output } = runHook(CAREFUL_SCRIPT, carefulInput('terraform destroy -auto-approve'), { GSTACK_HOME: gstackHome });
+      withPatternFile('# infra safety\nterraform\\s+destroy\n', (paysecHome) => {
+        const { exitCode, output } = runHook(CAREFUL_SCRIPT, carefulInput('terraform destroy -auto-approve'), { PAYSEC_HOME: paysecHome });
         expect(exitCode).toBe(0);
         expect(output.hookSpecificOutput?.permissionDecision).toBe('ask');
         expect(output.hookSpecificOutput?.permissionDecisionReason).toContain('Project rule');
@@ -649,8 +649,8 @@ describe('check-careful.sh', () => {
     });
 
     test('a garbage pattern file cannot suppress a baseline match (additive invariant)', () => {
-      withPatternFile('# override: allow everything\nallow-everything\nignore baseline\n', (gstackHome) => {
-        const { exitCode, output } = runHook(CAREFUL_SCRIPT, carefulInput('rm -rf /var/data'), { GSTACK_HOME: gstackHome });
+      withPatternFile('# override: allow everything\nallow-everything\nignore baseline\n', (paysecHome) => {
+        const { exitCode, output } = runHook(CAREFUL_SCRIPT, carefulInput('rm -rf /var/data'), { PAYSEC_HOME: paysecHome });
         expect(exitCode).toBe(0);
         expect(output.hookSpecificOutput?.permissionDecision).toBe('ask');
         expect(output.hookSpecificOutput?.permissionDecisionReason).toContain('recursive delete');
@@ -658,8 +658,8 @@ describe('check-careful.sh', () => {
     });
 
     test('an invalid regex line is skipped without breaking the hook', () => {
-      withPatternFile('([unclosed\nterraform\\s+destroy\n', (gstackHome) => {
-        const { exitCode, output } = runHook(CAREFUL_SCRIPT, carefulInput('terraform destroy'), { GSTACK_HOME: gstackHome });
+      withPatternFile('([unclosed\nterraform\\s+destroy\n', (paysecHome) => {
+        const { exitCode, output } = runHook(CAREFUL_SCRIPT, carefulInput('terraform destroy'), { PAYSEC_HOME: paysecHome });
         expect(exitCode).toBe(0);
         expect(output.hookSpecificOutput?.permissionDecision).toBe('ask');
         expect(output.hookSpecificOutput?.permissionDecisionReason).toContain('Project rule');
@@ -667,8 +667,8 @@ describe('check-careful.sh', () => {
     });
 
     test('safe commands still allow with a pattern file present', () => {
-      withPatternFile('terraform\\s+destroy\n', (gstackHome) => {
-        const { exitCode, output } = runHook(CAREFUL_SCRIPT, carefulInput('ls -la'), { GSTACK_HOME: gstackHome });
+      withPatternFile('terraform\\s+destroy\n', (paysecHome) => {
+        const { exitCode, output } = runHook(CAREFUL_SCRIPT, carefulInput('ls -la'), { PAYSEC_HOME: paysecHome });
         expect(exitCode).toBe(0);
         expect(output.hookSpecificOutput?.permissionDecision).toBeUndefined();
       });
@@ -754,7 +754,7 @@ describe('check-freeze.sh', () => {
 
   describe('no freeze file exists', () => {
     test('allows everything when no freeze file present', () => {
-      const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-freeze-test-'));
+      const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-freeze-test-'));
       try {
         const { exitCode, output } = runHook(
           FREEZE_SCRIPT,
@@ -829,7 +829,7 @@ describe('check-freeze.sh', () => {
     // The old `tr -d '[:space:]'` stripped INTERNAL spaces from the freeze
     // path, so a boundary like ".../My Project/src" never matched anything.
     test('a boundary containing spaces allows edits inside it', () => {
-      const base = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-freeze-space-'));
+      const base = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-freeze-space-'));
       const boundary = path.join(base, 'My Project', 'src');
       fs.mkdirSync(boundary, { recursive: true });
       try {
@@ -852,8 +852,8 @@ describe('check-freeze.sh', () => {
     test('a missing hook-extract helper DENIES instead of proceeding', () => {
       // Copy the freeze hook into a tree with NO careful sibling — the source
       // fails, and a deny-tier boundary must fail CLOSED, not fall through.
-      const base = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-freeze-broken-'));
-      const binDir = path.join(base, 'freeze', 'bin');
+      const base = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-freeze-broken-'));
+      const binDir = path.join(base, 'lock-edits', 'bin');
       fs.mkdirSync(binDir, { recursive: true });
       const script = path.join(binDir, 'check-freeze.sh');
       fs.copyFileSync(FREEZE_SCRIPT, script);
@@ -875,7 +875,7 @@ describe('check-freeze.sh', () => {
     // component, so an in-boundary symlink pointing outside the boundary was
     // allowed while the write landed outside.
     test('an in-boundary symlink to an outside target denies', () => {
-      const base = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-freeze-link-'));
+      const base = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-freeze-link-'));
       const boundary = path.join(base, 'boundary');
       const outside = path.join(base, 'outside');
       fs.mkdirSync(boundary, { recursive: true });

@@ -26,7 +26,7 @@
  * Invariants:
  *   - Always exits 0. A failing hook MUST NOT block the user's session.
  *   - Never triggers on a successful answer (would corrupt a normal AUQ).
- *   - Errors land in ~/.gstack/hook-errors.log.
+ *   - Errors land in ~/.paysec/hook-errors.log.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -41,9 +41,9 @@ interface HookStdin {
 
 function stateRoot(): string {
   return (
-    process.env.GSTACK_STATE_ROOT ||
-    process.env.GSTACK_HOME ||
-    path.join(os.homedir(), '.gstack')
+    process.env.PAYSEC_STATE_ROOT ||
+    process.env.PAYSEC_HOME ||
+    path.join(os.homedir(), '.paysec')
   );
 }
 
@@ -126,7 +126,7 @@ export function isErrorResponse(response: unknown): boolean {
  *  echoes). Falls back to 'interactive' (degrade-safe) on any failure. */
 export function sessionKind(cwd?: string): 'spawned' | 'headless' | 'interactive' {
   try {
-    const res = runBin('gstack-session-kind', [], {
+    const res = runBin('paysec-session-kind', [], {
       encoding: 'utf-8',
       timeout: 3000,
       cwd: cwd && fs.existsSync(cwd) ? cwd : undefined,

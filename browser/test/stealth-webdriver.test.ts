@@ -201,20 +201,20 @@ describe('applyStealth — per-install hardware from env', () => {
   let savedMem: string | undefined;
 
   beforeAll(async () => {
-    savedHw = process.env.GSTACK_HW_CONCURRENCY;
-    savedMem = process.env.GSTACK_DEVICE_MEMORY;
-    process.env.GSTACK_HW_CONCURRENCY = '12';
-    process.env.GSTACK_DEVICE_MEMORY = '4';
+    savedHw = process.env.PAYSEC_HW_CONCURRENCY;
+    savedMem = process.env.PAYSEC_DEVICE_MEMORY;
+    process.env.PAYSEC_HW_CONCURRENCY = '12';
+    process.env.PAYSEC_DEVICE_MEMORY = '4';
     ctx = await browser.newContext();
     await applyStealth(ctx); // readHostProfile() reads env at call time
   });
 
   afterAll(async () => {
     await ctx.close();
-    if (savedHw === undefined) delete process.env.GSTACK_HW_CONCURRENCY;
-    else process.env.GSTACK_HW_CONCURRENCY = savedHw;
-    if (savedMem === undefined) delete process.env.GSTACK_DEVICE_MEMORY;
-    else process.env.GSTACK_DEVICE_MEMORY = savedMem;
+    if (savedHw === undefined) delete process.env.PAYSEC_HW_CONCURRENCY;
+    else process.env.PAYSEC_HW_CONCURRENCY = savedHw;
+    if (savedMem === undefined) delete process.env.PAYSEC_DEVICE_MEMORY;
+    else process.env.PAYSEC_DEVICE_MEMORY = savedMem;
   });
 
   test('navigator.hardwareConcurrency and deviceMemory reflect the env profile', async () => {
@@ -232,21 +232,21 @@ describe('applyStealth — per-install hardware from env', () => {
   });
 });
 
-describe('applyStealth — extended mode layered on Layer C (GSTACK_STEALTH=extended)', () => {
+describe('applyStealth — extended mode layered on Layer C (PAYSEC_STEALTH=extended)', () => {
   let ctx: BrowserContext;
   let savedStealth: string | undefined;
 
   beforeAll(async () => {
-    savedStealth = process.env.GSTACK_STEALTH;
-    process.env.GSTACK_STEALTH = 'extended';
+    savedStealth = process.env.PAYSEC_STEALTH;
+    process.env.PAYSEC_STEALTH = 'extended';
     ctx = await browser.newContext();
     await applyStealth(ctx);
   });
 
   afterAll(async () => {
     await ctx.close();
-    if (savedStealth === undefined) delete process.env.GSTACK_STEALTH;
-    else process.env.GSTACK_STEALTH = savedStealth;
+    if (savedStealth === undefined) delete process.env.PAYSEC_STEALTH;
+    else process.env.PAYSEC_STEALTH = savedStealth;
   });
 
   test('extended actually runs: navigator.plugins is the faked PluginArray', async () => {

@@ -18,20 +18,20 @@ describe('skillCensus', () => {
   it('physicalSkillFiles includes the root router and the symlinked dir', () => {
     expect(census.physicalSkillFiles).toContain('SKILL.md');
     expect(census.physicalSkillFiles).toContain('connect-chrome/SKILL.md');
-    expect(census.physicalSkillFiles).toContain('open-gstack-browser/SKILL.md');
+    expect(census.physicalSkillFiles).toContain('open-paysec-browser/SKILL.md');
   });
 
   it('authoredSkills dedupes the connect-chrome symlink and excludes the root router', () => {
-    expect(census.authoredSkills).toContain('open-gstack-browser');
+    expect(census.authoredSkills).toContain('open-paysec-browser');
     expect(census.authoredSkills).not.toContain('connect-chrome');
     // Root router is not an authored skill; its dir entry would be '' anyway.
     for (const name of census.authoredSkills) expect(name.length).toBeGreaterThan(0);
   });
 
   it('registryEntries carries the root alias and collapses shared frontmatter names', () => {
-    expect(census.registryEntries).toContain('_gstack-command');
+    expect(census.registryEntries).toContain('_paysec-command');
     expect(
-      census.registryEntries.filter((n) => n === 'open-gstack-browser'),
+      census.registryEntries.filter((n) => n === 'open-paysec-browser'),
     ).toHaveLength(1);
   });
 
@@ -45,10 +45,10 @@ describe('skillCensus', () => {
   });
 
   it('frontmatterName mirrors setup: first ^name: line, whitespace stripped', () => {
-    const qa = frontmatterName(path.join(ROOT, 'qa', 'SKILL.md'));
+    const qa = frontmatterName(path.join(ROOT, 'qa-fix', 'SKILL.md'));
     expect(qa).toBe('qa');
     const alias = frontmatterName(path.join(ROOT, 'connect-chrome', 'SKILL.md'));
-    expect(alias).toBe('open-gstack-browser');
+    expect(alias).toBe('open-paysec-browser');
     expect(frontmatterName(path.join(ROOT, 'no-such-dir', 'SKILL.md'))).toBe('');
   });
 
@@ -59,7 +59,7 @@ describe('skillCensus', () => {
         .map((p) => frontmatterName(path.join(ROOT, p)) || path.dirname(p)),
     );
     for (const entry of census.registryEntries) {
-      if (entry === '_gstack-command') {
+      if (entry === '_paysec-command') {
         expect(fs.existsSync(path.join(ROOT, 'SKILL.md'))).toBe(true);
       } else {
         expect(names.has(entry)).toBe(true);

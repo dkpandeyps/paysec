@@ -5,11 +5,11 @@
  * test) each need a DIFFERENT count of "the skills", and hand-rolled walks
  * encode the wrong one somewhere. The counts diverge because of two facts:
  *
- *   1. `connect-chrome/` is a directory SYMLINK to `open-gstack-browser/`.
+ *   1. `connect-chrome/` is a directory SYMLINK to `open-paysec-browser/`.
  *      `Dirent.isDirectory()` is false for it (scripts/discover-skills.ts
  *      skips it) while setup's trailing-slash shell glob follows it.
  *   2. The root `SKILL.md` is a router, registered by `setup` under the
- *      alias name `_gstack-command`, not as an authored skill.
+ *      alias name `_paysec-command`, not as an authored skill.
  *
  * So: use `physicalSkillFiles` when you mean "every SKILL.md a filesystem
  * walk can reach" (context-bill's walker), `authoredSkills` when you mean
@@ -32,7 +32,7 @@ export interface SkillCensus {
   authoredSkills: string[];
   /** What `setup` registers into `~/.claude/skills/` with prefixing off:
    * one entry per unique frontmatter `name:` (falling back to dir name),
-   * plus the `_gstack-command` root alias when the root router exists.
+   * plus the `_paysec-command` root alias when the root router exists.
    * Symlinked dirs collapse here because they share a frontmatter name. */
   registryEntries: string[];
 }
@@ -57,7 +57,7 @@ export function skillCensus(root: string): SkillCensus {
 
   if (fs.existsSync(path.join(root, 'SKILL.md'))) {
     physicalSkillFiles.push('SKILL.md');
-    registrySet.add('_gstack-command');
+    registrySet.add('_paysec-command');
   }
 
   for (const entry of fs.readdirSync(root, { withFileTypes: true })) {

@@ -1,22 +1,22 @@
 ---
-name: skillify
+name: save-scrape-skill
 preamble-tier: 2
 version: 1.0.0
 description: |
-  Codify the most recent successful /scrape flow into a permanent
-  browser-skill on disk. Future /scrape calls with the same intent run
+  Codify the most recent successful /web-scrape flow into a permanent
+  browser-skill on disk. Future /web-scrape calls with the same intent run
   the codified script in ~200ms instead of re-driving the page. Walks
   back through the conversation, synthesizes script.ts + script.test.ts
   + fixture, runs the test in a temp dir, and asks before committing.
-  Use when asked to "skillify", "codify", "save this scrape", or
-  "make this permanent". (gstack)
+  Use when asked to "save-scrape-skill", "codify", "save this scrape", or
+  "make this permanent". (paysec)
 allowed-tools:
   - Bash
   - Read
   - Write
   - AskUserQuestion
 triggers:
-  - skillify
+  - save-scrape-skill
   - codify this scrape
   - save this scrape
   - make this permanent
@@ -24,13 +24,13 @@ triggers:
 
 {{PREAMBLE}}
 
-# /skillify — codify the last scrape into a permanent skill
+# /save-scrape-skill — codify the last scrape into a permanent skill
 
-The productivity multiplier. `/scrape` discovered how to pull the data;
-`/skillify` writes it as deterministic Playwright-via-`browse-client`
-code so the next `/scrape` call on the same intent runs in ~200ms.
+The productivity multiplier. `/web-scrape` discovered how to pull the data;
+`/save-scrape-skill` writes it as deterministic Playwright-via-`browse-client`
+code so the next `/web-scrape` call on the same intent runs in ~200ms.
 
-Without this command, `/scrape` is a slow wrapper around `$B`. With it,
+Without this command, `/web-scrape` is a slow wrapper around `$B`. With it,
 every successful scrape is a one-time cost.
 
 ## Iron contract — never write a half-broken skill to disk
@@ -47,7 +47,7 @@ shipped" state.
 ## Step 1 — Provenance guard (D1)
 
 Walk back through the conversation, **at most 10 agent turns**, looking
-for the most recent `/scrape` invocation that:
+for the most recent `/web-scrape` invocation that:
 
 - Was bounded (you can identify the user's intent line and the trailing
   JSON the prototype produced)
@@ -56,17 +56,17 @@ for the most recent `/scrape` invocation that:
 
 If you cannot find one, refuse with exactly this message:
 
-> "No recent /scrape result found in this conversation. Run /scrape
-> <intent> first, then say /skillify."
+> "No recent /web-scrape result found in this conversation. Run /web-scrape
+> <intent> first, then say /save-scrape-skill."
 
 Stop. Do not synthesize from chat fragments. Do not synthesize from a
-match-path /scrape result (matched skills are already codified — there's
-nothing to skillify).
+match-path /web-scrape result (matched skills are already codified — there's
+nothing to save-scrape-skill).
 
 If you find a candidate but the user is currently three turns past it
 discussing something unrelated, ask once before proceeding:
 
-> "The last successful /scrape was '<intent line>' a few turns back.
+> "The last successful /web-scrape was '<intent line>' a few turns back.
 > Skillify that one?"
 
 A "yes" lets you continue. Anything else: refuse with the message above.
@@ -78,7 +78,7 @@ From the prototype intent, extract:
 - A short skill name: lowercase letters/digits/dashes, ≤32 chars,
   starts with a letter, no consecutive dashes. E.g.,
   `lobsters-frontpage`, `gh-issue-list`, `pypi-package-stats`.
-- 3–5 trigger phrases the agent should match against in future `/scrape`
+- 3–5 trigger phrases the agent should match against in future `/web-scrape`
   calls. Mix the canonical phrase ("scrape lobsters frontpage") with
   paraphrases ("top posts on lobste.rs", "lobsters front page").
 - The host (just the hostname, e.g. `lobste.rs`).
@@ -87,7 +87,7 @@ Then **AskUserQuestion** to confirm:
 
 ```
 D<N> — Skill name + tier
-Project/branch/task: codifying /scrape "<intent>" as a browser-skill.
+Project/branch/task: codifying /web-scrape "<intent>" as a browser-skill.
 ELI10: Pick a short name we'll use to find this skill next time you say
 something similar. Pick a tier — global means every project on this
 machine sees it, project means just this repo.
@@ -97,8 +97,8 @@ didn't want them to).
 Recommendation: A — <proposed-name> at global tier — most scrape skills
 generalize across projects.
 Note: options differ in kind, not coverage — no completeness score.
-A) Keep "<proposed-name>" at global tier — ~/.gstack/browser-skills/<proposed-name>/  (recommended)
-B) Keep "<proposed-name>" but at project tier — <project>/.gstack/browser-skills/<proposed-name>/
+A) Keep "<proposed-name>" at global tier — ~/.paysec/browser-skills/<proposed-name>/  (recommended)
+B) Keep "<proposed-name>" but at project tier — <project>/.paysec/browser-skills/<proposed-name>/
 C) Rename it (free-form — say the new name)
 ```
 
@@ -203,16 +203,16 @@ describe('<name> parser', () => {
 
 ## Step 6 — Resolve the canonical SDK path + read it
 
-The canonical SDK lives at `<gstack-install>/browse/src/browse-client.ts`.
+The canonical SDK lives at `<paysec-install>/browser/src/browse-client.ts`.
 The bundled-skill loader walks the install tree to find it; mirror that.
 
-Resolve the gstack install dir. Two reliable signals (in order):
+Resolve the paysec install dir. Two reliable signals (in order):
 
 1. The bundled `hackernews-frontpage` skill — look at its tier path from
    `$B skill list` (the `bundled` row). The skill dir is
-   `<gstack-install>/browser-skills/hackernews-frontpage/`, so the install
+   `<paysec-install>/browser-skills/hackernews-frontpage/`, so the install
    dir is two `dirname` calls above its `_lib/browse-client.ts`.
-2. The active gstack skills install at `~/.claude/skills/gstack/`. Read
+2. The active paysec skills install at `~/.claude/skills/paysec/`. Read
    the symlink target if it's a symlink, otherwise use the path directly.
 
 Example (run as Bun, not bash, to avoid shell-redirect parsing issues):
@@ -224,7 +224,7 @@ import * as path from 'path';
 
 function resolveSdkPath(): string {
   const candidates = [
-    path.join(os.homedir(), '.claude', 'skills', 'gstack', 'browse', 'src', 'browse-client.ts'),
+    path.join(os.homedir(), '.claude', 'skills', 'paysec', 'browse', 'src', 'browse-client.ts'),
     // Add other install-dir candidates if your environment differs.
   ];
   for (const c of candidates) {
@@ -245,11 +245,11 @@ Read the SDK contents into a variable. The staging step writes it as
 
 ## Step 7 — Stage the skill (D3 atomic write)
 
-Use the helper at `browse/src/browser-skill-write.ts`. Construct an inline
+Use the helper at `browser/src/browser-skill-write.ts`. Construct an inline
 TypeScript snippet (or shell out to a small Bun one-liner) that calls:
 
 ```ts
-import { stageSkill } from '<gstack-install>/browse/src/browser-skill-write';
+import { stageSkill } from '<paysec-install>/browser/src/browser-skill-write';
 
 const stagedDir = stageSkill({
   name: '<name>',
@@ -322,7 +322,7 @@ If the test fails:
    environmental issue (SDK import, daemon connection):
 
    ```ts
-   import { discardStaged } from '<gstack-install>/browse/src/browser-skill-write';
+   import { discardStaged } from '<paysec-install>/browser/src/browser-skill-write';
    discardStaged('<stagedDir>');
    ```
 
@@ -335,9 +335,9 @@ Tests passed. Now ask the user before committing:
 
 ```
 D<N> — Commit skill "<name>" at <resolved-tier-path>?
-Project/branch/task: codified /scrape "<intent>" — tests pass against fixture.
+Project/branch/task: codified /web-scrape "<intent>" — tests pass against fixture.
 ELI10: The script ran clean against the snapshot we captured. Saying yes
-moves the staged folder into ~/.gstack/browser-skills/ where /scrape
+moves the staged folder into ~/.paysec/browser-skills/ where /web-scrape
 will find it next time. Saying no removes the staged folder and nothing
 lands on disk.
 Stakes if we pick wrong: yes commits an artifact you have to manually rm
@@ -360,7 +360,7 @@ this time — they already saw it).
 If the user approved:
 
 ```ts
-import { commitSkill } from '<gstack-install>/browse/src/browser-skill-write';
+import { commitSkill } from '<paysec-install>/browser/src/browser-skill-write';
 const dest = commitSkill({
   name: '<name>',
   tier: '<global|project>',  // from step 2 answer
@@ -379,7 +379,7 @@ user dismissed in step 2), report and ask whether to:
 If the user rejected in step 9:
 
 ```ts
-import { discardStaged } from '<gstack-install>/browse/src/browser-skill-write';
+import { discardStaged } from '<paysec-install>/browser/src/browser-skill-write';
 discardStaged('<stagedDir>');
 ```
 
@@ -400,7 +400,7 @@ in synthesis drifted. Surface this to the user — they may want to
 deserves to see the discrepancy.
 
 End the skill with one line: "Skill '<name>' committed at <tier>. Future
-/scrape calls matching '<canonical-trigger>' will run in ~200ms."
+/web-scrape calls matching '<canonical-trigger>' will run in ~200ms."
 
 ---
 
@@ -409,7 +409,7 @@ End the skill with one line: "Skill '<name>' committed at <tier>. Future
 - **Bun runtime required.** The codified skill runs as a Bun process
   (`bun run script.ts`). Phase 1 design carry-over (Codex finding #7).
   Real fix lands in Phase 4 (self-contained binary or Node fallback).
-  For now: the skill works on any machine that has gstack installed,
+  For now: the skill works on any machine that has paysec installed,
   which means it has Bun.
 - **Fixture-replay tests are point-in-time.** When the target site
   rotates HTML, the fixture goes stale and the test passes against an
@@ -424,9 +424,9 @@ End the skill with one line: "Skill '<name>' committed at <tier>. Future
 
 ## What this skill does NOT do
 
-- Codify match-path /scrape results (matched skills are already codified)
+- Codify match-path /web-scrape results (matched skills are already codified)
 - Codify mutating flows (those are /automate's job — Phase 2 P0)
-- Run skills (that's `$B skill run` — codified skills are run via /scrape's
+- Run skills (that's `$B skill run` — codified skills are run via /web-scrape's
   match path or directly)
 - Edit existing skills ($EDITOR + the skill dir is the surface — `$B skill
   show <name>` finds the path)

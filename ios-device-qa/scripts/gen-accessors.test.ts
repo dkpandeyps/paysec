@@ -612,7 +612,7 @@ class AppState {
       '--output', outputDir,
     ], {
       encoding: 'utf8',
-      env: { ...process.env, GSTACK_IOS_CACHE_ROOT: join(workDir, 'cache') },
+      env: { ...process.env, PAYSEC_IOS_CACHE_ROOT: join(workDir, 'cache') },
     });
     expect(result.status).toBe(4);
     // `let` is diagnosed first; either way the class/property is named and
@@ -962,7 +962,7 @@ final class ToolState {
 `);
     const env = {
       ...process.env,
-      GSTACK_IOS_CACHE_ROOT: cacheRoot,
+      PAYSEC_IOS_CACHE_ROOT: cacheRoot,
       APP_BUILD_ID: 'syntax-test-build',
       GEN_ACCESSORS_REV: 'syntax-test-v5',
     };
@@ -976,7 +976,7 @@ final class ToolState {
     expect(output).toContain('key: "names"');
     expect(output).toContain('key: "count"');
     expect(output).toContain('key: "enabled"');
-    expect(output).toContain('_GStackDebugBridgeSnapshotJSON.decode(raw0');
+    expect(output).toContain('_PaySecDebugBridgeSnapshotJSON.decode(raw0');
     expect(output).toContain('atomicRestore: { keys, apply in');
     expect(output).toContain('if apply {');
     expect(output).not.toMatch(/raw\d+ as\?/);

@@ -154,7 +154,7 @@ Examples:
 suffix with `-2`, `-3`, etc.
 
 **Length.** Total length must be ≤64 chars (validated by
-`bin/gstack-question-preference --write`). Truncate the option slug if
+`bin/paysec-question-preference --write`). Truncate the option slug if
 needed, preserving the `<skill>-split-` prefix.
 
 ## AUTO_DECIDE behavior with split chains
@@ -166,7 +166,7 @@ option, so preferences set on one option's id cannot leak across the
 chain. A `never-ask` on `ship-split-rspec` does not silently approve
 `ship-split-minitest`.
 
-**Layer 2 — runtime enforcement.** `bin/gstack-question-preference
+**Layer 2 — runtime enforcement.** `bin/paysec-question-preference
 --check` detects any id matching `*-split-*` (the canonical slug pattern
 emitted by split chains) and forces `ASK_NORMALLY` even when a
 `never-ask` or `ask-only-for-one-way` preference exists for that exact
@@ -184,12 +184,12 @@ sovereignty over the decision space is the entire point of splitting.
 
 This rule **overrides any per-skill "batch decisions" guidance**.
 Per-skill templates that explicitly require one-issue-per-call (e.g.
-`plan-eng-review`) are already compatible — they're a stricter special
+`plan-tech-review`) are already compatible — they're a stricter special
 case of this rule.
 
 ## Worked example: 5 platform integrations
 
-Fixture used by `test/skill-e2e-plan-ceo-split-overflow.test.ts`. A plan
+Fixture used by `test/skill-e2e-plan-business-split-overflow.test.ts`. A plan
 has 5 independent chat-platform candidates:
 
 - E1) Slack DM bot (~2 weeks, ~40% of asks)

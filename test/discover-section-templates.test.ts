@@ -15,13 +15,13 @@ afterAll(() => { try { fs.rmSync(root, { recursive: true, force: true }); } catc
 
 // ship/ has two section templates + a non-template file; review/ has none;
 // hidden + node_modules dirs must be skipped by the shared subdirs() filter.
-fs.mkdirSync(path.join(root, 'ship', 'sections'), { recursive: true });
-fs.writeFileSync(path.join(root, 'ship', 'SKILL.md.tmpl'), '---\nname: ship\n---\nbody');
-fs.writeFileSync(path.join(root, 'ship', 'sections', 'version-bump.md.tmpl'), 'bump');
-fs.writeFileSync(path.join(root, 'ship', 'sections', 'changelog.md.tmpl'), 'changelog');
-fs.writeFileSync(path.join(root, 'ship', 'sections', 'manifest.json'), '{}'); // not a .md.tmpl
-fs.mkdirSync(path.join(root, 'review'), { recursive: true });
-fs.writeFileSync(path.join(root, 'review', 'SKILL.md.tmpl'), '---\nname: review\n---\nbody');
+fs.mkdirSync(path.join(root, 'ship-pr', 'sections'), { recursive: true });
+fs.writeFileSync(path.join(root, 'ship-pr', 'SKILL.md.tmpl'), '---\nname: ship\n---\nbody');
+fs.writeFileSync(path.join(root, 'ship-pr', 'sections', 'version-bump.md.tmpl'), 'bump');
+fs.writeFileSync(path.join(root, 'ship-pr', 'sections', 'changelog.md.tmpl'), 'changelog');
+fs.writeFileSync(path.join(root, 'ship-pr', 'sections', 'manifest.json'), '{}'); // not a .md.tmpl
+fs.mkdirSync(path.join(root, 'pr-review'), { recursive: true });
+fs.writeFileSync(path.join(root, 'pr-review', 'SKILL.md.tmpl'), '---\nname: review\n---\nbody');
 fs.mkdirSync(path.join(root, 'node_modules', 'sections'), { recursive: true });
 fs.writeFileSync(path.join(root, 'node_modules', 'sections', 'x.md.tmpl'), 'nope');
 
@@ -30,15 +30,15 @@ describe('discoverSectionTemplates', () => {
 
   test('finds only *.md.tmpl files inside <skill>/sections/', () => {
     expect(found.map(f => f.tmpl)).toEqual([
-      'ship/sections/changelog.md.tmpl',
-      'ship/sections/version-bump.md.tmpl',
+      'ship-pr/sections/changelog.md.tmpl',
+      'ship-pr/sections/version-bump.md.tmpl',
     ]);
   });
 
   test('strips .tmpl for the output path and records the owning skill dir', () => {
     const bump = found.find(f => f.tmpl.endsWith('version-bump.md.tmpl'))!;
-    expect(bump.output).toBe('ship/sections/version-bump.md');
-    expect(bump.skillDir).toBe('ship');
+    expect(bump.output).toBe('ship-pr/sections/version-bump.md');
+    expect(bump.skillDir).toBe('ship-pr');
   });
 
   test('ignores non-template files (manifest.json) and skipped dirs (node_modules)', () => {

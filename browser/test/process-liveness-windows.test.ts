@@ -104,7 +104,7 @@ describe('process liveness probe (Windows terminal-agent leak)', () => {
   });
 
   test('5. spawnTerminalAgent passes windowsHide so no console is shown', () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-hide-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-hide-'));
     const script = path.join(tmpDir, 'fake-agent.ts');
     fs.writeFileSync(script, '// no-op\n');
     const origSpawn = (Bun as any).spawn;

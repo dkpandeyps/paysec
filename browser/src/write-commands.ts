@@ -179,7 +179,7 @@ export async function handleWriteCommand(
       if (inFrame) throw new Error('Cannot use load-html inside a frame. Run \'frame main\' first.');
 
       // --from-file <path.json>: read inline HTML from a JSON payload. Used by
-      // make-pdf to dodge Windows argv size limits on large rendered HTML.
+      // md-to-pdf to dodge Windows argv size limits on large rendered HTML.
       // The JSON shape is { html: string, waitUntil?: "load"|"domcontentloaded"|"networkidle" }.
       // The safe-dirs + magic-byte + size-cap checks below still apply to the
       // INLINE HTML content, not to the payload file path itself.
@@ -230,11 +230,11 @@ export async function handleWriteCommand(
 
       // Inline HTML path: validate size + magic byte, then setContent directly.
       if (fromFilePayload) {
-        const MAX_BYTES = parseInt(process.env.GSTACK_BROWSE_MAX_HTML_BYTES || '', 10) || (50 * 1024 * 1024);
+        const MAX_BYTES = parseInt(process.env.PAYSEC_BROWSE_MAX_HTML_BYTES || '', 10) || (50 * 1024 * 1024);
         if (Buffer.byteLength(fromFilePayload.html, 'utf8') > MAX_BYTES) {
           throw new Error(
             `load-html: --from-file html too large (> ${MAX_BYTES} bytes). ` +
-            'Raise with GSTACK_BROWSE_MAX_HTML_BYTES=<N>.'
+            'Raise with PAYSEC_BROWSE_MAX_HTML_BYTES=<N>.'
           );
         }
         const peek = fromFilePayload.html.trimStart();
@@ -288,10 +288,10 @@ export async function handleWriteCommand(
       }
 
       // Size cap
-      const MAX_BYTES = parseInt(process.env.GSTACK_BROWSE_MAX_HTML_BYTES || '', 10) || (50 * 1024 * 1024);
+      const MAX_BYTES = parseInt(process.env.PAYSEC_BROWSE_MAX_HTML_BYTES || '', 10) || (50 * 1024 * 1024);
       if (stat.size > MAX_BYTES) {
         throw new Error(
-          `load-html: file too large (${stat.size} bytes > ${MAX_BYTES} cap). Raise with GSTACK_BROWSE_MAX_HTML_BYTES=<N> or split the HTML.`
+          `load-html: file too large (${stat.size} bytes > ${MAX_BYTES} cap). Raise with PAYSEC_BROWSE_MAX_HTML_BYTES=<N> or split the HTML.`
         );
       }
 
@@ -881,8 +881,8 @@ export async function handleWriteCommand(
             // Always skip nav/header semantic elements
             if (tag === 'nav' || tag === 'header') continue;
             if (el.getAttribute('role') === 'navigation') continue;
-            // Skip the gstack control indicator
-            if ((el as HTMLElement).id === 'gstack-ctrl') continue;
+            // Skip the paysec control indicator
+            if ((el as HTMLElement).id === 'paysec-ctrl') continue;
             // Preserve the FIRST full-width element near the top (site's main nav bar)
             // This catches divs that act as navbars but aren't semantic <nav> elements
             if (!preservedTopNav && top <= 50 && width > viewportWidth * 0.8 && height < 120) {

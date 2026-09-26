@@ -3,7 +3,7 @@
  *
  * Conductor (the Mac app that runs many coding agents in parallel) sets
  * CONDUCTOR_WORKSPACE_PATH / CONDUCTOR_PORT in the session env. The same two
- * vars are what `bin/gstack-session-kind` keys on (it collapses Conductor into
+ * vars are what `bin/paysec-session-kind` keys on (it collapses Conductor into
  * `interactive`, so it can't be reused to distinguish Conductor specifically —
  * hence this dedicated helper).
  *

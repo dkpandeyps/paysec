@@ -2,7 +2,7 @@
  * #2557 / ENG-OV9: pins the dead-shield removal AND the live L4 wiring.
  *
  * The removed surface: /health's `security` field read getStatus(), whose
- * only data source (~/.gstack/security/session-state.json) lost its only
+ * only data source (~/.paysec/security/session-state.json) lost its only
  * writer when sidebar-agent.ts was ripped — so /health reported a permanent
  * 'inactive' or, wherever an old state file survived, a stale FALSE-GREEN
  * 'protected' ("no threats detected" when the real state was "not
@@ -33,7 +33,7 @@ describe('#2557: dead shield surface stays dead', () => {
     // The SECURITY session-state file must not be read anywhere in src/ —
     // that file has no writer, so any reader is a false-signal feed.
     // (session-persist.ts's per-project <stateDir>/session-state.json is a
-    // different, live file — only the ~/.gstack/security/ one is dead.)
+    // different, live file — only the ~/.paysec/security/ one is dead.)
     for (const f of fs.readdirSync(path.join(import.meta.dir, '../src')).filter((x) => x.endsWith('.ts'))) {
       const code = SRC(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/^\s*\*.*$/gm, '');
       const refs = /security[/'",\s][^\n]{0,80}session-state\.json/.test(code);

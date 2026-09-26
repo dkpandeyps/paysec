@@ -1,14 +1,14 @@
 /**
- * /codex recommendation substance — LIVE grade (periodic, paid, Codex CLI).
+ * /codex-second-opinion recommendation substance — LIVE grade (periodic, paid, Codex CLI).
  *
  * The gap this closes: skill-cross-model-recommendation-emit.test.ts only checks
- * the /codex TEMPLATE contains the "Recommendation: <action> because <reason>"
+ * the /codex-second-opinion TEMPLATE contains the "Recommendation: <action> because <reason>"
  * instruction (static grep). llm-judge-recommendation.test.ts grades the rubric
- * against FIXTURES. Nothing runs /codex live and grades the recommendation it
+ * against FIXTURES. Nothing runs /codex-second-opinion live and grades the recommendation it
  * actually emits. The user reports codex recommendations were the least
  * consistent surface on main — so this is the one that needs live coverage.
  *
- * Method: drive the real /codex skill via codex exec (isolated temp HOME) over a
+ * Method: drive the real /codex-second-opinion skill via codex exec (isolated temp HOME) over a
  * small, deliberately-flawed fixture diff. Capture codex's output, extract its
  * synthesis "Recommendation: ... because ..." line, and grade it with the same
  * judgeRecommendation() rubric used everywhere else:
@@ -61,12 +61,12 @@ the alternative>."
  }
 `;
 
-describeCodex('/codex recommendation substance (live, periodic)', () => {
+describeCodex('/codex-second-opinion recommendation substance (live, periodic)', () => {
   test(
     'codex emits a committed, substance>=4 synthesis recommendation',
     async () => {
       const result = await runCodexSkill({
-        skillDir: path.join(ROOT, 'codex'),
+        skillDir: path.join(ROOT, 'codex-second-opinion'),
         skillName: 'codex',
         prompt: FIXTURE_DIFF,
         timeoutMs: 300_000,

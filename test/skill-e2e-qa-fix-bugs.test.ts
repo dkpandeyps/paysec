@@ -8,7 +8,7 @@ import {
   copyDirSync, setupBrowseShims, logCost, recordE2E, dumpOutcomeDiagnostic,
   createEvalCollector, finalizeEvalCollector,
 } from './helpers/e2e-helpers';
-import { startTestServer } from '../browse/test/test-server';
+import { startTestServer } from '../browser/test/test-server';
 import { spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -36,7 +36,7 @@ let testServer: ReturnType<typeof startTestServer>;
     setupBrowseShims(outcomeDir);
 
     // Copy qa skill files
-    copyDirSync(path.join(ROOT, 'qa'), path.join(outcomeDir, 'qa'));
+    copyDirSync(path.join(ROOT, 'qa-fix'), path.join(outcomeDir, 'qa'));
   });
 
   afterAll(() => {
@@ -103,7 +103,7 @@ CRITICAL RULES:
       model: 'claude-opus-4-7',
     });
 
-    logCost(`/qa ${label}`, result);
+    logCost(`/qa-fix ${label}`, result);
 
     // Phase 1: browse mechanics. Accept error_max_turns — agent may have written
     // a partial report before running out of turns. What matters is detection rate.
@@ -143,7 +143,7 @@ CRITICAL RULES:
 
     if (!report) {
       dumpOutcomeDiagnostic(testWorkDir, label, '(no report file found)', { error: 'missing report' });
-      recordE2E(evalCollector, `/qa ${label}`, 'Planted-bug outcome evals', result, { error: 'no report generated' } as any);
+      recordE2E(evalCollector, `/qa-fix ${label}`, 'Planted-bug outcome evals', result, { error: 'no report generated' } as any);
       throw new Error(`No report file found in ${reportDir}`);
     }
 
@@ -151,7 +151,7 @@ CRITICAL RULES:
     console.log(`${label} outcome:`, JSON.stringify(judgeResult, null, 2));
 
     // Record to eval collector with outcome judge results
-    recordE2E(evalCollector, `/qa ${label}`, 'Planted-bug outcome evals', result, {
+    recordE2E(evalCollector, `/qa-fix ${label}`, 'Planted-bug outcome evals', result, {
       passed: judgePassed(judgeResult, groundTruth),
       detection_rate: judgeResult.detection_rate,
       false_positives: judgeResult.false_positives,

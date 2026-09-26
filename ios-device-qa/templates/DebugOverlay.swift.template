@@ -1,4 +1,4 @@
-// AUTO-GENERATED from gstack/ios-qa/templates/DebugOverlay.swift.template
+// AUTO-GENERATED from paysec/ios-device-qa/templates/DebugOverlay.swift.template
 //
 // DebugOverlay — on-device visual presence. Animated brand-colored border +
 // agent attribution chip + (optional) recording watermark. Renders above
@@ -129,7 +129,7 @@ private struct BorderShape: Shape {
 }
 
 private enum BrandColor {
-    // gstack brand color — resolved from DESIGN.md when codegen runs.
+    // paysec brand color — resolved from DESIGN.md when codegen runs.
     // Default falls back to a deep blue.
     static let accent = Color(red: 0.0, green: 0.46, blue: 1.0)
 }

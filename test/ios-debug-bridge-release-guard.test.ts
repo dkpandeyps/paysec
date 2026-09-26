@@ -29,13 +29,13 @@ import * as path from 'path';
 const ROOT = path.resolve(import.meta.dir, '..');
 
 const TOUCH_SOURCES = [
-  'ios-qa/templates/DebugBridgeTouch.m.template',
-  'test/fixtures/ios-qa/FixtureApp/Sources/DebugBridgeTouch/DebugBridgeTouch.m',
+  'ios-device-qa/templates/DebugBridgeTouch.m.template',
+  'test/fixtures/ios-device-qa/FixtureApp/Sources/DebugBridgeTouch/DebugBridgeTouch.m',
 ];
 
 const PACKAGE_MANIFESTS = [
-  'ios-qa/templates/Package.swift.template',
-  'test/fixtures/ios-qa/FixtureApp/Package.swift',
+  'ios-device-qa/templates/Package.swift.template',
+  'test/fixtures/ios-device-qa/FixtureApp/Package.swift',
 ];
 
 describe('DebugBridgeTouch Release compile-out guard', () => {

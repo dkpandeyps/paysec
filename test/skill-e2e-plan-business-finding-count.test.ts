@@ -1,8 +1,8 @@
 /**
- * /plan-ceo-review per-finding AskUserQuestion count (periodic, paid, real-PTY).
+ * /plan-business-review per-finding AskUserQuestion count (periodic, paid, real-PTY).
  *
  * Asserts the load-bearing rule "One issue = one AskUserQuestion call" by
- * driving /plan-ceo-review against a 5-finding seeded plan and counting
+ * driving /plan-business-review against a 5-finding seeded plan and counting
  * distinct review-phase AUQs. Passes when count is in [N-1, N+2].
  *
  * Two tests in this file:
@@ -26,7 +26,7 @@ import {
 } from './helpers/claude-pty-runner';
 
 /**
- * /plan-ceo-review's first AUQ asks "what scope?" with options like
+ * /plan-business-review's first AUQ asks "what scope?" with options like
  *   1. Branch diff vs main
  *   2. A specific plan file or design doc
  *   3. An idea you'll describe inline
@@ -34,7 +34,7 @@ import {
  *   7. Skip interview and plan immediately
  *
  * The default pick (1) routes to "branch diff vs main" — the wrong target
- * for our seeded fixture (the agent would review the gstack PR itself,
+ * for our seeded fixture (the agent would review the paysec PR itself,
  * recursively). Picking "Skip interview and plan immediately" bypasses
  * Step 0 and routes the agent to review the chat context (where our
  * follow-up plan was pasted).
@@ -63,7 +63,7 @@ const FLOOR_PAIRED = 2;
 const CEILING_PAIRED = 4;
 
 const PLAN_CEO_5_FINDINGS = [
-  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/gstack-test-plan-ceo.md (use Edit/Write to that exact path).',
+  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/paysec-test-plan-ceo.md (use Edit/Write to that exact path).',
   '',
   '# Plan: Payment Processing Integration',
   '',
@@ -89,7 +89,7 @@ const PLAN_CEO_5_FINDINGS = [
 ].join('\n');
 
 const PLAN_CEO_2_PAIRED_FINDINGS = [
-  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/gstack-test-plan-ceo-paired.md (use Edit/Write to that exact path).',
+  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/paysec-test-plan-ceo-paired.md (use Edit/Write to that exact path).',
   '',
   '# Plan: Payment Processing — Test Coverage',
   '',
@@ -102,10 +102,10 @@ const PLAN_CEO_2_PAIRED_FINDINGS = [
   'the success path is correctness, the failure path is graceful degradation.',
 ].join('\n');
 
-const PLAN_CEO_PATH = '/tmp/gstack-test-plan-ceo.md';
-const PLAN_CEO_PAIRED_PATH = '/tmp/gstack-test-plan-ceo-paired.md';
+const PLAN_CEO_PATH = '/tmp/paysec-test-plan-ceo.md';
+const PLAN_CEO_PAIRED_PATH = '/tmp/paysec-test-plan-ceo-paired.md';
 
-describeE2E('/plan-ceo-review per-finding AskUserQuestion count (periodic)', () => {
+describeE2E('/plan-business-review per-finding AskUserQuestion count (periodic)', () => {
   test(
     `5-finding plan emits ${FLOOR_DISTINCT}-${CEILING_DISTINCT} review-phase AskUserQuestions`,
     async () => {
@@ -116,8 +116,8 @@ describeE2E('/plan-ceo-review per-finding AskUserQuestion count (periodic)', () 
       }
 
       const obs = await runPlanSkillCounting({
-        skillName: 'plan-ceo-review',
-        slashCommand: '/plan-ceo-review',
+        skillName: 'plan-business-review',
+        slashCommand: '/plan-business-review',
         followUpPrompt: PLAN_CEO_5_FINDINGS,
         isLastStep0AUQ: ceoStep0Boundary,
         reviewCountCeiling: CEILING_DISTINCT + 1, // hard cap above assertion ceiling
@@ -130,7 +130,7 @@ describeE2E('/plan-ceo-review per-finding AskUserQuestion count (periodic)', () 
       try {
         if (!['plan_ready', 'completion_summary', 'ceiling_reached'].includes(obs.outcome)) {
           throw new Error(
-            `plan-ceo-review finding-count FAILED: outcome=${obs.outcome}\n` +
+            `plan-business-review finding-count FAILED: outcome=${obs.outcome}\n` +
               `step0=${obs.step0Count} review=${obs.reviewCount} elapsed=${obs.elapsedMs}ms\n` +
               `fingerprints (last 8):\n` +
               obs.fingerprints
@@ -206,8 +206,8 @@ describeE2E('/plan-ceo-review per-finding AskUserQuestion count (periodic)', () 
       }
 
       const obs = await runPlanSkillCounting({
-        skillName: 'plan-ceo-review',
-        slashCommand: '/plan-ceo-review',
+        skillName: 'plan-business-review',
+        slashCommand: '/plan-business-review',
         followUpPrompt: PLAN_CEO_2_PAIRED_FINDINGS,
         isLastStep0AUQ: ceoStep0Boundary,
         reviewCountCeiling: CEILING_PAIRED + 1,

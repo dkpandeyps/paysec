@@ -1,15 +1,15 @@
 /**
- * gstack-uninstall: real-directory installs are removed, gated on provenance
+ * paysec-uninstall: real-directory installs are removed, gated on provenance
  * (#2563, F8, ENG-OV10).
  *
  * On Windows, setup installs skills as REAL directory copies (no symlinks).
- * gstack-uninstall's per-skill loop filtered on `[ -L ]`, so every copy was
- * skipped: the tool exited 0, printed "gstack uninstalled.", and left ~52
- * gstack-* directories behind. The same filter also missed the standard Unix
+ * paysec-uninstall's per-skill loop filtered on `[ -L ]`, so every copy was
+ * skipped: the tool exited 0, printed "paysec uninstalled.", and left ~52
+ * paysec-* directories behind. The same filter also missed the standard Unix
  * shape (real dir + symlinked SKILL.md).
  *
  * Deletion gate for real-file installs (F8): the directory name must be in
- * gstack's skill inventory AND its SKILL.md must carry the existing generated
+ * paysec's skill inventory AND its SKILL.md must carry the existing generated
  * banner `<!-- AUTO-GENERATED from` (ENG-OV10 — every pre-v1.67 copy already
  * carries it; a NEW marker would refuse legitimate old installs). Anything
  * that fails a gate is listed to stderr and NEVER deleted.
@@ -21,7 +21,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const UNINSTALL = path.join(ROOT, 'bin', 'gstack-uninstall');
+const UNINSTALL = path.join(ROOT, 'bin', 'paysec-uninstall');
 
 const BANNER = '<!-- AUTO-GENERATED from SKILL.md.tmpl - DO NOT EDIT DIRECTLY -->\n';
 
@@ -35,18 +35,18 @@ let skillsDir: string;
 let installRoot: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-uninstall-copies-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-uninstall-copies-'));
   mockHome = path.join(tmpDir, 'home');
   skillsDir = path.join(mockHome, '.claude', 'skills');
-  installRoot = path.join(skillsDir, 'gstack');
+  installRoot = path.join(skillsDir, 'paysec');
 
   // Mock install root: the source-of-truth skill dirs the inventory reads.
-  for (const skill of ['review', 'ship', 'qa']) {
+  for (const skill of ['pr-review', 'ship-pr', 'qa-fix']) {
     fs.mkdirSync(path.join(installRoot, skill), { recursive: true });
     fs.writeFileSync(path.join(installRoot, skill, 'SKILL.md'), skillMd(skill));
   }
-  fs.writeFileSync(path.join(installRoot, 'SKILL.md'), skillMd('gstack'));
-  fs.mkdirSync(path.join(mockHome, '.gstack'), { recursive: true });
+  fs.writeFileSync(path.join(installRoot, 'SKILL.md'), skillMd('paysec'));
+  fs.mkdirSync(path.join(mockHome, '.paysec'), { recursive: true });
 });
 
 afterEach(() => {
@@ -60,8 +60,8 @@ function runUninstall(): { status: number | null; stdout: string; stderr: string
     env: {
       ...process.env,
       HOME: mockHome,
-      GSTACK_DIR: installRoot,
-      GSTACK_STATE_DIR: path.join(mockHome, '.gstack'),
+      PAYSEC_DIR: installRoot,
+      PAYSEC_STATE_DIR: path.join(mockHome, '.paysec'),
     },
     cwd: tmpDir, // not a git repo — per-project paths inert
     timeout: 20_000,
@@ -77,11 +77,11 @@ function realDirEntry(name: string, content: string): string {
   return dir;
 }
 
-describe('gstack-uninstall removes Windows real-dir copies (#2563)', () => {
+describe('paysec-uninstall removes Windows real-dir copies (#2563)', () => {
   test('inventory name + banner → removed (flat, prefixed, and alias forms)', () => {
-    const review = realDirEntry('review', skillMd('review'));
-    const prefixedShip = realDirEntry('gstack-ship', skillMd('gstack-ship'));
-    const alias = realDirEntry('_gstack-command', skillMd('_gstack-command'));
+    const review = realDirEntry('pr-review', skillMd('pr-review'));
+    const prefixedShip = realDirEntry('paysec-ship-pr', skillMd('paysec-ship-pr'));
+    const alias = realDirEntry('_paysec-command', skillMd('_paysec-command'));
     const ogbAlias = realDirEntry('connect-chrome', skillMd('connect-chrome'));
 
     const r = runUninstall();
@@ -103,9 +103,9 @@ describe('gstack-uninstall removes Windows real-dir copies (#2563)', () => {
     expect(r.stderr).toContain('left in place');
   });
 
-  test('no banner → kept and listed, even when the name collides with a gstack skill', () => {
+  test('no banner → kept and listed, even when the name collides with a paysec skill', () => {
     // F8's name-collision row: a user's own hand-written ~/.claude/skills/ship.
-    const usersOwn = realDirEntry('ship', skillMd('ship', false));
+    const usersOwn = realDirEntry('ship-pr', skillMd('ship-pr', false));
 
     const r = runUninstall();
     expect(r.status).toBe(0);
@@ -127,47 +127,47 @@ describe('gstack-uninstall removes Windows real-dir copies (#2563)', () => {
   });
 
   test('a clean sweep reports the removed entries', () => {
-    realDirEntry('review', skillMd('review'));
+    realDirEntry('pr-review', skillMd('pr-review'));
     const r = runUninstall();
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain('claude/review');
-    expect(r.stdout).toContain('gstack uninstalled.');
+    expect(r.stdout).toContain('claude/pr-review');
+    expect(r.stdout).toContain('paysec uninstalled.');
   });
 });
 
 // symlinkSync needs Developer Mode on Windows runners; the Unix install shape
 // can't be constructed there. The shape is Unix-only in practice anyway.
 describe.skipIf(process.platform === 'win32')(
-  'gstack-uninstall removes the Unix real-dir + symlinked-SKILL.md shape',
+  'paysec-uninstall removes the Unix real-dir + symlinked-SKILL.md shape',
   () => {
-    test('SKILL.md symlink pointing into gstack → removed', () => {
-      const dir = path.join(skillsDir, 'qa');
+    test('SKILL.md symlink pointing into paysec → removed', () => {
+      const dir = path.join(skillsDir, 'qa-fix');
       fs.mkdirSync(dir, { recursive: true });
-      fs.symlinkSync(path.join(installRoot, 'qa', 'SKILL.md'), path.join(dir, 'SKILL.md'));
+      fs.symlinkSync(path.join(installRoot, 'qa-fix', 'SKILL.md'), path.join(dir, 'SKILL.md'));
 
       const r = runUninstall();
       expect(r.status).toBe(0);
       expect(fs.existsSync(dir)).toBe(false);
     });
 
-    test('SKILL.md symlink into a gstack-SUBSTRING path (gstack-fork) → kept and listed', () => {
-      // DM5: the shape-2 gate must match "gstack" as an anchored path
+    test('SKILL.md symlink into a paysec-SUBSTRING path (paysec-fork) → kept and listed', () => {
+      // DM5: the shape-2 gate must match "paysec" as an anchored path
       // segment, not a substring — a user's own skill whose SKILL.md links
-      // into ~/tools/gstack-fork/ is NOT ours, even when the dir name
-      // collides with a real gstack skill (here: review, in the inventory).
-      // The anchored gate only matches a literal /gstack/ path segment, so
+      // into ~/tools/paysec-fork/ is NOT ours, even when the dir name
+      // collides with a real paysec skill (here: review, in the inventory).
+      // The anchored gate only matches a literal /paysec/ path segment, so
       // the tmpdir must not carry one (shared-process shard runs can leave
-      // $TMPDIR pointing into a gstack worktree — same hazard as the
+      // $TMPDIR pointing into a paysec worktree — same hazard as the
       // "pointing elsewhere" test below). Fall back to a fixed neutral root
       // and ASSERT the precondition.
       let neutralRoot = os.tmpdir();
-      if (neutralRoot.split(path.sep).includes('gstack')) neutralRoot = '/private' + path.sep + 'tmp';
+      if (neutralRoot.split(path.sep).includes('paysec')) neutralRoot = '/private' + path.sep + 'tmp';
       const forkRoot = fs.mkdtempSync(path.join(neutralRoot, 'tools-'));
-      expect(forkRoot.split(path.sep).includes('gstack')).toBe(false);
-      const forkSrc = path.join(forkRoot, 'gstack-fork', 'review');
+      expect(forkRoot.split(path.sep).includes('paysec')).toBe(false);
+      const forkSrc = path.join(forkRoot, 'paysec-fork', 'pr-review');
       fs.mkdirSync(forkSrc, { recursive: true });
-      fs.writeFileSync(path.join(forkSrc, 'SKILL.md'), skillMd('review'));
-      const dir = path.join(skillsDir, 'review');
+      fs.writeFileSync(path.join(forkSrc, 'SKILL.md'), skillMd('pr-review'));
+      const dir = path.join(skillsDir, 'pr-review');
       fs.mkdirSync(dir, { recursive: true });
       fs.symlinkSync(path.join(forkSrc, 'SKILL.md'), path.join(dir, 'SKILL.md'));
 
@@ -176,19 +176,19 @@ describe.skipIf(process.platform === 'win32')(
         expect(r.status).toBe(0);
         expect(fs.existsSync(dir)).toBe(true);
         expect(r.stderr).toContain('left in place');
-        expect(r.stderr).toContain(path.join('skills', 'review'));
+        expect(r.stderr).toContain(path.join('skills', 'pr-review'));
       } finally {
         fs.rmSync(forkRoot, { recursive: true, force: true });
       }
     });
 
-    test('SKILL.md symlink into gstack but name NOT in inventory → kept and listed', () => {
+    test('SKILL.md symlink into paysec but name NOT in inventory → kept and listed', () => {
       // Shape 2 now carries the same inventory gate as shape 3: a dir whose
       // name setup could never have created is skipped even when its
       // SKILL.md target resolves into the install root.
       const dir = path.join(skillsDir, 'my-custom-wrapper');
       fs.mkdirSync(dir, { recursive: true });
-      fs.symlinkSync(path.join(installRoot, 'qa', 'SKILL.md'), path.join(dir, 'SKILL.md'));
+      fs.symlinkSync(path.join(installRoot, 'qa-fix', 'SKILL.md'), path.join(dir, 'SKILL.md'));
 
       const r = runUninstall();
       expect(r.status).toBe(0);
@@ -197,12 +197,12 @@ describe.skipIf(process.platform === 'win32')(
     });
 
     test('SKILL.md symlink pointing elsewhere → kept and listed', () => {
-      // Target path must not contain a gstack path segment (the provenance
-      // match is anchored: gstack/*|*/gstack/*; keeping the stricter
+      // Target path must not contain a paysec path segment (the provenance
+      // match is anchored: paysec/*|*/paysec/*; keeping the stricter
       // no-substring precondition costs nothing) — the suite
       // tmpdir prefix does, so use a separate neutral tmpdir. os.tmpdir()
       // reads $TMPDIR at CALL time, and in shared-process shard runs a
-      // neighboring test can leave it pointing at a gstack-containing path —
+      // neighboring test can leave it pointing at a paysec-containing path —
       // observed once in a full-suite shard (the "neutral" target then
       // matched the provenance substring and the dir was wrongly deleted by
       // the test's own expectations). Fall back to a fixed neutral root and
@@ -210,11 +210,11 @@ describe.skipIf(process.platform === 'win32')(
       let neutralRoot = os.tmpdir();
       // realpath'd literal /tmp: /private/tmp on macOS, /tmp on Linux. The
       // hardcoded '/private/tmp' fallback ENOENT'd on Linux CI, where the
-      // shard runner's TMPDIR is the gstack-containing path that forces this
-      // branch. (Never taken on Windows — its TMPDIR carries no 'gstack'.)
-      if (neutralRoot.includes('gstack')) neutralRoot = fs.realpathSync('/tmp');
+      // shard runner's TMPDIR is the paysec-containing path that forces this
+      // branch. (Never taken on Windows — its TMPDIR carries no 'paysec'.)
+      if (neutralRoot.includes('paysec')) neutralRoot = fs.realpathSync('/tmp');
       const neutral = fs.mkdtempSync(path.join(neutralRoot, 'other-skill-src-'));
-      expect(neutral.includes('gstack')).toBe(false);
+      expect(neutral.includes('paysec')).toBe(false);
       const elsewhere = path.join(neutral, 'elsewhere.md');
       fs.writeFileSync(elsewhere, '# not ours\n');
       const dir = path.join(skillsDir, 'someone-elses');

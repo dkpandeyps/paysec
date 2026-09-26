@@ -8,8 +8,8 @@
  *
  * Exceptions (explicitly allowed): SKILL.md files for skills that legitimately discuss
  * V0 machinery:
- *   - plan-tune/ — the conversational inspection skill for /plan-tune
- *   - office-hours/ — sets the declared profile
+ *   - tune-questions/ — the conversational inspection skill for /tune-questions
+ *   - idea-review/ — sets the declared profile
  * For these, V0 vocabulary is load-bearing and must appear.
  *
  * All other tier-≥2 skills: 5D dim names + archetype names must NOT appear.
@@ -40,8 +40,8 @@ const FORBIDDEN_ARCHETYPE_NAMES = [
 
 // Skills that legitimately reference V0 psychographic vocabulary.
 const ALLOWED_SKILLS_WITH_V0_VOCAB = new Set([
-  'plan-tune',
-  'office-hours',
+  'tune-questions',
+  'idea-review',
 ]);
 
 function discoverTier2PlusSkillMds(): Array<{ skillName: string; mdPath: string }> {

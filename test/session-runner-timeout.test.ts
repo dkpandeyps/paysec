@@ -11,7 +11,7 @@ import * as os from 'os';
 // survives as an orphan that inherited our stdout/stderr pipes. Before the
 // fix, the runner then blocked on the pipe drain until the orphan exited —
 // observed as a 600s spawn timeout stretching past 1400s and tripping bun's
-// per-test timeout in skill-e2e-autoplan-dual-voice.test.ts. The fix cancels
+// per-test timeout in skill-e2e-auto-plan-review-dual-voice.test.ts. The fix cancels
 // the stdout reader on timeout and races the stderr drain against child exit
 // plus a short grace window.
 

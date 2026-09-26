@@ -50,7 +50,7 @@ describe('CLI outer supervisor (v1.44+)', () => {
 
   test('4. exponential backoff schedule, env-overridable', () => {
     const src = fs.readFileSync(CLI_TS, 'utf-8');
-    expect(src).toContain('GSTACK_SUPERVISOR_BACKOFF');
+    expect(src).toContain('PAYSEC_SUPERVISOR_BACKOFF');
     // Default schedule must include short waits at first (rapid recovery
     // from transient crashes) and cap at a sensible long wait.
     expect(src).toContain('1000,2000,4000,8000,30000');
@@ -58,7 +58,7 @@ describe('CLI outer supervisor (v1.44+)', () => {
 
   test('5. tick interval is env-overridable for tests', () => {
     const src = fs.readFileSync(CLI_TS, 'utf-8');
-    expect(src).toContain('GSTACK_SUPERVISOR_TICK_MS');
+    expect(src).toContain('PAYSEC_SUPERVISOR_TICK_MS');
   });
 
   test('6. respawned server gets a fresh terminal-agent too', () => {

@@ -1,5 +1,5 @@
 /**
- * PostToolUse hook (plan-tune cathedral T5) — unit tests.
+ * PostToolUse hook (tune-questions cathedral T5) — unit tests.
  *
  * Feeds the hook synthetic Claude Code hook payloads via stdin and asserts
  * the resulting question-log.jsonl reflects the right schema. Covers:
@@ -26,8 +26,8 @@ const HOOK = path.join(ROOT, 'hosts', 'claude', 'hooks', 'question-log-hook');
 let stateRoot: string;
 
 beforeEach(() => {
-  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-hooklog-'));
-  // Pre-create slug-resolved project dir so the bin's gstack-slug doesn't
+  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-hooklog-'));
+  // Pre-create slug-resolved project dir so the bin's paysec-slug doesn't
   // recompute every time.
 });
 
@@ -40,9 +40,9 @@ function runHook(stdin: object): { stdout: string; stderr: string; status: numbe
   for (const [k, v] of Object.entries(process.env)) {
     if (v !== undefined) env[k] = v;
   }
-  env.GSTACK_STATE_ROOT = stateRoot;
-  delete env.GSTACK_HOME;
-  env.GSTACK_QUESTION_LOG_NO_DERIVE = '1';
+  env.PAYSEC_STATE_ROOT = stateRoot;
+  delete env.PAYSEC_HOME;
+  env.PAYSEC_QUESTION_LOG_NO_DERIVE = '1';
   const res = spawnSync(HOOK, [], {
     env,
     input: JSON.stringify(stdin),
@@ -114,7 +114,7 @@ describe('PostToolUse hook (native AskUserQuestion)', () => {
     expect(events[0].recommended).toContain('Accept');
   });
 
-  test('marker-first question_id when <gstack-qid:foo> present', () => {
+  test('marker-first question_id when <paysec-qid:foo> present', () => {
     runHook({
       session_id: 'sess2',
       tool_name: 'AskUserQuestion',
@@ -122,7 +122,7 @@ describe('PostToolUse hook (native AskUserQuestion)', () => {
       tool_input: {
         questions: [
           {
-            question: 'D2 — Marker test <gstack-qid:ship-test-failure-triage>\nRecommendation: A',
+            question: 'D2 — Marker test <paysec-qid:ship-test-failure-triage>\nRecommendation: A',
             options: ['A) Fix now (recommended)', 'B) Investigate', 'C) Ack and ship'],
           },
         ],
@@ -134,7 +134,7 @@ describe('PostToolUse hook (native AskUserQuestion)', () => {
     expect(events.length).toBe(1);
     expect(events[0].question_id).toBe('ship-test-failure-triage');
     // Marker stripped from summary
-    expect((events[0].question_summary as string).includes('<gstack-qid:')).toBe(false);
+    expect((events[0].question_summary as string).includes('<paysec-qid:')).toBe(false);
   });
 });
 
@@ -343,8 +343,8 @@ describe('PostToolUse hook (crash safety)', () => {
     for (const [k, v] of Object.entries(process.env)) {
       if (v !== undefined) env[k] = v;
     }
-    env.GSTACK_STATE_ROOT = stateRoot;
-    env.GSTACK_QUESTION_LOG_NO_DERIVE = '1';
+    env.PAYSEC_STATE_ROOT = stateRoot;
+    env.PAYSEC_QUESTION_LOG_NO_DERIVE = '1';
     const res = spawnSync(HOOK, [], { env, input: '', encoding: 'utf-8' });
     expect(res.status).toBe(0);
   });
@@ -354,8 +354,8 @@ describe('PostToolUse hook (crash safety)', () => {
     for (const [k, v] of Object.entries(process.env)) {
       if (v !== undefined) env[k] = v;
     }
-    env.GSTACK_STATE_ROOT = stateRoot;
-    env.GSTACK_QUESTION_LOG_NO_DERIVE = '1';
+    env.PAYSEC_STATE_ROOT = stateRoot;
+    env.PAYSEC_QUESTION_LOG_NO_DERIVE = '1';
     const res = spawnSync(HOOK, [], {
       env,
       input: 'not json',

@@ -1,7 +1,7 @@
 /**
  * P4 first-run scaffold — E2E (periodic tier, ~$0.02 each, deterministic).
  *
- * Exercises bin/gstack-first-task-detect END-TO-END through the real runner +
+ * Exercises bin/paysec-first-task-detect END-TO-END through the real runner +
  * hermetic env (path resolution, execution, git-in-cwd), not just the unit
  * harness. Deterministic by construction: it asserts the binary's enum token
  * from the Bash tool_result in the stream-json transcript (never the model's
@@ -25,7 +25,7 @@ import {
 } from './helpers/e2e-helpers';
 
 const ROOT = path.join(import.meta.dir, '..');
-const DETECT = path.join(ROOT, 'bin', 'gstack-first-task-detect');
+const DETECT = path.join(ROOT, 'bin', 'paysec-first-task-detect');
 const evalCollector = createEvalCollector('e2e-first-task-scaffold');
 const MODEL = 'claude-haiku-4-5-20251001';
 

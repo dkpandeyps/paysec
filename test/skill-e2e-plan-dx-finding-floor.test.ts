@@ -1,7 +1,7 @@
 /**
- * /plan-devex-review AskUserQuestion floor regression (gate, paid, real-PTY).
+ * /plan-dx-review AskUserQuestion floor regression (gate, paid, real-PTY).
  *
- * See test/skill-e2e-plan-eng-finding-floor.test.ts for the contract.
+ * See test/skill-e2e-plan-tech-finding-floor.test.ts for the contract.
  */
 
 import { test } from 'bun:test';
@@ -11,13 +11,13 @@ import { FORCING_FLOOR_DEVEX } from './fixtures/forcing-finding-seeds';
 
 const describeE2E = describeE2ETier('gate');
 
-describeE2E('/plan-devex-review AskUserQuestion floor (gate)', () => {
+describeE2E('/plan-dx-review AskUserQuestion floor (gate)', () => {
   test(
     'seeded forcing finding causes the agent to fire at least one AskUserQuestion',
     async () => {
       const obs = await runPlanSkillFloorCheck({
-        skillName: 'plan-devex-review',
-        slashCommand: '/plan-devex-review',
+        skillName: 'plan-dx-review',
+        slashCommand: '/plan-dx-review',
         followUpPrompt: FORCING_FLOOR_DEVEX,
         cwd: process.cwd(),
         timeoutMs: 600_000,

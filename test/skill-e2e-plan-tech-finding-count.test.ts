@@ -1,7 +1,7 @@
 /**
- * /plan-eng-review per-finding AskUserQuestion count (periodic, paid, real-PTY).
+ * /plan-tech-review per-finding AskUserQuestion count (periodic, paid, real-PTY).
  *
- * Same shape as skill-e2e-plan-ceo-finding-count: drives /plan-eng-review
+ * Same shape as skill-e2e-plan-business-finding-count: drives /plan-tech-review
  * against a 5-finding seeded plan and asserts review-phase AUQ count ∈ [N-1, N+2].
  * Plus D19: review report at bottom of produced plan file.
  *
@@ -24,7 +24,7 @@ const FLOOR = N - 1; // 4
 const CEILING = N + 2; // 7
 
 const PLAN_ENG_5_FINDINGS = [
-  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/gstack-test-plan-eng.md (use Edit/Write to that exact path).',
+  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/paysec-test-plan-eng.md (use Edit/Write to that exact path).',
   '',
   '# Plan: Multi-tenant Auth Refactor',
   '',
@@ -49,9 +49,9 @@ const PLAN_ENG_5_FINDINGS = [
   'SessionMint, AuthCache, RequestPolicy). Worth flagging the complexity check.',
 ].join('\n');
 
-const PLAN_ENG_PATH = '/tmp/gstack-test-plan-eng.md';
+const PLAN_ENG_PATH = '/tmp/paysec-test-plan-eng.md';
 
-describeE2E('/plan-eng-review per-finding AskUserQuestion count (periodic)', () => {
+describeE2E('/plan-tech-review per-finding AskUserQuestion count (periodic)', () => {
   test(
     `5-finding plan emits ${FLOOR}-${CEILING} review-phase AskUserQuestions`,
     async () => {
@@ -62,8 +62,8 @@ describeE2E('/plan-eng-review per-finding AskUserQuestion count (periodic)', () 
       }
 
       const obs = await runPlanSkillCounting({
-        skillName: 'plan-eng-review',
-        slashCommand: '/plan-eng-review',
+        skillName: 'plan-tech-review',
+        slashCommand: '/plan-tech-review',
         followUpPrompt: PLAN_ENG_5_FINDINGS,
         isLastStep0AUQ: engStep0Boundary,
         reviewCountCeiling: CEILING + 1,
@@ -75,7 +75,7 @@ describeE2E('/plan-eng-review per-finding AskUserQuestion count (periodic)', () 
       try {
         if (!['plan_ready', 'completion_summary', 'ceiling_reached'].includes(obs.outcome)) {
           throw new Error(
-            `plan-eng-review finding-count FAILED: outcome=${obs.outcome}\n` +
+            `plan-tech-review finding-count FAILED: outcome=${obs.outcome}\n` +
               `step0=${obs.step0Count} review=${obs.reviewCount} elapsed=${obs.elapsedMs}ms\n` +
               `fingerprints (last 8):\n` +
               obs.fingerprints

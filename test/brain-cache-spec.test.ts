@@ -21,8 +21,8 @@ import {
   SKILL_CALIBRATION_WEIGHTS,
   TRANSPORT_DEFAULT_POLICY,
   USER_SLUG_RESOLUTION_ORDER,
-  GSTACK_SCHEMA_PACK_NAME,
-  GSTACK_SCHEMA_PACK_VERSION,
+  PAYSEC_SCHEMA_PACK_NAME,
+  PAYSEC_SCHEMA_PACK_VERSION,
   CACHE_REFRESH_LOCK_TIMEOUT_MS,
   SKILL_RUN_RETENTION_DAYS,
   getCacheFile,
@@ -63,8 +63,8 @@ describe('brain-cache-spec internal consistency', () => {
     }
   });
 
-  test('autoplan total budget covers the 4 plan-* skills (excluding office-hours)', () => {
-    const autoplanSkills = ['plan-ceo-review', 'plan-eng-review', 'plan-design-review', 'plan-devex-review'];
+  test('auto-plan-review total budget covers the 4 plan-* skills (excluding idea-review)', () => {
+    const autoplanSkills = ['plan-business-review', 'plan-tech-review', 'plan-ux-review', 'plan-dx-review'];
     const sum = autoplanSkills.reduce((acc, s) => acc + getSkillBudget(s), 0);
     expect(sum).toBeLessThanOrEqual(AUTOPLAN_PREFLIGHT_BUDGET_BYTES);
   });
@@ -95,9 +95,9 @@ describe('brain-cache-spec internal consistency', () => {
     for (const prefix of blocked) {
       expect(SALIENCE_DEFAULT_ALLOWLIST.some((p) => p.startsWith(prefix))).toBe(false);
     }
-    // Must contain at least projects/ + gstack/ (work-flow surfaces)
+    // Must contain at least projects/ + paysec/ (work-flow surfaces)
     expect(SALIENCE_DEFAULT_ALLOWLIST).toContain('projects/');
-    expect(SALIENCE_DEFAULT_ALLOWLIST).toContain('gstack/');
+    expect(SALIENCE_DEFAULT_ALLOWLIST).toContain('paysec/');
   });
 
   test('calibration weights are bounded 0-1 and present for all preflight skills', () => {
@@ -126,11 +126,11 @@ describe('brain-cache-spec internal consistency', () => {
   });
 
   test('schema pack identity is stable strings', () => {
-    expect(GSTACK_SCHEMA_PACK_NAME).toBe('gstack-core');
-    expect(GSTACK_SCHEMA_PACK_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(PAYSEC_SCHEMA_PACK_NAME).toBe('paysec-core');
+    expect(PAYSEC_SCHEMA_PACK_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  test('refresh lock timeout matches /sync-gbrain convention (5 min)', () => {
+  test('refresh lock timeout matches /brain-sync convention (5 min)', () => {
     expect(CACHE_REFRESH_LOCK_TIMEOUT_MS).toBe(5 * 60_000);
   });
 
@@ -144,8 +144,8 @@ describe('brain-cache-spec internal consistency', () => {
     expect(targets).toContain('recent-decisions');
   });
 
-  test('invalidation graph: /plan-ceo-review invalidates product + goals + recent-decisions chain', () => {
-    const targets = getInvalidationTargets('/plan-ceo-review');
+  test('invalidation graph: /plan-business-review invalidates product + goals + recent-decisions chain', () => {
+    const targets = getInvalidationTargets('/plan-business-review');
     expect(targets).toContain('product');
     expect(targets).toContain('goals');
   });
@@ -158,12 +158,12 @@ describe('brain-cache-spec internal consistency', () => {
 
   test('helpers return correct values for known names', () => {
     expect(getCacheFile('product')).toBe('product.md');
-    expect(getSkillSubset('plan-eng-review')).toEqual(['product', 'recent-decisions']);
-    expect(getSkillBudget('office-hours')).toBe(5120);
+    expect(getSkillSubset('plan-tech-review')).toEqual(['product', 'recent-decisions']);
+    expect(getSkillBudget('idea-review')).toBe(5120);
   });
 
   test('all 5 preflight skills are real planning-skill names', () => {
-    const expected = ['office-hours', 'plan-ceo-review', 'plan-eng-review', 'plan-design-review', 'plan-devex-review'];
+    const expected = ['idea-review', 'plan-business-review', 'plan-tech-review', 'plan-ux-review', 'plan-dx-review'];
     expect(getPreflightSkills().sort()).toEqual(expected.sort());
   });
 });

@@ -1,11 +1,11 @@
--- gstack attack telemetry — schema extension for prompt injection events.
+-- paysec attack telemetry — schema extension for prompt injection events.
 --
--- Ships alongside the gstack-telemetry-log `--event-type attack_attempt`
--- flag (bin/gstack-telemetry-log, commits 28ce883c + f68fa4a9). These
+-- Ships alongside the paysec-telemetry-log `--event-type attack_attempt`
+-- flag (bin/paysec-telemetry-log, commits 28ce883c + f68fa4a9). These
 -- columns are nullable so the existing skill_run events continue inserting
 -- unchanged.
 --
--- Fields (1:1 with gstack-telemetry-log flags):
+-- Fields (1:1 with paysec-telemetry-log flags):
 --   security_url_domain   — hostname only, never path/query
 --   security_payload_hash — salted SHA-256 hex
 --   security_confidence   — 0..1 numeric, clamped client-side
@@ -22,7 +22,7 @@
 -- Privacy rules (enforced client-side, documented here):
 --   * domain only, never path or query string
 --   * payload_hash is a salted hash, not the payload
---   * salt is per-device local file (~/.gstack/security/device-salt) —
+--   * salt is per-device local file (~/.paysec/security/device-salt) —
 --     preventing cross-device rainbow table attacks
 
 ALTER TABLE telemetry_events

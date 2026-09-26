@@ -1,5 +1,5 @@
 /**
- * Tunnel-surface behavioral eval for the pair-agent flow.
+ * Tunnel-surface behavioral eval for the pair-remote-agent flow.
  *
  * Spawns the daemon under `BROWSE_HEADLESS_SKIP=1 BROWSE_TUNNEL_LOCAL_ONLY=1`
  * so BOTH listeners come up: the local listener on `port` and the tunnel
@@ -26,7 +26,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '../..');
-const SERVER_ENTRY = path.join(ROOT, 'browse/src/server.ts');
+const SERVER_ENTRY = path.join(ROOT, 'browser/src/server.ts');
 
 interface DaemonHandle {
   proc: ReturnType<typeof Bun.spawn>;
@@ -73,13 +73,13 @@ async function waitForTunnelPort(stateFile: string, timeoutMs = 20_000): Promise
 
 async function spawnDaemonWithTunnel(): Promise<DaemonHandle> {
   // Isolate this test's analytics + denial log directory so we can assert on a
-  // fresh attempts.jsonl without colliding with the user's real ~/.gstack.
+  // fresh attempts.jsonl without colliding with the user's real ~/.paysec.
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pair-agent-tunnel-eval-'));
   const stateFile = path.join(tempDir, 'browse.json');
   const fakeHome = path.join(tempDir, 'home');
   fs.mkdirSync(fakeHome, { recursive: true });
   const localPort = 30000 + Math.floor(Math.random() * 30000);
-  const attemptsLogPath = path.join(fakeHome, '.gstack', 'security', 'attempts.jsonl');
+  const attemptsLogPath = path.join(fakeHome, '.paysec', 'security', 'attempts.jsonl');
 
   const proc = Bun.spawn(['bun', 'run', SERVER_ENTRY], {
     cwd: ROOT,
@@ -138,7 +138,7 @@ async function postCommand(baseUrl: string, token: string, body: any): Promise<{
   return { status: resp.status, bodyText: await resp.text() };
 }
 
-describe('pair-agent over tunnel surface — gate fires on the right surface only', () => {
+describe('pair-remote-agent over tunnel surface — gate fires on the right surface only', () => {
   let daemon: DaemonHandle;
 
   beforeAll(async () => {

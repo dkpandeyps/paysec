@@ -1,5 +1,5 @@
 /**
- * Declared-profile annotation helper (plan-tune cathedral T7).
+ * Declared-profile annotation helper (tune-questions cathedral T7).
  *
  * Given a kebab signal_key from scripts/question-registry.ts, returns a
  * one-line plain-English annotation when the user's declared profile is in
@@ -62,9 +62,9 @@ interface DeveloperProfile {
 
 function stateRoot(): string {
   return (
-    process.env.GSTACK_STATE_ROOT ||
-    process.env.GSTACK_HOME ||
-    path.join(os.homedir(), '.gstack')
+    process.env.PAYSEC_STATE_ROOT ||
+    process.env.PAYSEC_HOME ||
+    path.join(os.homedir(), '.paysec')
   );
 }
 

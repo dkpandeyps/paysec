@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 /**
- * gstack-egress — the auditor's view of the receipts ledger.
+ * paysec-egress — the auditor's view of the receipts ledger.
  *
- *   list    what gstack ATTEMPTED to send off this machine (one row per receipt)
+ *   list    what paysec ATTEMPTED to send off this machine (one row per receipt)
  *   grants  what CAN leave: every consent grant in force, where it lives,
  *           and the exact command that revokes it (pure config reads)
  *   verify  recompute the hash chain; exit 3 on tamper
@@ -20,7 +20,7 @@
  * The ledger is written by lib/egress-receipt.ts at every enumerated sink
  * (see test/egress-receipt-wiring.test.ts for the pinned list).
  *
- * Home: GSTACK_HOME, legacy GSTACK_STATE_DIR, else ~/.gstack.
+ * Home: PAYSEC_HOME, legacy PAYSEC_STATE_DIR, else ~/.paysec.
  */
 
 import path from 'node:path';
@@ -34,7 +34,7 @@ import {
 
 // import.meta.dir is Windows-safe; new URL(import.meta.url).pathname yields
 // '/C:/...' with percent-encoded spaces there, which would make the
-// gstack-config spawn silently fail and grants report every default. Matches
+// paysec-config spawn silently fail and grants report every default. Matches
 // the sibling bin/*.ts convention.
 const BIN_DIR = import.meta.dir;
 
@@ -51,11 +51,11 @@ function sanitizeForDisplay(value: unknown): string {
 }
 
 function usage(message: string): never {
-  process.stderr.write(`gstack-egress: ${message}\n`);
+  process.stderr.write(`paysec-egress: ${message}\n`);
   process.stderr.write(
-    'Usage: gstack-egress list [--since <ISO>] [--host <host>] [--sink <sink>] [--json]\n' +
-    '       gstack-egress verify [--json]\n' +
-    '       gstack-egress grants [--json]\n' +
+    'Usage: paysec-egress list [--since <ISO>] [--host <host>] [--sink <sink>] [--json]\n' +
+    '       paysec-egress verify [--json]\n' +
+    '       paysec-egress grants [--json]\n' +
     '\n' +
     'verify detects edits/reordering/mid-chain deletion; it does NOT detect\n' +
     'tail-truncation or deletion of the whole ledger (out of scope — the ledger\n' +
@@ -65,7 +65,7 @@ function usage(message: string): never {
 }
 
 function configGet(key: string): string {
-  const result = spawnSync(path.join(BIN_DIR, 'gstack-config'), ['get', key], {
+  const result = spawnSync(path.join(BIN_DIR, 'paysec-config'), ['get', key], {
     encoding: 'utf-8',
   });
   return (result.stdout || '').trim();
@@ -160,7 +160,7 @@ function egressGrants(args: string[], home: string): number {
       detail: 'anonymous and community tiers upload usage events to Supabase; off stays local-only',
       file: configFile,
       key: 'telemetry',
-      revoke: 'gstack-config set telemetry off',
+      revoke: 'paysec-config set telemetry off',
     },
     {
       grant: 'brain-sync',
@@ -169,7 +169,7 @@ function egressGrants(args: string[], home: string): number {
       detail: 'git push of curated allowlisted memory to the user-configured artifacts remote',
       file: configFile,
       key: 'artifacts_sync_mode',
-      revoke: 'gstack-config set artifacts_sync_mode off',
+      revoke: 'paysec-config set artifacts_sync_mode off',
     },
     {
       grant: 'redact_repo_visibility',
@@ -178,7 +178,7 @@ function egressGrants(args: string[], home: string): number {
       detail: 'redaction strictness assumption for external sinks; public gets per-finding confirmation',
       file: configFile,
       key: 'redact_repo_visibility',
-      revoke: 'gstack-config set redact_repo_visibility unknown (unknown = public-strict)',
+      revoke: 'paysec-config set redact_repo_visibility unknown (unknown = public-strict)',
     },
     {
       grant: 'redact_prepush_hook',
@@ -187,7 +187,7 @@ function egressGrants(args: string[], home: string): number {
       detail: 'opt-in git pre-push redaction scan; granted here means the guard is ON',
       file: configFile,
       key: 'redact_prepush_hook',
-      revoke: 'gstack-config set redact_prepush_hook false (disables the guard)',
+      revoke: 'paysec-config set redact_prepush_hook false (disables the guard)',
     },
   ];
 
@@ -203,7 +203,7 @@ function egressGrants(args: string[], home: string): number {
       `          revoke:   ${grant.revoke}\n`,
     );
   }
-  process.stdout.write("What was ATTEMPTED: 'gstack-egress list'. Chain check: 'gstack-egress verify'.\n");
+  process.stdout.write("What was ATTEMPTED: 'paysec-egress list'. Chain check: 'paysec-egress verify'.\n");
   return 0;
 }
 

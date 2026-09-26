@@ -521,13 +521,13 @@ describe('Hidden element stripping', () => {
     await cleanupHiddenMarkers(page);
   });
 
-  test('cleanup removes data-gstack-hidden attributes', async () => {
+  test('cleanup removes data-paysec-hidden attributes', async () => {
     const page = bm.getPage();
     await page.goto(`${baseUrl}/injection-hidden.html`, { waitUntil: 'domcontentloaded' });
     await markHiddenElements(page);
     await cleanupHiddenMarkers(page);
     const remaining = await page.evaluate(() =>
-      document.querySelectorAll('[data-gstack-hidden]').length,
+      document.querySelectorAll('[data-paysec-hidden]').length,
     );
     expect(remaining).toBe(0);
   });

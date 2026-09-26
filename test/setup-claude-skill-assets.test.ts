@@ -4,7 +4,7 @@
  * `link_claude_skill_dirs` historically installed only SKILL.md (+ sections/)
  * per skill, so every skill that reads a sibling runtime file at
  * `.claude/skills/<name>/<file>` — review's checklist.md + specialists/, qa's
- * templates/ + references/, gstack-upgrade's migrations/, careful/freeze's
+ * templates/ + references/, paysec-upgrade's migrations/, careful/freeze's
  * bin/ — was broken on a fresh Claude install. This suite runs the REAL
  * installer functions (extracted from `setup`) against the live repo into a
  * temp skills dir and asserts the install is complete.
@@ -13,10 +13,10 @@
  *   - Class 1 (alias-relative): a `.claude/skills/<name>/<relpath>` reference
  *     in an INSTALLED SKILL.md must resolve under the install dir. These are
  *     runtime reads against the flattened alias — a miss is a broken skill.
- *   - Class 2 (repo-anchored): a `~/.claude/skills/gstack/<relpath>`
+ *   - Class 2 (repo-anchored): a `~/.claude/skills/paysec/<relpath>`
  *     reference must exist in the source tree, EXCEPT built artifacts
- *     (browse/dist, design/dist, make-pdf/dist, the compiled
- *     bin/gstack-global-discover) — the free suite never builds binaries, so
+ *     (browser/dist, design/dist, md-to-pdf/dist, the compiled
+ *     bin/paysec-global-discover) — the free suite never builds binaries, so
  *     a naive "every path exists" either false-fails on dist or gets watered
  *     down to uselessness.
  */
@@ -31,10 +31,10 @@ const SETUP_SRC = fs.readFileSync(path.join(ROOT, 'setup'), 'utf-8');
 
 /** Built-at-setup artifacts: allowed to be absent from a fresh clone. */
 const BUILT_ARTIFACT_ALLOWLIST = [
-  'browse/dist/',
+  'browser/dist/',
   'design/dist/',
-  'make-pdf/dist/',
-  'bin/gstack-global-discover', // compiled from bin/gstack-global-discover.ts at build time
+  'md-to-pdf/dist/',
+  'bin/paysec-global-discover', // compiled from bin/paysec-global-discover.ts at build time
 ];
 
 /**
@@ -54,7 +54,7 @@ function extractFn(name: string): string {
   return SETUP_SRC.slice(start, end + 2);
 }
 
-const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-claude-install-'));
+const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-claude-install-'));
 
 beforeAll(() => {
   const script = [
@@ -108,12 +108,12 @@ describe('link_claude_skill_dirs installs every runtime asset (#2317, #2454)', (
 
   test('the #2454 affected-skills table is fully installed', () => {
     const expected: Array<[string, string]> = [
-      ['qa', 'references'],
-      ['qa', 'templates'],
-      ['plan-devex-review', 'dx-hall-of-fame.md'],
-      ['gstack-upgrade', 'migrations'],
-      ['careful', 'bin'],
-      ['freeze', 'bin'],
+      ['qa-fix', 'references'],
+      ['qa-fix', 'templates'],
+      ['plan-dx-review', 'dx-hall-of-fame.md'],
+      ['paysec-upgrade', 'migrations'],
+      ['safe-mode', 'bin'],
+      ['lock-edits', 'bin'],
     ];
     for (const [skill, asset] of expected) {
       expect(fs.existsSync(path.join(installDir, skill, asset))).toBe(true);
@@ -121,9 +121,9 @@ describe('link_claude_skill_dirs installs every runtime asset (#2317, #2454)', (
   });
 
   test('sections/ still installs for carved skills', () => {
-    expect(fs.existsSync(path.join(installDir, 'ship', 'sections'))).toBe(true);
+    expect(fs.existsSync(path.join(installDir, 'ship-pr', 'sections'))).toBe(true);
     expect(
-      fs.readdirSync(path.join(installDir, 'ship', 'sections')).length,
+      fs.readdirSync(path.join(installDir, 'ship-pr', 'sections')).length,
     ).toBeGreaterThan(0);
   });
 
@@ -182,10 +182,10 @@ describe('two-class referenced-paths (ENG-OV7)', () => {
   test('class 1: alias-relative references resolve under the install dir', () => {
     const missing: string[] = [];
     for (const { fromSkill, skillName, rel } of collectRefs()) {
-      if (skillName === 'gstack') continue; // class 2
-      // Prefix-mode prose may reference gstack-<name>; the flat install dir
+      if (skillName === 'paysec') continue; // class 2
+      // Prefix-mode prose may reference paysec-<name>; the flat install dir
       // is the unprefixed name.
-      const candidates = [skillName, skillName.replace(/^gstack-/, '')];
+      const candidates = [skillName, skillName.replace(/^paysec-/, '')];
       const found = candidates.some((c) => fs.existsSync(path.join(installDir, c, rel)));
       if (!found) missing.push(`${fromSkill}/SKILL.md → .claude/skills/${skillName}/${rel}`);
     }
@@ -195,12 +195,12 @@ describe('two-class referenced-paths (ENG-OV7)', () => {
   test('class 2: repo-anchored references exist in the tree (modulo built artifacts)', () => {
     const missing: string[] = [];
     for (const { fromSkill, skillName, rel } of collectRefs()) {
-      if (skillName !== 'gstack') continue; // class 1
+      if (skillName !== 'paysec') continue; // class 1
       if (rel.startsWith('.')) continue; // runtime state markers (.feature-prompted-*, .git)
       if (BUILT_ARTIFACT_ALLOWLIST.some((a) => rel === a || rel.startsWith(a))) continue;
       if (KNOWN_BROKEN_CLASS2[rel]) continue;
       if (!fs.existsSync(path.join(ROOT, rel))) {
-        missing.push(`${fromSkill}/SKILL.md → ~/.claude/skills/gstack/${rel}`);
+        missing.push(`${fromSkill}/SKILL.md → ~/.claude/skills/paysec/${rel}`);
       }
     }
     expect(missing).toEqual([]);
@@ -210,7 +210,7 @@ describe('two-class referenced-paths (ENG-OV7)', () => {
     // Guard against the extraction regex silently rotting: the review skill is
     // KNOWN to carry alias-relative refs; if the scanner stops seeing them the
     // class-1 assertion is vacuous.
-    const class1 = collectRefs().filter((r) => r.skillName !== 'gstack');
+    const class1 = collectRefs().filter((r) => r.skillName !== 'paysec');
     expect(class1.length).toBeGreaterThan(0);
     expect(class1.some((r) => r.skillName === 'review' && r.rel === 'checklist.md')).toBe(true);
   });

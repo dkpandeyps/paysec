@@ -1,5 +1,5 @@
 /**
- * Tests the split-engine SKIP semantics in bin/gstack-gbrain-sync.ts (plan D12).
+ * Tests the split-engine SKIP semantics in bin/paysec-gbrain-sync.ts (plan D12).
  *
  * When localEngineStatus() returns anything except 'ok', the orchestrator's
  * code + memory stages return ran=false summaries; the brain-sync stage runs
@@ -24,14 +24,14 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { execFileSync, spawnSync } from "child_process";
 
-const SCRIPT = join(import.meta.dir, "..", "bin", "gstack-gbrain-sync.ts");
+const SCRIPT = join(import.meta.dir, "..", "bin", "paysec-gbrain-sync.ts");
 const BUN_BIN = execFileSync("sh", ["-c", "command -v bun"], { encoding: "utf-8" }).trim();
 
 interface FakeEnv {
   tmp: string;
   bindir: string;
   home: string;
-  gstackHome: string;
+  paysecHome: string;
   cleanup: () => void;
 }
 
@@ -48,12 +48,12 @@ function makeEnv(opts: {
   const tmp = mkdtempSync(join(tmpdir(), "gbrain-sync-skip-"));
   const bindir = join(tmp, "bin");
   const home = join(tmp, "home");
-  const gstackHome = join(home, ".gstack");
+  const paysecHome = join(home, ".paysec");
   const gbrainDir = join(home, ".gbrain");
 
   mkdirSync(bindir, { recursive: true });
   mkdirSync(home, { recursive: true });
-  mkdirSync(gstackHome, { recursive: true });
+  mkdirSync(paysecHome, { recursive: true });
   mkdirSync(gbrainDir, { recursive: true });
 
   if (opts.withConfig) {
@@ -100,7 +100,7 @@ exit 0
     tmp,
     bindir,
     home,
-    gstackHome,
+    paysecHome,
     cleanup: () => rmSync(tmp, { recursive: true, force: true }),
   };
 }
@@ -125,7 +125,7 @@ function runOrchestrator(
     env: {
       ...process.env,
       HOME: env.home,
-      GSTACK_HOME: env.gstackHome,
+      PAYSEC_HOME: env.paysecHome,
       PATH: `${env.bindir}:/usr/bin:/bin`,
       ...extraEnv,
     },
@@ -137,19 +137,19 @@ function runOrchestrator(
   };
 }
 
-describe("gstack-gbrain-sync — split-engine SKIP (plan D12)", () => {
+describe("paysec-gbrain-sync — split-engine SKIP (plan D12)", () => {
   it("PROCEEDS (with warning) when the engine probe times out — slow is not broken (#1964)", () => {
     const env = makeEnv({ withGbrain: true, gbrainBehavior: "slow", withConfig: true });
     try {
       const r = runOrchestrator(env, ["--code-only"], {
-        GSTACK_GBRAIN_PROBE_TIMEOUT_MS: "300",
+        PAYSEC_GBRAIN_PROBE_TIMEOUT_MS: "300",
       });
       const out = r.stdout + r.stderr;
       // The stage must NOT be skipped with the local-engine reason...
       expect(out).not.toContain("local engine timeout");
       expect(out).not.toContain("config.json is malformed");
       // ...and the proceed-with-warning line must name the env knob.
-      expect(out).toContain("GSTACK_GBRAIN_PROBE_TIMEOUT_MS");
+      expect(out).toContain("PAYSEC_GBRAIN_PROBE_TIMEOUT_MS");
     } finally {
       env.cleanup();
     }
@@ -159,7 +159,7 @@ describe("gstack-gbrain-sync — split-engine SKIP (plan D12)", () => {
     const env = makeEnv({ withGbrain: true, gbrainBehavior: "slow", withConfig: true });
     try {
       const r = runOrchestrator(env, ["--no-code", "--no-brain-sync"], {
-        GSTACK_GBRAIN_PROBE_TIMEOUT_MS: "300",
+        PAYSEC_GBRAIN_PROBE_TIMEOUT_MS: "300",
       });
       const out = r.stdout + r.stderr;
       expect(out).not.toContain("local engine timeout");
@@ -175,7 +175,7 @@ describe("gstack-gbrain-sync — split-engine SKIP (plan D12)", () => {
       const r = runOrchestrator(
         env,
         ["--dream", "--no-code", "--no-memory", "--no-brain-sync"],
-        { GSTACK_GBRAIN_PROBE_TIMEOUT_MS: "300" },
+        { PAYSEC_GBRAIN_PROBE_TIMEOUT_MS: "300" },
       );
       const out = r.stdout + r.stderr;
       expect(out).not.toContain("local engine timeout");

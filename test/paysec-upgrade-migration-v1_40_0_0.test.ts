@@ -1,5 +1,5 @@
 /**
- * gstack-upgrade/migrations/v1.40.0.0.sh — migration script unit tests.
+ * paysec-upgrade/migrations/v1.40.0.0.sh — migration script unit tests.
  *
  * Per #1581: the original script unconditionally `touch`ed its done-marker even
  * when the jq-gated privacy-map patch was skipped. The fix defers `touch ${DONE}`
@@ -25,7 +25,7 @@ import { spawnSync } from "child_process";
 const ROOT = path.resolve(import.meta.dir, "..");
 const MIGRATION = path.join(
   ROOT,
-  "gstack-upgrade",
+  "paysec-upgrade",
   "migrations",
   "v1.40.0.0.sh",
 );
@@ -34,7 +34,7 @@ const NEW_PATTERN = "projects/*/*-eng-review-test-plan-*.md";
 const REAL_PATH = "/usr/bin:/bin:/opt/homebrew/bin";
 
 let tmpHome: string;
-let gstackHome: string;
+let paysecHome: string;
 let migrationDir: string;
 let donePath: string;
 let allowlistPath: string;
@@ -42,19 +42,19 @@ let privacyPath: string;
 let gitattrsPath: string;
 
 beforeEach(() => {
-  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "gstack-mig-v1400-"));
-  gstackHome = path.join(tmpHome, ".gstack");
-  migrationDir = path.join(gstackHome, ".migrations");
+  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "paysec-mig-v1400-"));
+  paysecHome = path.join(tmpHome, ".paysec");
+  migrationDir = path.join(paysecHome, ".migrations");
   donePath = path.join(migrationDir, "v1.40.0.0.done");
-  allowlistPath = path.join(gstackHome, ".brain-allowlist");
-  privacyPath = path.join(gstackHome, ".brain-privacy-map.json");
-  gitattrsPath = path.join(gstackHome, ".gitattributes");
-  fs.mkdirSync(gstackHome, { recursive: true });
+  allowlistPath = path.join(paysecHome, ".brain-allowlist");
+  privacyPath = path.join(paysecHome, ".brain-privacy-map.json");
+  gitattrsPath = path.join(paysecHome, ".gitattributes");
+  fs.mkdirSync(paysecHome, { recursive: true });
 });
 
 afterEach(() => {
   try {
-    fs.chmodSync(gstackHome, 0o755);
+    fs.chmodSync(paysecHome, 0o755);
     if (fs.existsSync(allowlistPath)) fs.chmodSync(allowlistPath, 0o644);
     if (fs.existsSync(privacyPath)) fs.chmodSync(privacyPath, 0o644);
     if (fs.existsSync(gitattrsPath)) fs.chmodSync(gitattrsPath, 0o644);
@@ -68,7 +68,7 @@ afterEach(() => {
  * command, etc.). Optionally omit jq, or substitute a shim.
  */
 function makeCuratedPath(opts: { jq?: "missing" | "shim-fail" | "real" } = {}): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gstack-mig-path-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "paysec-mig-path-"));
   const utils = [
     "bash",
     "sh",
@@ -298,7 +298,7 @@ describe("migrations/v1.40.0.0.sh", () => {
 
     // Tempfile cleanup: no leftover *.tmp.* sidecars.
     const leftovers = fs
-      .readdirSync(gstackHome)
+      .readdirSync(paysecHome)
       .filter((n) => n.startsWith(".brain-privacy-map.json.tmp."));
     expect(leftovers.length).toBe(0);
   });

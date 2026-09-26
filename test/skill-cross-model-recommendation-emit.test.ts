@@ -22,24 +22,24 @@ import * as path from 'path';
 const ROOT = path.resolve(import.meta.dir, '..');
 
 describe('cross-model synthesis emit instructions', () => {
-  test('codex/SKILL.md.tmpl Step 2A (review) requires a synthesis Recommendation', () => {
-    const tmpl = fs.readFileSync(path.join(ROOT, 'codex', 'SKILL.md.tmpl'), 'utf-8');
+  test('codex-second-opinion/SKILL.md.tmpl Step 2A (review) requires a synthesis Recommendation', () => {
+    const tmpl = fs.readFileSync(path.join(ROOT, 'codex-second-opinion', 'SKILL.md.tmpl'), 'utf-8');
     const step2a = sliceBetween(tmpl, '## Step 2A:', '## Step 2B:');
     expect(step2a, 'Step 2A section not found in codex template').not.toBe('');
     expect(step2a).toMatch(/Synthesis recommendation \(REQUIRED\)/);
     expect(step2a).toMatch(/Recommendation:\s*<action>\s*because/);
   });
 
-  test('codex/SKILL.md.tmpl Step 2B (challenge) requires a synthesis Recommendation', () => {
-    const tmpl = fs.readFileSync(path.join(ROOT, 'codex', 'SKILL.md.tmpl'), 'utf-8');
+  test('codex-second-opinion/SKILL.md.tmpl Step 2B (challenge) requires a synthesis Recommendation', () => {
+    const tmpl = fs.readFileSync(path.join(ROOT, 'codex-second-opinion', 'SKILL.md.tmpl'), 'utf-8');
     const step2b = sliceBetween(tmpl, '## Step 2B:', '## Step 2C:');
     expect(step2b, 'Step 2B section not found in codex template').not.toBe('');
     expect(step2b).toMatch(/Synthesis recommendation \(REQUIRED\)/);
     expect(step2b).toMatch(/Recommendation:\s*<action>\s*because/);
   });
 
-  test('codex/SKILL.md.tmpl Step 2C (consult) requires a synthesis Recommendation', () => {
-    const tmpl = fs.readFileSync(path.join(ROOT, 'codex', 'SKILL.md.tmpl'), 'utf-8');
+  test('codex-second-opinion/SKILL.md.tmpl Step 2C (consult) requires a synthesis Recommendation', () => {
+    const tmpl = fs.readFileSync(path.join(ROOT, 'codex-second-opinion', 'SKILL.md.tmpl'), 'utf-8');
     const step2c = sliceBetween(tmpl, '## Step 2C:', '## Model & Reasoning');
     expect(step2c, 'Step 2C section not found in codex template').not.toBe('');
     expect(step2c).toMatch(/Synthesis recommendation \(REQUIRED\)/);

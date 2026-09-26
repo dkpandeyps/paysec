@@ -13,11 +13,11 @@
  * threshold regresses. Skipped gracefully if the model cache is absent
  * (first-run CI) — prime via the sidebar-agent warmup.
  *
- * Dataset cache: ~/.gstack/cache/browsesafe-bench-smoke/test-rows.json
+ * Dataset cache: ~/.paysec/cache/browsesafe-bench-smoke/test-rows.json
  * (hermetic after first run — no HF network traffic on subsequent CI).
  *
- * Run: bun test browse/test/security-bench.test.ts
- * Run with fresh sample: rm -rf ~/.gstack/cache/browsesafe-bench-smoke/ && bun test ...
+ * Run: bun test browser/test/security-bench.test.ts
+ * Run with fresh sample: rm -rf ~/.paysec/cache/browsesafe-bench-smoke/ && bun test ...
  */
 
 import { describe, test, expect, beforeAll } from 'bun:test';
@@ -27,7 +27,7 @@ import * as path from 'path';
 
 const MODEL_CACHE = path.join(
   os.homedir(),
-  '.gstack',
+  '.paysec',
   'models',
   'testsavant-small',
   'onnx',
@@ -39,7 +39,7 @@ const MODEL_CACHE = path.join(
 // while CI (no cache) silently skipped it — the worst of both.
 const ML_AVAILABLE = process.env.SECURITY_BENCH === '1' && fs.existsSync(MODEL_CACHE);
 
-const CACHE_DIR = path.join(os.homedir(), '.gstack', 'cache', 'browsesafe-bench-smoke');
+const CACHE_DIR = path.join(os.homedir(), '.paysec', 'cache', 'browsesafe-bench-smoke');
 const CACHE_FILE = path.join(CACHE_DIR, 'test-rows.json');
 const SAMPLE_SIZE = 200;
 const HF_API = 'https://datasets-server.huggingface.co/rows?dataset=perplexity-ai/browsesafe-bench&config=default&split=test';

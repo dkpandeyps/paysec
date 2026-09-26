@@ -2,8 +2,8 @@
 # Migration: v1.38.1.0 — add root-level design + test-plan patterns to
 # .brain-allowlist, .brain-privacy-map.json, and .gitattributes (#1452).
 #
-# Why a migration: gstack-artifacts-init regenerates these files but also
-# does `git commit + push` on ~/.gstack/, which would clobber user state on
+# Why a migration: paysec-artifacts-init regenerates these files but also
+# does `git commit + push` on ~/.paysec/, which would clobber user state on
 # upgrade. Instead, we do targeted per-file in-place repairs.
 #
 # Per-file independent — if one file is missing we still repair the others.
@@ -15,12 +15,12 @@
 # still run. `set -u` is fine.
 set -u
 
-GSTACK_HOME="${HOME}/.gstack"
-ALLOWLIST="${GSTACK_HOME}/.brain-allowlist"
-PRIVACY="${GSTACK_HOME}/.brain-privacy-map.json"
-GITATTRS="${GSTACK_HOME}/.gitattributes"
+PAYSEC_HOME="${HOME}/.paysec"
+ALLOWLIST="${PAYSEC_HOME}/.brain-allowlist"
+PRIVACY="${PAYSEC_HOME}/.brain-privacy-map.json"
+GITATTRS="${PAYSEC_HOME}/.gitattributes"
 
-MIGRATION_DIR="${GSTACK_HOME}/.migrations"
+MIGRATION_DIR="${PAYSEC_HOME}/.migrations"
 DONE="${MIGRATION_DIR}/v1.38.1.0.done"
 
 mkdir -p "${MIGRATION_DIR}" 2>/dev/null || true
@@ -72,7 +72,7 @@ if [ -f "${PRIVACY}" ]; then
       fi
     done
   else
-    echo "  [v1.38.1.0] WARN: jq not found; skipping privacy-map repair. Install jq and re-run gstack-upgrade, or run gstack-artifacts-init manually." >&2
+    echo "  [v1.38.1.0] WARN: jq not found; skipping privacy-map repair. Install jq and re-run paysec-upgrade, or run paysec-artifacts-init manually." >&2
   fi
 fi
 
@@ -96,7 +96,7 @@ if [ "${added_any}" = "1" ]; then
 fi
 
 # NEVER `git commit + push` from this migration. The user controls when the
-# patches ship into their federated artifacts repo (next gstack-brain-sync
+# patches ship into their federated artifacts repo (next paysec-brain-sync
 # --once or a manual commit).
 
 exit 0

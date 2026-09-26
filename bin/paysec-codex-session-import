@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
-# gstack-codex-session-import — backfill question-log.jsonl from Codex sessions.
+# paysec-codex-session-import — backfill question-log.jsonl from Codex sessions.
 #
 # Codex has no AskUserQuestion tool (per docs/spikes/codex-session-format.md).
-# gstack skills running on Codex emit Decision Briefs as plain agent_message
+# paysec skills running on Codex emit Decision Briefs as plain agent_message
 # text, and the user's response shows up in the next user_message. This
 # importer reconstructs those question/answer pairs from the structured
 # JSONL session files at ~/.codex/sessions/<date>/.
 #
 # Usage:
-#   gstack-codex-session-import                   # latest session under ~/.codex/sessions/
-#   gstack-codex-session-import <path/to.jsonl>   # explicit session file
-#   gstack-codex-session-import --since <iso>     # all sessions newer than <iso>
+#   paysec-codex-session-import                   # latest session under ~/.codex/sessions/
+#   paysec-codex-session-import <path/to.jsonl>   # explicit session file
+#   paysec-codex-session-import --since <iso>     # all sessions newer than <iso>
 #
 # Recovery strategy (two-tier per D5/T4 spike):
-#   1. Marker-first: extract <gstack-qid:foo-bar> from agent_message → stable id.
+#   1. Marker-first: extract <paysec-qid:foo-bar> from agent_message → stable id.
 #   2. Pattern fallback: detect D<N> header + numbered options → hash id
 #      (source=codex-import-pattern, never used as preference key per D18).
 #
-# Writes via bin/gstack-question-log so source tagging, dedup, and async
+# Writes via bin/paysec-question-log so source tagging, dedup, and async
 # derive all apply uniformly.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-GSTACK_HOME="${GSTACK_STATE_ROOT:-${GSTACK_HOME:-$HOME/.gstack}}"
+PAYSEC_HOME="${PAYSEC_STATE_ROOT:-${PAYSEC_HOME:-$HOME/.paysec}}"
 CODEX_SESSIONS_ROOT="${CODEX_SESSIONS_ROOT:-$HOME/.codex/sessions}"
 
 MODE="latest"
@@ -54,7 +54,7 @@ SESSION_FILES=()
 case "$MODE" in
   explicit)
     if [ ! -f "$EXPLICIT_PATH" ]; then
-      echo "gstack-codex-session-import: file not found: $EXPLICIT_PATH" >&2
+      echo "paysec-codex-session-import: file not found: $EXPLICIT_PATH" >&2
       exit 1
     fi
     SESSION_FILES=("$EXPLICIT_PATH")
@@ -92,14 +92,14 @@ if [ ${#SESSION_FILES[@]} -eq 0 ]; then
 fi
 
 # Parse + extract via bun. Emits one line per question found, ready to pipe
-# into gstack-question-log. Tagged with source so downstream consumers
-# (/plan-tune stats, dream cycle) can distinguish backfilled events from
+# into paysec-question-log. Tagged with source so downstream consumers
+# (/tune-questions stats, dream cycle) can distinguish backfilled events from
 # live captures.
 IMPORTED=0
 SKIPPED_NO_ANSWER=0
 
 for SESSION_FILE in "${SESSION_FILES[@]}"; do
-  COUNT_LINE=$(SESSION_FILE_PATH="$SESSION_FILE" QLOG_BIN="$SCRIPT_DIR/gstack-question-log" bun -e '
+  COUNT_LINE=$(SESSION_FILE_PATH="$SESSION_FILE" QLOG_BIN="$SCRIPT_DIR/paysec-question-log" bun -e '
     const fs = require("fs");
     const path = require("path");
     const { spawnSync } = require("child_process");
@@ -135,7 +135,7 @@ for SESSION_FILE in "${SESSION_FILES[@]}"; do
       const text = String(e.payload?.message || "");
       if (!text) continue;
       // Detect D-numbered brief or marker. Markers are sufficient on their own.
-      const markerMatch = text.match(/<gstack-qid:([a-z0-9-]{1,64})>/i);
+      const markerMatch = text.match(/<paysec-qid:([a-z0-9-]{1,64})>/i);
       const dMatch = text.match(/^D\d+[\.\d]*\s*[—\-]\s*(.+?)$/m);
       if (!markerMatch && !dMatch) continue;
 
@@ -208,7 +208,7 @@ for SESSION_FILE in "${SESSION_FILES[@]}"; do
       const res = spawnSync(qlogBin, [JSON.stringify(b)], {
         encoding: "utf-8",
         stdio: ["ignore", "pipe", "pipe"],
-        // Run from the originating cwd so gstack-slug bucks events into the
+        // Run from the originating cwd so paysec-slug bucks events into the
         // right project. Falls back to the importer cwd if the session cwd
         // no longer exists.
         cwd: cwd && fs.existsSync(cwd) ? cwd : undefined,

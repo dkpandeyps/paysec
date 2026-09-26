@@ -46,7 +46,7 @@ describe('terminal-agent session routing (v1.44+ Commit 2)', () => {
     expect(block).toContain('sessionsById.delete(sid)');
     // Negative: must NOT enumerate all live sessions and dispose them
     // (codex T2 caught this — pre-spec the route killed every PTY on the
-    // agent, breaking multi-sidebar / pair-agent setups).
+    // agent, breaking multi-sidebar / pair-remote-agent setups).
     expect(block).not.toMatch(/for\s*\(\s*const\s+\[?ws/);
   });
 

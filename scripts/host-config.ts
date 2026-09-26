@@ -25,13 +25,13 @@ export interface HostConfig {
   cliAliases?: string[];
 
   // --- Path Configuration ---
-  /** Global install path relative to $HOME (e.g., '.config/opencode/skills/gstack'). */
+  /** Global install path relative to $HOME (e.g., '.config/opencode/skills/paysec'). */
   globalRoot: string;
-  /** Project-local skill path relative to repo root (e.g., '.opencode/skills/gstack'). */
+  /** Project-local skill path relative to repo root (e.g., '.opencode/skills/paysec'). */
   localSkillRoot: string;
   /** Gitignored directory under repo root for generated docs (e.g., '.opencode'). */
   hostSubdir: string;
-  /** Whether preamble generates $GSTACK_ROOT env vars (true for non-Claude hosts). */
+  /** Whether preamble generates $PAYSEC_ROOT env vars (true for non-Claude hosts). */
   usesEnvVars: boolean;
 
   // --- Frontmatter Transformation ---

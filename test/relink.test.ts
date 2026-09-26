@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-// Every test in this file shells out to gstack-config + gstack-relink (bash scripts
+// Every test in this file shells out to paysec-config + paysec-relink (bash scripts
 // invoking subprocess work). Under parallel bun test load, subprocess spawn contends
 // with other suites and each test can drift ~200ms past the 5s default. Bump to 15s.
 // Object.assign preserves test.only / test.skip / test.each / test.todo sub-APIs.
@@ -25,13 +25,13 @@ function run(cmd: string, env: Record<string, string> = {}, expectFail = false):
   try {
     return execSync(cmd, {
       cwd: ROOT,
-      // A sibling test file in the same shard PROCESS can leave GSTACK_HOME
+      // A sibling test file in the same shard PROCESS can leave PAYSEC_HOME
       // set on process.env; relink/config children must resolve state ONLY
       // via the dirs this test passes (observed: 'fresh install' test saw a
       // neighbor's skill_prefix and produced prefixed names).
       env: (() => {
-        const child: Record<string, string | undefined> = { ...process.env, GSTACK_STATE_DIR: tmpDir, ...env };
-        if (!('GSTACK_HOME' in env)) delete child.GSTACK_HOME;
+        const child: Record<string, string | undefined> = { ...process.env, PAYSEC_STATE_DIR: tmpDir, ...env };
+        if (!('PAYSEC_HOME' in env)) delete child.PAYSEC_HOME;
         return child;
       })(),
       encoding: 'utf-8',
@@ -44,25 +44,25 @@ function run(cmd: string, env: Record<string, string> = {}, expectFail = false):
   }
 }
 
-// Create a mock gstack install directory with skill subdirs
+// Create a mock paysec install directory with skill subdirs
 function setupMockInstall(skills: string[]): void {
-  installDir = path.join(tmpDir, 'gstack-install');
+  installDir = path.join(tmpDir, 'paysec-install');
   skillsDir = path.join(tmpDir, 'skills');
   fs.mkdirSync(installDir, { recursive: true });
   fs.mkdirSync(skillsDir, { recursive: true });
 
-  // Copy the real gstack-config and gstack-relink to the mock install
+  // Copy the real paysec-config and paysec-relink to the mock install
   const mockBin = path.join(installDir, 'bin');
   fs.mkdirSync(mockBin, { recursive: true });
-  fs.copyFileSync(path.join(BIN, 'gstack-config'), path.join(mockBin, 'gstack-config'));
-  fs.chmodSync(path.join(mockBin, 'gstack-config'), 0o755);
-  if (fs.existsSync(path.join(BIN, 'gstack-relink'))) {
-    fs.copyFileSync(path.join(BIN, 'gstack-relink'), path.join(mockBin, 'gstack-relink'));
-    fs.chmodSync(path.join(mockBin, 'gstack-relink'), 0o755);
+  fs.copyFileSync(path.join(BIN, 'paysec-config'), path.join(mockBin, 'paysec-config'));
+  fs.chmodSync(path.join(mockBin, 'paysec-config'), 0o755);
+  if (fs.existsSync(path.join(BIN, 'paysec-relink'))) {
+    fs.copyFileSync(path.join(BIN, 'paysec-relink'), path.join(mockBin, 'paysec-relink'));
+    fs.chmodSync(path.join(mockBin, 'paysec-relink'), 0o755);
   }
-  if (fs.existsSync(path.join(BIN, 'gstack-patch-names'))) {
-    fs.copyFileSync(path.join(BIN, 'gstack-patch-names'), path.join(mockBin, 'gstack-patch-names'));
-    fs.chmodSync(path.join(mockBin, 'gstack-patch-names'), 0o755);
+  if (fs.existsSync(path.join(BIN, 'paysec-patch-names'))) {
+    fs.copyFileSync(path.join(BIN, 'paysec-patch-names'), path.join(mockBin, 'paysec-patch-names'));
+    fs.chmodSync(path.join(mockBin, 'paysec-patch-names'), 0o755);
   }
 
   // Create mock skill directories with proper frontmatter
@@ -76,44 +76,44 @@ function setupMockInstall(skills: string[]): void {
 }
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-relink-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-relink-test-'));
 });
 
 afterEach(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
-describe('gstack-relink (#578)', () => {
+describe('paysec-relink (#578)', () => {
   // Test 11: prefixed symlinks when skill_prefix=true
-  test('creates gstack-* symlinks when skill_prefix=true', () => {
+  test('creates paysec-* symlinks when skill_prefix=true', () => {
     setupMockInstall(['qa', 'ship', 'review']);
     // Set config to prefix mode (pass install/skills env so auto-relink uses mock install)
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     // Run relink with env pointing to the mock install
-    const output = run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    const output = run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    // Verify gstack-* symlinks exist
-    expect(fs.existsSync(path.join(skillsDir, 'gstack-qa'))).toBe(true);
-    expect(fs.existsSync(path.join(skillsDir, 'gstack-ship'))).toBe(true);
-    expect(fs.existsSync(path.join(skillsDir, 'gstack-review'))).toBe(true);
-    expect(output).toContain('gstack-');
+    // Verify paysec-* symlinks exist
+    expect(fs.existsSync(path.join(skillsDir, 'paysec-qa-fix'))).toBe(true);
+    expect(fs.existsSync(path.join(skillsDir, 'paysec-ship-pr'))).toBe(true);
+    expect(fs.existsSync(path.join(skillsDir, 'paysec-pr-review'))).toBe(true);
+    expect(output).toContain('paysec-');
   });
 
   // Test 12: flat symlinks when skill_prefix=false
   test('creates flat symlinks when skill_prefix=false', () => {
     setupMockInstall(['qa', 'ship', 'review']);
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    const output = run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    const output = run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     expect(fs.existsSync(path.join(skillsDir, 'qa'))).toBe(true);
     expect(fs.existsSync(path.join(skillsDir, 'ship'))).toBe(true);
@@ -123,19 +123,19 @@ describe('gstack-relink (#578)', () => {
 
   // REGRESSION: unprefixed skills must be real directories, not symlinks (#761)
   // Claude Code auto-prefixes skills nested under a parent dir symlink.
-  // e.g., `qa -> gstack/qa` gets discovered as "gstack-qa", not "qa".
+  // e.g., `qa -> paysec/qa` gets discovered as "paysec-qa-fix", not "qa".
   // The fix: create real directories with SKILL.md symlinks inside.
   test('unprefixed skills are real directories with SKILL.md symlinks, not dir symlinks', () => {
-    setupMockInstall(['qa', 'ship', 'review', 'plan-ceo-review']);
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    setupMockInstall(['qa', 'ship', 'review', 'plan-business-review']);
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    for (const skill of ['qa', 'ship', 'review', 'plan-ceo-review']) {
+    for (const skill of ['qa', 'ship', 'review', 'plan-business-review']) {
       const skillPath = path.join(skillsDir, skill);
       const skillMdPath = path.join(skillPath, 'SKILL.md');
       // Must be a real directory, NOT a symlink
@@ -154,15 +154,15 @@ describe('gstack-relink (#578)', () => {
   // Same invariant for prefixed mode
   test('prefixed skills are real directories with SKILL.md symlinks, not dir symlinks', () => {
     setupMockInstall(['qa', 'ship']);
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    for (const skill of ['gstack-qa', 'gstack-ship']) {
+    for (const skill of ['paysec-qa-fix', 'paysec-ship-pr']) {
       const skillPath = path.join(skillsDir, skill);
       const skillMdPath = path.join(skillPath, 'SKILL.md');
       expect(fs.lstatSync(skillPath).isDirectory()).toBe(true);
@@ -180,79 +180,79 @@ describe('gstack-relink (#578)', () => {
     // Verify they start as symlinks
     expect(fs.lstatSync(path.join(skillsDir, 'qa')).isSymbolicLink()).toBe(true);
 
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
 
     // After relink: must be real directories, not symlinks
     expect(fs.lstatSync(path.join(skillsDir, 'qa')).isSymbolicLink()).toBe(false);
     expect(fs.lstatSync(path.join(skillsDir, 'qa')).isDirectory()).toBe(true);
-    expect(fs.lstatSync(path.join(skillsDir, 'qa', 'SKILL.md')).isSymbolicLink()).toBe(true);
+    expect(fs.lstatSync(path.join(skillsDir, 'qa-fix', 'SKILL.md')).isSymbolicLink()).toBe(true);
   });
 
-  test('creates a thin root alias wrapper for the /gstack slash command', () => {
+  test('creates a thin root alias wrapper for the /paysec slash command', () => {
     setupMockInstall(['qa']);
     fs.writeFileSync(
       path.join(installDir, 'SKILL.md'),
-      '---\nname: gstack\ndescription: root\n---\n# gstack',
+      '---\nname: paysec\ndescription: root\n---\n# paysec',
     );
 
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
 
-    const aliasDir = path.join(skillsDir, '_gstack-command');
+    const aliasDir = path.join(skillsDir, '_paysec-command');
     const aliasSkill = path.join(aliasDir, 'SKILL.md');
     expect(fs.lstatSync(aliasDir).isDirectory()).toBe(true);
     expect(fs.lstatSync(aliasDir).isSymbolicLink()).toBe(false);
     // #2511: the alias is a rewritten COPY, never a symlink. A symlinked
-    // alias re-serves the canonical `name: gstack`; Claude Code refuses
+    // alias re-serves the canonical `name: paysec`; Claude Code refuses
     // duplicate skill names and drops the entire personal-skills set.
     expect(fs.lstatSync(aliasSkill).isSymbolicLink()).toBe(false);
     const aliasContent = fs.readFileSync(aliasSkill, 'utf-8');
-    expect(aliasContent).toContain('name: _gstack-command');
-    expect(aliasContent).not.toContain('name: gstack\n');
+    expect(aliasContent).toContain('name: _paysec-command');
+    expect(aliasContent).not.toContain('name: paysec\n');
     // The rewrite happened on the COPY: the canonical source keeps its name.
-    expect(fs.readFileSync(path.join(installDir, 'SKILL.md'), 'utf-8')).toContain('name: gstack');
+    expect(fs.readFileSync(path.join(installDir, 'SKILL.md'), 'utf-8')).toContain('name: paysec');
 
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     expect(fs.existsSync(aliasSkill)).toBe(true);
   });
 
-  // #2201: connect-chrome ships as a dir SYMLINK to open-gstack-browser. The
+  // #2201: connect-chrome ships as a dir SYMLINK to open-paysec-browser. The
   // discovery loop used to link it under its own basename while its SKILL.md
-  // carried `name: open-gstack-browser` — a duplicate name that silently
+  // carried `name: open-paysec-browser` — a duplicate name that silently
   // shadows the real skill (readdir-order roulette). Symlinked source dirs
   // must be skipped; setup owns the rewritten-copy alias.
   test('symlinked skill dirs are skipped, so no duplicate frontmatter names (#2201)', () => {
-    setupMockInstall(['open-gstack-browser', 'qa']);
+    setupMockInstall(['open-paysec-browser', 'qa']);
     fs.symlinkSync(
-      path.join(installDir, 'open-gstack-browser'),
+      path.join(installDir, 'open-paysec-browser'),
       path.join(installDir, 'connect-chrome'),
     );
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
 
-    expect(fs.existsSync(path.join(skillsDir, 'open-gstack-browser'))).toBe(true);
+    expect(fs.existsSync(path.join(skillsDir, 'open-paysec-browser'))).toBe(true);
     expect(fs.existsSync(path.join(skillsDir, 'connect-chrome'))).toBe(false);
 
     // No two installed SKILL.md files may share a frontmatter name.
@@ -266,10 +266,10 @@ describe('gstack-relink (#578)', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  // #2569: rendered :user variants live in ${GSTACK_HOME}/render/claude.
+  // #2569: rendered :user variants live in ${PAYSEC_HOME}/render/claude.
   // relink must serve the render when present — otherwise any config change
   // silently flips every skill back to the canonical (blockless) source.
-  test('prefers a rendered SKILL.md from GSTACK_HOME/render/claude (#2569)', () => {
+  test('prefers a rendered SKILL.md from PAYSEC_HOME/render/claude (#2569)', () => {
     setupMockInstall(['qa', 'ship']);
     const renderDir = path.join(tmpDir, 'render', 'claude', 'qa');
     fs.mkdirSync(renderDir, { recursive: true });
@@ -278,65 +278,65 @@ describe('gstack-relink (#578)', () => {
       '---\nname: qa\ndescription: test\n---\nrendered brain-aware qa',
     );
 
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
-      GSTACK_HOME: tmpDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
+      PAYSEC_HOME: tmpDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
-      GSTACK_HOME: tmpDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
+      PAYSEC_HOME: tmpDir,
     });
 
-    const qaLink = path.join(skillsDir, 'qa', 'SKILL.md');
+    const qaLink = path.join(skillsDir, 'qa-fix', 'SKILL.md');
     expect(fs.readlinkSync(qaLink)).toBe(path.join(renderDir, 'SKILL.md'));
     expect(fs.readFileSync(qaLink, 'utf-8')).toContain('rendered brain-aware qa');
     // ship has no render — canonical source link.
-    expect(fs.readlinkSync(path.join(skillsDir, 'ship', 'SKILL.md'))).toBe(
-      path.join(installDir, 'ship', 'SKILL.md'),
+    expect(fs.readlinkSync(path.join(skillsDir, 'ship-pr', 'SKILL.md'))).toBe(
+      path.join(installDir, 'ship-pr', 'SKILL.md'),
     );
   });
 
-  // FIRST INSTALL: --no-prefix must create ONLY flat names, zero gstack-* pollution
-  test('first install --no-prefix: only flat names exist, zero gstack-* entries', () => {
-    setupMockInstall(['qa', 'ship', 'review', 'plan-ceo-review', 'gstack-upgrade']);
+  // FIRST INSTALL: --no-prefix must create ONLY flat names, zero paysec-* pollution
+  test('first install --no-prefix: only flat names exist, zero paysec-* entries', () => {
+    setupMockInstall(['qa', 'ship', 'review', 'plan-business-review', 'paysec-upgrade']);
     // Simulate first install: no saved config, pass --no-prefix equivalent
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     // Enumerate everything in skills dir
     const entries = fs.readdirSync(skillsDir);
-    // Expected: qa, ship, review, plan-ceo-review, gstack-upgrade (its real name)
-    expect(entries.sort()).toEqual(['gstack-upgrade', 'plan-ceo-review', 'qa', 'review', 'ship']);
-    // No gstack-qa, gstack-ship, gstack-review, gstack-plan-ceo-review
-    const leaked = entries.filter(e => e.startsWith('gstack-') && e !== 'gstack-upgrade');
+    // Expected: qa, ship, review, plan-business-review, paysec-upgrade (its real name)
+    expect(entries.sort()).toEqual(['paysec-upgrade', 'plan-business-review', 'qa', 'review', 'ship']);
+    // No paysec-qa-fix, paysec-ship-pr, paysec-pr-review, paysec-plan-business-review
+    const leaked = entries.filter(e => e.startsWith('paysec-') && e !== 'paysec-upgrade');
     expect(leaked).toEqual([]);
   });
 
-  // FIRST INSTALL: --prefix must create ONLY gstack-* names, zero flat-name pollution
-  test('first install --prefix: only gstack-* entries exist, zero flat names', () => {
-    setupMockInstall(['qa', 'ship', 'review', 'plan-ceo-review', 'gstack-upgrade']);
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+  // FIRST INSTALL: --prefix must create ONLY paysec-* names, zero flat-name pollution
+  test('first install --prefix: only paysec-* entries exist, zero flat names', () => {
+    setupMockInstall(['qa', 'ship', 'review', 'plan-business-review', 'paysec-upgrade']);
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     const entries = fs.readdirSync(skillsDir);
-    // Expected: gstack-qa, gstack-ship, gstack-review, gstack-plan-ceo-review, gstack-upgrade
+    // Expected: paysec-qa-fix, paysec-ship-pr, paysec-pr-review, paysec-plan-business-review, paysec-upgrade
     expect(entries.sort()).toEqual([
-      'gstack-plan-ceo-review', 'gstack-qa', 'gstack-review', 'gstack-ship', 'gstack-upgrade',
+      'paysec-plan-business-review', 'paysec-qa-fix', 'paysec-pr-review', 'paysec-ship-pr', 'paysec-upgrade',
     ]);
-    // No unprefixed qa, ship, review, plan-ceo-review
-    const leaked = entries.filter(e => !e.startsWith('gstack-'));
+    // No unprefixed qa, ship, review, plan-business-review
+    const leaked = entries.filter(e => !e.startsWith('paysec-'));
     expect(leaked).toEqual([]);
   });
 
@@ -344,77 +344,77 @@ describe('gstack-relink (#578)', () => {
   test('non-TTY first install defaults to flat names via relink', () => {
     setupMockInstall(['qa', 'ship']);
     // Don't set any config — simulate fresh install
-    // gstack-relink reads config; on fresh install config returns empty → defaults to false
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    // paysec-relink reads config; on fresh install config returns empty → defaults to false
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     const entries = fs.readdirSync(skillsDir);
     // Should be flat names (relink defaults to false when config returns empty)
     expect(entries.sort()).toEqual(['qa', 'ship']);
   });
 
-  // SWITCH: prefix → no-prefix must clean up ALL gstack-* entries
-  test('switching prefix to no-prefix removes all gstack-* entries completely', () => {
-    setupMockInstall(['qa', 'ship', 'review', 'plan-ceo-review', 'gstack-upgrade']);
+  // SWITCH: prefix → no-prefix must clean up ALL paysec-* entries
+  test('switching prefix to no-prefix removes all paysec-* entries completely', () => {
+    setupMockInstall(['qa', 'ship', 'review', 'plan-business-review', 'paysec-upgrade']);
     // Start in prefix mode
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     let entries = fs.readdirSync(skillsDir);
-    expect(entries.filter(e => !e.startsWith('gstack-'))).toEqual([]);
+    expect(entries.filter(e => !e.startsWith('paysec-'))).toEqual([]);
 
     // Switch to no-prefix
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     entries = fs.readdirSync(skillsDir);
-    // Only flat names + gstack-upgrade (its real name)
-    expect(entries.sort()).toEqual(['gstack-upgrade', 'plan-ceo-review', 'qa', 'review', 'ship']);
-    const leaked = entries.filter(e => e.startsWith('gstack-') && e !== 'gstack-upgrade');
+    // Only flat names + paysec-upgrade (its real name)
+    expect(entries.sort()).toEqual(['paysec-upgrade', 'plan-business-review', 'qa', 'review', 'ship']);
+    const leaked = entries.filter(e => e.startsWith('paysec-') && e !== 'paysec-upgrade');
     expect(leaked).toEqual([]);
   });
 
   // SWITCH: no-prefix → prefix must clean up ALL flat entries
   test('switching no-prefix to prefix removes all flat entries completely', () => {
-    setupMockInstall(['qa', 'ship', 'review', 'gstack-upgrade']);
+    setupMockInstall(['qa', 'ship', 'review', 'paysec-upgrade']);
     // Start in no-prefix mode
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     let entries = fs.readdirSync(skillsDir);
-    expect(entries.filter(e => e.startsWith('gstack-') && e !== 'gstack-upgrade')).toEqual([]);
+    expect(entries.filter(e => e.startsWith('paysec-') && e !== 'paysec-upgrade')).toEqual([]);
 
     // Switch to prefix
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     entries = fs.readdirSync(skillsDir);
-    // Only gstack-* names
+    // Only paysec-* names
     expect(entries.sort()).toEqual([
-      'gstack-qa', 'gstack-review', 'gstack-ship', 'gstack-upgrade',
+      'paysec-qa-fix', 'paysec-pr-review', 'paysec-ship-pr', 'paysec-upgrade',
     ]);
-    const leaked = entries.filter(e => !e.startsWith('gstack-'));
+    const leaked = entries.filter(e => !e.startsWith('paysec-'));
     expect(leaked).toEqual([]);
   });
 
@@ -422,74 +422,74 @@ describe('gstack-relink (#578)', () => {
   test('cleans up stale symlinks from opposite mode', () => {
     setupMockInstall(['qa', 'ship']);
     // Create prefixed symlinks first
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    expect(fs.existsSync(path.join(skillsDir, 'gstack-qa'))).toBe(true);
+    expect(fs.existsSync(path.join(skillsDir, 'paysec-qa-fix'))).toBe(true);
 
     // Switch to flat mode
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
 
     // Flat symlinks should exist, prefixed should be gone
     expect(fs.existsSync(path.join(skillsDir, 'qa'))).toBe(true);
-    expect(fs.existsSync(path.join(skillsDir, 'gstack-qa'))).toBe(false);
+    expect(fs.existsSync(path.join(skillsDir, 'paysec-qa-fix'))).toBe(false);
   });
 
   // Test 14: error when install dir missing
   test('prints error when install dir missing', () => {
-    const output = run(`${BIN}/gstack-relink`, {
-      GSTACK_INSTALL_DIR: '/nonexistent/path/gstack',
-      GSTACK_SKILLS_DIR: '/nonexistent/path/skills',
+    const output = run(`${BIN}/paysec-relink`, {
+      PAYSEC_INSTALL_DIR: '/nonexistent/path/paysec',
+      PAYSEC_SKILLS_DIR: '/nonexistent/path/skills',
     }, true);
     expect(output).toContain('setup');
   });
 
-  // Test: gstack-upgrade does NOT get double-prefixed
-  test('does not double-prefix gstack-upgrade directory', () => {
-    setupMockInstall(['qa', 'ship', 'gstack-upgrade']);
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+  // Test: paysec-upgrade does NOT get double-prefixed
+  test('does not double-prefix paysec-upgrade directory', () => {
+    setupMockInstall(['qa', 'ship', 'paysec-upgrade']);
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    // gstack-upgrade should keep its name, NOT become gstack-gstack-upgrade
-    expect(fs.existsSync(path.join(skillsDir, 'gstack-upgrade'))).toBe(true);
-    expect(fs.existsSync(path.join(skillsDir, 'gstack-gstack-upgrade'))).toBe(false);
+    // paysec-upgrade should keep its name, NOT become paysec-paysec-upgrade
+    expect(fs.existsSync(path.join(skillsDir, 'paysec-upgrade'))).toBe(true);
+    expect(fs.existsSync(path.join(skillsDir, 'paysec-paysec-upgrade'))).toBe(false);
     // Regular skills still get prefixed
-    expect(fs.existsSync(path.join(skillsDir, 'gstack-qa'))).toBe(true);
+    expect(fs.existsSync(path.join(skillsDir, 'paysec-qa-fix'))).toBe(true);
   });
 
-  // Test 15: gstack-config set skill_prefix triggers relink
-  test('gstack-config set skill_prefix triggers relink', () => {
+  // Test 15: paysec-config set skill_prefix triggers relink
+  test('paysec-config set skill_prefix triggers relink', () => {
     setupMockInstall(['qa', 'ship']);
-    // Run gstack-config set which should auto-trigger relink
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    // Run paysec-config set which should auto-trigger relink
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     // If relink was triggered, symlinks should exist
-    expect(fs.existsSync(path.join(skillsDir, 'gstack-qa'))).toBe(true);
-    expect(fs.existsSync(path.join(skillsDir, 'gstack-ship'))).toBe(true);
+    expect(fs.existsSync(path.join(skillsDir, 'paysec-qa-fix'))).toBe(true);
+    expect(fs.existsSync(path.join(skillsDir, 'paysec-ship-pr'))).toBe(true);
   });
 });
 
 describe('upgrade migrations', () => {
-  const MIGRATIONS_DIR = path.join(ROOT, 'gstack-upgrade', 'migrations');
+  const MIGRATIONS_DIR = path.join(ROOT, 'paysec-upgrade', 'migrations');
 
   test('migrations directory exists', () => {
     expect(fs.existsSync(MIGRATIONS_DIR)).toBe(true);
@@ -516,9 +516,9 @@ describe('upgrade migrations', () => {
     }
   });
 
-  test('v0.15.2.0 migration runs gstack-relink', () => {
+  test('v0.15.2.0 migration runs paysec-relink', () => {
     const content = fs.readFileSync(path.join(MIGRATIONS_DIR, 'v0.15.2.0.sh'), 'utf-8');
-    expect(content).toContain('gstack-relink');
+    expect(content).toContain('paysec-relink');
   });
 
   test('v0.15.2.0 migration fixes stale directory symlinks', () => {
@@ -528,16 +528,16 @@ describe('upgrade migrations', () => {
     fs.symlinkSync(path.join(installDir, 'ship'), path.join(skillsDir, 'ship'));
     fs.symlinkSync(path.join(installDir, 'review'), path.join(skillsDir, 'review'));
     // Set no-prefix mode (suppress auto-relink so symlinks stay intact for the test)
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_SETUP_RUNNING: '1',
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_SETUP_RUNNING: '1',
     });
     // Verify old state: symlinks
     expect(fs.lstatSync(path.join(skillsDir, 'qa')).isSymbolicLink()).toBe(true);
 
-    // Run the migration (it calls gstack-relink internally)
+    // Run the migration (it calls paysec-relink internally)
     run(`bash ${path.join(MIGRATIONS_DIR, 'v0.15.2.0.sh')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
 
     // After migration: real directories with SKILL.md symlinks
@@ -550,7 +550,7 @@ describe('upgrade migrations', () => {
   });
 });
 
-describe('gstack-patch-names (#620/#578)', () => {
+describe('paysec-patch-names (#620/#578)', () => {
   // Helper to read name: from SKILL.md frontmatter
   function readSkillName(skillDir: string): string | null {
     const content = fs.readFileSync(path.join(skillDir, 'SKILL.md'), 'utf-8');
@@ -560,77 +560,77 @@ describe('gstack-patch-names (#620/#578)', () => {
 
   test('prefix=true patches name: field in SKILL.md', () => {
     setupMockInstall(['qa', 'ship', 'review']);
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    // Verify name: field is patched with gstack- prefix
-    expect(readSkillName(path.join(installDir, 'qa'))).toBe('gstack-qa');
-    expect(readSkillName(path.join(installDir, 'ship'))).toBe('gstack-ship');
-    expect(readSkillName(path.join(installDir, 'review'))).toBe('gstack-review');
+    // Verify name: field is patched with paysec- prefix
+    expect(readSkillName(path.join(installDir, 'qa'))).toBe('paysec-qa-fix');
+    expect(readSkillName(path.join(installDir, 'ship'))).toBe('paysec-ship-pr');
+    expect(readSkillName(path.join(installDir, 'review'))).toBe('paysec-pr-review');
   });
 
   test('prefix=false restores name: field in SKILL.md', () => {
     setupMockInstall(['qa', 'ship']);
     // First, prefix them
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    expect(readSkillName(path.join(installDir, 'qa'))).toBe('gstack-qa');
+    expect(readSkillName(path.join(installDir, 'qa'))).toBe('paysec-qa-fix');
     // Now switch to flat mode
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix false`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix false`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     // Verify name: field is restored to unprefixed
     expect(readSkillName(path.join(installDir, 'qa'))).toBe('qa');
     expect(readSkillName(path.join(installDir, 'ship'))).toBe('ship');
   });
 
-  test('gstack-upgrade name: not double-prefixed', () => {
-    setupMockInstall(['qa', 'gstack-upgrade']);
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+  test('paysec-upgrade name: not double-prefixed', () => {
+    setupMockInstall(['qa', 'paysec-upgrade']);
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
-    // gstack-upgrade should keep its name, NOT become gstack-gstack-upgrade
-    expect(readSkillName(path.join(installDir, 'gstack-upgrade'))).toBe('gstack-upgrade');
+    // paysec-upgrade should keep its name, NOT become paysec-paysec-upgrade
+    expect(readSkillName(path.join(installDir, 'paysec-upgrade'))).toBe('paysec-upgrade');
     // Regular skill should be prefixed
-    expect(readSkillName(path.join(installDir, 'qa'))).toBe('gstack-qa');
+    expect(readSkillName(path.join(installDir, 'qa'))).toBe('paysec-qa-fix');
   });
 
   test('SKILL.md without frontmatter is a no-op', () => {
     setupMockInstall(['qa']);
     // Overwrite qa SKILL.md with no frontmatter
-    fs.writeFileSync(path.join(installDir, 'qa', 'SKILL.md'), '# qa\nSome content.');
-    run(`${path.join(installDir, 'bin', 'gstack-config')} set skill_prefix true`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    fs.writeFileSync(path.join(installDir, 'qa-fix', 'SKILL.md'), '# qa\nSome content.');
+    run(`${path.join(installDir, 'bin', 'paysec-config')} set skill_prefix true`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     // Should not crash
-    run(`${path.join(installDir, 'bin', 'gstack-relink')}`, {
-      GSTACK_INSTALL_DIR: installDir,
-      GSTACK_SKILLS_DIR: skillsDir,
+    run(`${path.join(installDir, 'bin', 'paysec-relink')}`, {
+      PAYSEC_INSTALL_DIR: installDir,
+      PAYSEC_SKILLS_DIR: skillsDir,
     });
     // Content should be unchanged (no name: to patch)
-    const content = fs.readFileSync(path.join(installDir, 'qa', 'SKILL.md'), 'utf-8');
+    const content = fs.readFileSync(path.join(installDir, 'qa-fix', 'SKILL.md'), 'utf-8');
     expect(content).toBe('# qa\nSome content.');
   });
 });

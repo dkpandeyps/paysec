@@ -14,9 +14,9 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { BrowserManager } from '../../browse/src/browser-manager';
-import { handleReadCommand } from '../../browse/src/read-commands';
-import { handleWriteCommand } from '../../browse/src/write-commands';
+import { BrowserManager } from '../../browser/src/browser-manager';
+import { handleReadCommand } from '../../browser/src/read-commands';
+import { handleWriteCommand } from '../../browser/src/write-commands';
 import { generateCompareHtml } from '../src/compare';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -24,7 +24,7 @@ import * as path from 'path';
 let bm: BrowserManager;
 
 // The command handlers take (command, args, session: TabSession, bm) — mirror
-// the real call sites (browse/src/cli.ts, browse/test/commands.test.ts) by
+// the real call sites (browser/src/cli.ts, browser/test/commands.test.ts) by
 // resolving the active TabSession from the manager on every call. Passing the
 // manager itself where a session is expected breaks as soon as a handler uses
 // a session method the manager doesn't delegate (e.g. clearLoadedHtml).
@@ -210,11 +210,11 @@ describe('Submit: browser click → feedback.json on disk', () => {
     ]);
     expect(successVisible).toBe('block');
 
-    // Success message should mention /design-shotgun
+    // Success message should mention /design-variants
     const successText = await readCmd('js', [
       'document.getElementById("success-msg").textContent'
     ]);
-    expect(successText).toContain('design-shotgun');
+    expect(successText).toContain('design-variants');
   });
 });
 

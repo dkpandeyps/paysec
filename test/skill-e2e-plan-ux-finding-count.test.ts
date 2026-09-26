@@ -1,7 +1,7 @@
 /**
- * /plan-design-review per-finding AskUserQuestion count (periodic, paid, real-PTY).
+ * /plan-ux-review per-finding AskUserQuestion count (periodic, paid, real-PTY).
  *
- * Same shape as skill-e2e-plan-ceo-finding-count: drives /plan-design-review
+ * Same shape as skill-e2e-plan-business-finding-count: drives /plan-ux-review
  * against a 5-finding seeded plan and asserts review-phase AUQ count ∈ [N-1, N+2].
  * Plus D19: review report at bottom of produced plan file.
  *
@@ -24,7 +24,7 @@ const FLOOR = N - 1;
 const CEILING = N + 2;
 
 const PLAN_DESIGN_5_FINDINGS = [
-  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/gstack-test-plan-design.md (use Edit/Write to that exact path).',
+  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/paysec-test-plan-design.md (use Edit/Write to that exact path).',
   '',
   '# Plan: Settings Page UI redesign',
   '',
@@ -50,9 +50,9 @@ const PLAN_DESIGN_5_FINDINGS = [
   'see a frozen page; we should add a spinner or skeleton state.',
 ].join('\n');
 
-const PLAN_DESIGN_PATH = '/tmp/gstack-test-plan-design.md';
+const PLAN_DESIGN_PATH = '/tmp/paysec-test-plan-design.md';
 
-describeE2E('/plan-design-review per-finding AskUserQuestion count (periodic)', () => {
+describeE2E('/plan-ux-review per-finding AskUserQuestion count (periodic)', () => {
   test(
     `5-finding plan emits ${FLOOR}-${CEILING} review-phase AskUserQuestions`,
     async () => {
@@ -63,8 +63,8 @@ describeE2E('/plan-design-review per-finding AskUserQuestion count (periodic)', 
       }
 
       const obs = await runPlanSkillCounting({
-        skillName: 'plan-design-review',
-        slashCommand: '/plan-design-review',
+        skillName: 'plan-ux-review',
+        slashCommand: '/plan-ux-review',
         followUpPrompt: PLAN_DESIGN_5_FINDINGS,
         isLastStep0AUQ: designStep0Boundary,
         reviewCountCeiling: CEILING + 1,
@@ -76,7 +76,7 @@ describeE2E('/plan-design-review per-finding AskUserQuestion count (periodic)', 
       try {
         if (!['plan_ready', 'completion_summary', 'ceiling_reached'].includes(obs.outcome)) {
           throw new Error(
-            `plan-design-review finding-count FAILED: outcome=${obs.outcome}\n` +
+            `plan-ux-review finding-count FAILED: outcome=${obs.outcome}\n` +
               `step0=${obs.step0Count} review=${obs.reviewCount} elapsed=${obs.elapsedMs}ms\n` +
               `fingerprints (last 8):\n` +
               obs.fingerprints

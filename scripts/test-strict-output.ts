@@ -277,7 +277,7 @@ export function strictTestExitCode(
 /**
  * Bun treats positional test paths as substring filters. Resolve every
  * canonical relative path before spawning so `test/foo.test.ts` cannot also
- * select `browse/test/foo.test.ts`.
+ * select `browser/test/foo.test.ts`.
  */
 export function exactTestFileSelectors(files: string[], rootDir = ROOT): string[] {
   return files.map((file) => path.isAbsolute(file) ? path.normalize(file) : path.resolve(rootDir, file));

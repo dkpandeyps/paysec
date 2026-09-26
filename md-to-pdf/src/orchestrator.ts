@@ -125,7 +125,7 @@ export async function generate(opts: GenerateOptions): Promise<string> {
   // The bundle tab is lazy: image-only documents open it only when a raster
   // actually needs print-resolution downscaling (eng-review D4).
   const warn = (msg: string) => {
-    if (!opts.quiet) process.stderr.write(`\r\x1b[K[make-pdf] warning: ${msg}\n`);
+    if (!opts.quiet) process.stderr.write(`\r\x1b[K[md-to-pdf] warning: ${msg}\n`);
   };
   let renderTab: RenderTab | null = null;
   let hasLandscape = false;
@@ -335,7 +335,7 @@ export async function preview(opts: PreviewOptions): Promise<string> {
     const hasLocalImages = /!\[[^\]]*\]\((?!https?:|data:)[^)]+\)/.test(markdown);
     if (fenceCount > 0 || hasLocalImages) {
       process.stderr.write(
-        `[make-pdf] preview note: ${fenceCount > 0 ? `${fenceCount} diagram fence(s) shown as code` : ""}` +
+        `[md-to-pdf] preview note: ${fenceCount > 0 ? `${fenceCount} diagram fence(s) shown as code` : ""}` +
         `${fenceCount > 0 && hasLocalImages ? "; " : ""}` +
         `${hasLocalImages ? "local images may not resolve from the preview location" : ""}` +
         ` — \`generate\` renders them fully.\n`,

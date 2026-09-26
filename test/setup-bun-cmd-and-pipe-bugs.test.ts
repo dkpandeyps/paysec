@@ -48,7 +48,7 @@ describe('setup: gen:skill-docs:user exit-code propagation (pipe-masking fix)', 
   test('setup: the live gbrain render block has no pipe masking its exit code', () => {
     // Slice the exact block from setup and confirm the fix is in place
     // without resorting to a fragile line-number check. (#2569 renamed the
-    // block from "regenerating" to "rendering ... into $_GSTACK_RENDER_DIR" —
+    // block from "regenerating" to "rendering ... into $_PAYSEC_RENDER_DIR" —
     // the exit-code-propagation invariant is unchanged.)
     const start = SETUP_SRC.indexOf('gbrain detected — rendering');
     expect(start).toBeGreaterThan(-1);
@@ -70,7 +70,7 @@ describe('setup: bun_cmd routing in link_*_skill_dirs (Windows non-ASCII path fi
   // writes a marker file, and proving the wrapper path actually invokes it.
 
   test('bun_cmd wrapper invokes $BUN_CMD (not literal bun on PATH)', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-buncmd-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-buncmd-'));
     const marker = path.join(tmp, 'invoked');
     const sentinel = path.join(tmp, 'fake-bun');
     fs.writeFileSync(sentinel, `#!/usr/bin/env bash\necho "ARGS:$*" > "${marker}"\n`);

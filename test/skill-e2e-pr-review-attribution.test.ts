@@ -49,7 +49,7 @@ describeIfSelected('Base branch detection', ['review-base-branch', 'ship-base-br
 
     // Extract only Step 0 (base branch detection) + minimal review instructions
     // Full SKILL.md is ~1500 lines — copying it causes the agent to spend all turns reading
-    const full = fs.readFileSync(path.join(ROOT, 'review', 'SKILL.md'), 'utf-8');
+    const full = fs.readFileSync(path.join(ROOT, 'pr-review', 'SKILL.md'), 'utf-8');
     const step0Start = full.indexOf('## Step 0: Detect platform and base branch');
     const step1Start = full.indexOf('## Step 1: Check branch');
     const step1End = full.indexOf('---', step1Start + 10);
@@ -70,8 +70,8 @@ Write your findings to ${dir}/review-output.md`,
       runId,
     });
 
-    logCost('/review base-branch', result);
-    recordE2E(evalCollector, '/review base branch detection', 'Base branch detection', result);
+    logCost('/pr-review base-branch', result);
+    recordE2E(evalCollector, '/pr-review base branch detection', 'Base branch detection', result);
     expect(result.exitReason).toBe('success');
 
     // Verify the review used "base branch" language (from Step 0)
@@ -104,9 +104,9 @@ Write your findings to ${dir}/review-output.md`,
     run('git', ['add', 'app.ts'], dir);
     run('git', ['commit', '-m', 'feat: update to v2'], dir);
 
-    // Extract only Step 0 (base branch detection) from ship/SKILL.md
+    // Extract only Step 0 (base branch detection) from ship-pr/SKILL.md
     // (copying the full 1900-line file causes agent context bloat and flaky timeouts)
-    const fullShipSkill = fs.readFileSync(path.join(ROOT, 'ship', 'SKILL.md'), 'utf-8');
+    const fullShipSkill = fs.readFileSync(path.join(ROOT, 'ship-pr', 'SKILL.md'), 'utf-8');
     const step0Start = fullShipSkill.indexOf('## Step 0: Detect platform and base branch');
     const step0End = fullShipSkill.indexOf('## Step 1: Pre-flight');
     const shipSection = fullShipSkill.slice(step0Start, step0End > step0Start ? step0End : undefined);
@@ -130,8 +130,8 @@ Write a summary to ${dir}/ship-preflight.md including:
       runId,
     });
 
-    logCost('/ship base-branch', result);
-    recordE2E(evalCollector, '/ship base branch detection', 'Base branch detection', result);
+    logCost('/ship-pr base-branch', result);
+    recordE2E(evalCollector, '/ship-pr base branch detection', 'Base branch detection', result);
     expect(result.exitReason).toBe('success');
 
     // Verify preflight output was written
@@ -187,19 +187,19 @@ describeIfSelected('Review Dashboard Via Attribution', ['review-dashboard-via'],
     const commit = headResult.stdout.toString().trim();
 
     // Pre-populate review log with autoplan-sourced entries
-    // gstack-review-read reads from ~/.gstack/projects/$SLUG/$BRANCH-reviews.jsonl
-    // For the test, we'll write a mock gstack-review-read script that returns our test data
+    // paysec-review-read reads from ~/.paysec/projects/$SLUG/$BRANCH-reviews.jsonl
+    // For the test, we'll write a mock paysec-review-read script that returns our test data
     const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
     const reviewData = [
-      `{"skill":"plan-eng-review","timestamp":"${timestamp}","status":"clean","unresolved":0,"critical_gaps":0,"issues_found":0,"mode":"FULL_REVIEW","via":"autoplan","commit":"${commit}"}`,
-      `{"skill":"plan-ceo-review","timestamp":"${timestamp}","status":"clean","unresolved":0,"critical_gaps":0,"mode":"SELECTIVE_EXPANSION","via":"autoplan","commit":"${commit}"}`,
+      `{"skill":"plan-tech-review","timestamp":"${timestamp}","status":"clean","unresolved":0,"critical_gaps":0,"issues_found":0,"mode":"FULL_REVIEW","via":"auto-plan-review","commit":"${commit}"}`,
+      `{"skill":"plan-business-review","timestamp":"${timestamp}","status":"clean","unresolved":0,"critical_gaps":0,"mode":"SELECTIVE_EXPANSION","via":"auto-plan-review","commit":"${commit}"}`,
       `{"skill":"codex-plan-review","timestamp":"${timestamp}","status":"clean","source":"codex","commit":"${commit}"}`,
     ].join('\n');
 
-    // Write a mock gstack-review-read that returns our test data
+    // Write a mock paysec-review-read that returns our test data
     const mockBinDir = path.join(dashDir, '.mock-bin');
     fs.mkdirSync(mockBinDir, { recursive: true });
-    fs.writeFileSync(path.join(mockBinDir, 'gstack-review-read'), [
+    fs.writeFileSync(path.join(mockBinDir, 'paysec-review-read'), [
       '#!/usr/bin/env bash',
       `echo '${reviewData.split('\n').join("'\necho '")}'`,
       'echo "---CONFIG---"',
@@ -207,11 +207,11 @@ describeIfSelected('Review Dashboard Via Attribution', ['review-dashboard-via'],
       'echo "---HEAD---"',
       `echo "${commit}"`,
     ].join('\n'));
-    fs.chmodSync(path.join(mockBinDir, 'gstack-review-read'), 0o755);
+    fs.chmodSync(path.join(mockBinDir, 'paysec-review-read'), 0o755);
 
-    // Extract only the Review Readiness Dashboard section from ship/SKILL.md
+    // Extract only the Review Readiness Dashboard section from ship-pr/SKILL.md
     // (copying the full 1900-line file causes agent context bloat and timeouts)
-    const fullSkill = fs.readFileSync(path.join(ROOT, 'ship', 'SKILL.md'), 'utf-8');
+    const fullSkill = fs.readFileSync(path.join(ROOT, 'ship-pr', 'SKILL.md'), 'utf-8');
     const dashStart = fullSkill.indexOf('## Review Readiness Dashboard');
     const dashEnd = fullSkill.indexOf('\n---\n', dashStart);
     const dashSection = fullSkill.slice(dashStart, dashEnd > dashStart ? dashEnd : undefined);
@@ -228,10 +228,10 @@ describeIfSelected('Review Dashboard Via Attribution', ['review-dashboard-via'],
     const result = await runSkillTest({
       prompt: `Read ship-SKILL.md. You only need to run the Review Readiness Dashboard section.
 
-Instead of running ~/.claude/skills/gstack/bin/gstack-review-read, run this mock: ${mockBinDir}/gstack-review-read
+Instead of running ~/.claude/skills/paysec/bin/paysec-review-read, run this mock: ${mockBinDir}/paysec-review-read
 
 Parse the output and display the dashboard table. Pay attention to:
-1. The "via" field in entries — show source attribution (e.g., "via /autoplan")
+1. The "via" field in entries — show source attribution (e.g., "via /auto-plan-review")
 2. The codex-plan-review entry — it should populate the Outside Voice row
 3. Since Eng Review IS clear, there should be NO gate blocking — just display the dashboard
 
@@ -251,8 +251,8 @@ Write the dashboard output to ${dashDir}/dashboard-output.md`,
       runId,
     });
 
-    logCost('/ship dashboard-via', result);
-    recordE2E(evalCollector, '/ship review dashboard via attribution', 'Dashboard via field', result);
+    logCost('/ship-pr dashboard-via', result);
+    recordE2E(evalCollector, '/ship-pr review dashboard via attribution', 'Dashboard via field', result);
     expect(result.exitReason).toBe('success');
 
     // Check dashboard output for via attribution
@@ -269,8 +269,8 @@ Write the dashboard output to ${dashDir}/dashboard-output.md`,
     }
     const combined = allOutput + dashContent;
 
-    // Should mention autoplan attribution
-    expect(combined).toMatch(/autoplan/);
+    // Should mention auto-plan-review attribution
+    expect(combined).toMatch(/auto-plan-review/);
     // Should show eng review as CLEAR (it has a clean entry)
     expect(combined).toMatch(/clear/i);
     // Should NOT contain AskUserQuestion gate (no blocking)

@@ -1,5 +1,5 @@
 /**
- * gstack browse — Side Panel
+ * paysec browse — Side Panel
  *
  * Terminal pane (default): live claude PTY via xterm.js, driven by
  * sidepanel-terminal.js.
@@ -104,7 +104,7 @@ document.getElementById('chat-cookies-btn').addEventListener('click', async () =
       body: JSON.stringify({ command: 'goto', args: [`${serverUrl}/cookie-picker`] }),
     });
   } catch (err) {
-    console.error('[gstack sidebar] Failed to open cookie picker:', err.message);
+    console.error('[paysec sidebar] Failed to open cookie picker:', err.message);
   }
 });
 
@@ -258,7 +258,7 @@ async function ensureSseSessionCookie() {
     });
     return resp.ok;
   } catch (err) {
-    console.warn('[gstack sidebar] Failed to mint SSE session cookie:', err && err.message);
+    console.warn('[paysec sidebar] Failed to mint SSE session cookie:', err && err.message);
     return false;
   }
 }
@@ -273,7 +273,7 @@ async function connectSSE() {
 
   eventSource.addEventListener('activity', (e) => {
     try { addEntry(JSON.parse(e.data)); } catch (err) {
-      console.error('[gstack sidebar] Failed to parse activity event:', err.message);
+      console.error('[paysec sidebar] Failed to parse activity event:', err.message);
     }
   });
 
@@ -286,7 +286,7 @@ async function connectSSE() {
       banner.textContent = `Missed ${data.availableFrom - data.gapFrom} events`;
       feed.appendChild(banner);
     } catch (err) {
-      console.error('[gstack sidebar] Failed to parse gap event:', err.message);
+      console.error('[paysec sidebar] Failed to parse gap event:', err.message);
     }
   });
 }
@@ -343,7 +343,7 @@ async function pollMemoryOnce() {
     // Evaluate guardrail triggers (single-heavy-tab OR tab-count crossing 200).
     // Toast is hidden when no trigger fires; snooze state suppresses re-fire.
     try { evaluateMemToast(snapshot); } catch (err) {
-      console.debug('[gstack sidebar] mem-toast evaluation failed:', err && err.message);
+      console.debug('[paysec sidebar] mem-toast evaluation failed:', err && err.message);
     }
     return { ok: true, slow: elapsed > MEM_POLL_SLOW_THRESHOLD_MS };
   } catch (err) {
@@ -352,7 +352,7 @@ async function pollMemoryOnce() {
     // sessions. Only log on the slow path so the user sees something in the
     // console if the diagnostic itself is misbehaving.
     if (elapsed > MEM_POLL_SLOW_THRESHOLD_MS) {
-      console.debug('[gstack sidebar] /memory poll slow/failed:', elapsed, 'ms', err && err.message);
+      console.debug('[paysec sidebar] /memory poll slow/failed:', elapsed, 'ms', err && err.message);
     }
     return { ok: false, slow: elapsed > MEM_POLL_SLOW_THRESHOLD_MS };
   }
@@ -418,7 +418,7 @@ async function loadSnoozeState() {
       memToastSnooze.heapAbove = stored.memToastSnooze.heapAbove | 0;
     }
   } catch (err) {
-    console.debug('[gstack sidebar] mem-toast snooze load failed:', err && err.message);
+    console.debug('[paysec sidebar] mem-toast snooze load failed:', err && err.message);
   }
 }
 
@@ -427,7 +427,7 @@ async function saveSnoozeState() {
   try {
     await chrome.storage.session.set({ memToastSnooze: { ...memToastSnooze } });
   } catch (err) {
-    console.debug('[gstack sidebar] mem-toast snooze save failed:', err && err.message);
+    console.debug('[paysec sidebar] mem-toast snooze save failed:', err && err.message);
   }
 }
 
@@ -498,7 +498,7 @@ function showMemToast(title, body, tabsForClose) {
           body: JSON.stringify({ command: 'closetab', args: [String(id)] }),
         });
       } catch (err) {
-        console.warn('[gstack sidebar] mem-toast closetab failed:', id, err && err.message);
+        console.warn('[paysec sidebar] mem-toast closetab failed:', id, err && err.message);
       }
     }
   };
@@ -564,7 +564,7 @@ function setupMemToastWiring() {
           await saveSnoozeState();
         }
       } catch (err) {
-        console.debug('[gstack sidebar] mem-toast snooze fetch failed:', err && err.message);
+        console.debug('[paysec sidebar] mem-toast snooze fetch failed:', err && err.message);
       }
       dismissMemToast();
     });
@@ -611,7 +611,7 @@ async function fetchRefs() {
     `).join('');
     footer.textContent = `${data.refs.length} refs`;
   } catch (err) {
-    console.error('[gstack sidebar] Failed to fetch refs:', err.message);
+    console.error('[paysec sidebar] Failed to fetch refs:', err.message);
   }
 }
 
@@ -996,10 +996,10 @@ inspectorSendBtn.addEventListener('click', async () => {
   // on the inspector data.
   //
   // Pre-scan via /pty-inject-scan before injection (D6, closes #1370).
-  // gstackScanForPTYInject is async; gstackInjectToTerminal stays sync.
-  const verdict = await window.gstackScanForPTYInject?.(message + '\n', 'inspector-send');
+  // paysecScanForPTYInject is async; paysecInjectToTerminal stays sync.
+  const verdict = await window.paysecScanForPTYInject?.(message + '\n', 'inspector-send');
   if (verdict?.verdict === 'BLOCK') {
-    console.warn('[gstack sidebar] Inspector send BLOCKED by /pty-inject-scan:', verdict.reasons);
+    console.warn('[paysec sidebar] Inspector send BLOCKED by /pty-inject-scan:', verdict.reasons);
     return;
   }
   if (verdict?.verdict === 'WARN') {
@@ -1008,9 +1008,9 @@ inspectorSendBtn.addEventListener('click', async () => {
     );
     if (!confirmed) return;
   }
-  const ok = window.gstackInjectToTerminal?.(message + '\n');
+  const ok = window.paysecInjectToTerminal?.(message + '\n');
   if (!ok) {
-    console.warn('[gstack sidebar] Inspector send needs an active Terminal session.');
+    console.warn('[paysec sidebar] Inspector send needs an active Terminal session.');
   }
 });
 
@@ -1036,10 +1036,10 @@ async function runCleanup(...buttons) {
   // The cleanup prompt is a STATIC template (no page-derived content), so
   // it will always PASS, but we still route it through the scan path so
   // the invariant test in test/extension-pty-inject-invariant.test.ts
-  // confirms every call site goes through gstackScanForPTYInject first.
-  const verdict = await window.gstackScanForPTYInject?.(cleanupPrompt + '\n', 'cleanup-button');
+  // confirms every call site goes through paysecScanForPTYInject first.
+  const verdict = await window.paysecScanForPTYInject?.(cleanupPrompt + '\n', 'cleanup-button');
   if (verdict?.verdict === 'BLOCK') {
-    console.warn('[gstack sidebar] Cleanup BLOCKED by /pty-inject-scan:', verdict.reasons);
+    console.warn('[paysec sidebar] Cleanup BLOCKED by /pty-inject-scan:', verdict.reasons);
     setTimeout(() => buttons.forEach(b => b?.classList.remove('loading')), 200);
     return;
   }
@@ -1052,9 +1052,9 @@ async function runCleanup(...buttons) {
       return;
     }
   }
-  const sent = window.gstackInjectToTerminal?.(cleanupPrompt + '\n');
+  const sent = window.paysecInjectToTerminal?.(cleanupPrompt + '\n');
   if (!sent) {
-    console.warn('[gstack sidebar] Cleanup needs an active Terminal session.');
+    console.warn('[paysec sidebar] Cleanup needs an active Terminal session.');
   }
   setTimeout(() => buttons.forEach(b => b?.classList.remove('loading')), 1200);
 }
@@ -1071,12 +1071,12 @@ async function runScreenshot(...buttons) {
     });
     const text = await resp.text();
     if (!resp.ok) {
-      console.warn('[gstack sidebar] Screenshot failed:', text);
+      console.warn('[paysec sidebar] Screenshot failed:', text);
     } else {
-      console.log('[gstack sidebar] Screenshot:', text);
+      console.log('[paysec sidebar] Screenshot:', text);
     }
   } catch (err) {
-    console.error('[gstack sidebar] Screenshot error:', err.message);
+    console.error('[paysec sidebar] Screenshot error:', err.message);
   } finally {
     buttons.forEach(b => b?.classList.remove('loading'));
   }
@@ -1128,7 +1128,7 @@ async function connectInspectorSSE() {
         const data = JSON.parse(e.data);
         inspectorShowData(data);
       } catch (err) {
-        console.error('[gstack sidebar] Failed to parse inspectResult:', err.message);
+        console.error('[paysec sidebar] Failed to parse inspectResult:', err.message);
       }
     });
 
@@ -1137,7 +1137,7 @@ async function connectInspectorSSE() {
       if (inspectorSSE) { inspectorSSE.close(); inspectorSSE = null; }
     });
   } catch (err) {
-    console.debug('[gstack sidebar] Inspector SSE not available:', err.message);
+    console.debug('[paysec sidebar] Inspector SSE not available:', err.message);
   }
 }
 
@@ -1159,11 +1159,11 @@ function updateConnection(url, token) {
   // the bootstrap token to POST /pty-session and the port to derive the WS
   // URL. We never expose the PTY token — it lives in an HttpOnly cookie.
   if (url) {
-    try { window.gstackServerPort = parseInt(new URL(url).port, 10); } catch {}
-    window.gstackAuthToken = token || null;
+    try { window.paysecServerPort = parseInt(new URL(url).port, 10); } catch {}
+    window.paysecAuthToken = token || null;
   } else {
-    window.gstackServerPort = null;
-    window.gstackAuthToken = null;
+    window.paysecServerPort = null;
+    window.paysecAuthToken = null;
   }
   if (url) {
     document.getElementById('footer-dot').className = 'dot connected';
@@ -1228,10 +1228,10 @@ document.getElementById('conn-reconnect').addEventListener('click', () => {
 });
 
 document.getElementById('conn-copy').addEventListener('click', () => {
-  navigator.clipboard.writeText('/open-gstack-browser').then(() => {
+  navigator.clipboard.writeText('/open-paysec-browser').then(() => {
     const btn = document.getElementById('conn-copy');
     btn.textContent = 'copied!';
-    setTimeout(() => { btn.textContent = '/open-gstack-browser'; }, 2000);
+    setTimeout(() => { btn.textContent = '/open-paysec-browser'; }, 2000);
   });
 });
 
@@ -1335,7 +1335,7 @@ async function tryConnect() {
   } catch (e) {
     setLoadingStatus(
       `Server not reachable on port ${port} (attempt ${connectAttempts})`,
-      `GET /health failed: ${e.message}\n\nThe browse server may still be starting.\nRun /open-gstack-browser in Claude Code.`
+      `GET /health failed: ${e.message}\n\nThe browse server may still be starting.\nRun /open-paysec-browser in Claude Code.`
     );
   }
 
@@ -1364,8 +1364,8 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
   // One-time v1.62 identity-pin notice from background.js. Transient banner —
   // no dedicated element in sidepanel.html since this fires once per install.
-  if (msg.type === 'gstack-migration-notice' && msg.message) {
-    console.log('[gstack sidebar]', msg.message);
+  if (msg.type === 'paysec-migration-notice' && msg.message) {
+    console.log('[paysec sidebar]', msg.message);
     try {
       const banner = document.createElement('div');
       banner.textContent = msg.message;
@@ -1376,7 +1376,7 @@ chrome.runtime.onMessage.addListener((msg) => {
       document.body.appendChild(banner);
       setTimeout(() => banner.remove(), 8000);
     } catch (err) {
-      console.debug('[gstack sidebar] migration banner failed:', err && err.message);
+      console.debug('[paysec sidebar] migration banner failed:', err && err.message);
     }
   }
   if (msg.type === 'inspectResult') {
@@ -1397,7 +1397,7 @@ chrome.runtime.onMessage.addListener((msg) => {
   // custom event so sidepanel-terminal.js can relay to terminal-agent.ts.
   // Result: claude's <stateDir>/tabs.json + active-tab.json stay live.
   if (msg.type === 'browserTabState') {
-    document.dispatchEvent(new CustomEvent('gstack:tab-state', {
+    document.dispatchEvent(new CustomEvent('paysec:tab-state', {
       detail: { active: msg.active, tabs: msg.tabs, reason: msg.reason },
     }));
   }
@@ -1424,9 +1424,9 @@ chrome.runtime.onMessage.addListener((msg) => {
 // /pty-dispose route accepts the auth token in the BODY (see
 // server-pty-lease-routes.test.ts test 4).
 window.addEventListener('pagehide', () => {
-  const sessionId = window.gstackPtySession;
-  const authToken = window.gstackAuthToken;
-  const port = window.gstackServerPort;
+  const sessionId = window.paysecPtySession;
+  const authToken = window.paysecAuthToken;
+  const port = window.paysecServerPort;
   if (!sessionId || !authToken || !port) return;
   try {
     const blob = new Blob([JSON.stringify({ sessionId, authToken })], {

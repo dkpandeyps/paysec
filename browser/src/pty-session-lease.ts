@@ -40,7 +40,7 @@ interface Lease {
 }
 
 const LEASE_TTL_MS = parseInt(
-  process.env.GSTACK_PTY_LEASE_TTL_MS || `${30 * 60 * 1000}`,
+  process.env.PAYSEC_PTY_LEASE_TTL_MS || `${30 * 60 * 1000}`,
   10,
 ); // 30 minutes default; covers idle-but-engaged user sessions
 const MAX_LEASES = 10_000;

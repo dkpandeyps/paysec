@@ -8,11 +8,11 @@
  *
  *   - the preamble epilogue        → "repo"
  *     (scripts/resolvers/preamble/generate-preamble-bash.ts)
- *   - gstack-telemetry-log         → "_repo_slug", "_branch"
- *     (bin/gstack-telemetry-log)
+ *   - paysec-telemetry-log         → "_repo_slug", "_branch"
+ *     (bin/paysec-telemetry-log)
  *
- * gstack-telemetry-sync MUST strip every one of those fields before the remote
- * POST (bin/gstack-telemetry-sync). The script has TWO strip paths — jq del()
+ * paysec-telemetry-sync MUST strip every one of those fields before the remote
+ * POST (bin/paysec-telemetry-sync). The script has TWO strip paths — jq del()
  * is PRIMARY (structural, escape-proof), sed is the jq-less fallback — and
  * this test enforces the contract on both:
  *
@@ -36,9 +36,9 @@ import fs from 'fs';
 import path from 'path';
 
 const ROOT = path.resolve(__dirname, '..');
-const SYNC = path.join(ROOT, 'bin', 'gstack-telemetry-sync');
+const SYNC = path.join(ROOT, 'bin', 'paysec-telemetry-sync');
 const PREAMBLE = path.join(ROOT, 'scripts', 'resolvers', 'preamble', 'generate-preamble-bash.ts');
-const TEL_LOG = path.join(ROOT, 'bin', 'gstack-telemetry-log');
+const TEL_LOG = path.join(ROOT, 'bin', 'paysec-telemetry-log');
 
 // Fields that identify the user's repo/branch. The promise is that NONE of
 // these reach the network. Add to this floor if a new identity field is born.
@@ -69,7 +69,7 @@ function fieldFromSedExpr(expr: string): string | null {
 
 /**
  * Repo/branch JSON keys a producer writes INTO skill-usage.jsonl — the only
- * file gstack-telemetry-sync reads and uploads. Scoped to the emission lines
+ * file paysec-telemetry-sync reads and uploads. Scoped to the emission lines
  * that target the synced file so local-only sinks (e.g. the timeline log, which
  * carries "branch" but is never synced) don't count against the egress invariant.
  */
@@ -94,7 +94,7 @@ describe('telemetry no-repo-identity-egress invariant', () => {
   // Repo-identity fields the producers emit into the synced file — computed
   // once, asserted against BOTH strip paths (jq primary, sed fallback). Only
   // emission lines that target the synced file (skill-usage.jsonl) count: the
-  // preamble appends directly; gstack-telemetry-log builds the synced event
+  // preamble appends directly; paysec-telemetry-log builds the synced event
   // with a `printf '{"v":1,...` line into $JSONL_FILE (= skill-usage.jsonl).
   const preambleSynced = fs
     .readFileSync(PREAMBLE, 'utf-8')
@@ -122,7 +122,7 @@ describe('telemetry no-repo-identity-egress invariant', () => {
     for (const field of emitted) {
       expect(
         strippedFields.has(field),
-        `producer emits repo-identity field "${field}" but gstack-telemetry-sync's sed fallback does not strip it (would leak to remote)`,
+        `producer emits repo-identity field "${field}" but paysec-telemetry-sync's sed fallback does not strip it (would leak to remote)`,
       ).toBe(true);
     }
   });
@@ -145,7 +145,7 @@ describe('telemetry no-repo-identity-egress invariant', () => {
 
   test('behavior: the real sed expressions remove repo identity, keep benign fields', () => {
     const sample =
-      '{"v":1,"ts":"2026-06-02T00:00:00Z","skill":"design-shotgun",' +
+      '{"v":1,"ts":"2026-06-02T00:00:00Z","skill":"design-variants",' +
       '"repo":"my-secret-repo","_repo_slug":"acme-my-secret-repo","_branch":"feature-x",' +
       '"sessions":3,"installation_id":"abc123"}';
 
@@ -166,7 +166,7 @@ describe('telemetry no-repo-identity-egress invariant', () => {
     expect(cleaned).not.toContain('_branch');
 
     // Benign fields are untouched — the strip is surgical, not a blanket wipe.
-    expect(cleaned).toContain('"skill":"design-shotgun"');
+    expect(cleaned).toContain('"skill":"design-variants"');
     expect(cleaned).toContain('"sessions":3');
     expect(cleaned).toContain('"ts":"2026-06-02T00:00:00Z"');
   });
@@ -175,7 +175,7 @@ describe('telemetry no-repo-identity-egress invariant', () => {
     if (!Bun.which('jq')) return; // jq-less machine: the sed-fallback behavior test above is the live path
 
     const sample =
-      '{"v":1,"ts":"2026-06-02T00:00:00Z","skill":"design-shotgun",' +
+      '{"v":1,"ts":"2026-06-02T00:00:00Z","skill":"design-variants",' +
       '"repo":"my-secret-repo","_repo_slug":"acme-my-secret-repo","_branch":"feature-x",' +
       '"sessions":3,"installation_id":"abc123"}';
 
@@ -200,7 +200,7 @@ describe('telemetry no-repo-identity-egress invariant', () => {
     expect(id.stdout).not.toContain('_repo_slug');
     expect(id.stdout).not.toContain('_branch');
     // Benign fields are untouched; identified tier keeps installation_id.
-    expect(id.stdout).toContain('"skill":"design-shotgun"');
+    expect(id.stdout).toContain('"skill":"design-variants"');
     expect(id.stdout).toContain('"sessions":3');
     expect(id.stdout).toContain('"installation_id":"abc123"');
 

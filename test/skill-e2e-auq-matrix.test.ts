@@ -15,12 +15,12 @@
  *
  * Scope: skills whose first AUQ is reliably reachable from a text fixture. Skills
  * that gate their first decision on external resources (a running browser for
- * /qa, the design binary + comparison boards for /design-shotgun and
- * /design-html — which by project policy use $D compare, not AUQ, for variant
+ * /qa-fix, the design binary + comparison boards for /design-variants and
+ * /design-to-html — which by project policy use $D compare, not AUQ, for variant
  * choices) are intentionally OUT of this matrix; Layer 0 covers their format
  * spec, and a fixture can't fairly trigger their AUQ.
  *
- * Run a subset in the foreground with AUQ_MATRIX_ONLY="plan-eng-review,cso".
+ * Run a subset in the foreground with AUQ_MATRIX_ONLY="plan-tech-review,security-audit".
  */
 import { test } from 'bun:test';
 import { describeE2ETier } from './helpers/e2e-gate';
@@ -73,27 +73,27 @@ interface MatrixSkill {
 
 const MATRIX: MatrixSkill[] = [
   {
-    skill: 'plan-eng-review',
+    skill: 'plan-tech-review',
     fixtures: { 'plan.md': FLAWED_PLAN },
     scenario: 'Read plan.md — that is the plan to review. It is a standalone plan document, not a codebase. Walk the review until the first AskUserQuestion (a per-issue finding or a scope decision).',
   },
   {
-    skill: 'plan-design-review',
+    skill: 'plan-ux-review',
     fixtures: { 'plan.md': FLAWED_PLAN + '\n## UI\nA new pricing page with a comparison table, plan cards, and an upgrade modal.\n' },
     scenario: 'Read plan.md — that is the plan to review (it has UI scope). Walk the review until the first AskUserQuestion.',
   },
   {
-    skill: 'plan-devex-review',
+    skill: 'plan-dx-review',
     fixtures: { 'plan.md': FLAWED_PLAN + '\n## CLI\nShip a `mytool pricing` command and a setup wizard for the new tier.\n' },
     scenario: 'Read plan.md — that is the plan to review (developer-experience scope). Walk the review until the first AskUserQuestion.',
   },
   {
-    skill: 'office-hours',
+    skill: 'idea-review',
     fixtures: {},
-    scenario: 'The founder says: "I am building an AI tool that auto-writes unit tests for any repo. I think it is a great idea but I have zero users. Should I build it, and how do I get my first users?" Run the office-hours diagnostic until the first AskUserQuestion.',
+    scenario: 'The founder says: "I am building an AI tool that auto-writes unit tests for any repo. I think it is a great idea but I have zero users. Should I build it, and how do I get my first users?" Run the idea-review diagnostic until the first AskUserQuestion.',
   },
   {
-    skill: 'cso',
+    skill: 'security-audit',
     fixtures: { 'server/auth.js': VULN_CODE },
     scenario: 'Audit the code in this repo (server/auth.js) for security issues. Walk the audit until the first AskUserQuestion (scope/stack confirmation or first finding).',
   },
@@ -110,7 +110,7 @@ const MATRIX: MatrixSkill[] = [
     model: 'claude-opus-4-7',
   },
   {
-    skill: 'design-consultation',
+    skill: 'design-system',
     fixtures: { 'product.md': '# Product\nA terminal-first task manager for developers. Audience: senior engineers. Stage: pre-launch.\n' },
     scenario: 'Read product.md. Run the design consultation for this product until the first AskUserQuestion.',
   },

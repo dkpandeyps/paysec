@@ -71,7 +71,7 @@ export function render(opts: RenderOptions): RenderResult {
   //    paragraph of body text on its own first page).
   const rawHtml = marked.parse(stripFrontmatter(opts.markdown), { async: false }) as string;
 
-  // 1.5. Image directive suffixes: `![a](x.png){width=50%}` → data-gstack-*
+  // 1.5. Image directive suffixes: `![a](x.png){width=50%}` → data-paysec-*
   // attributes. Before the sanitizer (which keeps data- attrs) so the brace
   // text never reaches smartypants or the final page.
   const directedHtml = applyImageDirectives(rawHtml);

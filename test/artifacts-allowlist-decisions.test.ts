@@ -3,13 +3,13 @@ import * as fs from "fs";
 import * as path from "path";
 
 const ROOT = path.resolve(import.meta.dir, "..");
-const INIT = fs.readFileSync(path.join(ROOT, "bin", "gstack-artifacts-init"), "utf-8");
+const INIT = fs.readFileSync(path.join(ROOT, "bin", "paysec-artifacts-init"), "utf-8");
 
-/** Pull a quoted heredoc body out of gstack-artifacts-init by target filename. */
+/** Pull a quoted heredoc body out of paysec-artifacts-init by target filename. */
 function heredoc(target: string): string {
-  const re = new RegExp(`cat > "\\$GSTACK_HOME/${target}" <<'EOF'\\n([\\s\\S]*?)\\nEOF\\n`);
+  const re = new RegExp(`cat > "\\$PAYSEC_HOME/${target}" <<'EOF'\\n([\\s\\S]*?)\\nEOF\\n`);
   const m = INIT.match(re);
-  if (!m) throw new Error(`heredoc for ${target} not found in gstack-artifacts-init`);
+  if (!m) throw new Error(`heredoc for ${target} not found in paysec-artifacts-init`);
   return m[1];
 }
 
@@ -26,7 +26,7 @@ const DECISION_PATHS = [
 ];
 
 /**
- * gstack-decision-log:40 enqueues projects/<slug>/decisions.jsonl after EVERY write,
+ * paysec-decision-log:40 enqueues projects/<slug>/decisions.jsonl after EVERY write,
  * but no managed glob matched it, so compute_paths_to_stage rejected all of them at
  * its "must match at least one allowlist glob" check. The writer and the syncer
  * disagreed silently: turning artifacts sync on backed up learnings, plans, designs
@@ -34,7 +34,7 @@ const DECISION_PATHS = [
  * anywhere reported a miss, because a dropped path prints exactly what a synced one
  * does when the queue is otherwise empty.
  *
- * Source-level rather than end-to-end: gstack-artifacts-init.test.ts drives the real
+ * Source-level rather than end-to-end: paysec-artifacts-init.test.ts drives the real
  * script through #!/bin/bash shims and a colon-separated PATH, so it cannot run on
  * Windows -- which is the platform where this bug bit.
  */
@@ -60,7 +60,7 @@ describe("the artifacts allowlist covers the decision store", () => {
 
   test("the allowlist still ends with the user-additions marker", () => {
     // Additions below it survive re-init; a glob added above would be silently
-    // overwritten the next time gstack-artifacts-init runs.
+    // overwritten the next time paysec-artifacts-init runs.
     expect(heredoc("\\.brain-allowlist").trimEnd()).toMatch(/# ---- USER ADDITIONS BELOW ----/);
   });
 });

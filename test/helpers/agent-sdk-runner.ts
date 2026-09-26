@@ -35,7 +35,7 @@ import {
 } from '@anthropic-ai/claude-agent-sdk';
 import * as fs from 'fs';
 import * as path from 'path';
-import { resolveClaudeBinary as resolveClaudeBinaryShared } from '../../browse/src/claude-bin';
+import { resolveClaudeBinary as resolveClaudeBinaryShared } from '../../browser/src/claude-bin';
 import { hermeticChildEnv } from './hermetic-env';
 import type { SkillTestResult } from './session-runner';
 
@@ -171,7 +171,7 @@ export class RateLimitExhaustedError extends Error {
  * process so that bun's --concurrent flag does not compound with in-test
  * concurrency to blow past Anthropic's rate limits.
  *
- * Default capacity 3. Override via GSTACK_SDK_MAX_CONCURRENCY env var.
+ * Default capacity 3. Override via PAYSEC_SDK_MAX_CONCURRENCY env var.
  */
 class Semaphore {
   private available: number;
@@ -201,7 +201,7 @@ class Semaphore {
   }
 }
 
-const DEFAULT_SDK_CONCURRENCY = Number(process.env.GSTACK_SDK_MAX_CONCURRENCY ?? 3);
+const DEFAULT_SDK_CONCURRENCY = Number(process.env.PAYSEC_SDK_MAX_CONCURRENCY ?? 3);
 let _apiSemaphore: Semaphore | null = null;
 function getApiSemaphore(): Semaphore {
   if (!_apiSemaphore) _apiSemaphore = new Semaphore(DEFAULT_SDK_CONCURRENCY);
@@ -305,7 +305,7 @@ export async function runAgentSdkTest(
   const model = opts.model ?? 'claude-sonnet-4-6';
 
   // NOTE on env: the SDK child gets the COMPLETE hermetic env (allowlist
-  // scrub + ANTHROPIC_API_KEY + hermetic CLAUDE_CONFIG_DIR/GSTACK_HOME), with
+  // scrub + ANTHROPIC_API_KEY + hermetic CLAUDE_CONFIG_DIR/PAYSEC_HOME), with
   // per-test opts.env merging last. The historical "passing env: breaks SDK
   // auth" failure (old CLAUDE.md warning) was partial-env replacement —
   // Options.env REPLACES the child's entire environment, so an object without

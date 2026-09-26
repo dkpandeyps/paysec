@@ -13,7 +13,7 @@
  *
  * Why a separate harness from skill-size-budget.test.ts: that one enforces
  * size discipline only. This module supports content invariants per skill
- * family (e.g., cso must preserve OWASP/STRIDE; plan-ceo must preserve
+ * family (e.g., security-audit must preserve OWASP/STRIDE; plan-ceo must preserve
  * mode-selection phrasing) so future compression can't silently strip
  * load-bearing prose even when size stays within ratio.
  */
@@ -205,9 +205,9 @@ export function runParityChecks(opts: {
  * from the size-budget / static / behavioral guards.
  */
 const MONOLITH_INVARIANTS: ParityInvariant[] = [
-  // cso is now carved — its invariant is generated from CARVE_GUARDS below.
+  // security-audit is now carved — its invariant is generated from CARVE_GUARDS below.
   {
-    skill: 'review',
+    skill: 'pr-review',
     mustContain: ['confidence', 'P1', 'P2'],
     mustHaveHeadings: ['## Preamble', '## When to invoke'],
     // The adversarial step swapped its bare `command -v codex` check for the shared
@@ -220,7 +220,7 @@ const MONOLITH_INVARIANTS: ParityInvariant[] = [
     minBytes: 70_000,
   },
   {
-    skill: 'qa',
+    skill: 'qa-fix',
     mustContain: ['bug', 'browse', 'fix'],
     mustHaveHeadings: ['## Preamble', '## When to invoke'],
     // v1.2.0 activation lift: the unified first-run-guidance section (P4 scaffold +
@@ -233,7 +233,7 @@ const MONOLITH_INVARIANTS: ParityInvariant[] = [
     minBytes: 50_000,
   },
   {
-    skill: 'investigate',
+    skill: 'debug-root-cause',
     mustContain: ['root cause', 'hypothes'],
     mustHaveHeadings: ['## Preamble', '## When to invoke'],
     // Cross-cutting preamble growth (v1.57.2.0 AUQ-failure prose fallback ~2KB + the
@@ -249,7 +249,7 @@ const MONOLITH_INVARIANTS: ParityInvariant[] = [
     minBytes: 30_000,
   },
   {
-    skill: 'autoplan',
+    skill: 'auto-plan-review',
     mustContain: ['ceo', 'eng', 'design'],
     mustHaveHeadings: ['## Preamble', '## When to invoke'],
     // v1.2.0 activation lift: shared first-run-guidance preamble section.
@@ -266,7 +266,7 @@ const MONOLITH_INVARIANTS: ParityInvariant[] = [
  * (maxSkeletonBytes), union floor (minUnionBytes), and content invariants
  * (mustContain) live in carve-guards.ts; this just projects them into the parity
  * shape. Adding a carve there auto-adds its union guard here — which is how
- * plan-devex-review (previously in SECTIONS_EXTRACTED but missing a sectioned
+ * plan-dx-review (previously in SECTIONS_EXTRACTED but missing a sectioned
  * parity invariant) is now guarded.
  */
 const CARVED_INVARIANTS: ParityInvariant[] = Object.values(CARVE_GUARDS).map((g) => ({

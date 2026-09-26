@@ -1,6 +1,6 @@
 // Real-device tests. The lightweight CoreDevice checks run with
-// GSTACK_HAS_IOS_DEVICE=1; the signing/install/interaction smoke test has the
-// separate, explicit GSTACK_IOS_DEVICE_DEPLOY=1 opt-in.
+// PAYSEC_HAS_IOS_DEVICE=1; the signing/install/interaction smoke test has the
+// separate, explicit PAYSEC_IOS_DEVICE_DEPLOY=1 opt-in.
 //
 // Runs only when:
 //   - An iPhone is connected via USB and reachable through CoreDevice
@@ -14,8 +14,8 @@
 //   4. The fixture iOS SPM package builds with `swift build` for iOS target
 //      (verifies the templates compile against the iOS SDK, not just macOS)
 //
-// GSTACK_IOS_DEVICE_DEPLOY=1 additionally generates the fixture Xcode project,
-// signs it with GSTACK_IOS_DEVELOPMENT_TEAM + GSTACK_IOS_BUNDLE_ID, installs
+// PAYSEC_IOS_DEVICE_DEPLOY=1 additionally generates the fixture Xcode project,
+// signs it with PAYSEC_IOS_DEVELOPMENT_TEAM + PAYSEC_IOS_BUNDLE_ID, installs
 // and launches it, then proves screenshot/elements/tap through the real daemon.
 // It remains skipped in normal CI because signing and a paired iPhone are
 // intentionally machine-specific.
@@ -25,16 +25,16 @@ import { spawnSync } from 'child_process';
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, unlinkSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { startDaemon, type RunningDaemon } from '../ios-qa/daemon/src/index';
-import { startTunnelKeepalive } from '../ios-qa/daemon/src/devicectl';
-import { bootstrapTunnel } from '../ios-qa/daemon/src/tunnel-bootstrap';
-import type { DeviceTunnel } from '../ios-qa/daemon/src/proxy';
+import { startDaemon, type RunningDaemon } from '../ios-device-qa/daemon/src/index';
+import { startTunnelKeepalive } from '../ios-device-qa/daemon/src/devicectl';
+import { bootstrapTunnel } from '../ios-device-qa/daemon/src/tunnel-bootstrap';
+import type { DeviceTunnel } from '../ios-device-qa/daemon/src/proxy';
 
 const ROOT = join(import.meta.dir, '..');
-const FIXTURE_PATH = join(ROOT, 'test/fixtures/ios-qa/FixtureApp');
+const FIXTURE_PATH = join(ROOT, 'test/fixtures/ios-device-qa/FixtureApp');
 
-const HAS_DEVICE = process.env.GSTACK_HAS_IOS_DEVICE === '1';
-const DEPLOY_TO_DEVICE = process.env.GSTACK_IOS_DEVICE_DEPLOY === '1';
+const HAS_DEVICE = process.env.PAYSEC_HAS_IOS_DEVICE === '1';
+const DEPLOY_TO_DEVICE = process.env.PAYSEC_IOS_DEVICE_DEPLOY === '1';
 const describeIfDevice = HAS_DEVICE ? describe : describe.skip;
 const testIfDeploy = DEPLOY_TO_DEVICE ? test : test.skip;
 
@@ -113,10 +113,10 @@ function isPaired(udid: string): boolean {
   return r.status === 0;
 }
 
-function requireDeployEnv(name: 'GSTACK_IOS_DEVELOPMENT_TEAM' | 'GSTACK_IOS_BUNDLE_ID'): string {
+function requireDeployEnv(name: 'PAYSEC_IOS_DEVELOPMENT_TEAM' | 'PAYSEC_IOS_BUNDLE_ID'): string {
   const value = process.env[name]?.trim();
   if (!value) {
-    throw new Error(`${name} is required when GSTACK_IOS_DEVICE_DEPLOY=1`);
+    throw new Error(`${name} is required when PAYSEC_IOS_DEVICE_DEPLOY=1`);
   }
   return value;
 }
@@ -303,8 +303,8 @@ describeIfDevice('ios device path', () => {
 
 describe('ios device deployment (explicit opt-in)', () => {
   testIfDeploy('generates, signs, installs, launches, and drives the fixture through the daemon', async () => {
-    const developmentTeam = requireDeployEnv('GSTACK_IOS_DEVELOPMENT_TEAM');
-    const bundleId = requireDeployEnv('GSTACK_IOS_BUNDLE_ID');
+    const developmentTeam = requireDeployEnv('PAYSEC_IOS_DEVELOPMENT_TEAM');
+    const bundleId = requireDeployEnv('PAYSEC_IOS_BUNDLE_ID');
     const devices = listDevices();
     const device = devices.find((candidate) => isAvailableIPhone(candidate) && isPaired(candidate.identifier));
     if (!device) {
@@ -312,12 +312,12 @@ describe('ios device deployment (explicit opt-in)', () => {
         ? devices.map((d) => `  ${d.name} (${d.model}, ${d.platform}, ${d.identifier}): state=${d.state}, paired=${d.paired}`).join('\n')
         : '  devicectl returned no devices';
       throw new Error([
-        'GSTACK_IOS_DEVICE_DEPLOY=1 requires an available, paired iPhone; stale unavailable devices are never selected.',
+        'PAYSEC_IOS_DEVICE_DEPLOY=1 requires an available, paired iPhone; stale unavailable devices are never selected.',
         summary,
       ].join('\n'));
     }
 
-    const workDir = mkdtempSync(join(tmpdir(), 'gstack-ios-device-deploy-'));
+    const workDir = mkdtempSync(join(tmpdir(), 'paysec-ios-device-deploy-'));
     const fixtureDir = join(workDir, 'FixtureApp');
     const derivedData = join(workDir, 'DerivedData');
     let daemon: RunningDaemon | undefined;
@@ -327,10 +327,10 @@ describe('ios device deployment (explicit opt-in)', () => {
     try {
       cpSync(FIXTURE_PATH, fixtureDir, { recursive: true });
 
-      // Exercise the same deterministic bootstrap that /ios-qa and /ios-sync
+      // Exercise the same deterministic bootstrap that /ios-device-qa and /ios-bridge-sync
       // install for users. This creates the app-owned typed accessor before
       // XcodeGen discovers the fixture sources.
-      runChecked(join(ROOT, 'bin/gstack-ios-qa-regen'), [
+      runChecked(join(ROOT, 'bin/paysec-ios-qa-regen'), [
         '--app-source', join(fixtureDir, 'Sources/FixtureApp'),
         '--bridge-dir', fixtureDir,
       ], { cwd: fixtureDir });

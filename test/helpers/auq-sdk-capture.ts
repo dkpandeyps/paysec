@@ -78,7 +78,7 @@ export async function gradeAuqRecommendation(
 }
 
 /**
- * Build a throwaway plan dir holding a SPECIFIC plan-ceo-review SKILL.md (so we
+ * Build a throwaway plan dir holding a SPECIFIC plan-business-review SKILL.md (so we
  * can pit the carved skeleton against the verbose monolith). `sectionsFrom`, if
  * given, copies that dir's sections/ alongside (for the carved variant).
  */
@@ -108,10 +108,10 @@ export function setupPlanCeoDir(opts: {
       'barrier. The team agreed it "feels like" it should be cheaper.',
     ].join('\n'),
   );
-  fs.mkdirSync(path.join(dir, 'plan-ceo-review'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'plan-ceo-review', 'SKILL.md'), opts.skillMd);
+  fs.mkdirSync(path.join(dir, 'plan-business-review'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'plan-business-review', 'SKILL.md'), opts.skillMd);
   if (opts.sectionsFrom && fs.existsSync(opts.sectionsFrom)) {
-    fs.cpSync(opts.sectionsFrom, path.join(dir, 'plan-ceo-review', 'sections'), { recursive: true });
+    fs.cpSync(opts.sectionsFrom, path.join(dir, 'plan-business-review', 'sections'), { recursive: true });
   }
   run('git', ['add', '.']);
   run('git', ['commit', '-m', 'plan']);
@@ -274,16 +274,16 @@ Rules for this run:
 
 /** Read the carved (current worktree) plan-ceo SKILL.md + its sections dir. */
 export function carvedSkill(): { skillMd: string; sectionsFrom: string | null } {
-  const sec = path.join(ROOT, 'plan-ceo-review', 'sections');
+  const sec = path.join(ROOT, 'plan-business-review', 'sections');
   return {
-    skillMd: fs.readFileSync(path.join(ROOT, 'plan-ceo-review', 'SKILL.md'), 'utf-8'),
+    skillMd: fs.readFileSync(path.join(ROOT, 'plan-business-review', 'SKILL.md'), 'utf-8'),
     sectionsFrom: fs.existsSync(sec) ? sec : null,
   };
 }
 
 /** Read the pre-carve verbose monolith plan-ceo SKILL.md from git. */
 export function verboseSkill(gitRef = 'ab66193e^'): string {
-  return execGit(['show', `${gitRef}:plan-ceo-review/SKILL.md`]);
+  return execGit(['show', `${gitRef}:plan-business-review/SKILL.md`]);
 }
 
 function execGit(args: string[]): string {
@@ -293,7 +293,7 @@ function execGit(args: string[]): string {
 }
 
 /**
- * Drive plan-ceo-review to its Step 0F mode-selection AskUserQuestion in the
+ * Drive plan-business-review to its Step 0F mode-selection AskUserQuestion in the
  * given plan dir and capture the verbatim question text the model generates.
  * Returns the captured text ('' if the agent never wrote the file).
  */
@@ -304,7 +304,7 @@ export async function captureModeSelectionAuq(opts: {
   model?: string;
 }): Promise<string> {
   const outFile = path.join(opts.planDir, 'ask-capture.md');
-  const skillPath = path.join(opts.planDir, 'plan-ceo-review', 'SKILL.md');
+  const skillPath = path.join(opts.planDir, 'plan-business-review', 'SKILL.md');
   const planPath = path.join(opts.planDir, 'plan.md');
   // CRITICAL: pin the EXACT skill file. Without this the agent runs
   // `find / -name SKILL.md` / Glob and reads the GLOBAL install

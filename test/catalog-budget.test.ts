@@ -20,7 +20,7 @@ import { skillCensus } from './helpers/skill-census';
  *   ref     this commit
  *   method  for each authored skill (test/helpers/skill-census.ts
  *           authoredSkills — symlink-deduped, root router excluded) plus the
- *           root router's `_gstack-command` alias frontmatter as one separate
+ *           root router's `_paysec-command` alias frontmatter as one separate
  *           line item, run parseFrontmatter() below and sum
  *           Buffer.byteLength(name) + Buffer.byteLength(description);
  *           token-equivalents = ceil(bytes / 4).
@@ -28,11 +28,11 @@ import { skillCensus } from './helpers/skill-census';
  *           + root router alias 49 bytes = 4,420 bytes total
  *           = 1,105 token-equivalents (measured 2026-08-12)
  * Ceiling is 1,150 token-equivalents (4,600 bytes), so headroom is 180 bytes
- * (~4%). Dominant skill: design-consultation at 229 bytes name+description.
+ * (~4%). Dominant skill: design-system at 229 bytes name+description.
  */
 const CATALOG_BUDGET_TOKEN_EQUIVALENTS = 1_150;
 
-// Largest today: design-consultation at 229 bytes. A description that needs
+// Largest today: design-system at 229 bytes. A description that needs
 // more than 260 bytes is a body paragraph, not a catalog entry.
 const PER_SKILL_BYTE_CAP = 260;
 
@@ -76,7 +76,7 @@ function catalogEntries(): CatalogEntry[] {
     });
   }
   // The root SKILL.md is a router, registered by setup as the
-  // `_gstack-command` alias — not an authored skill, but its frontmatter
+  // `_paysec-command` alias — not an authored skill, but its frontmatter
   // still ships in the catalog, so it counts as one line item.
   const router = parseFrontmatter(readFileSync(join(ROOT, 'SKILL.md'), 'utf8'));
   if (router.name && router.description) {

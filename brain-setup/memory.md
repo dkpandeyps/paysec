@@ -1,7 +1,7 @@
-# gstack memory ingest — what it does, what stays local, what you can do with it
+# paysec memory ingest — what it does, what stays local, what you can do with it
 
 This is the user-facing reference for the V1 transcript + memory ingest
-feature in `/setup-gbrain`. If you ran `/setup-gbrain` and it asked
+feature in `/brain-setup`. If you ran `/brain-setup` and it asked
 "Ingest THIS repo's transcripts into gbrain?", this doc explains what
 happens after you say yes.
 
@@ -12,32 +12,32 @@ happens after you say yes.
 | Claude Code session JSONL | `transcript` | `~/.claude/projects/*/` | High — full conversations including tool I/O |
 | Codex CLI session JSONL | `transcript` | `~/.codex/sessions/YYYY/MM/DD/` | High |
 | Cursor session SQLite (V1.0.1) | `transcript` | `~/Library/Application Support/Cursor/` | Same — deferred V1.0.1 |
-| Eureka log | `eureka` | `~/.gstack/analytics/eureka.jsonl` | Medium — your insights, often non-secret |
-| Project learnings | `learning` | `~/.gstack/projects/<slug>/learnings.jsonl` | Medium |
-| Project timeline | `timeline` | `~/.gstack/projects/<slug>/timeline.jsonl` | Low |
-| CEO plans | `ceo-plan` | `~/.gstack/projects/<slug>/ceo-plans/*.md` | Medium |
-| Design docs | `design-doc` | `~/.gstack/projects/<slug>/*-design-*.md` | Medium |
-| Retros | `retro` | `~/.gstack/projects/<slug>/retros/*.md` | Medium |
-| Builder profile | `builder-profile-entry` | `~/.gstack/builder-profile.jsonl` | Low |
+| Eureka log | `eureka` | `~/.paysec/analytics/eureka.jsonl` | Medium — your insights, often non-secret |
+| Project learnings | `learning` | `~/.paysec/projects/<slug>/learnings.jsonl` | Medium |
+| Project timeline | `timeline` | `~/.paysec/projects/<slug>/timeline.jsonl` | Low |
+| CEO plans | `ceo-plan` | `~/.paysec/projects/<slug>/ceo-plans/*.md` | Medium |
+| Design docs | `design-doc` | `~/.paysec/projects/<slug>/*-design-*.md` | Medium |
+| Retros | `retro` | `~/.paysec/projects/<slug>/retros/*.md` | Medium |
+| Builder profile | `builder-profile-entry` | `~/.paysec/builder-profile.jsonl` | Low |
 
 ## What stays local
 
-- **State files** (`~/.gstack/.gbrain-sync-state.json`,
-  `~/.gstack/.transcript-ingest-state.json`,
-  `~/.gstack/.gbrain-engine-cache.json`,
-  `~/.gstack/.gbrain-errors.jsonl`) are local-only per ED1 (state file
+- **State files** (`~/.paysec/.gbrain-sync-state.json`,
+  `~/.paysec/.transcript-ingest-state.json`,
+  `~/.paysec/.gbrain-engine-cache.json`,
+  `~/.paysec/.gbrain-errors.jsonl`) are local-only per ED1 (state file
   sync semantics decision). They are not synced via the brain remote.
 
 - **Sessions with no resolvable git remote** (running in `/tmp/`, scratch
   dirs, etc.) are skipped by default. Pass `--include-unattributed` to
   the ingest helper to opt them in.
 
-- **Repos under a `deny` trust policy** (set in `/setup-gbrain` Step 6)
+- **Repos under a `deny` trust policy** (set in `/brain-setup` Step 6)
   are skipped — neither code nor transcripts from those repos ingest.
 
 ## What gets scanned for secrets
 
-The cross-machine secret boundary is `gstack-brain-sync` (the git push
+The cross-machine secret boundary is `paysec-brain-sync` (the git push
 to your private artifacts repo), which runs its own scanner before any
 content leaves this Mac. Local PGLite ingest doesn't change the exposure
 surface for content that already lives on disk in plaintext.
@@ -47,9 +47,9 @@ v1.33.0.0 — off by default. To re-enable it (adds ~4-8 min to cold runs
 on a large transcript corpus), use either:
 
 ```bash
-bun run bin/gstack-memory-ingest.ts --bulk --scan-secrets
+bun run bin/paysec-memory-ingest.ts --bulk --scan-secrets
 # or
-GSTACK_MEMORY_INGEST_SCAN_SECRETS=1 bun run bin/gstack-memory-ingest.ts --bulk
+PAYSEC_MEMORY_INGEST_SCAN_SECRETS=1 bun run bin/paysec-memory-ingest.ts --bulk
 ```
 
 When enabled, gitleaks covers:
@@ -61,9 +61,9 @@ When enabled, gitleaks covers:
 
 A session with a positive finding is **skipped entirely** — not partially
 redacted. The match line + rule ID are logged to stderr; you can see what
-was skipped via `bun run bin/gstack-memory-ingest.ts --probe` (which
+was skipped via `bun run bin/paysec-memory-ingest.ts --probe` (which
 shows new vs. updated counts) or by reviewing the helper's output during
-`/sync-gbrain --full`.
+`/brain-sync --full`.
 
 If gitleaks is not installed (run `brew install gitleaks` on macOS, or
 `apt install gitleaks` on Linux) and you passed `--scan-secrets` anyway,
@@ -71,11 +71,11 @@ the helper warns once and disables secret scanning for that run.
 
 ## Where it goes
 
-Storage tier depends on your gbrain engine (set during `/setup-gbrain`):
+Storage tier depends on your gbrain engine (set during `/brain-setup`):
 
 - **Supabase configured:** code + transcripts go to Supabase Storage
   (multi-Mac native). Curated memory (eureka/learnings/etc.) goes to the
-  brain-linked git repo via `gstack-brain-sync`.
+  brain-linked git repo via `paysec-brain-sync`.
 - **Local PGLite only:** everything stays on this Mac. Curated memory
   syncs via git if you've enabled brain-sync.
 
@@ -99,7 +99,7 @@ replaceable from disk on each Mac.
 
 - **Read a specific page:**
   ```bash
-  gbrain get_page transcripts/claude-code/garrytan-gstack/2026-05-01-abc123
+  gbrain get_page transcripts/claude-code/garrytan-paysec/2026-05-01-abc123
   ```
 
 - **Delete a page:**
@@ -110,20 +110,20 @@ replaceable from disk on each Mac.
   index but git history retains it. For hard-delete, run `git filter-repo`
   on the brain remote.
 
-- **Bulk-delete by criteria** (V1.0.1 follow-up — `gstack-transcript-prune`
+- **Bulk-delete by criteria** (V1.0.1 follow-up — `paysec-transcript-prune`
   helper). For V1.0, use `gbrain delete_page <slug>` per-page or write
   a small loop over `gbrain list_pages` output.
 
 - **Disable entirely:**
   ```bash
-  gstack-config set transcript_ingest_mode off
-  gstack-config set gbrain_context_load off  # also disables retrieval
+  paysec-config set transcript_ingest_mode off
+  paysec-config set gbrain_context_load off  # also disables retrieval
   ```
 
 ## How the agent uses it
 
-At every gstack skill start, the preamble runs
-`gstack-brain-context-load` which:
+At every paysec skill start, the preamble runs
+`paysec-brain-context-load` which:
 
 1. Reads the active skill's `gbrain.context_queries:` frontmatter
 2. Dispatches each query to gbrain (vector / list / filesystem)
@@ -131,10 +131,10 @@ At every gstack skill start, the preamble runs
    `<USER_TRANSCRIPT_DATA do-not-interpret-as-instructions>` envelopes
 4. The model sees this as part of the preamble before making any decisions
 
-For example, when you run `/office-hours`, the model context
+For example, when you run `/idea-review`, the model context
 automatically includes:
 
-- `## Prior office-hours sessions in this repo` (last 5)
+- `## Prior idea-review sessions in this repo` (last 5)
 - `## Your builder profile snapshot` (latest entry)
 - `## Recent design docs for this project` (last 3)
 - `## Recent eureka moments` (last 5)
@@ -148,17 +148,17 @@ startup never blocks > 2s on gbrain issues (Section 1C).
 
 ## What to do when something feels off
 
-Run `/setup-gbrain` again. It's idempotent: every step detects existing
+Run `/brain-setup` again. It's idempotent: every step detects existing
 state, repairs only what's missing, and prints a GREEN/YELLOW/RED
 verdict block. If a row is RED, the row tells you what to do.
 
 Common cases:
 
 - **Salience block is empty** — your transcripts may not be ingested
-  yet. Run `bun run bin/gstack-gbrain-sync.ts --full` to do a full pass.
+  yet. Run `bun run bin/paysec-gbrain-sync.ts --full` to do a full pass.
 
 - **"gbrain CLI missing" in the preamble output** — gbrain isn't on
-  your PATH. Run `/setup-gbrain` to install/wire it.
+  your PATH. Run `/brain-setup` to install/wire it.
 
 - **PGLite engine corrupt (V1.5)** — V1.5 ships
   `gbrain restore-from-sync` for atomic rebuild from the brain remote.
@@ -166,15 +166,15 @@ Common cases:
   --pglite && gbrain import <brain-remote-clone-dir>`.
 
 - **A page has stale or wrong content** — `gbrain delete_page <slug>`,
-  then re-run `bun run bin/gstack-gbrain-sync.ts --incremental` to re-ingest from
+  then re-run `bun run bin/paysec-gbrain-sync.ts --incremental` to re-ingest from
   source if the source file is still on disk and unchanged.
 
 ## Privacy + audit
 
 - Every `secretScanFile` finding is logged to stderr at ingest time.
-- Every gbrain put/delete is logged to `~/.gstack/.gbrain-errors.jsonl`
+- Every gbrain put/delete is logged to `~/.paysec/.gbrain-errors.jsonl`
   with `{ts, op, duration_ms, outcome}` for forensic tracing.
-- `~/.gstack/.gbrain-engine-cache.json` shows which storage tier is
+- `~/.paysec/.gbrain-engine-cache.json` shows which storage tier is
   active (PGLite vs Supabase).
 - Brain-sync git history shows every curated artifact push with the
   user's git identity.
@@ -192,14 +192,14 @@ per-file scanning was off, or gitleaks missed it), the recovery path is:
 
 If you don't run gbrain locally — you have a teammate or another machine
 running `gbrain serve` over HTTP, accessible via Tailscale, ngrok, or
-internal LAN — `/setup-gbrain` Path 4 is the one-paste flow.
+internal LAN — `/brain-setup` Path 4 is the one-paste flow.
 
 You provide:
 - The MCP URL (e.g., `https://wintermute.tail554574.ts.net:3131/mcp`)
 - A bearer token (issued by the brain admin via `gbrain access-token issue`)
 
-What `/setup-gbrain` does:
-1. Verifies the URL + token via `gstack-gbrain-mcp-verify`. Three failure
+What `/brain-setup` does:
+1. Verifies the URL + token via `paysec-gbrain-mcp-verify`. Three failure
    modes get classified with one-line remediation hints:
    **NETWORK** ("check Tailscale/DNS"), **AUTH** ("rotate token"),
    **MALFORMED** ("Accept-header gotcha — pass both `application/json`
@@ -212,7 +212,7 @@ What `/setup-gbrain` does:
 3. Skips local install, local doctor, transcript ingest, and federated
    source registration. All four require a local `gbrain` CLI that Path 4
    doesn't install.
-4. Optionally provisions a `gstack-artifacts-$USER` private repo on
+4. Optionally provisions a `paysec-artifacts-$USER` private repo on
    GitHub or GitLab and prints the one-line `gbrain sources add` command
    for your brain admin to run on the brain host.
 
@@ -227,7 +227,7 @@ is small but it's not zero.
 Mitigations we've considered:
 - **Stdin or env-var input form for headers** — would close the argv
   window. As of Claude Code v1.0.x, the CLI doesn't expose either.
-  When it does, `/setup-gbrain` Path 4 will switch automatically.
+  When it does, `/brain-setup` Path 4 will switch automatically.
 - **Keychain storage** — explicitly out of scope (the token's resting
   state in `~/.claude.json` is the existing trust surface for every MCP
   credential; expanding to Keychain would touch every MCP server, not
@@ -235,7 +235,7 @@ Mitigations we've considered:
 
 ### Why Path 4 is "always print" for the brain-admin hookup
 
-`gstack-artifacts-init` always prints the `gbrain sources add` command
+`paysec-artifacts-init` always prints the `gbrain sources add` command
 labeled "Send this to your brain admin" — even when the user IS the
 brain admin (consistent UX, no mode-detection fragility).
 
@@ -260,7 +260,7 @@ the verified server version, the artifacts repo URL (if provisioned),
 and the per-repo trust policy.
 
 ```markdown
-## GBrain Configuration (configured by /setup-gbrain)
+## GBrain Configuration (configured by /brain-setup)
 - Mode: remote-http
 - MCP URL: https://wintermute.tail554574.ts.net:3131/mcp
 - Server version: gbrain v0.27.1
@@ -276,12 +276,12 @@ and the per-repo trust policy.
 
 Server-side. When verify hits `AUTH` (e.g., the brain admin rotated the
 token), the helper says: "rotate token on the brain host, re-run
-/setup-gbrain." On wintermute or wherever your gbrain server lives:
+/brain-setup." On wintermute or wherever your gbrain server lives:
 
 ```
 gbrain access-token rotate    # invalidates old, issues new
 ```
 
-(See `gstack/setup-gbrain/SKILL.md.tmpl` for the full Path 4 flow plus
+(See `paysec/brain-setup/SKILL.md.tmpl` for the full Path 4 flow plus
 the gbrain enhancement requests around scoped tokens that would let
-gstack auto-rotate in V2.)
+paysec auto-rotate in V2.)

@@ -1,23 +1,23 @@
 /**
- * Question Registry — typed schema for AskUserQuestion invocations across gstack.
+ * Question Registry — typed schema for AskUserQuestion invocations across paysec.
  *
  * Purpose
  * -------
  * Every AskUserQuestion invocation is tagged with a stable question_id that maps
- * to an entry in this registry. The registry is the substrate /plan-tune builds on:
+ * to an entry in this registry. The registry is the substrate /tune-questions builds on:
  * - Logging (question-log.jsonl) tags events with a registered id
  * - Per-question preferences (question-preferences.json) are keyed by registered id
  * - One-way door safety is declared here, not inferred from prose summaries
  * - The psychographic signal map (scripts/psychographic-signals.ts) maps id → dimension delta
  *
- * Not every AskUserQuestion in gstack needs a registry entry right away. Skills
+ * Not every AskUserQuestion in paysec needs a registry entry right away. Skills
  * often craft questions dynamically at runtime — the agent generates an ad-hoc id
- * of the form `{skill}-{slug}` for those. The /plan-tune skill surfaces frequently-
+ * of the form `{skill}-{slug}` for those. The /tune-questions skill surfaces frequently-
  * firing ad-hoc ids as candidates for registry promotion.
  *
  * v1 coverage target: the ~30-50 most-common recurring question categories across
- * ship, review, office-hours, plan-ceo-review, plan-eng-review, plan-design-review,
- * plan-devex-review, qa, investigate, and land-and-deploy. One-way doors 100%.
+ * ship, review, idea-review, plan-business-review, plan-tech-review, plan-ux-review,
+ * plan-dx-review, qa, investigate, and merge-and-deploy. One-way doors 100%.
  *
  * Adding a new entry
  * ------------------
@@ -33,7 +33,7 @@
  *    signals.ts uses (id, user_choice) to look up the dimension delta.
  * 5. `options` is a short list of stable option keys. UI labels can vary; keys
  *    must stay the same so preferences survive wording changes.
- * 6. Run `bun test test/plan-tune.test.ts` to verify format + uniqueness.
+ * 6. Run `bun test test/tune-questions.test.ts` to verify format + uniqueness.
  */
 
 export type QuestionCategory =
@@ -74,7 +74,7 @@ export type StandardOption =
 export interface QuestionDef {
   /** Stable kebab-case id: `{skill}-{semantic-description}` */
   id: string;
-  /** Skill that owns this question (must match a gstack skill directory name) */
+  /** Skill that owns this question (must match a paysec skill directory name) */
   skill: string;
   /** Shape of the question */
   category: QuestionCategory;
@@ -84,7 +84,7 @@ export interface QuestionDef {
   options?: StandardOption[] | string[];
   /** Optional key into scripts/psychographic-signals.ts for dimension attribution */
   signal_key?: string;
-  /** One-line description for docs and /plan-tune profile output */
+  /** One-line description for docs and /tune-questions profile output */
   description: string;
 }
 
@@ -93,11 +93,11 @@ export interface QuestionDef {
  * Grouped by skill for readability. Maintained by hand.
  *
  * When adding new skills or question types, extend this object. The CI lint
- * test/plan-tune.test.ts verifies format, uniqueness, and required fields.
+ * test/tune-questions.test.ts verifies format, uniqueness, and required fields.
  */
 export const QUESTIONS = {
   // -----------------------------------------------------------------------
-  // /ship — pre-landing review, deploy, PR creation
+  // /ship-pr — pre-landing review, deploy, PR creation
   // -----------------------------------------------------------------------
   'ship-release-pipeline-missing': {
     id: 'ship-release-pipeline-missing',
@@ -179,7 +179,7 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /review — pre-landing code review
+  // /pr-review — pre-landing code review
   // -----------------------------------------------------------------------
   'review-finding-fix': {
     id: 'review-finding-fix',
@@ -208,11 +208,11 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /office-hours — YC diagnostic + builder brainstorm
+  // /idea-review — YC diagnostic + builder brainstorm
   // -----------------------------------------------------------------------
   'office-hours-mode-goal': {
     id: 'office-hours-mode-goal',
-    skill: 'office-hours',
+    skill: 'idea-review',
     category: 'routing',
     door_type: 'two-way',
     options: ['startup', 'intrapreneur', 'hackathon', 'oss-research', 'learning', 'fun'],
@@ -221,7 +221,7 @@ export const QUESTIONS = {
   },
   'office-hours-premise-confirm': {
     id: 'office-hours-premise-confirm',
-    skill: 'office-hours',
+    skill: 'idea-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'reject'],
@@ -229,7 +229,7 @@ export const QUESTIONS = {
   },
   'office-hours-cross-model-run': {
     id: 'office-hours-cross-model-run',
-    skill: 'office-hours',
+    skill: 'idea-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'skip'],
@@ -237,7 +237,7 @@ export const QUESTIONS = {
   },
   'office-hours-landscape-privacy-gate': {
     id: 'office-hours-landscape-privacy-gate',
-    skill: 'office-hours',
+    skill: 'idea-review',
     category: 'approval',
     door_type: 'one-way',
     options: ['accept', 'skip'],
@@ -245,7 +245,7 @@ export const QUESTIONS = {
   },
   'office-hours-approach-choose': {
     id: 'office-hours-approach-choose',
-    skill: 'office-hours',
+    skill: 'idea-review',
     category: 'routing',
     door_type: 'two-way',
     options: ['minimal', 'ideal', 'creative'],
@@ -254,7 +254,7 @@ export const QUESTIONS = {
   },
   'office-hours-design-doc-approve': {
     id: 'office-hours-design-doc-approve',
-    skill: 'office-hours',
+    skill: 'idea-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'revise', 'restart'],
@@ -262,11 +262,11 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /plan-ceo-review — scope & strategy
+  // /plan-business-review — scope & strategy
   // -----------------------------------------------------------------------
   'plan-ceo-review-mode': {
     id: 'plan-ceo-review-mode',
-    skill: 'plan-ceo-review',
+    skill: 'plan-business-review',
     category: 'routing',
     door_type: 'two-way',
     options: ['expand', 'selective', 'hold', 'reduce'],
@@ -275,7 +275,7 @@ export const QUESTIONS = {
   },
   'plan-ceo-review-expansion-proposal': {
     id: 'plan-ceo-review-expansion-proposal',
-    skill: 'plan-ceo-review',
+    skill: 'plan-business-review',
     category: 'cherry-pick',
     door_type: 'two-way',
     options: ['accept', 'defer', 'skip'],
@@ -284,7 +284,7 @@ export const QUESTIONS = {
   },
   'plan-ceo-review-premise-revise': {
     id: 'plan-ceo-review-premise-revise',
-    skill: 'plan-ceo-review',
+    skill: 'plan-business-review',
     category: 'approval',
     door_type: 'one-way',
     options: ['revise', 'hold'],
@@ -292,7 +292,7 @@ export const QUESTIONS = {
   },
   'plan-ceo-review-outside-voice': {
     id: 'plan-ceo-review-outside-voice',
-    skill: 'plan-ceo-review',
+    skill: 'plan-business-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'skip'],
@@ -300,7 +300,7 @@ export const QUESTIONS = {
   },
   'plan-ceo-review-promote-to-docs': {
     id: 'plan-ceo-review-promote-to-docs',
-    skill: 'plan-ceo-review',
+    skill: 'plan-business-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'keep-local', 'skip'],
@@ -308,11 +308,11 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /plan-eng-review — architecture & tests (required gate)
+  // /plan-tech-review — architecture & tests (required gate)
   // -----------------------------------------------------------------------
   'plan-eng-review-arch-finding': {
     id: 'plan-eng-review-arch-finding',
-    skill: 'plan-eng-review',
+    skill: 'plan-tech-review',
     category: 'approval',
     door_type: 'one-way',
     options: ['fix-now', 'defer', 'accept-risk'],
@@ -321,7 +321,7 @@ export const QUESTIONS = {
   },
   'plan-eng-review-scope-reduce': {
     id: 'plan-eng-review-scope-reduce',
-    skill: 'plan-eng-review',
+    skill: 'plan-tech-review',
     category: 'routing',
     door_type: 'two-way',
     options: ['reduce', 'hold'],
@@ -330,7 +330,7 @@ export const QUESTIONS = {
   },
   'plan-eng-review-test-gap': {
     id: 'plan-eng-review-test-gap',
-    skill: 'plan-eng-review',
+    skill: 'plan-tech-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['add-test', 'defer', 'skip'],
@@ -339,7 +339,7 @@ export const QUESTIONS = {
   },
   'plan-eng-review-outside-voice': {
     id: 'plan-eng-review-outside-voice',
-    skill: 'plan-eng-review',
+    skill: 'plan-tech-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'skip'],
@@ -347,7 +347,7 @@ export const QUESTIONS = {
   },
   'plan-eng-review-todo-add': {
     id: 'plan-eng-review-todo-add',
-    skill: 'plan-eng-review',
+    skill: 'plan-tech-review',
     category: 'cherry-pick',
     door_type: 'two-way',
     options: ['accept', 'skip', 'build-now'],
@@ -355,11 +355,11 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /plan-design-review — UI/UX plan audit
+  // /plan-ux-review — UI/UX plan audit
   // -----------------------------------------------------------------------
   'plan-design-review-mode': {
     id: 'plan-design-review-mode',
-    skill: 'plan-design-review',
+    skill: 'plan-ux-review',
     category: 'routing',
     door_type: 'two-way',
     options: ['expand', 'polish', 'triage'],
@@ -368,7 +368,7 @@ export const QUESTIONS = {
   },
   'plan-design-review-fix': {
     id: 'plan-design-review-fix',
-    skill: 'plan-design-review',
+    skill: 'plan-ux-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['fix-now', 'defer', 'skip'],
@@ -377,18 +377,18 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /plan-devex-review — developer experience plan audit
+  // /plan-dx-review — developer experience plan audit
   // -----------------------------------------------------------------------
   'plan-devex-review-persona': {
     id: 'plan-devex-review-persona',
-    skill: 'plan-devex-review',
+    skill: 'plan-dx-review',
     category: 'clarification',
     door_type: 'two-way',
     description: "Who is your target developer? (Determines persona for review.)",
   },
   'plan-devex-review-mode': {
     id: 'plan-devex-review-mode',
-    skill: 'plan-devex-review',
+    skill: 'plan-dx-review',
     category: 'routing',
     door_type: 'two-way',
     options: ['expand', 'polish', 'triage'],
@@ -397,7 +397,7 @@ export const QUESTIONS = {
   },
   'plan-devex-review-friction-fix': {
     id: 'plan-devex-review-friction-fix',
-    skill: 'plan-devex-review',
+    skill: 'plan-dx-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['fix-now', 'defer', 'skip'],
@@ -406,7 +406,7 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /qa — QA testing
+  // /qa-fix — QA testing
   // -----------------------------------------------------------------------
   'qa-bug-fix-scope': {
     id: 'qa-bug-fix-scope',
@@ -427,7 +427,7 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /investigate — root-cause debugging
+  // /debug-root-cause — root-cause debugging
   // -----------------------------------------------------------------------
   'investigate-hypothesis-confirm': {
     id: 'investigate-hypothesis-confirm',
@@ -447,11 +447,11 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /land-and-deploy — merge + deploy + verify
+  // /merge-and-deploy — merge + deploy + verify
   // -----------------------------------------------------------------------
   'land-and-deploy-merge-confirm': {
     id: 'land-and-deploy-merge-confirm',
-    skill: 'land-and-deploy',
+    skill: 'merge-and-deploy',
     category: 'approval',
     door_type: 'one-way',
     options: ['accept', 'reject'],
@@ -460,7 +460,7 @@ export const QUESTIONS = {
   },
   'land-and-deploy-rollback': {
     id: 'land-and-deploy-rollback',
-    skill: 'land-and-deploy',
+    skill: 'merge-and-deploy',
     category: 'approval',
     door_type: 'one-way',
     options: ['accept', 'reject'],
@@ -469,11 +469,11 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /cso — security audit
+  // /security-audit — security audit
   // -----------------------------------------------------------------------
   'cso-global-scan-approval': {
     id: 'cso-global-scan-approval',
-    skill: 'cso',
+    skill: 'security-audit',
     category: 'approval',
     door_type: 'one-way',
     options: ['accept', 'deny'],
@@ -481,7 +481,7 @@ export const QUESTIONS = {
   },
   'cso-finding-fix': {
     id: 'cso-finding-fix',
-    skill: 'cso',
+    skill: 'security-audit',
     category: 'approval',
     door_type: 'one-way',
     options: ['fix-now', 'defer', 'accept-risk'],
@@ -489,15 +489,15 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /gstack-upgrade — version upgrade
+  // /paysec-upgrade — version upgrade
   // -----------------------------------------------------------------------
-  'gstack-upgrade-inline': {
-    id: 'gstack-upgrade-inline',
-    skill: 'gstack-upgrade',
+  'paysec-upgrade-inline': {
+    id: 'paysec-upgrade-inline',
+    skill: 'paysec-upgrade',
     category: 'approval',
     door_type: 'two-way',
     options: ['yes-upgrade', 'always-auto', 'not-now', 'never-ask'],
-    description: "Upgrade gstack now? (Also: always auto-upgrade, snooze, or disable the prompt.)",
+    description: "Upgrade paysec now? (Also: always auto-upgrade, snooze, or disable the prompt.)",
   },
 
   // -----------------------------------------------------------------------
@@ -509,7 +509,7 @@ export const QUESTIONS = {
     category: 'approval',
     door_type: 'two-way',
     options: ['community', 'anonymous', 'off'],
-    description: "Share usage data with gstack? community (recommended) / anonymous / off",
+    description: "Share usage data with paysec? community (recommended) / anonymous / off",
   },
   'preamble-proactive-behavior': {
     id: 'preamble-proactive-behavior',
@@ -517,7 +517,7 @@ export const QUESTIONS = {
     category: 'approval',
     door_type: 'two-way',
     options: ['on', 'off'],
-    description: "Let gstack proactively suggest skills based on conversation context?",
+    description: "Let paysec proactively suggest skills based on conversation context?",
   },
   'preamble-routing-injection': {
     id: 'preamble-routing-injection',
@@ -525,7 +525,7 @@ export const QUESTIONS = {
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'decline'],
-    description: "Add gstack skill routing rules to CLAUDE.md?",
+    description: "Add paysec skill routing rules to CLAUDE.md?",
   },
   'preamble-vendored-migration': {
     id: 'preamble-vendored-migration',
@@ -533,7 +533,7 @@ export const QUESTIONS = {
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'keep-vendored'],
-    description: "This repo has vendored gstack (deprecated) — migrate to team mode?",
+    description: "This repo has vendored paysec (deprecated) — migrate to team mode?",
   },
   'preamble-completeness-intro': {
     id: 'preamble-completeness-intro',
@@ -553,11 +553,11 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /plan-tune — the skill itself
+  // /tune-questions — the skill itself
   // -----------------------------------------------------------------------
   'plan-tune-enable-setup': {
     id: 'plan-tune-enable-setup',
-    skill: 'plan-tune',
+    skill: 'tune-questions',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'skip'],
@@ -565,14 +565,14 @@ export const QUESTIONS = {
   },
   'plan-tune-declared-dimension': {
     id: 'plan-tune-declared-dimension',
-    skill: 'plan-tune',
+    skill: 'tune-questions',
     category: 'clarification',
     door_type: 'two-way',
-    description: "Self-declaration question (one per dimension during /plan-tune setup)",
+    description: "Self-declaration question (one per dimension during /tune-questions setup)",
   },
   'plan-tune-confirm-mutation': {
     id: 'plan-tune-confirm-mutation',
-    skill: 'plan-tune',
+    skill: 'tune-questions',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'reject'],
@@ -580,11 +580,11 @@ export const QUESTIONS = {
   },
 
   // -----------------------------------------------------------------------
-  // /autoplan — sequential auto-review
+  // /auto-plan-review — sequential auto-review
   // -----------------------------------------------------------------------
   'autoplan-taste-decision': {
     id: 'autoplan-taste-decision',
-    skill: 'autoplan',
+    skill: 'auto-plan-review',
     category: 'approval',
     door_type: 'two-way',
     options: ['accept', 'override', 'investigate'],
@@ -592,7 +592,7 @@ export const QUESTIONS = {
   },
   'autoplan-user-challenge': {
     id: 'autoplan-user-challenge',
-    skill: 'autoplan',
+    skill: 'auto-plan-review',
     category: 'approval',
     door_type: 'one-way',
     options: ['accept', 'reject', 'revise'],
@@ -624,7 +624,7 @@ export function getAllRegisteredIds(): Set<string> {
   return new Set(Object.keys(QUESTIONS));
 }
 
-/** Registry stats, for /plan-tune stats */
+/** Registry stats, for /tune-questions stats */
 export function getRegistryStats() {
   const all = Object.values(QUESTIONS as Record<string, QuestionDef>);
   const bySkill: Record<string, number> = {};

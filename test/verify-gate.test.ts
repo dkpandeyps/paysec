@@ -1,9 +1,9 @@
 /**
- * gstack-verify-gate — Stop-hook enforcement tier.
+ * paysec-verify-gate — Stop-hook enforcement tier.
  *
  * Pins the behaviours the gate exists for:
  *   trust    — a declared command NEVER runs until the user records it via
- *              `gstack-verify-gate --trust` (per-repo command trust store).
+ *              `paysec-verify-gate --trust` (per-repo command trust store).
  *   block    — trusted check fails, exit 2, turn cannot end.
  *   allow    — trusted check passes, exit 0.
  *   fail open — nothing declared, exit 0. Absence never blocks.
@@ -21,24 +21,24 @@ import { createHash } from 'crypto';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const GATE = path.join(ROOT, 'bin', 'gstack-verify-gate');
+const GATE = path.join(ROOT, 'bin', 'paysec-verify-gate');
 
 let dir: string;
-let gstackHome: string;
+let paysecHome: string;
 
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-verify-gate-'));
-  gstackHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-verify-gate-home-'));
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-verify-gate-'));
+  paysecHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-verify-gate-home-'));
 });
 
 afterEach(() => {
   fs.rmSync(dir, { recursive: true, force: true });
-  fs.rmSync(gstackHome, { recursive: true, force: true });
+  fs.rmSync(paysecHome, { recursive: true, force: true });
 });
 
 /** Declare a verification command in the project's CLAUDE.md (comment form). */
 function declareCheck(command: string): void {
-  fs.writeFileSync(path.join(dir, 'CLAUDE.md'), `# Fixture\n\n<!-- gstack:verify: ${command} -->\n`);
+  fs.writeFileSync(path.join(dir, 'CLAUDE.md'), `# Fixture\n\n<!-- paysec:verify: ${command} -->\n`);
 }
 
 /** Write the check script the declaration points at. Touches `check-ran` when executed. */
@@ -63,7 +63,7 @@ interface RunOpts {
 }
 
 function gateEnv(projectDirEnv: boolean): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env, GSTACK_HOME: gstackHome };
+  const env: NodeJS.ProcessEnv = { ...process.env, PAYSEC_HOME: paysecHome };
   if (projectDirEnv) env.CLAUDE_PROJECT_DIR = dir;
   else delete env.CLAUDE_PROJECT_DIR;
   return env;
@@ -93,7 +93,7 @@ function trust(opts: RunOpts = {}): { code: number; stdout: string; stderr: stri
   return { code: r.status ?? 1, stdout: r.stdout || '', stderr: r.stderr || '' };
 }
 
-describe('gstack-verify-gate trust store', () => {
+describe('paysec-verify-gate trust store', () => {
   test('an untrusted declared command is NOT executed and does not block', () => {
     declareCheck('touch sentinel-ran');
 
@@ -162,8 +162,8 @@ describe('gstack-verify-gate trust store', () => {
     expect(checkRan()).toBe(true);
   });
 
-  test('non-comment declaration form (gstack:verify: cmd without <!-- -->) is honored', () => {
-    fs.writeFileSync(path.join(dir, 'CLAUDE.md'), '# Fixture\n\ngstack:verify: ./check.sh\n');
+  test('non-comment declaration form (paysec:verify: cmd without <!-- -->) is honored', () => {
+    fs.writeFileSync(path.join(dir, 'CLAUDE.md'), '# Fixture\n\npaysec:verify: ./check.sh\n');
     check(0, 'all good');
 
     expect(trust().stdout).toContain('./check.sh');
@@ -174,12 +174,12 @@ describe('gstack-verify-gate trust store', () => {
     expect(checkRan()).toBe(true);
   });
 
-  test('the trust store file is created 0600 under GSTACK_HOME', () => {
+  test('the trust store file is created 0600 under PAYSEC_HOME', () => {
     declareCheck('./check.sh');
     check(0, 'all good');
     expect(trust().code).toBe(0);
 
-    const store = path.join(gstackHome, 'verify-gate-trust');
+    const store = path.join(paysecHome, 'verify-gate-trust');
     expect(fs.existsSync(store)).toBe(true);
     expect(fs.statSync(store).mode & 0o777).toBe(0o600);
   });
@@ -193,7 +193,7 @@ describe('gstack-verify-gate trust store', () => {
   });
 });
 
-describe('gstack-verify-gate', () => {
+describe('paysec-verify-gate', () => {
   test('blocks the turn when the trusted check fails', () => {
     declareCheck('./check.sh');
     check(1, 'totals mismatch');
@@ -223,7 +223,7 @@ describe('gstack-verify-gate', () => {
     const r = runGate();
 
     expect(r.code).toBe(0);
-    expect(r.stdout).toContain("declares no 'gstack:verify:' command");
+    expect(r.stdout).toContain("declares no 'paysec:verify:' command");
   });
 
   test('fails open when there is no CLAUDE.md at all', () => {
@@ -234,17 +234,17 @@ describe('gstack-verify-gate', () => {
   });
 
   test('never invents a command: an empty declaration fails open', () => {
-    fs.writeFileSync(path.join(dir, 'CLAUDE.md'), '<!-- gstack:verify: -->\n');
+    fs.writeFileSync(path.join(dir, 'CLAUDE.md'), '<!-- paysec:verify: -->\n');
 
     const r = runGate();
 
     expect(r.code).toBe(0);
-    expect(r.stdout).toContain("declares no 'gstack:verify:' command");
+    expect(r.stdout).toContain("declares no 'paysec:verify:' command");
   });
 
 });
 
-describe('gstack-verify-gate re-entry enforcement (no one-shot bypass)', () => {
+describe('paysec-verify-gate re-entry enforcement (no one-shot bypass)', () => {
   test('re-entry with a still-failing trusted check is blocked again', () => {
     declareCheck('./check.sh');
     check(1, 'still failing');
@@ -312,7 +312,7 @@ describe('gstack-verify-gate re-entry enforcement (no one-shot bypass)', () => {
   });
 });
 
-describe('gstack-verify-gate trust-grant audit trail', () => {
+describe('paysec-verify-gate trust-grant audit trail', () => {
   test('every --trust grant appends a JSON audit line (right sha256, 0600, verbatim cmd)', () => {
     declareCheck('./check.sh');
     check(0, 'all good');
@@ -322,7 +322,7 @@ describe('gstack-verify-gate trust-grant audit trail', () => {
     // --trust prints the VERBATIM command being trusted.
     expect(t.stdout).toContain('./check.sh');
 
-    const log = path.join(gstackHome, 'security', 'verify-gate-trust-grants.jsonl');
+    const log = path.join(paysecHome, 'security', 'verify-gate-trust-grants.jsonl');
     expect(fs.existsSync(log)).toBe(true);
     expect(fs.statSync(log).mode & 0o777).toBe(0o600);
 
@@ -354,6 +354,6 @@ describe('opt-in contract (adapted from the fork: NOT registered by default)', (
 
   test('the bin documents its own registration and removal commands', () => {
     expect(gate).toContain('remove-source --source verify-gate');
-    expect(gate).toContain('gstack:verify:');
+    expect(gate).toContain('paysec:verify:');
   });
 });

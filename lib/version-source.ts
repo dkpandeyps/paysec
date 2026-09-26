@@ -1,24 +1,24 @@
 // version-source — where a repo's version lives, and how wide it is.
 //
-// gstack's native shape is a plain-text VERSION file at the repo root holding a
-// 4-digit MAJOR.MINOR.PATCH.MICRO — and for gstack itself that file STAYS the
+// paysec's native shape is a plain-text VERSION file at the repo root holding a
+// 4-digit MAJOR.MINOR.PATCH.MICRO — and for paysec itself that file STAYS the
 // source of truth (decision pinned in the v1.67 fix-wave plan: package.json is
 // a translated mirror, never the authority). This module exists for the two
 // real-world shapes that did not fit and both failed CLOSED in a way that
-// silently disabled /ship's version tooling (#2501):
+// silently disabled /ship-pr's version tooling (#2501):
 //
 //   1. The version's home is a package.json — often not at the root (a monorepo
 //      whose frontend/package.json is the single source of truth because the
-//      build injects it). The --version-path / .gstack/version-path pin already
+//      build injects it). The --version-path / .paysec/version-path pin already
 //      let you point anywhere, but the readers treated the target as raw text,
 //      so a JSON file was whitespace-stripped into `{"name":"frontend",...` and
 //      every version read came back as the 0.0.0.0 fallback — including rival
 //      PRs' claims fetched through the GitHub Contents API, which were then
 //      dropped as "malformed".
 //   2. The version is 3-digit semver. parseVersion() required exactly four
-//      components, so gstack-next-version exited 2 ("could not parse base
+//      components, so paysec-next-version exited 2 ("could not parse base
 //      version") on every invocation — and that CLI *is* the queue-collision
-//      check, so /ship fell through to its documented "offline" path of naive
+//      check, so /ship-pr fell through to its documented "offline" path of naive
 //      local arithmetic. Two branches cut from the same base then pick the same
 //      version, and git merges that without a conflict because both sides set
 //      one line to identical text. The duplicate slot ships silently.
@@ -61,7 +61,7 @@ export function cmpVersion(a: Version, b: Version): number {
 
 /**
  * Bump one level. In a 3-digit repo there is no MICRO component to move, so
- * `micro` is carried out as a PATCH: /ship auto-picks MICRO by default, and
+ * `micro` is carried out as a PATCH: /ship-pr auto-picks MICRO by default, and
  * erroring there would make it unusable in every 3-digit repo — a silent no-op
  * would be worse still, since the caller would then write back the version it
  * started with and claim a taken slot.
@@ -86,7 +86,7 @@ export function bumpWasCoerced(level: Bump, width: VersionWidth): boolean {
 }
 
 /**
- * The npm-valid form of a gstack version. npm's semver is 3-component and
+ * The npm-valid form of a paysec version. npm's semver is 3-component and
  * rejects a fourth, so the 4-digit MAJOR.MINOR.PATCH.MICRO truncates to
  * MAJOR.MINOR.PATCH; 3-digit versions pass through unchanged. Per the
  * version-tooling end-state spec (v1.67 fix-wave plan, decision 11): the

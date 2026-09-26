@@ -8,10 +8,10 @@
  *   - One place that maps non-zero exit codes to typed errors.
  *
  * Binary resolution order (Codex round 2 #4, v1.24-aligned):
- *   1. $GSTACK_BROWSE_BIN env override (preferred, matches v1.24 GSTACK_*_BIN pattern)
+ *   1. $PAYSEC_BROWSE_BIN env override (preferred, matches v1.24 PAYSEC_*_BIN pattern)
  *   2. $BROWSE_BIN env override (back-compat alias)
- *   3. sibling dir: dirname(argv[0])/../browse/dist/browse[.exe]
- *   4. ~/.claude/skills/gstack/browse/dist/browse[.exe]
+ *   3. sibling dir: dirname(argv[0])/../browser/dist/browse[.exe]
+ *   4. ~/.claude/skills/paysec/browser/dist/browse[.exe]
  *   5. PATH lookup via Bun.which('browse') — handles Windows PATHEXT natively
  *   6. error with setup hint
  *
@@ -102,16 +102,16 @@ export function findExecutable(base: string): string | null {
  * canonical setup message if not found. See header for resolution order.
  */
 export function resolveBrowseBin(env: NodeJS.ProcessEnv = process.env): string {
-  // 1 + 2: env overrides (GSTACK_BROWSE_BIN preferred, BROWSE_BIN back-compat).
-  const overrideRaw = env.GSTACK_BROWSE_BIN ?? env.BROWSE_BIN;
+  // 1 + 2: env overrides (PAYSEC_BROWSE_BIN preferred, BROWSE_BIN back-compat).
+  const overrideRaw = env.PAYSEC_BROWSE_BIN ?? env.BROWSE_BIN;
   const override = resolveOverride(overrideRaw, env);
   if (override) return override;
 
-  // 3: sibling — make-pdf and browse co-located in dist/.
+  // 3: sibling — md-to-pdf and browse co-located in dist/.
   const selfDir = path.dirname(process.argv[0]);
   const siblingCandidates = [
-    path.resolve(selfDir, "../browse/dist/browse"),
-    path.resolve(selfDir, "../../browse/dist/browse"),
+    path.resolve(selfDir, "../browser/dist/browse"),
+    path.resolve(selfDir, "../../browser/dist/browse"),
     path.resolve(selfDir, "../browse"),
   ];
   for (const candidate of siblingCandidates) {
@@ -121,7 +121,7 @@ export function resolveBrowseBin(env: NodeJS.ProcessEnv = process.env): string {
 
   // 4: global install.
   const home = os.homedir();
-  const globalPath = path.join(home, ".claude/skills/gstack/browse/dist/browse");
+  const globalPath = path.join(home, ".claude/skills/paysec/browser/dist/browse");
   const globalFound = findExecutable(globalPath);
   if (globalFound) return globalFound;
 
@@ -137,21 +137,21 @@ export function resolveBrowseBin(env: NodeJS.ProcessEnv = process.env): string {
     [
       "browse binary not found.",
       "",
-      "make-pdf needs browse (the gstack Chromium daemon) to render PDFs.",
+      "md-to-pdf needs browse (the paysec Chromium daemon) to render PDFs.",
       "Tried:",
-      `  - $GSTACK_BROWSE_BIN (${env.GSTACK_BROWSE_BIN || "unset"})`,
+      `  - $PAYSEC_BROWSE_BIN (${env.PAYSEC_BROWSE_BIN || "unset"})`,
       `  - $BROWSE_BIN (${env.BROWSE_BIN || "unset"})`,
       `  - sibling: ${siblingCandidates.join(", ")}`,
       `  - global: ${globalPath}`,
       "  - PATH: `browse`",
       "",
-      "To fix: run gstack setup from the gstack repo:",
-      "  cd ~/.claude/skills/gstack && ./setup",
+      "To fix: run paysec setup from the paysec repo:",
+      "  cd ~/.claude/skills/paysec && ./setup",
       "",
-      "Or set GSTACK_BROWSE_BIN explicitly:",
+      "Or set PAYSEC_BROWSE_BIN explicitly:",
       process.platform === "win32"
-        ? '  setx GSTACK_BROWSE_BIN "C:\\path\\to\\browse.exe"'
-        : "  export GSTACK_BROWSE_BIN=/path/to/browse",
+        ? '  setx PAYSEC_BROWSE_BIN "C:\\path\\to\\browse.exe"'
+        : "  export PAYSEC_BROWSE_BIN=/path/to/browse",
     ].join("\n"),
   );
 }
@@ -201,7 +201,7 @@ function runBrowse(args: string[]): string {
  * non-Windows; os.tmpdir on Windows).  v1.6.0.0 tightened --from-file
  * validation to close a CLI/API parity gap (PR #1103), so os.tmpdir()
  * on macOS (/var/folders/...) now fails validateReadPath.  Use the same
- * TEMP_DIR convention as browse/src/platform.ts.
+ * TEMP_DIR convention as browser/src/platform.ts.
  *
  * Exported because orchestrator.ts and setup.ts write files that browse must
  * read back; os.tmpdir() there trips the same validateReadPath rejection.

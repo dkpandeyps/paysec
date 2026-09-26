@@ -1,5 +1,5 @@
 /**
- * Declared annotation helper (plan-tune cathedral T7) — unit tests.
+ * Declared annotation helper (tune-questions cathedral T7) — unit tests.
  *
  * Verifies the helper's contract:
  *   - Returns null for unknown signal_key.
@@ -23,17 +23,17 @@ let prevHome: string | undefined;
 let stateRoot: string;
 
 beforeEach(() => {
-  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-annot-'));
-  prevStateRoot = process.env.GSTACK_STATE_ROOT;
-  prevHome = process.env.GSTACK_HOME;
-  process.env.GSTACK_STATE_ROOT = stateRoot;
-  delete process.env.GSTACK_HOME;
+  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-annot-'));
+  prevStateRoot = process.env.PAYSEC_STATE_ROOT;
+  prevHome = process.env.PAYSEC_HOME;
+  process.env.PAYSEC_STATE_ROOT = stateRoot;
+  delete process.env.PAYSEC_HOME;
 });
 
 afterEach(() => {
-  if (prevStateRoot !== undefined) process.env.GSTACK_STATE_ROOT = prevStateRoot;
-  else delete process.env.GSTACK_STATE_ROOT;
-  if (prevHome !== undefined) process.env.GSTACK_HOME = prevHome;
+  if (prevStateRoot !== undefined) process.env.PAYSEC_STATE_ROOT = prevStateRoot;
+  else delete process.env.PAYSEC_STATE_ROOT;
+  if (prevHome !== undefined) process.env.PAYSEC_HOME = prevHome;
   fs.rmSync(stateRoot, { recursive: true, force: true });
 });
 

@@ -1,4 +1,4 @@
-# Spike: Claude Code hook mutation for plan-tune cathedral
+# Spike: Claude Code hook mutation for tune-questions cathedral
 
 **Status:** complete (2026-05-27)
 **Surfaces:** D10 (does PreToolUse allow mutating AUQ input?), D19/Codex (matcher must cover MCP variants)
@@ -39,7 +39,7 @@ Optional in subagent context: `agent_id`, `agent_type`.
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "allow",
-    "permissionDecisionReason": "auto-decided by plan-tune preference",
+    "permissionDecisionReason": "auto-decided by tune-questions preference",
     "updatedInput": { /* shallow-merged into original tool_input */ },
     "additionalContext": "optional context for Claude"
   }
@@ -85,11 +85,11 @@ required for our hook to fire there.
 > deduplicated automatically.
 
 **For our use case:**
-- gstack registers exactly one PreToolUse hook and one PostToolUse hook on
+- paysec registers exactly one PreToolUse hook and one PostToolUse hook on
   AUQ-shaped tool names.
 - If a user has THEIR own hook that also returns `updatedInput` on
   AskUserQuestion, the merge order is undefined.
-- Mitigation: document this constraint in `bin/gstack-settings-hook`
+- Mitigation: document this constraint in `bin/paysec-settings-hook`
   install prompt. User can detect the conflict from the diff preview before
   accepting.
 
@@ -104,7 +104,7 @@ required for our hook to fire there.
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "allow",
-    "permissionDecisionReason": "plan-tune: never-ask preference on ship-test-failure-triage",
+    "permissionDecisionReason": "tune-questions: never-ask preference on ship-test-failure-triage",
     "updatedInput": {
       "questions": [{ /* same as input, but with auto-selected answer */ }]
     }
@@ -113,13 +113,13 @@ required for our hook to fire there.
 ```
 
 **Pass-through (no preference, or one-way safety override):** exit 0 with
-EMPTY stdout. When there is context to inject (plan-tune memory nuggets),
+EMPTY stdout. When there is context to inject (tune-questions memory nuggets),
 emit `additionalContext` WITHOUT a `permissionDecision`:
 ```json
 {
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
-    "additionalContext": "[plan-tune memory] Past answers suggest: ..."
+    "additionalContext": "[tune-questions memory] Past answers suggest: ..."
   }
 }
 ```
@@ -181,7 +181,7 @@ guaranteed path.
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/skills/gstack/hosts/claude/hooks/question-preference-hook",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/skills/paysec/hosts/claude/hooks/question-preference-hook",
             "timeout": 5
           }
         ]
@@ -193,7 +193,7 @@ guaranteed path.
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/skills/gstack/hosts/claude/hooks/question-log-hook",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/skills/paysec/hosts/claude/hooks/question-log-hook",
             "timeout": 5
           }
         ]
@@ -214,14 +214,14 @@ shells into bun.
    label first. The label is on the option's `label` field per
    AskUserQuestion Format. Implementation will need to walk `tool_input.
    questions[*].options[*]` looking for the label suffix. Worked
-   examples: ship/SKILL.md.tmpl emits options like `"A) Fix now"
+   examples: ship-pr/SKILL.md.tmpl emits options like `"A) Fix now"
    (recommended)`.
 
 2. **Auto-decided event tagging.** When hook returns `updatedInput`, the
    PostToolUse hook will see the resolved input and log a normal event.
    Need an extra field on the PostToolUse payload (e.g.,
    `was_auto_decided: true`) that the hook can set via session state
-   tracking — write a marker file in `~/.gstack/sessions/<id>/.auto-decided-<tool_use_id>`
+   tracking — write a marker file in `~/.paysec/sessions/<id>/.auto-decided-<tool_use_id>`
    from PreToolUse, read it from PostToolUse, delete on read.
 
 3. **Timeout behavior.** Default hook timeout is 60s but the docs are
@@ -232,5 +232,5 @@ shells into bun.
 
 - https://code.claude.com/docs/en/hooks (canonical, latest as of 2026-04)
 - WebSearch results 2026-05-27
-- Existing `bin/gstack-settings-hook` (SessionStart-only impl, to be
+- Existing `bin/paysec-settings-hook` (SessionStart-only impl, to be
   superseded by T3 schema-aware rewrite)

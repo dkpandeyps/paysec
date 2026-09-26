@@ -1,8 +1,8 @@
 /**
- * /ship review fix loop stays in one invocation (#2391).
+ * /ship-pr review fix loop stays in one invocation (#2391).
  *
  * The pre-landing review used to commit its fixes, STOP, and tell the user
- * to run /ship again — 5-10 manual invocations on a branch with a few
+ * to run /ship-pr again — 5-10 manual invocations on a branch with a few
  * auto-fixable findings, violating the skill's fully-automated contract.
  * The rendered section must instruct a bounded in-invocation loop
  * (re-test, re-review, max 3 fix cycles) and must never terminate an
@@ -15,18 +15,18 @@ import * as path from 'path';
 const ROOT = path.join(import.meta.dir, '..');
 
 const RENDERED_SITES = [
-  path.join(ROOT, 'ship', 'sections', 'review-army.md'),
+  path.join(ROOT, 'ship-pr', 'sections', 'review-army.md'),
   path.join(ROOT, 'test', 'fixtures', 'golden', 'claude-ship-SKILL.md'),
   path.join(ROOT, 'test', 'fixtures', 'golden', 'codex-ship-SKILL.md'),
   path.join(ROOT, 'test', 'fixtures', 'golden', 'factory-ship-SKILL.md'),
 ];
 
-describe('/ship review fix loop (#2391)', () => {
+describe('/ship-pr review fix loop (#2391)', () => {
   test('no rendered ship surface instructs a STOP-and-rerun after fixes', () => {
     // The pre-fix instruction: "then **STOP** and tell the user to run
-    // `/ship` again". The fixed text mentions the phrase only inside a
+    // `/ship-pr` again". The fixed text mentions the phrase only inside a
     // NEVER-do-this prohibition, so match the imperative STOP shape.
-    const rerunRequest = /\*\*STOP\*\*[^\n]*run `\/ship` again/;
+    const rerunRequest = /\*\*STOP\*\*[^\n]*run `\/ship-pr` again/;
     for (const file of RENDERED_SITES) {
       const content = fs.readFileSync(file, 'utf-8');
       expect(rerunRequest.test(content)).toBe(false);

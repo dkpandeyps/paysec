@@ -11,8 +11,8 @@
  * telemetry.
  *
  * Telemetry data flow:
- *   1. Always: local JSONL append to ~/.gstack/analytics/ (inline, inspectable)
- *   2. If _TEL != "off" AND binary exists: gstack-telemetry-log for remote reporting
+ *   1. Always: local JSONL append to ~/.paysec/analytics/ (inline, inspectable)
+ *   2. If _TEL != "off" AND binary exists: paysec-telemetry-log for remote reporting
  */
 
 
@@ -60,7 +60,7 @@ import { generateContextHealth } from './preamble/generate-context-health';
 // Tier 3+ repo mode + search
 import { generateRepoModeSection } from './preamble/generate-repo-mode-section';
 import { generateSearchBeforeBuildingSection } from './preamble/generate-search-before-building';
-import { generateMakePdfSetup } from './make-pdf';
+import { generateMakePdfSetup } from './md-to-pdf';
 
 // Standalone export used directly by the resolver registry
 export { generateTestFailureTriage } from './preamble/generate-test-failure-triage';
@@ -88,7 +88,7 @@ export function generatePreamble(ctx: TemplateContext): string {
   }
   const sections = [
     generatePreambleBash(ctx),
-    ...(ctx.skillName === 'make-pdf' ? [generateMakePdfSetup(ctx)] : []),
+    ...(ctx.skillName === 'md-to-pdf' ? [generateMakePdfSetup(ctx)] : []),
     // Plan-mode-skill semantics stays near the top: after bash (so _SESSION_ID /
     // _BRANCH / _TEL env vars are live) and before all onboarding gates so
     // models read the authoritative "AskUserQuestion satisfies plan mode's

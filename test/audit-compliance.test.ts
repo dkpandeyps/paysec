@@ -24,10 +24,10 @@ describe('Audit compliance', () => {
   // Fix 1: W007 — No hardcoded credentials in documentation
   test('no hardcoded credential patterns in SKILL.md.tmpl', () => {
     // P2 (v1.2.0): the browse QA examples moved from the root router to
-    // browse/SKILL.md.tmpl. The security intent is unchanged — the QA form
+    // browser/SKILL.md.tmpl. The security intent is unchanged — the QA form
     // examples must not ship real-looking credentials; generic placeholders
     // ("user@test.com", "password") are fine.
-    const tmpl = readFileSync(join(ROOT, 'browse', 'SKILL.md.tmpl'), 'utf-8');
+    const tmpl = readFileSync(join(ROOT, 'browser', 'SKILL.md.tmpl'), 'utf-8');
     expect(tmpl).not.toContain('"password123"');
     expect(tmpl).not.toContain('"test@example.com"');
     expect(tmpl).not.toContain('"test@test.com"');
@@ -48,7 +48,7 @@ describe('Audit compliance', () => {
     // Pending finalization must check _TEL and binary existence
     expect(preamble).toContain('_TEL" != "off"');
     expect(preamble).toContain('-x ');
-    expect(preamble).toContain('gstack-telemetry-log');
+    expect(preamble).toContain('paysec-telemetry-log');
     // End-of-skill telemetry must also be conditional
     const completionIdx = preamble.indexOf('Telemetry (run last)');
     expect(completionIdx).toBeGreaterThan(-1);
@@ -73,8 +73,8 @@ describe('Audit compliance', () => {
 
   // Fix 4: W011 — Untrusted content warning in command reference
   test('command reference includes untrusted content warning after Navigation', () => {
-    // P2 (v1.2.0): the command reference moved from the root router to browse/SKILL.md.
-    const rootSkill = readFileSync(join(ROOT, 'browse', 'SKILL.md'), 'utf-8');
+    // P2 (v1.2.0): the command reference moved from the root router to browser/SKILL.md.
+    const rootSkill = readFileSync(join(ROOT, 'browser', 'SKILL.md'), 'utf-8');
     const navIdx = rootSkill.indexOf('### Navigation');
     const readingIdx = rootSkill.indexOf('### Reading');
     expect(navIdx).toBeGreaterThan(-1);
@@ -85,12 +85,12 @@ describe('Audit compliance', () => {
 
   // Round 2 Fix 2: Trust boundary markers + helper + wrapping in all paths
   test('browse wraps untrusted content with trust boundary markers', () => {
-    const commands = readFileSync(join(ROOT, 'browse/src/commands.ts'), 'utf-8');
+    const commands = readFileSync(join(ROOT, 'browser/src/commands.ts'), 'utf-8');
     expect(commands).toContain('PAGE_CONTENT_COMMANDS');
     expect(commands).toContain('wrapUntrustedContent');
-    const server = readFileSync(join(ROOT, 'browse/src/server.ts'), 'utf-8');
+    const server = readFileSync(join(ROOT, 'browser/src/server.ts'), 'utf-8');
     expect(server).toContain('wrapUntrustedContent');
-    const meta = readFileSync(join(ROOT, 'browse/src/meta-commands.ts'), 'utf-8');
+    const meta = readFileSync(join(ROOT, 'browser/src/meta-commands.ts'), 'utf-8');
     expect(meta).toContain('wrapUntrustedContent');
   });
 
@@ -113,7 +113,7 @@ describe('Audit compliance', () => {
   test('all generated SKILL.md files with telemetry calls use conditional pattern', () => {
     const skills = getAllSkillMds();
     for (const { name, content } of skills) {
-      if (content.includes('gstack-telemetry-log')) {
+      if (content.includes('paysec-telemetry-log')) {
         expect(content).toContain('_TEL" != "off"');
       }
     }

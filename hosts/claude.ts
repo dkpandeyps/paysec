@@ -4,7 +4,7 @@ const claude = defineHost({
   name: 'claude',
   displayName: 'Claude Code',
 
-  usesEnvVars: false,  // primary host — literal ~ paths, no $GSTACK_ROOT env vars
+  usesEnvVars: false,  // primary host — literal ~ paths, no $PAYSEC_ROOT env vars
 
   frontmatter: {
     mode: 'denylist',
@@ -14,7 +14,7 @@ const claude = defineHost({
 
   generation: {
     generateMetadata: false,
-    skipSkills: ['claude'],  // the /claude outside-voice skill is for non-Claude hosts; /codex stays (it IS a Claude skill wrapping codex exec)
+    skipSkills: ['claude-second-opinion'],  // the /claude-second-opinion outside-voice skill is for non-Claude hosts; /codex-second-opinion stays (it IS a Claude skill wrapping codex exec)
   },
 
   pathRewrites: [],  // Claude is the primary host — no rewrites needed

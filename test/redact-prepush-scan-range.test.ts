@@ -1,5 +1,5 @@
 /**
- * gstack-redact-prepush — WHICH commits get scanned.
+ * paysec-redact-prepush — WHICH commits get scanned.
  *
  * `remoteSha..localSha` is "everything new on this branch", not "everything new
  * to the remote". Merge origin/main into a feature branch and every commit main
@@ -65,7 +65,7 @@ const addedOnly = (diff: string): string =>
     .join("\n");
 
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "gstack-prepush-"));
+  dir = mkdtempSync(join(tmpdir(), "paysec-prepush-"));
   run(["init", "-q", "-b", "main"]);
   run(["config", "user.email", "t@example.com"]);
   run(["config", "user.name", "T"]);
@@ -84,7 +84,7 @@ const FAKE_AWS_NOREMOT = ["AKIA", "IOSFODNN7NOREMOT"].join("");
 
 /** Give the repo an "origin" whose main carries a fixture we did not write. */
 function setUpRemoteWithForeignFixture(): void {
-  const remote = mkdtempSync(join(tmpdir(), "gstack-prepush-remote-"));
+  const remote = mkdtempSync(join(tmpdir(), "paysec-prepush-remote-"));
   run(["init", "-q", "--bare", "-b", "main"], remote);
   run(["remote", "add", "origin", remote]);
   run(["push", "-q", "origin", "main"]);
@@ -169,7 +169,7 @@ describe("narrowing the range does not narrow coverage", () => {
 // These run END-TO-END through the hook binary with the real argv + stdin
 // protocol, because the behavior under test is the argv threading itself.
 describe("S1: exclusion scoped to the push-target remote", () => {
-  const PREPUSH = join(import.meta.dir, "..", "bin", "gstack-redact-prepush");
+  const PREPUSH = join(import.meta.dir, "..", "bin", "paysec-redact-prepush");
   const FAKE_AWS_OTHERREM = ["AKIA", "IOSFODNN7OTHERRM"].join("");
 
   function runHook(stdinLines: string, argv: string[]): { code: number; stderr: string } {
@@ -192,7 +192,7 @@ describe("S1: exclusion scoped to the push-target remote", () => {
    *      the first time this content heads anywhere public
    */
   function buildSecretOnSecondRemote(): { originTip: string } {
-    const origin = mkdtempSync(join(tmpdir(), "gstack-prepush-origin-"));
+    const origin = mkdtempSync(join(tmpdir(), "paysec-prepush-origin-"));
     run(["init", "-q", "--bare", "-b", "main"], origin);
     run(["remote", "add", "origin", origin]);
     run(["push", "-q", "origin", "main"]);
@@ -201,7 +201,7 @@ describe("S1: exclusion scoped to the push-target remote", () => {
     run(["push", "-q", "-u", "origin", "feature"]);
     const originTip = run(["rev-parse", "HEAD"]).trim();
 
-    const other = mkdtempSync(join(tmpdir(), "gstack-prepush-other-"));
+    const other = mkdtempSync(join(tmpdir(), "paysec-prepush-other-"));
     run(["init", "-q", "--bare", "-b", "main"], other);
     run(["remote", "add", "other", other]);
     run(["checkout", "-q", "-b", "leaky"]);

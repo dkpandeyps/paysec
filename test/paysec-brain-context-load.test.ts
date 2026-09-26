@@ -1,5 +1,5 @@
 /**
- * Unit tests for bin/gstack-brain-context-load.ts (Lane C).
+ * Unit tests for bin/paysec-brain-context-load.ts (Lane C).
  *
  * Tests CLI surface, template var substitution, manifest vs default-fallback
  * routing, datamark envelope wrapping, and graceful degradation when gbrain
@@ -12,7 +12,7 @@ import { tmpdir } from "os";
 import { delimiter, join } from "path";
 import { spawnSync } from "child_process";
 
-const SCRIPT = join(import.meta.dir, "..", "bin", "gstack-brain-context-load.ts");
+const SCRIPT = join(import.meta.dir, "..", "bin", "paysec-brain-context-load.ts");
 
 function runScript(args: string[], env: Record<string, string> = {}): { stdout: string; stderr: string; exitCode: number } {
   const result = spawnSync("bun", [SCRIPT, ...args], {
@@ -91,15 +91,15 @@ function prependPath(binDir: string): Record<string, string> {
     [pathKey]: `${binDir}${delimiter}${currentPath}`,
     // Cold process spawns on a loaded machine can exceed the 500ms default
     // budget; the fake gbrain is instant once spawned, so give it headroom.
-    GSTACK_BRAIN_TIMEOUT_MS: "10000",
+    PAYSEC_BRAIN_TIMEOUT_MS: "10000",
   };
 }
 
-describe("gstack-brain-context-load CLI", () => {
+describe("paysec-brain-context-load CLI", () => {
   it("--help exits 0 with usage", () => {
     const r = runScript(["--help"]);
     expect(r.exitCode).toBe(0);
-    expect(r.stderr).toContain("Usage: gstack-brain-context-load");
+    expect(r.stderr).toContain("Usage: paysec-brain-context-load");
     expect(r.stderr).toContain("--skill");
     expect(r.stderr).toContain("--repo");
   });
@@ -117,7 +117,7 @@ describe("gstack-brain-context-load CLI", () => {
   });
 });
 
-describe("gstack-brain-context-load — manifest dispatch", () => {
+describe("paysec-brain-context-load — manifest dispatch", () => {
   it("falls back to default manifest when --skill resolves to no file", () => {
     const r = runScript(["--skill", "nonexistent-skill-xyz", "--repo", "test-repo", "--explain", "--quiet"]);
     expect(r.exitCode).toBe(0);
@@ -127,7 +127,7 @@ describe("gstack-brain-context-load — manifest dispatch", () => {
   });
 
   it("uses skill manifest when --skill-file points at a valid SKILL.md", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-bcl-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-bcl-"));
     const skillFile = join(dir, "SKILL.md");
     writeFileSync(
       skillFile,
@@ -165,7 +165,7 @@ body
   });
 
   it("wraps rendered body in USER_TRANSCRIPT_DATA envelope (datamark per D12)", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-bcl-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-bcl-"));
     const skillFile = join(dir, "SKILL.md");
     writeFileSync(
       skillFile,
@@ -192,7 +192,7 @@ gbrain:
   });
 
   it("substitutes {repo_slug} in render_as", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-bcl-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-bcl-"));
     const skillFile = join(dir, "SKILL.md");
     writeFileSync(
       skillFile,
@@ -218,7 +218,7 @@ gbrain:
   });
 
   it("skips queries with unresolved template vars (logged via --explain)", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-bcl-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-bcl-"));
     const skillFile = join(dir, "SKILL.md");
     writeFileSync(
       skillFile,
@@ -245,7 +245,7 @@ gbrain:
   });
 
   it("--quiet suppresses rendered output", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-bcl-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-bcl-"));
     const skillFile = join(dir, "SKILL.md");
     writeFileSync(
       skillFile,
@@ -271,9 +271,9 @@ gbrain:
   });
 });
 
-describe("gstack-brain-context-load — graceful gbrain absence", () => {
+describe("paysec-brain-context-load — graceful gbrain absence", () => {
   it("uses gbrain when a binary is available on PATH", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-bcl-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-bcl-"));
     const binDir = join(dir, "bin");
     mkdirSync(binDir);
     writeFakeGbrain(binDir);
@@ -290,7 +290,7 @@ describe("gstack-brain-context-load — graceful gbrain absence", () => {
   });
 
   it("manifest filter: blocks reach gbrain as --filter args with template vars resolved (#1687)", () => {
-    const dir = mkdtempSync(join(tmpdir(), "gstack-bcl-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-bcl-"));
     const binDir = join(dir, "bin");
     mkdirSync(binDir);
     writeFakeGbrain(binDir);
@@ -335,7 +335,7 @@ gbrain:
     // times, so the only invocations are the 3 default-manifest list_pages
     // queries — a revert adds `--version` lines (and re-probing adds one per
     // query) and fails exactly here.
-    const dir = mkdtempSync(join(tmpdir(), "gstack-bcl-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-bcl-"));
     const binDir = join(dir, "bin");
     mkdirSync(binDir);
     const logFile = join(dir, "gbrain-argv.log");
@@ -355,12 +355,12 @@ gbrain:
     }
   });
 
-  it("availability survives a 1ms query budget — detection is not subject to GSTACK_BRAIN_TIMEOUT_MS", () => {
+  it("availability survives a 1ms query budget — detection is not subject to PAYSEC_BRAIN_TIMEOUT_MS", () => {
     // The spawn probe ran under the same MCP_TIMEOUT_MS budget as the queries,
     // so a cold spawn slower than the budget misreported gbrain as MISSING.
     // With the stat scan, a 1ms budget kills the queries themselves (SKIP)
     // but detection still sees the CLI — "gbrain CLI missing" must not appear.
-    const dir = mkdtempSync(join(tmpdir(), "gstack-bcl-"));
+    const dir = mkdtempSync(join(tmpdir(), "paysec-bcl-"));
     const binDir = join(dir, "bin");
     mkdirSync(binDir);
     // A SLOW fake, not the shared instant one: on a fast CI runner the
@@ -384,7 +384,7 @@ fi
     chmodSync(fakeBin, 0o755);
 
     try {
-      const env = { ...prependPath(binDir), GSTACK_BRAIN_TIMEOUT_MS: "1" };
+      const env = { ...prependPath(binDir), PAYSEC_BRAIN_TIMEOUT_MS: "1" };
       const r = runScript(["--repo", "test-repo", "--explain", "--quiet"], env);
       expect(r.exitCode).toBe(0);
       expect(r.stderr).toContain("SKIP");

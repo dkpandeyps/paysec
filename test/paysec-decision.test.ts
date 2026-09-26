@@ -1,5 +1,5 @@
 /**
- * Unit tests for lib/gstack-decision.ts — event-sourced decision memory model.
+ * Unit tests for lib/paysec-decision.ts — event-sourced decision memory model.
  */
 
 import { describe, it, expect } from "bun:test";
@@ -22,7 +22,7 @@ import {
   type DecisionEvent,
   type ActiveDecision,
   type DecisionPaths,
-} from "../lib/gstack-decision";
+} from "../lib/paysec-decision";
 
 const PEM_SECRET = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----";
 
@@ -111,10 +111,10 @@ describe("filterByScope", () => {
 
 describe("decisionPaths", () => {
   it("derives log/snapshot/archive under the project slug", () => {
-    const p = decisionPaths("garrytan-gstack", "/tmp/gs");
-    expect(p.log).toBe("/tmp/gs/projects/garrytan-gstack/decisions.jsonl");
-    expect(p.snapshot).toBe("/tmp/gs/projects/garrytan-gstack/decisions.active.json");
-    expect(p.archive).toBe("/tmp/gs/projects/garrytan-gstack/decisions.archive.jsonl");
+    const p = decisionPaths("garrytan-paysec", "/tmp/gs");
+    expect(p.log).toBe("/tmp/gs/projects/garrytan-paysec/decisions.jsonl");
+    expect(p.snapshot).toBe("/tmp/gs/projects/garrytan-paysec/decisions.active.json");
+    expect(p.archive).toBe("/tmp/gs/projects/garrytan-paysec/decisions.archive.jsonl");
   });
 });
 

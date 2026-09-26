@@ -2,7 +2,7 @@
  * CI secret gate contract (R4/R9, fork port wave 2).
  *
  * .github/scripts/gate-secret-scan.mjs pipes a unified diff's ADDED lines
- * into bin/gstack-redact and enforces: HIGH fails (exit 1), MEDIUM is an
+ * into bin/paysec-redact and enforces: HIGH fails (exit 1), MEDIUM is an
  * advisory count only (no human in CI to confirm, so it must never fail
  * the check), clean passes. The workflow-level pathspec excludes keep the
  * planted-bug fixtures out of the diff entirely; this pins the script's
@@ -70,7 +70,7 @@ describe("gate-secret-scan.mjs exit contract", () => {
 
 describe("gate-secret-scan.mjs fail-closed legs", () => {
   test("oversize diff (report.oversize) fails the gate", () => {
-    // The script pins --max-bytes 16000000; bin/gstack-redact refuses to scan
+    // The script pins --max-bytes 16000000; bin/paysec-redact refuses to scan
     // anything larger and reports oversize:true (fail-closed). The gate must
     // exit 1 rather than pass unscanned bytes. ~17MB of added lines guarantees
     // the joined additions exceed the cap.
@@ -82,8 +82,8 @@ describe("gate-secret-scan.mjs fail-closed legs", () => {
     expect(r.out).toContain("1 high");
   }, 60_000);
 
-  test("unexpected gstack-redact exit code fails the gate even when the report is clean", () => {
-    // Stub bin/gstack-redact that emits a CLEAN JSON report but exits 1 —
+  test("unexpected paysec-redact exit code fails the gate even when the report is clean", () => {
+    // Stub bin/paysec-redact that emits a CLEAN JSON report but exits 1 —
     // not one of the contract codes (0 clean / 2 MEDIUM / 3 HIGH). The gate
     // must treat the unexpected exit as failure: a broken scanner reporting
     // "all clear" is exactly the fail-open shape this leg guards against.
@@ -91,7 +91,7 @@ describe("gate-secret-scan.mjs fail-closed legs", () => {
     try {
       mkdirSync(join(dir, "bin"));
       writeFileSync(
-        join(dir, "bin", "gstack-redact"),
+        join(dir, "bin", "paysec-redact"),
         [
           "#!/usr/bin/env bun",
           'let input = "";',
@@ -112,8 +112,8 @@ describe("gate-secret-scan.mjs fail-closed legs", () => {
     }
   });
 
-  test("missing gstack-redact (spawn crash, empty stdout) exits nonzero — never fail-open", () => {
-    // cwd with no bin/gstack-redact at all: bun exits module-not-found with
+  test("missing paysec-redact (spawn crash, empty stdout) exits nonzero — never fail-open", () => {
+    // cwd with no bin/paysec-redact at all: bun exits module-not-found with
     // empty stdout. Whatever the exact failure shape, the gate must not
     // report success.
     const dir = mkdtempSync(join(tmpdir(), "gate-secret-scan-absent-"));

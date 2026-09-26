@@ -34,13 +34,13 @@ When `$B connect` launches, it creates a git worktree for file isolation. We wan
 
 ## Why this matters
 
-Today, `/qa` and `/design-review` feel like a black box. Claude says "I found 3 issues" but you can't see what it's looking at. With the sidebar connected to Conductor:
+Today, `/qa-fix` and `/design-qa` feel like a black box. Claude says "I found 3 issues" but you can't see what it's looking at. With the sidebar connected to Conductor:
 
 - **You watch Claude test your app** in real time — every click, every navigation, every screenshot appears in Chrome while you watch
 - **You can interrupt** — "no, test the mobile view" or "skip that page" — without switching windows
 - **One agent, two views** — the same Claude that's editing your code is also controlling the browser. No context duplication, no stale state
 
-## What's already built (gstack side)
+## What's already built (paysec side)
 
 Everything on our side is done and shipping:
 
@@ -54,4 +54,4 @@ Everything on our side is done and shipping:
 
 The only change on our side: swap the data source from "local `claude -p` subprocess" to "Conductor session stream." The extension code stays the same.
 
-**Estimated effort:** 2-3 days Conductor engineering, 1 day gstack integration.
+**Estimated effort:** 2-3 days Conductor engineering, 1 day paysec integration.

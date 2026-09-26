@@ -7,7 +7,7 @@ import * as os from 'os';
 const ROOT = path.resolve(import.meta.dir, '..');
 const SETUP_SRC = fs.readFileSync(path.join(ROOT, 'setup'), 'utf-8');
 
-// gstack-learnings-log is the command from the original bug report: bin scripts
+// paysec-learnings-log is the command from the original bug report: bin scripts
 // import shared modules via `$SCRIPT_DIR/../lib`, so a runtime root that
 // exposes bin/ without lib/ fails with "Cannot find module .../lib/jsonl-store.ts".
 // Running it end-to-end from each installed root proves bin and lib travel together.
@@ -33,8 +33,8 @@ function extractFunction(name: string): string {
 // root assignment through the last runtime-asset link so the extracted code is
 // a complete statement list.
 function extractKiroBlock(): string {
-  const startAnchor = 'KIRO_GSTACK="$KIRO_SKILLS/gstack"';
-  const endAnchor = '_link_or_copy "$SOURCE_GSTACK_DIR/supabase/config.sh" "$KIRO_GSTACK/supabase/config.sh"\n  fi';
+  const startAnchor = 'KIRO_PAYSEC="$KIRO_SKILLS/paysec"';
+  const endAnchor = '_link_or_copy "$SOURCE_PAYSEC_DIR/supabase/config.sh" "$KIRO_PAYSEC/supabase/config.sh"\n  fi';
   const start = SETUP_SRC.indexOf(startAnchor);
   const end = SETUP_SRC.indexOf(endAnchor, start);
   if (start < 0 || end < 0) throw new Error('Could not locate the Kiro install block in setup');
@@ -53,12 +53,12 @@ interface CommandResult {
 
 // Build one host runtime root inside a sandbox using the real setup shell code
 // (IS_WINDOWS toggles _link_or_copy between symlink and copy), then execute
-// gstack-learnings-log from the installed root and check the learning landed.
+// paysec-learnings-log from the installed root and check the learning landed.
 function buildRootAndRunCommand(
   isWindows: '0' | '1',
   buildScript: (sandbox: string) => { script: string; rootDir: string },
 ): CommandResult {
-  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-runtime-lib-'));
+  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-runtime-lib-'));
   try {
     const home = path.join(sandbox, 'home');
     const project = path.join(sandbox, 'project');
@@ -73,14 +73,14 @@ function buildRootAndRunCommand(
     );
 
     const libLst = fs.lstatSync(path.join(rootDir, 'lib'), { throwIfNoEntry: false });
-    const run = spawnSync('bash', [path.join(rootDir, 'bin', 'gstack-learnings-log'), PAYLOAD], {
+    const run = spawnSync('bash', [path.join(rootDir, 'bin', 'paysec-learnings-log'), PAYLOAD], {
       cwd: project,
       encoding: 'utf-8',
       timeout: 30000,
-      env: { ...process.env, HOME: home, GSTACK_HOME: path.join(home, '.gstack') },
+      env: { ...process.env, HOME: home, PAYSEC_HOME: path.join(home, '.paysec') },
     });
 
-    const projectsDir = path.join(home, '.gstack', 'projects');
+    const projectsDir = path.join(home, '.paysec', 'projects');
     const learningsWritten = fs.existsSync(projectsDir)
       && fs.readdirSync(projectsDir).some((slug) => {
         const file = path.join(projectsDir, slug, 'learnings.jsonl');
@@ -95,7 +95,7 @@ function buildRootAndRunCommand(
       learningsWritten,
       libIsSymlink: libLst ? libLst.isSymbolicLink() : null,
       // Distinct defect (#2215): telemetry-class bin scripts source
-      // $GSTACK_DIR/supabase/config.sh to resolve GSTACK_SUPABASE_URL. The
+      // $PAYSEC_DIR/supabase/config.sh to resolve PAYSEC_SUPABASE_URL. The
       // [ -f ... ] guard means a missing file degrades SILENTLY, so only a
       // presence check on the installed root catches it.
       supabaseConfigPresent: fs.existsSync(path.join(rootDir, 'supabase', 'config.sh')),
@@ -110,43 +110,43 @@ function buildRootAndRunCommand(
 const HOST_ROOTS: Record<string, (sandbox: string) => { script: string; rootDir: string }> = {
   'agents sidecar': (sandbox) => ({
     script: [
-      `SOURCE_GSTACK_DIR="${ROOT}"`,
+      `SOURCE_PAYSEC_DIR="${ROOT}"`,
       extractFunction('create_agents_sidecar'),
       `mkdir -p "${sandbox}/repo"`,
       `create_agents_sidecar "${sandbox}/repo"`,
     ].join('\n'),
-    rootDir: path.join(sandbox, 'repo', '.agents', 'skills', 'gstack'),
+    rootDir: path.join(sandbox, 'repo', '.agents', 'skills', 'paysec'),
   }),
   codex: (sandbox) => ({
     script: [
       extractFunction('create_codex_runtime_root'),
-      `create_codex_runtime_root "${ROOT}" "${sandbox}/home/.codex/skills/gstack"`,
+      `create_codex_runtime_root "${ROOT}" "${sandbox}/home/.codex/skills/paysec"`,
     ].join('\n'),
-    rootDir: path.join(sandbox, 'home', '.codex', 'skills', 'gstack'),
+    rootDir: path.join(sandbox, 'home', '.codex', 'skills', 'paysec'),
   }),
   factory: (sandbox) => ({
     script: [
       extractFunction('create_factory_runtime_root'),
-      `create_factory_runtime_root "${ROOT}" "${sandbox}/home/.factory/skills/gstack"`,
+      `create_factory_runtime_root "${ROOT}" "${sandbox}/home/.factory/skills/paysec"`,
     ].join('\n'),
-    rootDir: path.join(sandbox, 'home', '.factory', 'skills', 'gstack'),
+    rootDir: path.join(sandbox, 'home', '.factory', 'skills', 'paysec'),
   }),
   opencode: (sandbox) => ({
     script: [
       extractFunction('create_opencode_runtime_root'),
-      `create_opencode_runtime_root "${ROOT}" "${sandbox}/home/.opencode/skills/gstack"`,
+      `create_opencode_runtime_root "${ROOT}" "${sandbox}/home/.opencode/skills/paysec"`,
     ].join('\n'),
-    rootDir: path.join(sandbox, 'home', '.opencode', 'skills', 'gstack'),
+    rootDir: path.join(sandbox, 'home', '.opencode', 'skills', 'paysec'),
   }),
   kiro: (sandbox) => ({
     script: [
       `HOME="${sandbox}/home"`,
-      `SOURCE_GSTACK_DIR="${ROOT}"`,
+      `SOURCE_PAYSEC_DIR="${ROOT}"`,
       `KIRO_SKILLS="$HOME/.kiro/skills"`,
       `mkdir -p "$KIRO_SKILLS"`,
       extractKiroBlock(),
     ].join('\n'),
-    rootDir: path.join(sandbox, 'home', '.kiro', 'skills', 'gstack'),
+    rootDir: path.join(sandbox, 'home', '.kiro', 'skills', 'paysec'),
   }),
 };
 
@@ -157,7 +157,7 @@ const HOST_ROOTS: Record<string, (sandbox: string) => { script: string; rootDir:
 // the Windows copy branch itself, which is plain `cp -R` and portable.
 describe.skipIf(process.platform === 'win32')('setup: bin commands resolve sibling lib from every host root', () => {
   for (const [host, buildScript] of Object.entries(HOST_ROOTS)) {
-    test(`${host} root (symlink install): gstack-learnings-log imports ../lib and writes the learning`, () => {
+    test(`${host} root (symlink install): paysec-learnings-log imports ../lib and writes the learning`, () => {
       const r = buildRootAndRunCommand('0', buildScript);
       expect(r.buildStatus).toBe(0);
       expect(r.libIsSymlink).toBe(true);
@@ -167,7 +167,7 @@ describe.skipIf(process.platform === 'win32')('setup: bin commands resolve sibli
       expect(r.supabaseConfigPresent).toBe(true);
     });
 
-    test(`${host} root (Windows copy install): gstack-learnings-log imports ../lib and writes the learning`, () => {
+    test(`${host} root (Windows copy install): paysec-learnings-log imports ../lib and writes the learning`, () => {
       const r = buildRootAndRunCommand('1', buildScript);
       expect(r.buildStatus).toBe(0);
       // Windows branch copies: lib must be a real directory, not a symlink.

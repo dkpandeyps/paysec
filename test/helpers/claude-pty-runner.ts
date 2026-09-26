@@ -89,7 +89,7 @@ export interface ClaudePtyOptions {
   /** Terminal size. Default 120x40. Plan-mode UI lays out cleanly at this size. */
   cols?: number;
   rows?: number;
-  /** Working directory. Default: process.cwd(). The repo cwd has the gstack
+  /** Working directory. Default: process.cwd(). The repo cwd has the paysec
    *  skill registry and trusted-folder cookie, so most tests want this. */
   cwd?: string;
   /** Extra env on top of process.env. */
@@ -171,7 +171,7 @@ export function isPlanReadyVisible(visible: string): boolean {
 
 /**
  * Detect the AUTO_DECIDE preamble template firing. The model prints
- * "Auto-decided <summary> → <option> (your preference). Change with /plan-tune."
+ * "Auto-decided <summary> → <option> (your preference). Change with /tune-questions."
  * when it short-circuits an AskUserQuestion via the question-tuning resolver
  * (`scripts/resolvers/question-tuning.ts:26`). The "Auto-decided ..." stem +
  * "(your preference)" tail combination is the tightest signal. Whitespace-
@@ -352,7 +352,7 @@ export function isNumberedOptionListVisible(visible: string): boolean {
 //
 // Cost: ~$0.0005 per call using claude haiku 4.5. Cached by snapshot hash so
 // identical TTY frames don't re-charge. All verdicts logged to
-// ~/.gstack/analytics/pty-judge.jsonl for offline analysis.
+// ~/.paysec/analytics/pty-judge.jsonl for offline analysis.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { spawnSync as nodeSpawnSync } from 'node:child_process';
@@ -376,7 +376,7 @@ const PTY_VERDICT_CACHE = new Map<string, PtyStateVerdict>();
  */
 function logPtyJudge(record: Record<string, unknown>): void {
   try {
-    const dir = `${process.env.HOME}/.gstack/analytics`;
+    const dir = `${process.env.HOME}/.paysec/analytics`;
     fs.mkdirSync(dir, { recursive: true });
     fs.appendFileSync(`${dir}/pty-judge.jsonl`, JSON.stringify(record) + '\n');
   } catch {
@@ -385,14 +385,14 @@ function logPtyJudge(record: Record<string, unknown>): void {
 }
 
 /**
- * Snapshot dump for postmortem debugging when GSTACK_PTY_LOG=1.
+ * Snapshot dump for postmortem debugging when PAYSEC_PTY_LOG=1.
  * Writes the last 4KB of visible TTY plus context to
- * ~/.gstack/analytics/pty-snapshots/<testName>-<elapsed>ms.txt.
+ * ~/.paysec/analytics/pty-snapshots/<testName>-<elapsed>ms.txt.
  */
 export function logPtySnapshot(visible: string, ctx: { testName: string; elapsedMs: number; tag?: string }): void {
-  if (process.env.GSTACK_PTY_LOG !== '1') return;
+  if (process.env.PAYSEC_PTY_LOG !== '1') return;
   try {
-    const dir = `${process.env.HOME}/.gstack/analytics/pty-snapshots`;
+    const dir = `${process.env.HOME}/.paysec/analytics/pty-snapshots`;
     fs.mkdirSync(dir, { recursive: true });
     const tag = ctx.tag ? `-${ctx.tag}` : '';
     const file = `${dir}/${ctx.testName}-${ctx.elapsedMs}ms${tag}.txt`;
@@ -534,9 +534,9 @@ ${tail}
  *   - 2+ distinct lettered options (A) B) C) D)) at line starts — typical
  *     for plan-eng / plan-design / plan-devex prose AUQ
  *   - 3+ distinct numbered options (1. 2. 3.) at line starts WITHOUT a
- *     `❯<spaces>1.` cursor — typical for autoplan / office-hours prose AUQ
+ *     `❯<spaces>1.` cursor — typical for auto-plan-review / idea-review prose AUQ
  *   - 3+ markdown bold-bullet options (`- **label**`) following an
- *     interrogative line — office-hours renders its mode question this way
+ *     interrogative line — idea-review renders its mode question this way
  *     (`> - **Building a startup**`), which has no letter/number marker
  *   - Pattern 4/5 (collapsed-form): a reply-instruction OR recommendation
  *     marker PLUS 2+ distinct A-D letter markers each punctuated by ) : or (
@@ -590,7 +590,7 @@ export function isProseAUQVisible(visible: string): boolean {
   }
   if (numberedHits.size >= 2) return true;
 
-  // Pattern 3: markdown bold-bullet option list. office-hours renders its
+  // Pattern 3: markdown bold-bullet option list. idea-review renders its
   // mode question as `> - **Building a startup**` lines under
   // --disallowedTools — no letter/number marker, so Patterns 1-2 miss it,
   // and the model keeps a spinner up so the Haiku judge scores it 'working'
@@ -640,7 +640,7 @@ export function isProseAUQVisible(visible: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Scope-gate render detectors (plan-eng-review / plan-design-review)
+// Scope-gate render detectors (plan-tech-review / plan-ux-review)
 // ---------------------------------------------------------------------------
 //
 // Both anchor on the RENDER SHAPE, not bare keywords, so model narration
@@ -752,7 +752,7 @@ export function parseNumberedOptions(
   // Cursor line: option 1 may be inline after box dividers + prompt header
   // (`...divider...header...❯1. label`) — and, when the PTY reflows the whole
   // AUQ onto ONE logical line, options 2..N sit on the SAME line after it
-  // (observed with /plan-design-review's Step-0 scope gate: `❯1.Branch diff
+  // (observed with /plan-ux-review's Step-0 scope gate: `❯1.Branch diff
   // ... 2.Plan or design doc ... 5.Chat about this ... Enter to select`).
   // Parse the cursor line as a STREAM: find every `N.` token (not preceded
   // by a digit, not followed by one — excludes "12." and "1.5"), require
@@ -815,13 +815,13 @@ export function parseNumberedOptions(
 }
 
 /**
- * The four /plan-ceo-review modes. Used by `skill-e2e-plan-ceo-mode-routing`
+ * The four /plan-business-review modes. Used by `skill-e2e-plan-business-mode-routing`
  * to detect Step 0F mode-selection AskUserQuestions, and by the upcoming
  * finding-count tests as a Step-0 boundary signal: an AUQ whose options
  * match this regex IS the mode pick (the last Step-0 question for plan-ceo).
  *
  * Lifted out of the mode-routing test so multiple PTY tests can share one
- * source of truth — when /plan-ceo-review adds a fifth mode, one regex updates
+ * source of truth — when /plan-business-review adds a fifth mode, one regex updates
  * everywhere instead of drifting per-test.
  */
 export const MODE_RE = /HOLD SCOPE|SCOPE EXPANSION|SELECTIVE EXPANSION|SCOPE REDUCTION/i;
@@ -865,7 +865,7 @@ export type ClassifyResult =
 
 const SANCTIONED_WRITE_SUBSTRINGS = [
   '.claude/plans',
-  '.gstack/',
+  '.paysec/',
   '/.context/',
   'CHANGELOG.md',
   'TODOS.md',
@@ -1140,10 +1140,10 @@ export function auqFingerprint(
  * stop signal; this regex is the "we're done, go gracefully" hint.
  */
 export const COMPLETION_SUMMARY_RE =
-  /(GSTACK REVIEW REPORT|## Completion [Ss]ummary|Status:\s*(clean|issues_open)|^VERDICT:)/m;
+  /(PAYSEC REVIEW REPORT|## Completion [Ss]ummary|Status:\s*(clean|issues_open)|^VERDICT:)/m;
 
 /**
- * Result of asserting that a plan file ends with `## GSTACK REVIEW REPORT`
+ * Result of asserting that a plan file ends with `## PAYSEC REVIEW REPORT`
  * as its last `## ` heading. `ok` is true iff the report is present AND no
  * other `## ` heading appears after it. Diagnostic fields are populated only
  * on failure to keep the success path cheap.
@@ -1155,7 +1155,7 @@ export interface ReviewReportAtBottomResult {
 }
 
 /**
- * Assert that `## GSTACK REVIEW REPORT` is the last `## ` heading in a plan
+ * Assert that `## PAYSEC REVIEW REPORT` is the last `## ` heading in a plan
  * file's content. Pure string operation — no filesystem access. Used by the
  * finding-count E2E tests as a second assertion on each test's produced plan.
  *
@@ -1167,10 +1167,10 @@ export interface ReviewReportAtBottomResult {
 export function assertReviewReportAtBottom(
   content: string,
 ): ReviewReportAtBottomResult {
-  const re = /^## GSTACK REVIEW REPORT\s*$/m;
+  const re = /^## PAYSEC REVIEW REPORT\s*$/m;
   const match = re.exec(content);
   if (!match) {
-    return { ok: false, reason: 'no GSTACK REVIEW REPORT section' };
+    return { ok: false, reason: 'no PAYSEC REVIEW REPORT section' };
   }
   const after = content.slice(match.index + match[0].length);
   // Match any `## ` heading after the report. Reject `## ` followed by
@@ -1181,7 +1181,7 @@ export function assertReviewReportAtBottom(
   if (trailingHeadings.length > 0) {
     return {
       ok: false,
-      reason: 'trailing ## heading(s) after GSTACK REVIEW REPORT',
+      reason: 'trailing ## heading(s) after PAYSEC REVIEW REPORT',
       trailingHeadings,
     };
   }
@@ -1190,7 +1190,7 @@ export function assertReviewReportAtBottom(
 
 /**
  * Test helper: if `obs.planFile` was set, read it and assert
- * `## GSTACK REVIEW REPORT` is the last `## ` section. Throws on
+ * `## PAYSEC REVIEW REPORT` is the last `## ` section. Throws on
  * violation with a diagnostic message including the plan path,
  * the reason, any trailing headings, and the last 2KB of TTY output.
  *
@@ -1225,7 +1225,7 @@ export function assertReportAtBottomIfPlanWritten(
       ? `\ntrailing headings: ${verdict.trailingHeadings.join(', ')}`
       : '';
     throw new Error(
-      `GSTACK REVIEW REPORT contract violation in ${obs.planFile}: ${verdict.reason}${trailing}\n` +
+      `PAYSEC REVIEW REPORT contract violation in ${obs.planFile}: ${verdict.reason}${trailing}\n` +
         `--- evidence (last 2KB) ---\n${obs.evidence}`,
     );
   }
@@ -1237,10 +1237,10 @@ export function assertReportAtBottomIfPlanWritten(
  *
  * - `ceoStep0Boundary`: matches the mode-pick AUQ (options match `MODE_RE`).
  * - `engStep0Boundary`: matches the cross-project-learnings or scope-reduction
- *   AUQ that closes plan-eng-review's preamble.
- * - `designStep0Boundary`: matches plan-design-review's first dimension /
+ *   AUQ that closes plan-tech-review's preamble.
+ * - `designStep0Boundary`: matches plan-ux-review's first dimension /
  *   posture AUQ.
- * - `devexStep0Boundary`: matches plan-devex-review's persona-selection AUQ.
+ * - `devexStep0Boundary`: matches plan-dx-review's persona-selection AUQ.
  *
  * Predicates live alongside the helper so the unit suite can exercise each
  * against synthetic fingerprints (positive AND negative cases). Skill test
@@ -1258,14 +1258,14 @@ export const engStep0Boundary: Step0BoundaryPredicate = (fp) =>
   /scope reduction recommendation|cross[\s-]?project learnings/i.test(
     fp.promptSnippet,
   ) ||
-  // plan-eng-review's Step 0 may legitimately end with NO scope-reduction /
+  // plan-tech-review's Step 0 may legitimately end with NO scope-reduction /
   // learnings AUQ. When it does, the first answered review-phase question —
-  // tagged <gstack-qid:plan-eng-review-...> ({skill}-{slug} convention) —
+  // tagged <paysec-qid:plan-eng-review-...> ({skill}-{slug} convention) —
   // must fire the boundary, or every per-finding AUQ stays classified
   // preReview and the multi-finding batching counter reads 0. Anchor allows
   // the skill-name prefix; live qids observed: plan-eng-review-jitter,
   // plan-eng-review-idempotency, plan-eng-review-todos-e2e-concurrent.
-  /gstack-qid:\s*(?:plan-)?eng-review-/i.test(fp.promptSnippet);
+  /paysec-qid:\s*(?:plan-)?eng-review-/i.test(fp.promptSnippet);
 
 export const designStep0Boundary: Step0BoundaryPredicate = (fp) =>
   /design system|design posture|design score|first dimension/i.test(
@@ -1506,7 +1506,7 @@ export async function launchClaudePty(
  *
  * @example
  * const session = await launchClaudePty();
- * const result = await invokeAndObserve(session, '/plan-ceo-review', {
+ * const result = await invokeAndObserve(session, '/plan-business-review', {
  *   askUserQuestion: /❯\s*1\./,
  *   planReady: /ready to execute/i,
  *   silentWrite: /⏺\s*Write\(/,
@@ -1650,7 +1650,7 @@ export interface PlanSkillObservation {
  *   - 'asked' = the skill is gating decisions on the user, as expected.
  *   - 'plan_ready' = the skill ran end-to-end, wrote a plan file, and
  *     surfaced claude's native confirmation. Some skills (like
- *     plan-design-review on a no-UI branch) legitimately reach plan_ready
+ *     plan-ux-review on a no-UI branch) legitimately reach plan_ready
  *     without firing AskUserQuestion because they short-circuit.
  *
  * FAIL: 'silent_write' or 'exited' or 'timeout'.
@@ -1661,7 +1661,7 @@ export interface PlanSkillObservation {
  * counted zero questions.
  */
 export async function runPlanSkillObservation(opts: {
-  /** Skill name, e.g. 'plan-ceo-review'. */
+  /** Skill name, e.g. 'plan-business-review'. */
   skillName: string;
   /** Whether to launch in plan mode. Default true. The no-op regression
    *  test sets this false to verify skills work outside plan mode. */
@@ -1838,7 +1838,7 @@ export async function runPlanSkillObservation(opts: {
       // burned >60s with periodic ticks, ask Haiku "is the model waiting,
       // working, or hung?" Treat 'waiting' as 'asked' (model surfaced a
       // question via prose the regex couldn't reassemble). Snapshot the
-      // visible buffer at each judge call when GSTACK_PTY_LOG=1.
+      // visible buffer at each judge call when PAYSEC_PTY_LOG=1.
       const elapsed = Date.now() - start;
       if (elapsed > JUDGE_AFTER_MS && Date.now() - lastJudgeAt > JUDGE_INTERVAL_MS) {
         lastJudgeAt = Date.now();
@@ -1935,7 +1935,7 @@ export interface PlanSkillCountObservation {
  *      the skill reviews. Slash commands with trailing args are rejected by
  *      Claude Code unless the skill defines them, so the plan goes as a
  *      follow-up message (the proven pattern at
- *      skill-e2e-plan-design-with-ui.test.ts:57-71).
+ *      skill-e2e-plan-ux-with-ui.test.ts:57-71).
  *   4. Poll loop:
  *      - Skip permission dialogs (auto-grant with `defaultPick`).
  *      - On a new numbered-option list, parse prompt + options, build
@@ -1966,9 +1966,9 @@ export interface PlanSkillCountObservation {
  * fingerprints.
  */
 export async function runPlanSkillCounting(opts: {
-  /** Skill name, e.g. 'plan-ceo-review'. Used for diagnostic strings only. */
+  /** Skill name, e.g. 'plan-business-review'. Used for diagnostic strings only. */
   skillName: string;
-  /** Slash command to send alone, e.g. '/plan-ceo-review'. No trailing args. */
+  /** Slash command to send alone, e.g. '/plan-business-review'. No trailing args. */
   slashCommand: string;
   /** Plan content sent as a follow-up message ~3s after the slash command. */
   followUpPrompt: string;
@@ -1984,7 +1984,7 @@ export async function runPlanSkillCounting(opts: {
    * Optional override for the FIRST AUQ observed. Receives the fingerprint;
    * returns the option index to press. Subsequent AUQs always use defaultPick.
    *
-   * Skill-specific routing helper: /plan-ceo-review's first AUQ asks "what
+   * Skill-specific routing helper: /plan-business-review's first AUQ asks "what
    * scope?" with options like "branch diff" / "describe inline" / "skip
    * interview". Pressing the default 1 routes to "branch diff" (the wrong
    * review target for a seeded fixture). firstAUQPick lets the test pick
@@ -2221,9 +2221,9 @@ export interface PlanSkillFloorObservation {
  * numbered-option render. See block comment above for the contract.
  */
 export async function runPlanSkillFloorCheck(opts: {
-  /** Skill name, e.g. 'plan-eng-review'. Used for diagnostic strings only. */
+  /** Skill name, e.g. 'plan-tech-review'. Used for diagnostic strings only. */
   skillName: string;
-  /** Slash command to send alone, e.g. '/plan-eng-review'. */
+  /** Slash command to send alone, e.g. '/plan-tech-review'. */
   slashCommand: string;
   /** Plan content sent as a follow-up message ~3s after the slash command. */
   followUpPrompt: string;
@@ -2383,7 +2383,7 @@ export async function runPlanSkillFloorCheck(opts: {
 
       // Reached terminal without AUQ → transcript-bug regression.
       // Note: COMPLETION_SUMMARY_RE is intentionally NOT checked here — it
-      // matches "GSTACK REVIEW REPORT" anywhere in the buffer, including
+      // matches "PAYSEC REVIEW REPORT" anywhere in the buffer, including
       // when the agent does recon by reading existing plan files (which
       // contain that string as a generated section). The plan_ready check
       // (claude's actual "Ready to execute" confirmation) is the reliable

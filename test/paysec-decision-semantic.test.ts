@@ -1,5 +1,5 @@
 /**
- * Tests for lib/gstack-decision-semantic.ts — the OPTIONAL gbrain enhancement.
+ * Tests for lib/paysec-decision-semantic.ts — the OPTIONAL gbrain enhancement.
  *
  * The load-bearing contract is DEGRADE-TO-NULL: when gbrain is absent/errors, every
  * entry point returns null (caller shows reliable file results), never throws, never
@@ -15,7 +15,7 @@ import {
   parseSearchHits,
   resolveMemorySourceId,
   semanticRecall,
-} from "../lib/gstack-decision-semantic";
+} from "../lib/paysec-decision-semantic";
 
 describe("parseSearchHits (text surface)", () => {
   const sample = [
@@ -91,7 +91,7 @@ describe("end-to-end with a fake gbrain shim", () => {
     writeShim(
       `#!/usr/bin/env bash
 if [ "$1" = "sources" ]; then
-  echo '{"sources":[{"id":"code","local_path":"/repo","page_count":100},{"id":"default","local_path":"/u/.gstack-brain-worktree","page_count":3}]}'
+  echo '{"sources":[{"id":"code","local_path":"/repo","page_count":100},{"id":"default","local_path":"/u/.paysec-brain-worktree","page_count":3}]}'
   exit 0
 fi
 if [ "$1" = "search" ]; then
@@ -129,7 +129,7 @@ exit 1
   test("degrades to null when gbrain search exits non-zero", () => {
     writeShim(
       `#!/usr/bin/env bash
-if [ "$1" = "sources" ]; then echo '{"sources":[{"id":"default","local_path":"/u/.gstack-brain-worktree"}]}'; exit 0; fi
+if [ "$1" = "sources" ]; then echo '{"sources":[{"id":"default","local_path":"/u/.paysec-brain-worktree"}]}'; exit 0; fi
 exit 1
 `,
     );

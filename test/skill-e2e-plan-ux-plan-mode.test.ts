@@ -1,10 +1,10 @@
 /**
- * plan-design-review plan-mode smoke (periodic, paid, real-PTY).
+ * plan-ux-review plan-mode smoke (periodic, paid, real-PTY).
  *
- * See test/skill-e2e-plan-ceo-plan-mode.test.ts for the shared assertion
- * contract. Exercises the same contract against /plan-design-review.
+ * See test/skill-e2e-plan-business-plan-mode.test.ts for the shared assertion
+ * contract. Exercises the same contract against /plan-ux-review.
  *
- * Note: on no-UI-scope branches plan-design-review legitimately short-
+ * Note: on no-UI-scope branches plan-ux-review legitimately short-
  * circuits to plan_ready without firing AskUserQuestion. Both 'asked' and
  * 'plan_ready' are valid pass outcomes.
  */
@@ -41,17 +41,17 @@ Only the happy path is designed. No empty states, no error states,
 no loading states. Mobile: "stacks on mobile."
 `;
 
-describeE2E('plan-design-review plan-mode smoke (periodic)', () => {
+describeE2E('plan-ux-review plan-mode smoke (periodic)', () => {
   test('reaches a terminal outcome (asked or plan_ready) without silent writes', async () => {
     const obs = await runPlanSkillObservation({
-      skillName: 'plan-design-review',
+      skillName: 'plan-ux-review',
       inPlanMode: true,
       timeoutMs: 300_000,
     });
 
     if (obs.outcome === 'silent_write' || obs.outcome === 'exited' || obs.outcome === 'timeout') {
       throw new Error(
-        `plan-design-review plan-mode smoke FAILED: outcome=${obs.outcome}\n` +
+        `plan-ux-review plan-mode smoke FAILED: outcome=${obs.outcome}\n` +
           `summary: ${obs.summary}\n` +
           `elapsed: ${obs.elapsedMs}ms\n` +
           `--- evidence (last 2KB visible) ---\n${obs.evidence}`,
@@ -68,7 +68,7 @@ describeE2E('plan-design-review plan-mode smoke (periodic)', () => {
   // --disallowedTools (native AUQ available is the common path here).
   test('scope gate auto-selects B when a plan is seeded in plan mode', async () => {
     const obs = await runPlanSkillObservation({
-      skillName: 'plan-design-review',
+      skillName: 'plan-ux-review',
       inPlanMode: true,
       initialPlanContent: SEED_PLAN_UI_HEAVY,
       timeoutMs: 300_000,

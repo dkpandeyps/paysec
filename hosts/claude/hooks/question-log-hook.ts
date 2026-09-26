@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 /**
- * PostToolUse hook for AskUserQuestion (Claude Code, plan-tune cathedral T5).
+ * PostToolUse hook for AskUserQuestion (Claude Code, tune-questions cathedral T5).
  *
  * Reads hook stdin JSON, extracts every AUQ question + user choice from the
- * tool_input/tool_response, and writes them via gstack-question-log so the
+ * tool_input/tool_response, and writes them via paysec-question-log so the
  * substrate captures fires deterministically — no agent compliance required.
  *
  * Triggered by ~/.claude/settings.json:
@@ -14,7 +14,7 @@
  *           "matcher": "(AskUserQuestion|mcp__.*__AskUserQuestion)",
  *           "hooks": [
  *             { "type": "command",
- *               "command": "$CLAUDE_PROJECT_DIR/.claude/skills/gstack/hosts/claude/hooks/question-log-hook",
+ *               "command": "$CLAUDE_PROJECT_DIR/.claude/skills/paysec/hosts/claude/hooks/question-log-hook",
  *               "timeout": 5 }
  *           ]
  *         }
@@ -24,10 +24,10 @@
  *
  * Invariants:
  *   - Always exits 0. A failing hook MUST NOT block the user's session.
- *     Errors land in ~/.gstack/hook-errors.log for postmortem.
- *   - Spawns gstack-question-log as a subprocess; that bin handles
+ *     Errors land in ~/.paysec/hook-errors.log for postmortem.
+ *   - Spawns paysec-question-log as a subprocess; that bin handles
  *     validation, dedup (source+tool_use_id), async derive.
- *   - Marker-first question_id (`<gstack-qid:foo-bar>`), hash fallback
+ *   - Marker-first question_id (`<paysec-qid:foo-bar>`), hash fallback
  *     (D18 progressive markers).
  *
  * See docs/spikes/claude-code-hook-mutation.md for the protocol contract.
@@ -65,15 +65,15 @@ interface ExtractedQuestion {
   door_type?: string;
 }
 
-const MARKER_RE = /<gstack-qid:([a-z0-9-]{1,64})>/i;
+const MARKER_RE = /<paysec-qid:([a-z0-9-]{1,64})>/i;
 const RECOMMENDED_LABEL_RE = /\(recommended\)\s*$/i;
 
 function logHookError(msg: string): void {
   try {
     const stateRoot =
-      process.env.GSTACK_STATE_ROOT ||
-      process.env.GSTACK_HOME ||
-      path.join(os.homedir(), '.gstack');
+      process.env.PAYSEC_STATE_ROOT ||
+      process.env.PAYSEC_HOME ||
+      path.join(os.homedir(), '.paysec');
     fs.mkdirSync(stateRoot, { recursive: true });
     fs.appendFileSync(
       path.join(stateRoot, 'hook-errors.log'),
@@ -107,7 +107,7 @@ function hashQuestionId(skill: string, question: string, options: string[]): str
 
 /**
  * Marker-first id extraction. Returns the marker id (stripped of the
- * <gstack-qid:...> wrapper) when present, else a hash-based hook- id.
+ * <paysec-qid:...> wrapper) when present, else a hash-based hook- id.
  * Per D18 progressive markers — hash ids are observed-only, never used
  * as preference keys.
  */
@@ -243,23 +243,23 @@ function extractUserChoices(
 function detectSkill(cwd: string | undefined): string {
   // Best-effort: cwd often contains the project slug but rarely the running
   // skill. Without a session-state mechanism, leave as 'unknown' — the
-  // skill marker (<gstack-skill:NAME>) embedded in question text per
-  // future plan-tune work is the durable path.
+  // skill marker (<paysec-skill:NAME>) embedded in question text per
+  // future tune-questions work is the durable path.
   void cwd;
   return 'unknown';
 }
 
 function spawnLog(payload: Record<string, unknown>, cwd?: string): void {
-  const res = runBin('gstack-question-log', [JSON.stringify(payload)], {
+  const res = runBin('paysec-question-log', [JSON.stringify(payload)], {
     encoding: 'utf-8',
     stdio: ['ignore', 'pipe', 'pipe'],
     timeout: 3000,
-    // Run from the originating tool call's cwd so gstack-slug resolves to
+    // Run from the originating tool call's cwd so paysec-slug resolves to
     // the project the user is actually in, not the hook script's location.
     cwd: cwd && fs.existsSync(cwd) ? cwd : undefined,
   });
   if (res.status !== 0) {
-    logHookError(`gstack-question-log exited ${res.status}: ${res.stderr || res.stdout}`);
+    logHookError(`paysec-question-log exited ${res.status}: ${res.stderr || res.stdout}`);
   }
 }
 

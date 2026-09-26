@@ -50,7 +50,7 @@ export async function receiptedFetch(
   } catch (err) {
     process.stderr.write(
       `[design] egress receipt could not be written (${(err as Error).message}) — proceeding (fail-open). ` +
-      `gstack records what it ATTEMPTS to send off-machine; see gstack-egress.\n`,
+      `paysec records what it ATTEMPTS to send off-machine; see paysec-egress.\n`,
     );
   }
   return fetchImpl(url, init);

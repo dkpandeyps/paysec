@@ -1,8 +1,8 @@
 /**
  * gbrain-guards — defense-in-depth against gbrain's destructive code paths (#1734).
  *
- * gbrain (the separate CLI gstack shells out to) can rm-rf a user's working tree
- * during an autopilot race (its own bug, upstream gbrain #1526). gstack can't fix
+ * gbrain (the separate CLI paysec shells out to) can rm-rf a user's working tree
+ * during an autopilot race (its own bug, upstream gbrain #1526). paysec can't fix
  * that, but it MUST stop treating gbrain's destructive subcommands as safe. These
  * guards gate the two ways the orchestrator can reach destruction:
  *
@@ -37,7 +37,7 @@ import { parseSourcesList, type GbrainSourceRow } from "./gbrain-sources";
 
 export function gbrainHome(env: NodeJS.ProcessEnv = process.env): string {
   // #2521: GBRAIN_HOME is a PARENT dir per gbrain's configDir() contract —
-  // gbrain appends `.gbrain` itself, so gstack must too.
+  // gbrain appends `.gbrain` itself, so paysec must too.
   return env.GBRAIN_HOME ? join(env.GBRAIN_HOME, ".gbrain") : join(homedir(), ".gbrain");
 }
 
@@ -302,7 +302,7 @@ export function decideCodeSync(
       allow: false,
       reason:
         `source "${sourceId}" is URL-managed (remote_url set); sync may auto-reclone and ` +
-        `delete the working tree. Re-run /sync-gbrain with --allow-reclone to proceed.`,
+        `delete the working tree. Re-run /brain-sync with --allow-reclone to proceed.`,
     };
   }
   return { allow: true, reason: "no remote_url, or reclone explicitly allowed" };

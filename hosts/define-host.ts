@@ -3,7 +3,7 @@
  * used to live.
  *
  * Every field a host doesn't override gets the common external-host default:
- * paths derived from the host name (`.{name}/skills/gstack`), allowlist
+ * paths derived from the host name (`.{name}/skills/paysec`), allowlist
  * frontmatter (name + description), no metadata sidecar, skip the codex
  * skill, the standard three-entry pathRewrite trio derived from the resolved
  * paths, the shared runtimeRoot asset list, and symlink-generated install.
@@ -66,9 +66,9 @@ export const EXEC_STYLE_TOOL_REWRITES: Record<string, string> = {
  * an override on the common external-host defaults documented above.
  *
  * `extraPathRewrites` appends to the derived standard trio
- * (`~/.claude/skills/gstack` → `~/{globalRoot}`, `.claude/skills/gstack` →
+ * (`~/.claude/skills/paysec` → `~/{globalRoot}`, `.claude/skills/paysec` →
  * localSkillRoot, `.claude/skills` → `{hostSubdir}/skills`). Hosts whose
- * rewrites aren't mechanically derivable (codex, factory use $GSTACK_ROOT and
+ * rewrites aren't mechanically derivable (codex, factory use $PAYSEC_ROOT and
  * an extra review rewrite; claude has none) replace the whole list via
  * `pathRewrites` instead. The two are mutually exclusive.
  */
@@ -86,10 +86,10 @@ export function defineHost<const N extends string>(overrides: HostOverrides<N>):
     displayName,
     cliCommand = name,
     cliAliases = [],
-    globalRoot = `.${name}/skills/gstack`,
-    localSkillRoot = `.${name}/skills/gstack`,
+    globalRoot = `.${name}/skills/paysec`,
+    localSkillRoot = `.${name}/skills/paysec`,
     hostSubdir = `.${name}`,
-    usesEnvVars = true,  // false only for Claude (literal ~ paths, no $GSTACK_ROOT)
+    usesEnvVars = true,  // false only for Claude (literal ~ paths, no $PAYSEC_ROOT)
     frontmatter = {
       mode: 'allowlist',
       keepFields: ['name', 'description'],
@@ -97,16 +97,16 @@ export function defineHost<const N extends string>(overrides: HostOverrides<N>):
     },
     generation = {
       generateMetadata: false,
-      skipSkills: ['codex'],  // Codex skill is a Claude wrapper around codex exec
+      skipSkills: ['codex-second-opinion'],  // Codex skill is a Claude wrapper around codex exec
     },
     pathRewrites,
     extraPathRewrites,
     toolRewrites,
     suppressedResolvers = [...GBRAIN_RESOLVERS],
     runtimeRoot = {
-      globalSymlinks: ['bin', 'browse/dist', 'browse/bin', 'gstack-upgrade', 'ETHOS.md'],
+      globalSymlinks: ['bin', 'browser/dist', 'browser/bin', 'paysec-upgrade', 'ETHOS.md'],
       globalFiles: {
-        'review': ['checklist.md', 'TODOS-format.md'],
+        'pr-review': ['checklist.md', 'TODOS-format.md'],
       },
     },
     install = {
@@ -125,8 +125,8 @@ export function defineHost<const N extends string>(overrides: HostOverrides<N>):
   }
 
   const resolvedPathRewrites: PathRewrite[] = pathRewrites ?? [
-    { from: '~/.claude/skills/gstack', to: `~/${globalRoot}` },
-    { from: '.claude/skills/gstack', to: localSkillRoot },
+    { from: '~/.claude/skills/paysec', to: `~/${globalRoot}` },
+    { from: '.claude/skills/paysec', to: localSkillRoot },
     { from: '.claude/skills', to: `${hostSubdir}/skills` },
     ...(extraPathRewrites ?? []),
   ];

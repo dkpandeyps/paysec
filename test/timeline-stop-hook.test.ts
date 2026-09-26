@@ -25,8 +25,8 @@ let projectDir: string;
 let timelinePath: string;
 
 beforeEach(() => {
-  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-stop-hook-home-'));
-  projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-stop-hook-proj-'));
+  tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-stop-hook-home-'));
+  projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-stop-hook-proj-'));
   fs.mkdirSync(path.join(tmpHome, 'projects', SLUG), { recursive: true });
   timelinePath = path.join(tmpHome, 'projects', SLUG, 'timeline.jsonl');
 });
@@ -42,8 +42,8 @@ function runHook(stdin: string): { exitCode: number; stdout: string; stderr: str
     encoding: 'utf-8',
     env: {
       ...process.env,
-      GSTACK_HOME: tmpHome,
-      GSTACK_PROJECT_SLUG: SLUG, // deterministic slug, no git required
+      PAYSEC_HOME: tmpHome,
+      PAYSEC_PROJECT_SLUG: SLUG, // deterministic slug, no git required
     },
     timeout: 15_000,
   });
@@ -228,23 +228,23 @@ describe('timeline-stop-hook wiring', () => {
   test('setup registers the Stop hook with its own source tag and tears it down on --no-team', () => {
     const setup = fs.readFileSync(path.join(ROOT, 'setup'), 'utf-8');
     expect(setup).toContain('--event Stop');
-    expect(setup).toContain('--source gstack-timeline-stop');
+    expect(setup).toContain('--source paysec-timeline-stop');
     expect(setup).toContain('hosts/claude/hooks/timeline-stop-hook');
-    // --no-team teardown removes it alongside the plan-tune hooks.
-    const teardown = setup.slice(setup.indexOf('# Also tear down plan-tune'));
-    expect(teardown).toContain('remove-source --source gstack-timeline-stop');
+    // --no-team teardown removes it alongside the tune-questions hooks.
+    const teardown = setup.slice(setup.indexOf('# Also tear down tune-questions'));
+    expect(teardown).toContain('remove-source --source paysec-timeline-stop');
   });
 
-  test('gstack-uninstall removes the Stop hook registration', () => {
-    const uninstall = fs.readFileSync(path.join(ROOT, 'bin', 'gstack-uninstall'), 'utf-8');
-    expect(uninstall).toContain('remove-source --source gstack-timeline-stop');
+  test('paysec-uninstall removes the Stop hook registration', () => {
+    const uninstall = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-uninstall'), 'utf-8');
+    expect(uninstall).toContain('remove-source --source paysec-timeline-stop');
   });
 
   test('the bash shim is fail-open: exits 0 even when bun is unavailable', () => {
     const r = spawnSync('bash', [HOOK], {
       input: '{}',
       encoding: 'utf-8',
-      env: { HOME: tmpHome, PATH: '/usr/bin:/bin', GSTACK_HOME: tmpHome },
+      env: { HOME: tmpHome, PATH: '/usr/bin:/bin', PAYSEC_HOME: tmpHome },
       timeout: 15_000,
     });
     expect(r.status).toBe(0);

@@ -76,11 +76,11 @@ A civic tech data platform for government employees to access, visualize, and sh
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'initial project setup']);
 
-    // Copy design-consultation skill
-    fs.mkdirSync(path.join(designDir, 'design-consultation'), { recursive: true });
+    // Copy design-system skill
+    fs.mkdirSync(path.join(designDir, 'design-system'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'design-consultation', 'SKILL.md'),
-      path.join(designDir, 'design-consultation', 'SKILL.md'),
+      path.join(ROOT, 'design-system', 'SKILL.md'),
+      path.join(designDir, 'design-system', 'SKILL.md'),
     );
   });
 
@@ -90,7 +90,7 @@ A civic tech data platform for government employees to access, visualize, and sh
 
   testConcurrentIfSelected('design-consultation-core', async () => {
     const result = await runSkillTest({
-      prompt: `Read design-consultation/SKILL.md for the design consultation workflow.
+      prompt: `Read design-system/SKILL.md for the design consultation workflow.
 Skip the preamble bash block, lake intro, telemetry, and contributor mode sections — go straight to the design workflow.
 
 This is a civic tech data platform called CivicPulse for government employees who need to access public data. Read the README.md for details.
@@ -106,7 +106,7 @@ Write DESIGN.md and CLAUDE.md (or update it) in the working directory.`,
       model: 'claude-opus-4-7',
     });
 
-    logCost('/design-consultation core', result);
+    logCost('/design-system core', result);
 
     const designPath = path.join(designDir, 'DESIGN.md');
     const claudePath = path.join(designDir, 'CLAUDE.md');
@@ -145,7 +145,7 @@ Write DESIGN.md and CLAUDE.md (or update it) in the working directory.`,
     }
 
     const structuralPass = designExists && claudeExists && missingSections.length === 0;
-    recordE2E(evalCollector, '/design-consultation core', 'Design Consultation E2E', result, {
+    recordE2E(evalCollector, '/design-system core', 'Design Consultation E2E', result, {
       passed: structuralPass && judgeResult.passed && ['success', 'error_max_turns'].includes(result.exitReason),
     });
 
@@ -189,7 +189,7 @@ Do NOT generate a full DESIGN.md — just research notes.`,
       runId,
     });
 
-    logCost('/design-consultation research', result);
+    logCost('/design-system research', result);
 
     const notesPath = path.join(researchDir, 'research-notes.md');
     const notesExist = fs.existsSync(notesPath);
@@ -203,7 +203,7 @@ Do NOT generate a full DESIGN.md — just research notes.`,
       console.warn('WebSearch not used — may be unavailable in test env');
     }
 
-    recordE2E(evalCollector, '/design-consultation research', 'Design Consultation E2E', result, {
+    recordE2E(evalCollector, '/design-system research', 'Design Consultation E2E', result, {
       passed: notesExist && notesContent.length > 200 && ['success', 'error_max_turns'].includes(result.exitReason),
     });
 
@@ -225,7 +225,7 @@ Body: system-ui
 `);
 
     const result = await runSkillTest({
-      prompt: `Read design-consultation/SKILL.md for the design consultation workflow.
+      prompt: `Read design-system/SKILL.md for the design consultation workflow.
 
 There is already a DESIGN.md in this repo. Update it with a complete design system for CivicPulse, a civic tech data platform for government employees.
 
@@ -238,7 +238,7 @@ Skip research. Skip font preview. Skip any AskUserQuestion calls — this is non
       model: 'claude-opus-4-7',
     });
 
-    logCost('/design-consultation existing', result);
+    logCost('/design-system existing', result);
 
     const designPath = path.join(designDir, 'DESIGN.md');
     const designExists = fs.existsSync(designPath);
@@ -251,7 +251,7 @@ Skip research. Skip font preview. Skip any AskUserQuestion calls — this is non
     const hasColor = designContent.toLowerCase().includes('color');
     const hasSpacing = designContent.toLowerCase().includes('spacing');
 
-    recordE2E(evalCollector, '/design-consultation existing', 'Design Consultation E2E', result, {
+    recordE2E(evalCollector, '/design-system existing', 'Design Consultation E2E', result, {
       passed: designExists && hasColor && hasSpacing && ['success', 'error_max_turns'].includes(result.exitReason),
     });
 
@@ -289,7 +289,7 @@ Do NOT write DESIGN.md — only the preview HTML.`,
       runId,
     });
 
-    logCost('/design-consultation preview', result);
+    logCost('/design-system preview', result);
 
     const previewPath = path.join(previewDir, 'design-preview.html');
     const previewExists = fs.existsSync(previewPath);
@@ -301,7 +301,7 @@ Do NOT write DESIGN.md — only the preview HTML.`,
     const hasHtml = previewContent.includes('<html') || previewContent.includes('<!DOCTYPE');
     const hasFontRef = previewContent.includes('font-family') || previewContent.includes('fonts.googleapis') || previewContent.includes('fonts.bunny');
 
-    recordE2E(evalCollector, '/design-consultation preview', 'Design Consultation E2E', result, {
+    recordE2E(evalCollector, '/design-system preview', 'Design Consultation E2E', result, {
       passed: previewExists && hasHtml && ['success', 'error_max_turns'].includes(result.exitReason),
     });
 
@@ -320,7 +320,7 @@ Do NOT write DESIGN.md — only the preview HTML.`,
 
 describeIfSelected('Plan Design Review E2E', ['plan-design-review-plan-mode', 'plan-design-review-no-ui-scope'], () => {
 
-  /** Create an isolated tmpdir with git repo and plan-design-review skill */
+  /** Create an isolated tmpdir with git repo and plan-ux-review skill */
   function setupReviewDir(): string {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-plan-design-'));
     const run = (cmd: string, args: string[]) =>
@@ -330,13 +330,13 @@ describeIfSelected('Plan Design Review E2E', ['plan-design-review-plan-mode', 'p
     run('git', ['config', 'user.email', 'test@test.com']);
     run('git', ['config', 'user.name', 'Test']);
 
-    // Copy plan-design-review skill
-    fs.mkdirSync(path.join(dir, 'plan-design-review'), { recursive: true });
+    // Copy plan-ux-review skill
+    fs.mkdirSync(path.join(dir, 'plan-ux-review'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'plan-design-review', 'SKILL.md'),
-      path.join(dir, 'plan-design-review', 'SKILL.md'),
+      path.join(ROOT, 'plan-ux-review', 'SKILL.md'),
+      path.join(dir, 'plan-ux-review', 'SKILL.md'),
     );
-    { const _sec = path.join(ROOT, 'plan-design-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(dir, 'plan-design-review', 'sections'), { recursive: true }); }
+    { const _sec = path.join(ROOT, 'plan-ux-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(dir, 'plan-ux-review', 'sections'), { recursive: true }); }
 
     return dir;
   }
@@ -371,7 +371,7 @@ Build a user dashboard that shows account stats, recent activity, and settings.
       run('git', ['commit', '-m', 'initial plan']);
 
       const result = await runSkillTest({
-        prompt: `Read plan-design-review/SKILL.md for the design review workflow.
+        prompt: `Read plan-ux-review/SKILL.md for the design review workflow.
 
 Review the plan in ./plan.md. This plan has several design gaps — it uses vague language like "clean, modern UI" and "cards and icons", mentions a "hero section with gradient" (AI slop), and doesn't specify empty states, error states, loading states, responsive behavior, or accessibility.
 
@@ -385,7 +385,7 @@ IMPORTANT: Do NOT try to browse any URLs or use a browse binary. This is a plan 
         runId,
       });
 
-      logCost('/plan-design-review plan-mode', result);
+      logCost('/plan-ux-review plan-mode', result);
 
       // Check that the agent produced design ratings (0-10 scale)
       const output = result.output || '';
@@ -406,7 +406,7 @@ IMPORTANT: Do NOT try to browse any URLs or use a browse binary. This is a plan 
         planAfter.toLowerCase().includes('responsive') ||
         planAfter.toLowerCase().includes('accessibility');
 
-      recordE2E(evalCollector, '/plan-design-review plan-mode', 'Plan Design Review E2E', result, {
+      recordE2E(evalCollector, '/plan-ux-review plan-mode', 'Plan Design Review E2E', result, {
         passed: hasDesignContent && planWasEdited && ['success', 'error_max_turns'].includes(result.exitReason),
       });
 
@@ -445,7 +445,7 @@ Migrate user records from PostgreSQL to a new schema with better indexing.
       run('git', ['commit', '-m', 'initial plan']);
 
       const result = await runSkillTest({
-        prompt: `Read plan-design-review/SKILL.md for the design review workflow.
+        prompt: `Read plan-ux-review/SKILL.md for the design review workflow.
 
 Review the plan in ./backend-plan.md. This is a pure backend database migration plan with no UI changes.
 
@@ -459,7 +459,7 @@ IMPORTANT: Do NOT try to browse any URLs or use a browse binary. This is a plan 
         runId,
       });
 
-      logCost('/plan-design-review no-ui-scope', result);
+      logCost('/plan-ux-review no-ui-scope', result);
 
       // Agent should detect no UI scope and exit early
       const output = result.output || '';
@@ -469,7 +469,7 @@ IMPORTANT: Do NOT try to browse any URLs or use a browse binary. This is a plan 
         output.toLowerCase().includes('not applicable') ||
         output.toLowerCase().includes('backend');
 
-      recordE2E(evalCollector, '/plan-design-review no-ui-scope', 'Plan Design Review E2E', result, {
+      recordE2E(evalCollector, '/plan-ux-review no-ui-scope', 'Plan Design Review E2E', result, {
         passed: detectsNoUI && ['success', 'error_max_turns'].includes(result.exitReason),
       });
 
@@ -558,11 +558,11 @@ describeIfSelected('Design Review E2E', ['design-review-fix'], () => {
       },
     });
 
-    // Copy design-review skill
-    fs.mkdirSync(path.join(qaDesignDir, 'design-review'), { recursive: true });
+    // Copy design-qa skill
+    fs.mkdirSync(path.join(qaDesignDir, 'design-qa'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'design-review', 'SKILL.md'),
-      path.join(qaDesignDir, 'design-review', 'SKILL.md'),
+      path.join(ROOT, 'design-qa', 'SKILL.md'),
+      path.join(qaDesignDir, 'design-qa', 'SKILL.md'),
     );
   });
 
@@ -579,7 +579,7 @@ describeIfSelected('Design Review E2E', ['design-review-fix'], () => {
 
 B="${browseBin}"
 
-Read design-review/SKILL.md for the design review + fix workflow.
+Read design-qa/SKILL.md for the design review + fix workflow.
 
 Review the site at ${serverUrl}. Use --quick mode. Skip any AskUserQuestion calls — this is non-interactive. Fix up to 3 issues max. Write your report to ./design-audit.md.`,
       workingDirectory: qaDesignDir,
@@ -589,7 +589,7 @@ Review the site at ${serverUrl}. Use --quick mode. Skip any AskUserQuestion call
       runId,
     });
 
-    logCost('/design-review fix', result);
+    logCost('/design-qa fix', result);
 
     const reportPath = path.join(qaDesignDir, 'design-audit.md');
     const reportExists = fs.existsSync(reportPath);
@@ -601,7 +601,7 @@ Review the site at ${serverUrl}. Use --quick mode. Skip any AskUserQuestion call
     const commits = gitLog.stdout.toString().trim().split('\n');
     const designFixCommits = commits.filter((c: string) => c.includes('style(design)'));
 
-    recordE2E(evalCollector, '/design-review fix', 'Design Review E2E', result, {
+    recordE2E(evalCollector, '/design-qa fix', 'Design Review E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason),
     });
 

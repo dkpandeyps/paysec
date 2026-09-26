@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@gstack/diagram-render",
+      "name": "@paysec/diagram-render",
       "dependencies": {
         "@excalidraw/excalidraw": "0.18.0",
         "@excalidraw/mermaid-to-excalidraw": "1.1.2",

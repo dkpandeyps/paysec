@@ -19,7 +19,7 @@ import { networkBuffer } from '../src/buffers';
 //
 // What this test does NOT cover:
 //   - A real Chromium burst measuring peak Bun RSS during concurrent
-//     fetches. That's a periodic-tier test (browse/test/
+//     fetches. That's a periodic-tier test (browser/test/
 //     memory-leak-reproducer-e2e.test.ts, deferred — see TODOS).
 //   - Per-tab JS heap growth on the Chromium side. Outside Bun's
 //     visibility entirely.

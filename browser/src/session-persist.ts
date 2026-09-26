@@ -37,7 +37,7 @@ function quarantineCorrupt(filePath: string): void {
 export const SESSION_STATE_FILE = 'session-state.json';
 export const SESSION_STATE_VERSION = 1;
 
-/** Config gate. Documented in browse/SKILL.md ("Session persistence"). */
+/** Config gate. Documented in browser/SKILL.md ("Session persistence"). */
 export function isSessionPersistEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   return env.BROWSE_PERSIST_STATE === '1';
 }

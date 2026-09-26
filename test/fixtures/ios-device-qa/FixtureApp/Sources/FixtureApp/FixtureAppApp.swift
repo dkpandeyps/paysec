@@ -1,4 +1,4 @@
-// FixtureApp — interaction-rich SwiftUI app used by the ios-qa device-path
+// FixtureApp — interaction-rich SwiftUI app used by the ios-device-qa device-path
 // E2E test. Every control exposes a stable accessibility identifier and writes
 // to visible verification state so device-driven taps have an explicit oracle.
 //

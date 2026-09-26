@@ -1,8 +1,8 @@
 /**
- * gstack CLI — thin wrapper that talks to the persistent server
+ * paysec CLI — thin wrapper that talks to the persistent server
  *
  * Flow:
- *   1. Read .gstack/browse.json for port + token
+ *   1. Read .paysec/browse.json for port + token
  *   2. If missing or stale PID → start server in background
  *   3. Health check + version mismatch detection
  *   4. Send command via HTTP POST
@@ -57,7 +57,7 @@ export function resolveServerScript(
     return env.BROWSE_SERVER_SCRIPT;
   }
 
-  // Dev mode: cli.ts runs directly from browse/src
+  // Dev mode: cli.ts runs directly from browser/src
   // On macOS/Linux, import.meta.dir starts with /
   // On Windows, it starts with a drive letter (e.g., C:\...)
   if (!metaDir.includes('$bunfs')) {
@@ -67,7 +67,7 @@ export function resolveServerScript(
     }
   }
 
-  // Compiled binary: derive the source tree from browse/dist/browse
+  // Compiled binary: derive the source tree from browser/dist/browse
   if (execPath) {
     const adjacent = path.resolve(path.dirname(execPath), '..', 'src', 'server.ts');
     if (fs.existsSync(adjacent)) {
@@ -96,7 +96,7 @@ export function resolveNodeServerScript(
     if (fs.existsSync(distScript)) return distScript;
   }
 
-  // Compiled binary: browse/dist/browse → browse/dist/server-node.mjs
+  // Compiled binary: browser/dist/browse → browser/dist/server-node.mjs
   if (execPath) {
     const adjacent = path.resolve(path.dirname(execPath), 'server-node.mjs');
     if (fs.existsSync(adjacent)) return adjacent;
@@ -199,7 +199,7 @@ async function killServer(pid: number): Promise<void> {
  * Verifies PID ownership before sending signals.
  */
 function cleanupLegacyState(): void {
-  // No legacy state on Windows — /tmp and `ps` don't exist, and gstack
+  // No legacy state on Windows — /tmp and `ps` don't exist, and paysec
   // never ran on Windows before the Node.js fallback was added.
   if (IS_WINDOWS) return;
 
@@ -239,7 +239,7 @@ function cleanupLegacyState(): void {
 // ─── Chromium profile lock helpers (#1781) ─────────────────────
 /** Profile dir used by headed/connect Chromium sessions. */
 function chromiumProfileDir(): string {
-  return path.join(process.env.HOME || '/tmp', '.gstack', 'chromium-profile');
+  return path.join(process.env.HOME || '/tmp', '.paysec', 'chromium-profile');
 }
 
 /** Remove Chromium SingletonLock/Socket/Cookie so a relaunch can acquire the
@@ -397,7 +397,7 @@ function raiseHeadedWindowMacOS(): void {
 //
 // F6 log hygiene: nothing that reaches the daemon's stdout/stderr may carry
 // an auth token or unsanitized page-derived strings —
-// browse/test/daemon-log-hygiene.test.ts pins this with needle tests.
+// browser/test/daemon-log-hygiene.test.ts pins this with needle tests.
 //
 // Single source for the log path (M4): the Unix fd-open path and the Windows
 // launcher string both build it, and a drifted spelling would silently split
@@ -654,7 +654,7 @@ async function ensureServer(flags?: GlobalFlags): Promise<ServerState> {
   // fail fast with a clear error instead of silently starting a new one.
   if (process.env.BROWSE_NO_AUTOSTART === '1') {
     console.error('[browse] Server not available and BROWSE_NO_AUTOSTART is set.');
-    console.error('[browse] The headed browser may have been closed. Run /open-gstack-browser to restart.');
+    console.error('[browse] The headed browser may have been closed. Run /open-paysec-browser to restart.');
     process.exit(1);
   }
 
@@ -663,7 +663,7 @@ async function ensureServer(flags?: GlobalFlags): Promise<ServerState> {
   // Silently replacing it would be confusing — tell the user to reconnect.
   if (state && state.mode === 'headed' && isProcessAlive(state.pid)) {
     console.error(`[browse] Headed server running (PID ${state.pid}) but not responding.`);
-    console.error(`[browse] Run '/open-gstack-browser' to restart.`);
+    console.error(`[browse] Run '/open-paysec-browser' to restart.`);
     process.exit(1);
   }
 
@@ -722,7 +722,7 @@ async function ensureServer(flags?: GlobalFlags): Promise<ServerState> {
 
 /**
  * Extract `--tab-id <N>` from args and return { tabId, args } with the flag stripped.
- * Used by make-pdf's tab-scoped flow: every browse command (newtab, load-html, js,
+ * Used by md-to-pdf's tab-scoped flow: every browse command (newtab, load-html, js,
  * pdf, closetab) can take `--tab-id <N>` to target a specific tab. Without this,
  * parallel `$P generate` calls would race on the active tab.
  */
@@ -745,7 +745,7 @@ export function extractTabId(args: string[]): { tabId: number | undefined; args:
 // ─── Command Dispatch ──────────────────────────────────────────
 async function sendCommand(state: ServerState, command: string, args: string[], retries = 0): Promise<void> {
   // Precedence: CLI --tab-id flag > BROWSE_TAB env var.
-  // make-pdf always passes --tab-id; human users typically rely on BROWSE_TAB
+  // md-to-pdf always passes --tab-id; human users typically rely on BROWSE_TAB
   // or the active tab.
   const extracted = extractTabId(args);
   args = extracted.args;
@@ -866,10 +866,10 @@ let _globalFlags: GlobalFlags | null = null;
 
 // ─── Ngrok Detection ───────────────────────────────────────────
 
-/** Check if ngrok is installed and authenticated (native config or gstack env). */
+/** Check if ngrok is installed and authenticated (native config or paysec env). */
 function isNgrokAvailable(): boolean {
-  // Check gstack's own ngrok env
-  const ngrokEnvPath = path.join(process.env.HOME || '/tmp', '.gstack', 'ngrok.env');
+  // Check paysec's own ngrok env
+  const ngrokEnvPath = path.join(process.env.HOME || '/tmp', '.paysec', 'ngrok.env');
   if (fs.existsSync(ngrokEnvPath)) return true;
 
   // Check NGROK_AUTHTOKEN env var
@@ -989,7 +989,7 @@ TOKEN: Expires ${expiresAt}. Revoke: ask the user to run
   $B tunnel revoke <your-name>
 
 ERRORS:
-  401 → Token expired/revoked. Ask user to run /pair-agent again.
+  401 → Token expired/revoked. Ask user to run /pair-remote-agent again.
   403 → Command out of scope, or tab not yours. Run newtab first.
   429 → Rate limited (>10 req/s). Wait for Retry-After header.
 
@@ -1147,9 +1147,9 @@ async function handlePairAgent(state: ServerState, args: string[]): Promise<void
   if (pairData.tunnel_url) {
     serverUrl = pairData.tunnel_url;
   } else if (!localHost) {
-    // No tunnel active. Remote tunneling (pair-agent) is opt-in — never
+    // No tunnel active. Remote tunneling (pair-remote-agent) is opt-in — never
     // auto-start it unless the user explicitly enabled it, even if ngrok is
-    // installed and authed. First use goes through the /pair-agent skill's
+    // installed and authed. First use goes through the /pair-remote-agent skill's
     // consent question, which sets the key.
     const pairEnabled = isPairAgentEnabled();
     const ngrokAvailable = pairEnabled && isNgrokAvailable();
@@ -1180,9 +1180,9 @@ async function handlePairAgent(state: ServerState, args: string[]): Promise<void
       // Consent gate, not a tooling gap: when pair_agent is off, ngrok
       // setup instructions can never fix it. Name the real remedy, with
       // the same wording as the /tunnel/start 403 body in server.ts.
-      console.warn('[browse] No tunnel active: pair-agent is off (tunnel exposes this browser beyond the machine).');
+      console.warn('[browse] No tunnel active: pair-remote-agent is off (tunnel exposes this browser beyond the machine).');
       console.warn('[browse] Instructions will use localhost (same-machine only).');
-      console.warn('[browse] For remote agents: enable once with `gstack-config set pair_agent on` — or run /pair-agent, which asks for consent and sets it.\n');
+      console.warn('[browse] For remote agents: enable once with `paysec-config set pair_agent on` — or run /pair-remote-agent, which asks for consent and sets it.\n');
       serverUrl = pairData.server_url;
     } else {
       console.warn('[browse] No tunnel active and ngrok is not installed/configured.');
@@ -1199,7 +1199,7 @@ async function handlePairAgent(state: ServerState, args: string[]): Promise<void
     try {
       // Resolve host config for the globalRoot path
       const hostsPath = path.resolve(__dirname, '..', '..', 'hosts', 'index.ts');
-      let globalRoot = `.${localHost}/skills/gstack`;
+      let globalRoot = `.${localHost}/skills/paysec`;
       try {
         const { getHostConfig } = await import(hostsPath);
         const hostConfig = getHostConfig(localHost);
@@ -1259,7 +1259,7 @@ async function main() {
   const args = globalFlags.args;
 
   if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
-    console.log(`gstack browse — Fast headless browser for AI coding agents
+    console.log(`paysec browse — Fast headless browser for AI coding agents
 
 Usage: browse <command> [args...]
 
@@ -1459,12 +1459,12 @@ Refs:           After 'snapshot', use @e1, @e2... as selectors:
     process.on('SIGTERM', () => teardownAndExit('SIGTERM'));
 
     const SUPERVISOR_TICK_MS = parseInt(
-      process.env.GSTACK_SUPERVISOR_TICK_MS || '30000',
+      process.env.PAYSEC_SUPERVISOR_TICK_MS || '30000',
       10,
     );
     const SUPERVISOR_GUARD_WINDOW_MS = 5 * 60_000;
     const SUPERVISOR_GUARD_MAX = 5;
-    const SUPERVISOR_BACKOFF_MS = (process.env.GSTACK_SUPERVISOR_BACKOFF || '1000,2000,4000,8000,30000')
+    const SUPERVISOR_BACKOFF_MS = (process.env.PAYSEC_SUPERVISOR_BACKOFF || '1000,2000,4000,8000,30000')
       .split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isFinite(n));
     const respawns: number[] = [];
 
@@ -1607,7 +1607,7 @@ Refs:           After 'snapshot', use @e1, @e2... as selectors:
     // force-restart flag, which kills the daemon and then BOOTS A FRESH ONE
     // (daemon + Chromium, multi-second churn) just so sendCommand('stop')
     // can shut it down again — the #2254 churn in force clothing, and
-    // gstack-upgrade's Step 4.8 sends users down exactly this path when a
+    // paysec-upgrade's Step 4.8 sends users down exactly this path when a
     // stale daemon is busy. The desired end state is "no daemon"; get there
     // directly.
     if (isProcessAlive(stopState.pid) && globalFlags.forceRestart) {
@@ -1633,11 +1633,11 @@ Refs:           After 'snapshot', use @e1, @e2... as selectors:
   let state = await ensureServer(globalFlags);
 
   // ─── Pair-Agent (post-server, pre-dispatch) ──────────────
-  if (command === 'pair-agent') {
+  if (command === 'pair-remote-agent') {
     // Ensure headed mode — the user should see the browser window
     // when sharing it with another agent. Feels safer, more impressive.
     if (state.mode !== 'headed' && !hasFlag(commandArgs, '--headless')) {
-      console.log('[browse] Opening GStack Browser so you can see what the remote agent does...');
+      console.log('[browse] Opening PaySec Browser so you can see what the remote agent does...');
       // In compiled binaries, process.argv[1] is /$bunfs/... (virtual).
       // Use process.execPath which is the real binary on disk.
       const browseBin = process.execPath;
@@ -1647,7 +1647,7 @@ Refs:           After 'snapshot', use @e1, @e2... as selectors:
       const connectProc = Bun.spawn([browseBin, 'connect', '--force-restart'], {
         cwd: process.cwd(),
         stdio: ['ignore', 'inherit', 'inherit'],
-        // Disable parent-PID monitoring: pair-agent needs the server to outlive
+        // Disable parent-PID monitoring: pair-remote-agent needs the server to outlive
         // the connect subprocess. Setting to 0 tells the server not to self-terminate.
         env: { ...process.env, BROWSE_PARENT_PID: '0' },
       });

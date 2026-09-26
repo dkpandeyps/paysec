@@ -27,10 +27,10 @@ import { afterEach, beforeAll } from 'bun:test';
 //
 // Deliberately narrow: snapshotting + restoring all of process.env breaks
 // tests that legitimately set per-file env at module top-level (e.g.,
-// domain-skills-storage.test.ts assigns `process.env.GSTACK_HOME` at
+// domain-skills-storage.test.ts assigns `process.env.PAYSEC_HOME` at
 // import time so the loaded module reads the test sandbox path on first
 // invocation — wiping that on afterEach would route reads at the user's
-// real ~/.gstack and the test would assert on the wrong filesystem).
+// real ~/.paysec and the test would assert on the wrong filesystem).
 //
 // If a future test pollutes a different variable in the same broken way,
 // add it to RESTORE_KEYS rather than widening the snapshot scope.

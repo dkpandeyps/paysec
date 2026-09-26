@@ -111,11 +111,11 @@ describe("parseInfoString", () => {
 
 describe("substituteSlots", () => {
   test("replaces the <p>-wrapped token with slot HTML", () => {
-    const slots = new Map([["gstack-diagram-slot-ab-1", "<figure>X</figure>"]]);
-    const html = "<h1>T</h1>\n<p>gstack-diagram-slot-ab-1</p>\n<p>tail</p>";
+    const slots = new Map([["paysec-diagram-slot-ab-1", "<figure>X</figure>"]]);
+    const html = "<h1>T</h1>\n<p>paysec-diagram-slot-ab-1</p>\n<p>tail</p>";
     const out = substituteSlots(html, slots);
     expect(out).toContain("<figure>X</figure>");
-    expect(out).not.toContain("gstack-diagram-slot");
+    expect(out).not.toContain("paysec-diagram-slot");
     expect(out).not.toContain("<p><figure>");
   });
 });
@@ -258,8 +258,8 @@ describe("inlineLocalImages", () => {
     const warnings: string[] = [];
     const out = inlineLocalImages(`<img src="ok.png" alt="x">`, { ...base, warn: (m) => warnings.push(m) });
     expect(out).toContain("data:image/png;base64,");
-    expect(out).toContain('data-gstack-px-width="40"');
-    expect(out).toContain('data-gstack-px-height="20"');
+    expect(out).toContain('data-paysec-px-width="40"');
+    expect(out).toContain('data-paysec-px-height="20"');
     expect(warnings).toHaveLength(0);
   });
 
@@ -335,8 +335,8 @@ describe("inlineLocalImages", () => {
   test("existing data URI gets dimension annotations only", () => {
     const uri = `data:image/png;base64,${tinyPng(33, 44).toString("base64")}`;
     const out = inlineLocalImages(`<img src="${uri}">`, { ...base, warn: () => {} });
-    expect(out).toContain('data-gstack-px-width="33"');
-    expect(out).toContain('data-gstack-px-height="44"');
+    expect(out).toContain('data-paysec-px-width="33"');
+    expect(out).toContain('data-paysec-px-height="44"');
   });
 
   test("out-of-tree image reads warn (never silent) and still inline", () => {
@@ -398,6 +398,6 @@ describe("inlineLocalImages", () => {
     fs.writeFileSync(path.join(dir, "wide.png"), tinyPng(6000, 100));
     const warnings: string[] = [];
     const out = inlineLocalImages(`<img src="wide.png">`, { ...base, warn: (m) => warnings.push(m) });
-    expect(out).toContain('data-gstack-px-width="6000"');
+    expect(out).toContain('data-paysec-px-width="6000"');
   });
 });

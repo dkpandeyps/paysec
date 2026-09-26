@@ -16,7 +16,7 @@ import { callJudge } from "./helpers/llm-judge";
 const evalsEnabled = !!process.env.EVALS;
 const describeEval = evalsEnabled ? describe : describe.skip;
 
-// The Phase 4.5a instructions, distilled. Kept in sync with spec/SKILL.md.tmpl's
+// The Phase 4.5a instructions, distilled. Kept in sync with write-spec/SKILL.md.tmpl's
 // semantic-pass section (the categories are the contract).
 const SEMANTIC_INSTRUCTIONS = `You are running a security semantic review of a backlog spec before it becomes a
 (possibly public) GitHub issue. Read the spec DATA between <<<SPEC>>> and <<<END>>>

@@ -30,7 +30,7 @@ import { createSessionCookieStore } from './session-cookie-store';
 
 const TTL_MS = 30 * 60 * 1000; // 30 minutes
 
-export const SSE_COOKIE_NAME = 'gstack_sse';
+export const SSE_COOKIE_NAME = 'paysec_sse';
 
 const store = createSessionCookieStore({ cookieName: SSE_COOKIE_NAME, ttlMs: TTL_MS });
 

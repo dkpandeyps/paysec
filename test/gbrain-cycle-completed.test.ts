@@ -54,7 +54,7 @@ exit 1
   return { env, cleanup: () => rmSync(tmp, { recursive: true, force: true }) };
 }
 
-const SRC = "gstack-code-gstack-c5994d95";
+const SRC = "paysec-code-paysec-c5994d95";
 
 function doctor(check: { name: string; status: string; message?: string } | null): string {
   return JSON.stringify({ checks: check ? [check] : [] });
@@ -116,7 +116,7 @@ describe("cycleCompleted", () => {
 
   it("matches the source id as a LITERAL substring (regex metachars are inert)", () => {
     // An id containing regex metachars must match literally, not as a pattern.
-    const metaId = "gstack-code-a.b+c";
+    const metaId = "paysec-code-a.b+c";
     const fake = makeFakeGbrain({
       doctorJson: doctor({
         name: "cycle_freshness",
@@ -126,7 +126,7 @@ describe("cycleCompleted", () => {
     });
     expect(cycleCompleted(metaId, fake.env)).toBe("never");
     // A different id that a regex 'a.b+c' would also match must NOT match literally.
-    expect(cycleCompleted("gstack-code-aXbc", fake.env)).toBe("unknown");
+    expect(cycleCompleted("paysec-code-aXbc", fake.env)).toBe("unknown");
     fake.cleanup();
   });
 });

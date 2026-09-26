@@ -1,10 +1,10 @@
 /**
- * gstack-artifacts-init — provider-selection + brain-admin-hookup tests.
+ * paysec-artifacts-init — provider-selection + brain-admin-hookup tests.
  *
- * Mirrors the gstack-brain-init-gh-mock.test.ts pattern: install fake gh /
+ * Mirrors the paysec-brain-init-gh-mock.test.ts pattern: install fake gh /
  * glab / git binaries on PATH, drive the script's three host-pref branches,
  * assert it (a) creates the right repo name, (b) stores HTTPS canonical in
- * ~/.gstack-artifacts-remote.txt, (c) prints the "Send this to your brain
+ * ~/.paysec-artifacts-remote.txt, (c) prints the "Send this to your brain
  * admin" block in the right form depending on --url-form-supported.
  *
  * Per codex Finding #3: the script always prints the hookup command, never
@@ -24,7 +24,7 @@ import { spawnSync } from 'child_process';
 const test = (name: string, fn: any) => _test(name, fn, 30000);
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const INIT_BIN = path.join(ROOT, 'bin', 'gstack-artifacts-init');
+const INIT_BIN = path.join(ROOT, 'bin', 'paysec-artifacts-init');
 
 let tmpHome: string;
 let bareRemote: string;
@@ -40,7 +40,7 @@ function makeFakeGh(opts: {
 } = {}) {
   const authStatus = opts.authStatus ?? 'ok';
   const repoCreate = opts.repoCreate ?? 'success';
-  const webUrl = opts.webUrl ?? `https://github.com/testuser/gstack-artifacts-testuser`;
+  const webUrl = opts.webUrl ?? `https://github.com/testuser/paysec-artifacts-testuser`;
   const gitProtocol = opts.gitProtocol ?? 'https';
   const script = `#!/bin/bash
 echo "gh $@" >> "${ghCallLog}"
@@ -84,7 +84,7 @@ function makeFakeGlab(opts: {
 } = {}) {
   const authStatus = opts.authStatus ?? 'ok';
   const repoCreate = opts.repoCreate ?? 'success';
-  const webUrl = opts.webUrl ?? 'https://gitlab.com/testuser/gstack-artifacts-testuser';
+  const webUrl = opts.webUrl ?? 'https://gitlab.com/testuser/paysec-artifacts-testuser';
   const gitProtocol = opts.gitProtocol ?? 'https';
   const script = `#!/bin/bash
 echo "glab $@" >> "${glabCallLog}"
@@ -147,7 +147,7 @@ function run(argv: string[], opts: { env?: Record<string, string>; input?: strin
   const binDir = path.join(ROOT, 'bin');
   const env = {
     PATH: `${fakeBinDir}:${binDir}:/usr/bin:/bin:/opt/homebrew/bin`,
-    GSTACK_HOME: tmpHome,
+    PAYSEC_HOME: tmpHome,
     USER: 'testuser',
     HOME: tmpHome,
     ...(opts.env || {}),
@@ -186,8 +186,8 @@ afterEach(() => {
   fs.rmSync(fakeBinDir, { recursive: true, force: true });
 });
 
-describe('gstack-artifacts-init provider selection', () => {
-  test('--host github invokes gh repo create with gstack-artifacts-$USER', () => {
+describe('paysec-artifacts-init provider selection', () => {
+  test('--host github invokes gh repo create with paysec-artifacts-$USER', () => {
     makeFakeGh({});
     const r = run(['--host', 'github']);
     if (r.status !== 0) console.error('STDERR:', r.stderr);
@@ -195,7 +195,7 @@ describe('gstack-artifacts-init provider selection', () => {
     const calls = readCalls(ghCallLog);
     const createCall = calls.find((c) => c.startsWith('gh repo create'));
     expect(createCall).toBeDefined();
-    expect(createCall).toContain('gstack-artifacts-testuser');
+    expect(createCall).toContain('paysec-artifacts-testuser');
     expect(createCall).toContain('--private');
   });
 
@@ -207,7 +207,7 @@ describe('gstack-artifacts-init provider selection', () => {
     const calls = readCalls(glabCallLog);
     const createCall = calls.find((c) => c.startsWith('glab repo create'));
     expect(createCall).toBeDefined();
-    expect(createCall).toContain('gstack-artifacts-testuser');
+    expect(createCall).toContain('paysec-artifacts-testuser');
     expect(createCall).toContain('--private');
   });
 
@@ -246,50 +246,50 @@ describe('gstack-artifacts-init provider selection', () => {
 
   test('neither authed → falls through to manual URL paste', () => {
     // No gh, no glab fakes.
-    const r = run([], { input: 'https://github.com/testuser/gstack-artifacts-testuser\n' });
+    const r = run([], { input: 'https://github.com/testuser/paysec-artifacts-testuser\n' });
     expect(r.status).toBe(0);
     expect(r.stderr).toContain('Neither gh nor glab');
   });
 });
 
-describe('gstack-artifacts-init canonical URL storage (codex Finding #10)', () => {
-  test('stores HTTPS URL canonical in ~/.gstack-artifacts-remote.txt', () => {
-    makeFakeGh({ webUrl: 'https://github.com/testuser/gstack-artifacts-testuser' });
+describe('paysec-artifacts-init canonical URL storage (codex Finding #10)', () => {
+  test('stores HTTPS URL canonical in ~/.paysec-artifacts-remote.txt', () => {
+    makeFakeGh({ webUrl: 'https://github.com/testuser/paysec-artifacts-testuser' });
     const r = run(['--host', 'github']);
     expect(r.status).toBe(0);
-    const remoteFile = path.join(tmpHome, '.gstack-artifacts-remote.txt');
+    const remoteFile = path.join(tmpHome, '.paysec-artifacts-remote.txt');
     expect(fs.existsSync(remoteFile)).toBe(true);
     const stored = fs.readFileSync(remoteFile, 'utf-8').trim();
     // HTTPS, NOT SSH (codex Finding #10: canonical = HTTPS).
     expect(stored).toMatch(/^https:\/\//);
-    expect(stored).toBe('https://github.com/testuser/gstack-artifacts-testuser');
+    expect(stored).toBe('https://github.com/testuser/paysec-artifacts-testuser');
   });
 
   test('strips trailing .git from gh repo view output', () => {
-    makeFakeGh({ webUrl: 'https://github.com/testuser/gstack-artifacts-testuser.git' });
+    makeFakeGh({ webUrl: 'https://github.com/testuser/paysec-artifacts-testuser.git' });
     const r = run(['--host', 'github']);
     expect(r.status).toBe(0);
-    const stored = fs.readFileSync(path.join(tmpHome, '.gstack-artifacts-remote.txt'), 'utf-8').trim();
-    expect(stored).toBe('https://github.com/testuser/gstack-artifacts-testuser');
+    const stored = fs.readFileSync(path.join(tmpHome, '.paysec-artifacts-remote.txt'), 'utf-8').trim();
+    expect(stored).toBe('https://github.com/testuser/paysec-artifacts-testuser');
   });
 
   test('configures git origin with HTTPS when gh git_protocol is https', () => {
-    makeFakeGh({ webUrl: 'https://github.com/testuser/gstack-artifacts-testuser' });
+    makeFakeGh({ webUrl: 'https://github.com/testuser/paysec-artifacts-testuser' });
     const r = run(['--host', 'github']);
     expect(r.status).toBe(0);
     const remote = spawnSync('git', ['-C', tmpHome, 'remote', 'get-url', 'origin'], { encoding: 'utf-8' });
-    expect(remote.stdout.trim()).toBe('https://github.com/testuser/gstack-artifacts-testuser');
+    expect(remote.stdout.trim()).toBe('https://github.com/testuser/paysec-artifacts-testuser');
   });
 
   test('configures git origin with SSH when gh git_protocol is ssh', () => {
     makeFakeGh({
-      webUrl: 'https://github.com/testuser/gstack-artifacts-testuser',
+      webUrl: 'https://github.com/testuser/paysec-artifacts-testuser',
       gitProtocol: 'ssh',
     });
     const r = run(['--host', 'github']);
     expect(r.status).toBe(0);
     const remote = spawnSync('git', ['-C', tmpHome, 'remote', 'get-url', 'origin'], { encoding: 'utf-8' });
-    expect(remote.stdout.trim()).toBe('git@github.com:testuser/gstack-artifacts-testuser.git');
+    expect(remote.stdout.trim()).toBe('git@github.com:testuser/paysec-artifacts-testuser.git');
   });
 
   test('defaults provider-created remotes to HTTPS when git_protocol is unset', () => {
@@ -297,7 +297,7 @@ describe('gstack-artifacts-init canonical URL storage (codex Finding #10)', () =
     const r = run(['--host', 'github']);
     expect(r.status).toBe(0);
     const remote = spawnSync('git', ['-C', tmpHome, 'remote', 'get-url', 'origin'], { encoding: 'utf-8' });
-    expect(remote.stdout.trim()).toBe('https://github.com/testuser/gstack-artifacts-testuser');
+    expect(remote.stdout.trim()).toBe('https://github.com/testuser/paysec-artifacts-testuser');
   });
 
   test('honors glab git_protocol when configured', () => {
@@ -305,11 +305,11 @@ describe('gstack-artifacts-init canonical URL storage (codex Finding #10)', () =
     const r = run(['--host', 'gitlab']);
     expect(r.status).toBe(0);
     const remote = spawnSync('git', ['-C', tmpHome, 'remote', 'get-url', 'origin'], { encoding: 'utf-8' });
-    expect(remote.stdout.trim()).toBe('git@gitlab.com:testuser/gstack-artifacts-testuser.git');
+    expect(remote.stdout.trim()).toBe('git@gitlab.com:testuser/paysec-artifacts-testuser.git');
   });
 });
 
-describe('gstack-artifacts-init brain-admin hookup printout (codex Finding #3)', () => {
+describe('paysec-artifacts-init brain-admin hookup printout (codex Finding #3)', () => {
   test('--url-form-supported false prints the two-line clone-then-path form', () => {
     makeFakeGh({});
     const r = run(['--host', 'github', '--url-form-supported', 'false']);
@@ -327,12 +327,12 @@ describe('gstack-artifacts-init brain-admin hookup printout (codex Finding #3)',
     const r = run(['--host', 'github', '--url-form-supported', 'true']);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain('Send this to your brain admin');
-    expect(r.stdout).toContain('gbrain sources add gstack-artifacts-testuser --url');
+    expect(r.stdout).toContain('gbrain sources add paysec-artifacts-testuser --url');
     expect(r.stdout).not.toContain('git clone');
   });
 
   test('the gbrain command line uses canonical HTTPS, not SSH', () => {
-    makeFakeGh({ webUrl: 'https://github.com/testuser/gstack-artifacts-testuser' });
+    makeFakeGh({ webUrl: 'https://github.com/testuser/paysec-artifacts-testuser' });
     const r = run(['--host', 'github', '--url-form-supported', 'true']);
     expect(r.status).toBe(0);
     // Find the line with the gbrain command and check ITS URL is HTTPS.
@@ -340,16 +340,16 @@ describe('gstack-artifacts-init brain-admin hookup printout (codex Finding #3)',
       .split('\n')
       .find((l) => l.includes('gbrain sources add'));
     expect(gbrainLine).toBeDefined();
-    expect(gbrainLine).toContain('https://github.com/testuser/gstack-artifacts-testuser');
+    expect(gbrainLine).toContain('https://github.com/testuser/paysec-artifacts-testuser');
     expect(gbrainLine).not.toContain('git@github.com');
     // The Push line follows the provider CLI preference independently.
   });
 });
 
-describe('gstack-artifacts-init idempotency', () => {
+describe('paysec-artifacts-init idempotency', () => {
   test('--remote <url> bypasses provider selection entirely', () => {
     makeFakeGh({});
-    const r = run(['--remote', 'https://github.com/testuser/gstack-artifacts-testuser']);
+    const r = run(['--remote', 'https://github.com/testuser/paysec-artifacts-testuser']);
     expect(r.status).toBe(0);
     // gh auth was checked (still useful for provider detection) but no repo create.
     expect(readCalls(ghCallLog).some((c) => c.startsWith('gh repo create'))).toBe(false);
@@ -357,23 +357,23 @@ describe('gstack-artifacts-init idempotency', () => {
 
   test('explicit HTTPS --remote stays HTTPS even when gh prefers SSH', () => {
     makeFakeGh({ gitProtocol: 'ssh' });
-    const r = run(['--remote', 'https://github.com/testuser/gstack-artifacts-testuser']);
+    const r = run(['--remote', 'https://github.com/testuser/paysec-artifacts-testuser']);
     expect(r.status).toBe(0);
     const remote = spawnSync('git', ['-C', tmpHome, 'remote', 'get-url', 'origin'], { encoding: 'utf-8' });
-    expect(remote.stdout.trim()).toBe('https://github.com/testuser/gstack-artifacts-testuser');
+    expect(remote.stdout.trim()).toBe('https://github.com/testuser/paysec-artifacts-testuser');
   });
 
   test('--push-protocol overrides the inferred protocol', () => {
     makeFakeGh({ gitProtocol: 'https' });
     const r = run([
       '--remote',
-      'https://github.com/testuser/gstack-artifacts-testuser',
+      'https://github.com/testuser/paysec-artifacts-testuser',
       '--push-protocol',
       'ssh',
     ]);
     expect(r.status).toBe(0);
     const remote = spawnSync('git', ['-C', tmpHome, 'remote', 'get-url', 'origin'], { encoding: 'utf-8' });
-    expect(remote.stdout.trim()).toBe('git@github.com:testuser/gstack-artifacts-testuser.git');
+    expect(remote.stdout.trim()).toBe('git@github.com:testuser/paysec-artifacts-testuser.git');
   });
 
   test('rejects an invalid --push-protocol value', () => {
@@ -385,7 +385,7 @@ describe('gstack-artifacts-init idempotency', () => {
 
   test('re-run with same --remote is safe (no conflict error)', () => {
     makeFakeGh({});
-    const url = 'https://github.com/testuser/gstack-artifacts-testuser';
+    const url = 'https://github.com/testuser/paysec-artifacts-testuser';
     run(['--remote', url]);
     const r2 = run(['--remote', url]);
     expect(r2.status).toBe(0);
@@ -393,7 +393,7 @@ describe('gstack-artifacts-init idempotency', () => {
 
   test('re-run with DIFFERENT --remote exits 1 with conflict message', () => {
     makeFakeGh({});
-    run(['--remote', 'https://github.com/testuser/gstack-artifacts-testuser']);
+    run(['--remote', 'https://github.com/testuser/paysec-artifacts-testuser']);
     const r2 = run(['--remote', 'https://github.com/other/repo']);
     expect(r2.status).not.toBe(0);
     expect(r2.stderr).toContain('already a git repo');

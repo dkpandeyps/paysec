@@ -1,8 +1,8 @@
 /**
- * /autoplan cross-skill chain (periodic, paid, real-PTY).
+ * /auto-plan-review cross-skill chain (periodic, paid, real-PTY).
  *
- * Asserts: when /autoplan runs against a plan fixture, the phase markers
- * the autoplan template emits appear in the correct order:
+ * Asserts: when /auto-plan-review runs against a plan fixture, the phase markers
+ * the auto-plan-review template emits appear in the correct order:
  *
  *   "**Phase 1 complete." (CEO)        →
  *   "**Phase 2 complete." (Design — only if UI scope detected) →
@@ -13,7 +13,7 @@
  * test. Nothing verifies the SEQUENCING — that phases don't run in
  * parallel, that Phase 3 doesn't start before Phase 1 ends, that
  * conditional phases (Design, DX) are skipped when their scope is absent.
- * A regression where the autoplan template wires phases concurrently
+ * A regression where the auto-plan-review template wires phases concurrently
  * would not be caught by per-phase tests.
  *
  * Approach: tee timestamps as each "**Phase N complete." marker first
@@ -47,12 +47,12 @@ interface PhaseHit {
   ts: number;
 }
 
-describeE2E('/autoplan chain ordering (periodic)', () => {
+describeE2E('/auto-plan-review chain ordering (periodic)', () => {
   test(
     'phases run sequentially: Phase 1 (CEO) before Phase 3 (Eng), Phase 2 (Design) between when present',
     async () => {
       // UI-heavy fixture so Phase 2 runs.
-      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-autoplan-chain-'));
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-autoplan-chain-'));
       try {
         const gitRun = (args: string[]) =>
           spawnSync('git', args, { cwd: tempDir, stdio: 'pipe', timeout: 5000 });
@@ -81,11 +81,11 @@ describeE2E('/autoplan chain ordering (periodic)', () => {
         try {
           await Bun.sleep(8000);
           const since = session.mark();
-          session.send('/autoplan\r');
+          session.send('/auto-plan-review\r');
 
           const budgetMs = 900_000; // 15 min
           const start = Date.now();
-          // Phase markers in autoplan/SKILL.md (lines 1126, 1211, 1331, 1437):
+          // Phase markers in auto-plan-review/SKILL.md (lines 1126, 1211, 1331, 1437):
           //   "**Phase 1 complete." / "**Phase 2 complete." / "**Phase 3 complete." / "**Phase 3.5 complete."
           const phasePattern = /\*\*Phase\s+(\d+(?:\.\d+)?)\s+complete\.?\*\*/g;
 
@@ -99,8 +99,8 @@ describeE2E('/autoplan chain ordering (periodic)', () => {
             }
             const visible = session.visibleSince(since);
 
-            // Auto-grant any permission dialog so autoplan can keep moving
-            // through its phases. The autoplan template auto-decides AskUserQuestions
+            // Auto-grant any permission dialog so auto-plan-review can keep moving
+            // through its phases. The auto-plan-review template auto-decides AskUserQuestions
             // it owns; only permission prompts (file/tool grants) need our
             // hand-pressing. Classify on tail to avoid stale matches.
             const recentTail = visible.slice(-1500);
@@ -131,7 +131,7 @@ describeE2E('/autoplan chain ordering (periodic)', () => {
               break;
             }
 
-            // Plan-ready as a fallback terminal — autoplan finished without
+            // Plan-ready as a fallback terminal — auto-plan-review finished without
             // surfacing a Phase 3 marker. This is a regression surface.
             if (isPlanReadyVisible(visible)) {
               outcome = 'plan_ready';
@@ -145,7 +145,7 @@ describeE2E('/autoplan chain ordering (periodic)', () => {
 
         if (outcome === 'exited' || outcome === 'timeout') {
           throw new Error(
-            `autoplan chain test FAILED: outcome=${outcome}, hits=${JSON.stringify(hits)}\n` +
+            `auto-plan-review chain test FAILED: outcome=${outcome}, hits=${JSON.stringify(hits)}\n` +
               `--- evidence (last 3KB) ---\n${evidence}`,
           );
         }

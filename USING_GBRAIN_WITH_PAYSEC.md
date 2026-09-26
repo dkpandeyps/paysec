@@ -1,8 +1,8 @@
-# Using GBrain with GStack
+# Using GBrain with PaySec
 
 Your coding agent, with a memory it actually keeps.
 
-[GBrain](https://github.com/garrytan/gbrain) is a persistent knowledge base designed for AI agents. It stores what your agent learns, what you've decided, what worked and what didn't, and lets the agent search all of it on demand. GStack gives you a one-command path from zero to "gbrain is running, and my agent can call it" — with paths for try-it-local, share-with-your-team, and everything between.
+[GBrain](https://github.com/garrytan/gbrain) is a persistent knowledge base designed for AI agents. It stores what your agent learns, what you've decided, what worked and what didn't, and lets the agent search all of it on demand. PaySec gives you a one-command path from zero to "gbrain is running, and my agent can call it" — with paths for try-it-local, share-with-your-team, and everything between.
 
 This is the full monty: every scenario, every flag, every helper bin, every troubleshooting step. For the quick pitch, see the [README's GBrain section](README.md#gbrain--persistent-knowledge-for-your-coding-agent). For error codes and sync-specific issues, see [docs/gbrain-sync.md](docs/gbrain-sync.md).
 
@@ -11,17 +11,17 @@ This is the full monty: every scenario, every flag, every helper bin, every trou
 ## The one-command install
 
 ```bash
-/setup-gbrain
+/brain-setup
 ```
 
 That's it. The skill detects your current state, asks three questions at most, and walks you through install, init, MCP registration for Claude Code, and per-repo trust policy. On a clean Mac with nothing installed it finishes in under five minutes. On a Mac where something's already set up it takes seconds (it detects the existing state and skips done work).
 
 ## What you get after setup
 
-Once `/setup-gbrain` finishes, your coding agent has two retrieval surfaces it didn't have before:
+Once `/brain-setup` finishes, your coding agent has two retrieval surfaces it didn't have before:
 
 - **Semantic code search across this repo.** `gbrain search "browser security canary"` returns ranked file regions, not exact-match grep hits. `gbrain code-def`, `code-refs`, `code-callers`, `code-callees` walk the call graph by symbol — useful when you don't know which file holds the implementation but you know what it does. The agent prefers these over Grep when the question is semantic; CLAUDE.md gets a `## GBrain Search Guidance` block that teaches it the routing rules.
-- **Cross-session memory.** Plans, retros, decisions, and learnings from past sessions live in `~/.gstack/` and (if you opted in to artifacts sync) get pushed to a private git repo that gbrain indexes. `gbrain search "what did we decide about auth?"` actually finds the prior CEO plan instead of you re-describing context every session.
+- **Cross-session memory.** Plans, retros, decisions, and learnings from past sessions live in `~/.paysec/` and (if you opted in to artifacts sync) get pushed to a private git repo that gbrain indexes. `gbrain search "what did we decide about auth?"` actually finds the prior CEO plan instead of you re-describing context every session.
 
 If you also enabled remote MCP (Path 4 below), brain queries route to a shared brain server that other machines can write to — your laptop, your desktop, and a teammate's machine all see the same memory.
 
@@ -45,7 +45,7 @@ Best for: fresh Supabase account, you want a clean new project with zero clickin
 
 At the end: explicit reminder to revoke the PAT at https://supabase.com/dashboard/account/tokens. The skill already discarded it from memory.
 
-**If you Ctrl-C mid-provision:** The SIGINT trap prints your in-flight project ref + a resume command. You can delete the orphan at the Supabase dashboard, or run `/setup-gbrain --resume-provision <ref>` to pick up where you left off.
+**If you Ctrl-C mid-provision:** The SIGINT trap prints your in-flight project ref + a resume command. You can delete the orphan at the Supabase dashboard, or run `/brain-setup --resume-provision <ref>` to pick up where you left off.
 
 ### Path 2b: Supabase, create manually
 
@@ -59,9 +59,9 @@ Best for: try-it-first, no account, no cloud, no sharing. Or a dedicated "this M
 
 **What happens:** `gbrain init --pglite`. Brain lives at `~/.gbrain/brain.pglite`. No network calls for the init itself. Done in 30 seconds.
 
-**Embedding model.** When `VOYAGE_API_KEY` is set, gstack inits PGLite with `voyage-code-3` (1024-dim) — Voyage's code-specialized embedding model, which beats their general-purpose `voyage-4-large` and OpenAI `text-embedding-3-large` head-to-head on this codebase's symbol queries. Without `VOYAGE_API_KEY`, gbrain auto-selects (OpenAI 1536-dim when `OPENAI_API_KEY` is present, else falls down its provider chain). Either way, the embeddings call out to the chosen provider's API during sync — set the key for the provider you want before running `/sync-gbrain`.
+**Embedding model.** When `VOYAGE_API_KEY` is set, paysec inits PGLite with `voyage-code-3` (1024-dim) — Voyage's code-specialized embedding model, which beats their general-purpose `voyage-4-large` and OpenAI `text-embedding-3-large` head-to-head on this codebase's symbol queries. Without `VOYAGE_API_KEY`, gbrain auto-selects (OpenAI 1536-dim when `OPENAI_API_KEY` is present, else falls down its provider chain). Either way, the embeddings call out to the chosen provider's API during sync — set the key for the provider you want before running `/brain-sync`.
 
-This is the best first choice if you just want to see what gbrain feels like before committing to cloud. You can always migrate later with `/setup-gbrain --switch`.
+This is the best first choice if you just want to see what gbrain feels like before committing to cloud. You can always migrate later with `/brain-setup --switch`.
 
 ### Path 4: Remote gbrain MCP (split-engine)
 
@@ -98,47 +98,47 @@ Every repo on your machine gets a policy decision: **read-write**, **read-only**
 - **read-only** — your agent can search the brain but never writes new pages from this repo's sessions. Ideal for multi-client consultants: search the shared brain, don't contaminate it with Client A's code while you're in Client B's repo.
 - **deny** — no gbrain interaction at all. The repo is invisible to gbrain tooling.
 
-The skill asks once per repo the first time you run a gstack skill there. After that the decision is sticky — every worktree + branch of the same git remote shares the same policy, so you set it once and it follows you.
+The skill asks once per repo the first time you run a paysec skill there. After that the decision is sticky — every worktree + branch of the same git remote shares the same policy, so you set it once and it follows you.
 
 SSH and HTTPS remote variants collapse to the same key: `https://github.com/foo/bar.git` and `git@github.com:foo/bar.git` are the same repo.
 
 **To change a policy:**
 
 ```bash
-/setup-gbrain --repo      # re-prompt for this repo only
+/brain-setup --repo      # re-prompt for this repo only
 
 # Or directly:
-~/.claude/skills/gstack/bin/gstack-gbrain-repo-policy set "github.com/foo/bar" read-only
+~/.claude/skills/paysec/bin/paysec-gbrain-repo-policy set "github.com/foo/bar" read-only
 ```
 
 **To see every policy:**
 
 ```bash
-~/.claude/skills/gstack/bin/gstack-gbrain-repo-policy list
+~/.claude/skills/paysec/bin/paysec-gbrain-repo-policy list
 ```
 
-Storage: `~/.gstack/gbrain-repo-policy.json`, mode 0600, schema-versioned so future migrations stay deterministic.
+Storage: `~/.paysec/gbrain-repo-policy.json`, mode 0600, schema-versioned so future migrations stay deterministic.
 
-## Keeping the brain current with `/sync-gbrain`
+## Keeping the brain current with `/brain-sync`
 
-`/setup-gbrain` is one-time onboarding. `/sync-gbrain` is the verb you run every time you want gbrain to see fresh changes in this repo's code.
+`/brain-setup` is one-time onboarding. `/brain-sync` is the verb you run every time you want gbrain to see fresh changes in this repo's code.
 
 ```bash
-/sync-gbrain                # incremental: mtime fast-path, ~seconds on a clean tree
-/sync-gbrain --full         # full reindex (~25-35 minutes on a big Mac)
-/sync-gbrain --code-only    # only the code stage; skip memory + brain-sync
-/sync-gbrain --dry-run      # preview what would sync; no writes
+/brain-sync                # incremental: mtime fast-path, ~seconds on a clean tree
+/brain-sync --full         # full reindex (~25-35 minutes on a big Mac)
+/brain-sync --code-only    # only the code stage; skip memory + brain-sync
+/brain-sync --dry-run      # preview what would sync; no writes
 ```
 
-The skill runs three stages — code, memory, brain-sync — independently. A failure in one doesn't block the others. State persists to `~/.gstack/.gbrain-sync-state.json` so re-running picks up cleanly.
+The skill runs three stages — code, memory, brain-sync — independently. A failure in one doesn't block the others. State persists to `~/.paysec/.gbrain-sync-state.json` so re-running picks up cleanly.
 
-Stages that can send data off-machine (code sync into a possibly-remote gbrain DB, memory ingest, the brain-sync push) each write a tamper-evident receipt to the egress ledger (`~/.gstack/security/egress.jsonl`) before sending, fail-closed: if the receipt can't be written, the stage refuses with `EGRESS_RECEIPT_FAILED` instead of syncing unrecorded. Fix is usually `mkdir -p ~/.gstack/security && chmod -R u+w ~/.gstack/security`, then re-run. Inspect receipts with `gstack-egress list`.
+Stages that can send data off-machine (code sync into a possibly-remote gbrain DB, memory ingest, the brain-sync push) each write a tamper-evident receipt to the egress ledger (`~/.paysec/security/egress.jsonl`) before sending, fail-closed: if the receipt can't be written, the stage refuses with `EGRESS_RECEIPT_FAILED` instead of syncing unrecorded. Fix is usually `mkdir -p ~/.paysec/security && chmod -R u+w ~/.paysec/security`, then re-run. Inspect receipts with `paysec-egress list`.
 
 **What it does on a fresh worktree:**
 
 1. **Pre-flight.** Checks `gbrain_local_status` (the local engine's health). If the engine is `broken-db` or `broken-config`, the skill STOPs with a remediation menu — it refuses to silently degrade. If the local engine is missing and you're in remote-MCP mode (Path 4), the code stage SKIPs cleanly and only brain-sync runs.
 2. **Code stage.** Registers the cwd as a federated source via `gbrain sources add`, writes a `.gbrain-source` pin file in the repo root (kubectl-style context — every worktree gets its own pin, so Conductor sibling worktrees don't collide), runs `gbrain sync --strategy code`.
-3. **Memory stage.** Stages your `~/.gstack/` transcripts + curated memory. In local-stdio MCP mode, ingests into the local engine. In remote-http MCP mode, persists staged markdown to `~/.gstack/transcripts/run-<pid>-<ts>/` for the remote brain admin's pull pipeline. The ingest timeout is 30 minutes by default; raise it for a big brain with `GSTACK_INGEST_TIMEOUT_MS` (accepts 1 min–24h). On timeout the gbrain import checkpoint is preserved, so the next `/sync-gbrain` resumes instead of starting over.
+3. **Memory stage.** Stages your `~/.paysec/` transcripts + curated memory. In local-stdio MCP mode, ingests into the local engine. In remote-http MCP mode, persists staged markdown to `~/.paysec/transcripts/run-<pid>-<ts>/` for the remote brain admin's pull pipeline. The ingest timeout is 30 minutes by default; raise it for a big brain with `PAYSEC_INGEST_TIMEOUT_MS` (accepts 1 min–24h). On timeout the gbrain import checkpoint is preserved, so the next `/brain-sync` resumes instead of starting over.
 4. **Brain-sync stage.** Pushes curated artifacts (plans, designs, retros) to your private artifacts repo if you have one configured.
 5. **CLAUDE.md guidance.** Capability-checks the round-trip (write a page → search → find it). If green, writes the `## GBrain Search Guidance` block to your project's CLAUDE.md. If red, REMOVES the block — the agent should never be told to use a tool that isn't installed.
 
@@ -148,79 +148,79 @@ Stages that can send data off-machine (code sync into a possibly-remote gbrain D
 gbrain sync --source <source-id> --skip-failed
 ```
 
-Re-runnable, idempotent, safe to run from multiple terminals on the same machine (locked at `~/.gstack/.sync-gbrain.lock`).
+Re-runnable, idempotent, safe to run from multiple terminals on the same machine (locked at `~/.paysec/.brain-sync.lock`).
 
 ## Switching engines later
 
 Picked PGLite and now want to join a team brain? One command:
 
 ```bash
-/setup-gbrain --switch
+/brain-setup --switch
 ```
 
 The skill runs `gbrain migrate --to supabase --url "$URL"` wrapped in `timeout 180s`. Migration is bidirectional (Supabase → PGLite also works) and lossless — pages, chunks, embeddings, links, tags, and timeline all copy. Your original brain is preserved as a backup.
 
-**If migration hangs:** another gstack session may be holding a lock on the source brain. The timeout fires at 3 minutes with an actionable message. Close other workspaces and re-run.
+**If migration hangs:** another paysec session may be holding a lock on the source brain. The timeout fires at 3 minutes with an actionable message. Close other workspaces and re-run.
 
-## GStack memory sync (a separate concern)
+## PaySec memory sync (a separate concern)
 
-This is different from gbrain itself. Your gstack state (`~/.gstack/` — learnings, plans, retros, timeline, developer profile) is machine-local by default. "GStack memory sync" optionally pushes a curated, secret-scanned subset to a private git repo so your memory follows you across machines — and, if you're running gbrain, that git repo becomes indexable there too.
+This is different from gbrain itself. Your paysec state (`~/.paysec/` — learnings, plans, retros, timeline, developer profile) is machine-local by default. "PaySec memory sync" optionally pushes a curated, secret-scanned subset to a private git repo so your memory follows you across machines — and, if you're running gbrain, that git repo becomes indexable there too.
 
 Turn it on with:
 
 ```bash
-gstack-artifacts-init
+paysec-artifacts-init
 ```
 
 You'll get a one-time privacy prompt: **everything allowlisted** / **artifacts only** (plans, designs, retros, learnings — skip behavioral data like timelines) / **off**. Every skill run syncs the queue at start and end — no daemon, no background process.
 
 Secret-shaped content (AWS keys, GitHub tokens, PEM blocks, JWTs, bearer tokens) is blocked from sync before it leaves your machine.
 
-**On a new machine:** Copy `~/.gstack-artifacts-remote.txt` over (the legacy
-`~/.gstack-brain-remote.txt` name still works), run `gstack-brain-restore`, and
+**On a new machine:** Copy `~/.paysec-artifacts-remote.txt` over (the legacy
+`~/.paysec-brain-remote.txt` name still works), run `paysec-brain-restore`, and
 yesterday's learnings surface on today's laptop.
 
 Full guide: [docs/gbrain-sync.md](docs/gbrain-sync.md). Error index: [docs/gbrain-sync-errors.md](docs/gbrain-sync-errors.md).
 
-`/setup-gbrain` offers to wire this up for you at the end of initial setup — it's one more AskUserQuestion, and it integrates with the same private-repo infrastructure.
+`/brain-setup` offers to wire this up for you at the end of initial setup — it's one more AskUserQuestion, and it integrates with the same private-repo infrastructure.
 
 ## Cleanup orphan projects
 
 If you Ctrl-C'd mid-provision, tried three different names before settling on one, or otherwise accumulated gbrain-shaped Supabase projects you don't use, there's a subcommand for that:
 
 ```bash
-/setup-gbrain --cleanup-orphans
+/brain-setup --cleanup-orphans
 ```
 
 The skill re-collects a PAT (one-time, discarded after), lists every project in your Supabase account whose name starts with `gbrain` and whose ref doesn't match your active `~/.gbrain/config.json` pooler URL. For each orphan it asks per-project: *"Delete orphan project `<ref>` (`<name>`, created `<date>`)?"* — no batching, no "delete all" shortcut. The active brain is never offered for deletion.
 
 ## Command + flag reference
 
-### `/setup-gbrain` entry modes
+### `/brain-setup` entry modes
 
 | Invocation | What it does |
 |---|---|
-| `/setup-gbrain` | Full flow: detect state, pick path, install, init, MCP, policy, optional memory-sync |
-| `/setup-gbrain --repo` | Flip the per-remote trust policy for the current repo only |
-| `/setup-gbrain --switch` | Migrate engine (PGLite ↔ Supabase) without re-running the other steps |
-| `/setup-gbrain --resume-provision <ref>` | Resume a path-2a auto-provision that was interrupted during polling |
-| `/setup-gbrain --cleanup-orphans` | List + per-project delete of orphan Supabase projects |
+| `/brain-setup` | Full flow: detect state, pick path, install, init, MCP, policy, optional memory-sync |
+| `/brain-setup --repo` | Flip the per-remote trust policy for the current repo only |
+| `/brain-setup --switch` | Migrate engine (PGLite ↔ Supabase) without re-running the other steps |
+| `/brain-setup --resume-provision <ref>` | Resume a path-2a auto-provision that was interrupted during polling |
+| `/brain-setup --cleanup-orphans` | List + per-project delete of orphan Supabase projects |
 
 ### Bin helpers (for scripting)
 
 | Bin | Purpose |
 |---|---|
-| `gstack-gbrain-detect` | Emit current state as JSON: gbrain on PATH, version, config engine, doctor status, sync mode |
-| `gstack-gbrain-install` | Detect-first installer (probes `~/git/gbrain`, `~/gbrain`, then fresh clone). Has `--dry-run` and `--validate-only` flags. PATH-shadow check exits 3 with remediation menu. |
-| `gstack-gbrain-lib.sh` | Sourced, not executed. Provides `read_secret_to_env VARNAME "prompt" [--echo-redacted "<sed-expr>"]` |
-| `gstack-gbrain-supabase-verify` | Structural URL check. Rejects direct-connection URLs (`db.*.supabase.co:5432`) with exit 3 |
-| `gstack-gbrain-supabase-provision` | Management API wrapper. Subcommands: `list-orgs`, `create`, `wait`, `pooler-url`, `list-orphans`, `delete-project`. All require `SUPABASE_ACCESS_TOKEN` in env. `create` and `pooler-url` also require `DB_PASS`. `--json` mode available on every subcommand. |
-| `gstack-gbrain-repo-policy` | Per-remote trust triad. Subcommands: `get`, `set`, `list`, `normalize` |
-| `gstack-gbrain-source-wireup` | Registers your `~/.gstack/` brain repo with gbrain as a federated source via `gbrain sources add` + `git worktree`, then runs an initial `gbrain sync`. Idempotent. Replaces the dead `consumers.json + /ingest-repo` HTTP wireup from v1.12.x. Flags: `--strict`, `--source-id <id>`, `--no-pull`, `--uninstall`, `--probe`. |
+| `paysec-gbrain-detect` | Emit current state as JSON: gbrain on PATH, version, config engine, doctor status, sync mode |
+| `paysec-gbrain-install` | Detect-first installer (probes `~/git/gbrain`, `~/gbrain`, then fresh clone). Has `--dry-run` and `--validate-only` flags. PATH-shadow check exits 3 with remediation menu. |
+| `paysec-gbrain-lib.sh` | Sourced, not executed. Provides `read_secret_to_env VARNAME "prompt" [--echo-redacted "<sed-expr>"]` |
+| `paysec-gbrain-supabase-verify` | Structural URL check. Rejects direct-connection URLs (`db.*.supabase.co:5432`) with exit 3 |
+| `paysec-gbrain-supabase-provision` | Management API wrapper. Subcommands: `list-orgs`, `create`, `wait`, `pooler-url`, `list-orphans`, `delete-project`. All require `SUPABASE_ACCESS_TOKEN` in env. `create` and `pooler-url` also require `DB_PASS`. `--json` mode available on every subcommand. |
+| `paysec-gbrain-repo-policy` | Per-remote trust triad. Subcommands: `get`, `set`, `list`, `normalize` |
+| `paysec-gbrain-source-wireup` | Registers your `~/.paysec/` brain repo with gbrain as a federated source via `gbrain sources add` + `git worktree`, then runs an initial `gbrain sync`. Idempotent. Replaces the dead `consumers.json + /ingest-repo` HTTP wireup from v1.12.x. Flags: `--strict`, `--source-id <id>`, `--no-pull`, `--uninstall`, `--probe`. |
 
 ### gbrain CLI (upstream tool)
 
-Gbrain itself ships with these that gstack wraps:
+Gbrain itself ships with these that paysec wraps:
 
 | Command | Purpose |
 |---|---|
@@ -239,44 +239,44 @@ Gbrain itself ships with these that gstack wraps:
 | Path | What lives there |
 |---|---|
 | `~/.gbrain/config.json` | Engine (pglite/postgres), database URL or path, API keys. Mode 0600. Written by `gbrain init`. |
-| `~/.gstack/gbrain-repo-policy.json` | Per-remote trust triad. Schema v2. Mode 0600. |
-| `~/.gstack/.setup-gbrain.lock.d` | Concurrent-run lock (atomic mkdir). Released on normal exit + SIGINT. |
-| `~/.gstack/.brain-queue.jsonl` | Pending sync entries for gstack memory sync |
-| `~/.gstack/.brain-last-push` | Timestamp of last sync push (for `/health` scoring) |
-| `~/.gstack-artifacts-remote.txt` | URL of your gstack memory sync remote (safe to copy between machines; legacy name `~/.gstack-brain-remote.txt` still read) |
-| `~/.gstack/.setup-gbrain-inflight.json` | Reserved for future `--resume-provision` persisted state |
+| `~/.paysec/gbrain-repo-policy.json` | Per-remote trust triad. Schema v2. Mode 0600. |
+| `~/.paysec/.brain-setup.lock.d` | Concurrent-run lock (atomic mkdir). Released on normal exit + SIGINT. |
+| `~/.paysec/.brain-queue.jsonl` | Pending sync entries for paysec memory sync |
+| `~/.paysec/.brain-last-push` | Timestamp of last sync push (for `/code-health` scoring) |
+| `~/.paysec-artifacts-remote.txt` | URL of your paysec memory sync remote (safe to copy between machines; legacy name `~/.paysec-brain-remote.txt` still read) |
+| `~/.paysec/.setup-gbrain-inflight.json` | Reserved for future `--resume-provision` persisted state |
 
 ### Environment variables
 
 | Var | Where it's read | What it does |
 |---|---|---|
-| `SUPABASE_ACCESS_TOKEN` | `gstack-gbrain-supabase-provision` | PAT for Management API calls. Discarded after each setup run. |
-| `DB_PASS` | `gstack-gbrain-supabase-provision` (create, pooler-url) | Generated DB password. Never in argv. |
+| `SUPABASE_ACCESS_TOKEN` | `paysec-gbrain-supabase-provision` | PAT for Management API calls. Discarded after each setup run. |
+| `DB_PASS` | `paysec-gbrain-supabase-provision` (create, pooler-url) | Generated DB password. Never in argv. |
 | `GBRAIN_DATABASE_URL` | `gbrain init`, `gbrain doctor`, etc. | Postgres connection string (Supabase pooler URL for us). Env takes precedence over `~/.gbrain/config.json`. |
 | `DATABASE_URL` | `gbrain init` (fallback) | Same semantics as `GBRAIN_DATABASE_URL`; checked second. |
-| `SUPABASE_API_BASE` | `gstack-gbrain-supabase-provision` | Override the Management API host. Used by tests to point at a mock server. |
-| `GBRAIN_INSTALL_DIR` | `gstack-gbrain-install` | Override default install path (`~/gbrain`) |
-| `GSTACK_HOME` | every bin helper | Override `~/.gstack` state dir. Heavy test use. |
-| `VOYAGE_API_KEY` | `gbrain embed` subprocess; gstack PGLite init | When set, gstack inits PGLite with `voyage-code-3` (1024-dim), Voyage's code-specialized embedding model. Beats `voyage-4-large` and OpenAI `text-embedding-3-large` head-to-head on this codebase's symbol queries. See CHANGELOG v1.43.1.0 for the A/B numbers. |
-| `OPENAI_API_KEY` | `gbrain embed` subprocess | Used for embeddings during `gbrain sync` / `/sync-gbrain` when `VOYAGE_API_KEY` is not set (gbrain's auto-selected fallback, `text-embedding-3-large` 1536-dim). Without either key, pages are imported structurally (symbol tables, chunks) but semantic search degrades — you'll see `[gbrain] embedding failed for code file ...` in the sync log. |
+| `SUPABASE_API_BASE` | `paysec-gbrain-supabase-provision` | Override the Management API host. Used by tests to point at a mock server. |
+| `GBRAIN_INSTALL_DIR` | `paysec-gbrain-install` | Override default install path (`~/gbrain`) |
+| `PAYSEC_HOME` | every bin helper | Override `~/.paysec` state dir. Heavy test use. |
+| `VOYAGE_API_KEY` | `gbrain embed` subprocess; paysec PGLite init | When set, paysec inits PGLite with `voyage-code-3` (1024-dim), Voyage's code-specialized embedding model. Beats `voyage-4-large` and OpenAI `text-embedding-3-large` head-to-head on this codebase's symbol queries. See CHANGELOG v1.43.1.0 for the A/B numbers. |
+| `OPENAI_API_KEY` | `gbrain embed` subprocess | Used for embeddings during `gbrain sync` / `/brain-sync` when `VOYAGE_API_KEY` is not set (gbrain's auto-selected fallback, `text-embedding-3-large` 1536-dim). Without either key, pages are imported structurally (symbol tables, chunks) but semantic search degrades — you'll see `[gbrain] embedding failed for code file ...` in the sync log. |
 | `ANTHROPIC_API_KEY` | `claude-agent-sdk`, paid evals | Required for `bun run test:evals` and any direct `query()` call against Claude. |
-| `GSTACK_OPENAI_API_KEY` | `lib/conductor-env-shim.ts` | Conductor-injected fallback. Promoted to `OPENAI_API_KEY` when the canonical name is empty. |
-| `GSTACK_ANTHROPIC_API_KEY` | `lib/conductor-env-shim.ts` | Same pattern as above for Anthropic. |
+| `PAYSEC_OPENAI_API_KEY` | `lib/conductor-env-shim.ts` | Conductor-injected fallback. Promoted to `OPENAI_API_KEY` when the canonical name is empty. |
+| `PAYSEC_ANTHROPIC_API_KEY` | `lib/conductor-env-shim.ts` | Same pattern as above for Anthropic. |
 
-## Conductor + GSTACK_* env vars
+## Conductor + PAYSEC_* env vars
 
-If you run gstack inside a [Conductor](https://conductor.build) workspace, **Conductor explicitly strips `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` from the workspace env.** Setting them in `~/.zshrc` or `.env` won't help — the strip happens after env inheritance. To get a usable API key into a workspace, set `GSTACK_ANTHROPIC_API_KEY` and `GSTACK_OPENAI_API_KEY` in Conductor's workspace env config instead. Conductor passes those through untouched.
+If you run paysec inside a [Conductor](https://conductor.build) workspace, **Conductor explicitly strips `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` from the workspace env.** Setting them in `~/.zshrc` or `.env` won't help — the strip happens after env inheritance. To get a usable API key into a workspace, set `PAYSEC_ANTHROPIC_API_KEY` and `PAYSEC_OPENAI_API_KEY` in Conductor's workspace env config instead. Conductor passes those through untouched.
 
-`lib/conductor-env-shim.ts` bridges the gap on the gstack side: when imported as a side effect (`import "../lib/conductor-env-shim";`), it promotes `GSTACK_FOO_API_KEY` to `FOO_API_KEY` for any subprocess that doesn't see the canonical name. The shim is already wired into:
+`lib/conductor-env-shim.ts` bridges the gap on the paysec side: when imported as a side effect (`import "../lib/conductor-env-shim";`), it promotes `PAYSEC_FOO_API_KEY` to `FOO_API_KEY` for any subprocess that doesn't see the canonical name. The shim is already wired into:
 
-- `bin/gstack-gbrain-sync.ts` — so `/sync-gbrain` picks up OpenAI for embeddings
-- `bin/gstack-model-benchmark` — so `--judge` runs work without manual env mapping
+- `bin/paysec-gbrain-sync.ts` — so `/brain-sync` picks up OpenAI for embeddings
+- `bin/paysec-model-benchmark` — so `--judge` runs work without manual env mapping
 - `scripts/preflight-agent-sdk.ts` — so paid-eval auth probes work
 - `test/helpers/e2e-helpers.ts` — so `bun run test:evals` finds Anthropic
 
 If you add a new TS entry point that hits a paid API or needs gbrain embeddings, add the same one-line import at the top. See [CONTRIBUTING.md "Conductor workspaces"](CONTRIBUTING.md#conductor-workspaces) for the contributor checklist.
 
-`bin/gstack-codex-probe` is bash and doesn't read these directly — it relies on `~/.codex/` auth managed by the Codex CLI.
+`bin/paysec-codex-probe` is bash and doesn't read these directly — it relies on `~/.codex/` auth managed by the Codex CLI.
 
 ## Security model
 
@@ -285,7 +285,7 @@ One rule for every secret this skill touches: **env var only, never argv, never 
 **Enforced in code:**
 
 - CI grep test in `test/skill-validation.test.ts` fails the build if `$SUPABASE_ACCESS_TOKEN` or `$GBRAIN_DATABASE_URL` appears in an argv position
-- CI grep test fails if `--insecure`, `-k`, or `NODE_TLS_REJECT_UNAUTHORIZED=0` appear in `bin/gstack-gbrain-supabase-provision`
+- CI grep test fails if `--insecure`, `-k`, or `NODE_TLS_REJECT_UNAUTHORIZED=0` appear in `bin/paysec-gbrain-supabase-provision`
 - `set +x` at the top of the provision helper prevents debug tracing from leaking PAT
 - Telemetry payload contains only enumerated categorical values (scenario, install result, MCP opt-in, trust tier) — never free-form strings that could contain secrets
 
@@ -310,7 +310,7 @@ Another `gbrain` binary is earlier in PATH than the one the installer just linke
 - Prepend `~/.bun/bin` to PATH in your shell rc so the linked binary wins
 - Set `GBRAIN_INSTALL_DIR` to the shadowing binary's install directory and re-run
 
-Then re-run `/setup-gbrain`.
+Then re-run `/brain-setup`.
 
 ### "rejected direct-connection URL"
 
@@ -321,30 +321,30 @@ You pasted a `db.<ref>.supabase.co:5432` URL. Those are IPv6-only and fail in mo
 The Supabase project is still initializing. Your ref was printed in the exit message. Wait a minute, then:
 
 ```bash
-/setup-gbrain --resume-provision <ref>
+/brain-setup --resume-provision <ref>
 ```
 
 The skill re-collects a PAT, skips project creation, resumes polling.
 
-### "Another `/setup-gbrain` instance is running"
+### "Another `/brain-setup` instance is running"
 
 You have a stale lock directory. If you're sure no other instance is actually running:
 
 ```bash
-rm -rf ~/.gstack/.setup-gbrain.lock.d
+rm -rf ~/.paysec/.brain-setup.lock.d
 ```
 
 Then re-run.
 
 ### "No cross-model tension" on policy file
 
-You edited `~/.gstack/gbrain-repo-policy.json` by hand with legacy `allow` values? No problem. On the next read, gstack auto-migrates `allow` → `read-write` and adds `_schema_version: 2`. One log line on stderr, idempotent, deterministic.
+You edited `~/.paysec/gbrain-repo-policy.json` by hand with legacy `allow` values? No problem. On the next read, paysec auto-migrates `allow` → `read-write` and adds `_schema_version: 2`. One log line on stderr, idempotent, deterministic.
 
 ### `gbrain doctor` says "warnings"
 
-`/health` treats that as yellow, not red. Check `gbrain doctor --json | jq .checks` to see which sub-checks are warning. Typical causes: resolver MECE overlap (skill names clashing) or DB connection not yet configured.
+`/code-health` treats that as yellow, not red. Check `gbrain doctor --json | jq .checks` to see which sub-checks are warning. Typical causes: resolver MECE overlap (skill names clashing) or DB connection not yet configured.
 
-### `/sync-gbrain` reports `OK` but `gbrain search` returns nothing semantic
+### `/brain-sync` reports `OK` but `gbrain search` returns nothing semantic
 
 Embeddings probably failed during import. Symbol queries (`code-def`, `code-refs`) still work because they don't need embeddings, but `gbrain search "<terms>"` falls back to a degraded BM25 path. Look in the sync output for lines like:
 
@@ -352,7 +352,7 @@ Embeddings probably failed during import. Symbol queries (`code-def`, `code-refs
 [gbrain] embedding failed for code file <name>: OpenAI embedding requires OPENAI_API_KEY
 ```
 
-The fix is to put a provider API key in the process env before re-running. `VOYAGE_API_KEY` is preferred for code (gstack defaults PGLite to `voyage-code-3` when set); otherwise `OPENAI_API_KEY` falls back to `text-embedding-3-large`. On a bare Mac shell, source the key from `~/.zshrc` before calling. In Conductor, the `lib/conductor-env-shim.ts` shim promotes `GSTACK_ANTHROPIC_API_KEY` / `GSTACK_OPENAI_API_KEY` to their canonical names automatically; for `VOYAGE_API_KEY`, set it directly in your Conductor workspace env. Re-run `/sync-gbrain --code-only` to backfill embeddings on already-imported pages.
+The fix is to put a provider API key in the process env before re-running. `VOYAGE_API_KEY` is preferred for code (paysec defaults PGLite to `voyage-code-3` when set); otherwise `OPENAI_API_KEY` falls back to `text-embedding-3-large`. On a bare Mac shell, source the key from `~/.zshrc` before calling. In Conductor, the `lib/conductor-env-shim.ts` shim promotes `PAYSEC_ANTHROPIC_API_KEY` / `PAYSEC_OPENAI_API_KEY` to their canonical names automatically; for `VOYAGE_API_KEY`, set it directly in your Conductor workspace env. Re-run `/brain-sync --code-only` to backfill embeddings on already-imported pages.
 
 ### `gbrain sync` blocked at a commit hash — `FILE_TOO_LARGE`
 
@@ -366,24 +366,24 @@ Watermark advances past the offending commit. The same file fails again if it ch
 
 ### Switching PGLite → Supabase hangs
 
-Another gstack session in a sibling Conductor workspace may be holding a lock on your local PGLite file via its preamble's `gstack-brain-sync` call. Close other workspaces, re-run `/setup-gbrain --switch`. The timeout is bounded at 180s so you'll never actually wait forever.
+Another paysec session in a sibling Conductor workspace may be holding a lock on your local PGLite file via its preamble's `paysec-brain-sync` call. Close other workspaces, re-run `/brain-setup --switch`. The timeout is bounded at 180s so you'll never actually wait forever.
 
 ## Why this design
 
 **Why per-remote trust triad and not binary allow/deny?** Multi-client consultants need search without write-back. A freelance dev working on Client A in the morning and Client B in the afternoon can't let A's code insights leak into a brain Client B can search. Read-only solves that cleanly.
 
-**Why not bundle gbrain into gstack?** Gbrain is a separate, actively-developed project with its own release cadence, schema migrations, and MCP surface. Bundling would mean gstack has to gate gbrain updates, which slows gbrain improvements from reaching users. Separate-but-integrated lets each ship on its own cadence.
+**Why not bundle gbrain into paysec?** Gbrain is a separate, actively-developed project with its own release cadence, schema migrations, and MCP surface. Bundling would mean paysec has to gate gbrain updates, which slows gbrain improvements from reaching users. Separate-but-integrated lets each ship on its own cadence.
 
 **Why `gbrain init --non-interactive` via env var and not a flag?** Connection strings contain database passwords. Passing them as argv lands the password in `ps`, shell history, and process listings. Env-var handoff keeps the secret in process memory only. Gbrain supports both `GBRAIN_DATABASE_URL` and `DATABASE_URL`; we use the former to avoid collisions with non-gbrain tooling.
 
 **Why fail-hard on PATH shadowing instead of warn-and-continue?** A shadowed `gbrain` means every subsequent command calls a different binary than the one we just installed. That's a silent version-drift bug that surfaces as mysterious feature gaps weeks later. Setup skills have one job — set up a working environment. Refusing to install into a broken one is the setup-skill-correct behavior.
 
-**Why not auto-import every repo?** Privacy + noise. An auto-import preamble hook that ingests every repo you touch would: (a) leak work code into a shared brain without consent, and (b) clog search with throwaway repos. The per-remote policy makes ingestion an explicit, per-repo decision. `/setup-gbrain` doesn't install any auto-import hook today — but the policy store is forward-compatible for one later.
+**Why not auto-import every repo?** Privacy + noise. An auto-import preamble hook that ingests every repo you touch would: (a) leak work code into a shared brain without consent, and (b) clog search with throwaway repos. The per-remote policy makes ingestion an explicit, per-repo decision. `/brain-setup` doesn't install any auto-import hook today — but the policy store is forward-compatible for one later.
 
 ## Related skills + next steps
 
-- `/health` — includes a GBrain dimension (doctor status, sync queue depth, last-push age) in its 0-10 composite score. The dimension is omitted when gbrain isn't installed; running `/health` on a non-gbrain machine doesn't penalize that choice.
-- `/gstack-upgrade` — keeps gstack itself up to date. Does NOT upgrade gbrain independently. gbrain installs at the latest HEAD by default; to refresh it, `git pull` in your gbrain clone (default `~/gbrain`) and re-run `/setup-gbrain`. Pin a specific commit with `gstack-gbrain-install --pinned-commit <sha>` if you need reproducibility. Installs below the minimum tested version are refused.
-- `/retro` — weekly retrospective pulls learnings and plans from your gbrain when memory sync is on, letting the retro reference cross-machine history.
+- `/code-health` — includes a GBrain dimension (doctor status, sync queue depth, last-push age) in its 0-10 composite score. The dimension is omitted when gbrain isn't installed; running `/code-health` on a non-gbrain machine doesn't penalize that choice.
+- `/paysec-upgrade` — keeps paysec itself up to date. Does NOT upgrade gbrain independently. gbrain installs at the latest HEAD by default; to refresh it, `git pull` in your gbrain clone (default `~/gbrain`) and re-run `/brain-setup`. Pin a specific commit with `paysec-gbrain-install --pinned-commit <sha>` if you need reproducibility. Installs below the minimum tested version are refused.
+- `/weekly-retro` — weekly retrospective pulls learnings and plans from your gbrain when memory sync is on, letting the retro reference cross-machine history.
 
-Run `/setup-gbrain` and see what sticks.
+Run `/brain-setup` and see what sticks.

@@ -12,7 +12,7 @@
  * widening during a routine refactor (matches the dual-listener.test.ts
  * pattern). End-to-end behavior (real /bin/bash PTY round-trip,
  * tunnel-surface 404 + denial-log) lives in
- * `browse/test/terminal-agent-integration.test.ts`.
+ * `browser/test/terminal-agent-integration.test.ts`.
  */
 
 import { describe, test, expect, beforeEach } from 'bun:test';
@@ -61,10 +61,10 @@ describe('pty-session-cookie: mint/validate/revoke', () => {
     expect(cookie).not.toContain('Secure');
   });
 
-  test('extractPtyCookie reads gstack_pty from a Cookie header', () => {
+  test('extractPtyCookie reads paysec_pty from a Cookie header', () => {
     const { token } = mintPtySessionToken();
     const req = new Request('http://127.0.0.1/ws', {
-      headers: { 'cookie': `othercookie=foo; gstack_pty=${token}; baz=qux` },
+      headers: { 'cookie': `othercookie=foo; paysec_pty=${token}; baz=qux` },
     });
     expect(extractPtyCookie(req)).toBe(token);
   });
@@ -98,7 +98,7 @@ describe('Source-level guard: /health does NOT surface ptyToken', () => {
     // The /health JSON.stringify body must not mention the cookie token.
     // It's allowed to include `terminalPort` (a port number, not auth).
     expect(slice).not.toContain('ptyToken');
-    expect(slice).not.toContain('gstack_pty');
+    expect(slice).not.toContain('paysec_pty');
     expect(slice).toContain('terminalPort');
   });
 });
@@ -121,7 +121,7 @@ describe('Source-level guard: terminal-agent', () => {
   test('validates the session token against an in-memory token set', () => {
     const wsHandler = AGENT_SRC.slice(AGENT_SRC.indexOf("if (url.pathname === '/ws')"));
     // Two transports: Sec-WebSocket-Protocol (preferred for browsers) and
-    // the gstack_pty cookie fallback — parsing shared via extractPtyCookie
+    // the paysec_pty cookie fallback — parsing shared via extractPtyCookie
     // (the hand-rolled parse here had drifted from the server's), validation
     // still against the agent's own validTokens map.
     expect(wsHandler).toContain('sec-websocket-protocol');
@@ -129,16 +129,16 @@ describe('Source-level guard: terminal-agent', () => {
     expect(wsHandler).toContain('validTokens.has');
   });
 
-  test('Sec-WebSocket-Protocol auth: strips gstack-pty. prefix, no manual echo', () => {
+  test('Sec-WebSocket-Protocol auth: strips paysec-pty. prefix, no manual echo', () => {
     const wsHandler = AGENT_SRC.slice(AGENT_SRC.indexOf("if (url.pathname === '/ws')"));
-    // Browsers send `Sec-WebSocket-Protocol: gstack-pty.<token>`. The agent
+    // Browsers send `Sec-WebSocket-Protocol: paysec-pty.<token>`. The agent
     // must strip the prefix before checking validTokens. The protocol echo
     // is Bun's job: Bun >= 1.3 auto-echoes the first offered protocol in the
     // 101 response. A manual echo on top produced a DUPLICATE
     // Sec-WebSocket-Protocol header, which strict clients (Chromium, python
     // websockets) reject per RFC 6455 — the sidebar terminal could never
     // connect. Pin the invariant: no manual echo in the upgrade call.
-    expect(wsHandler).toContain("'gstack-pty.'");
+    expect(wsHandler).toContain("'paysec-pty.'");
     expect(wsHandler).toContain('sec-websocket-protocol');
     expect(wsHandler).not.toContain("headers: { 'Sec-WebSocket-Protocol'");
   });
@@ -213,7 +213,7 @@ describe('Source-level guard: terminal-agent', () => {
     expect(AGENT_SRC).toContain('function buildTabAwarenessHint');
     const hint = AGENT_SRC.slice(AGENT_SRC.indexOf('function buildTabAwarenessHint'));
     // The hint must mention the live state files and the fanout command —
-    // those are the two affordances that distinguish a gstack-PTY claude
+    // those are the two affordances that distinguish a paysec-PTY claude
     // from a plain `claude` session.
     expect(hint).toContain('tabs.json');
     expect(hint).toContain('active-tab.json');

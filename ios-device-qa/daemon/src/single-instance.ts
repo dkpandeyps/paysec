@@ -1,5 +1,5 @@
 // Single-instance enforcement. Daemon takes an exclusive flock on
-// ~/.gstack/ios-qa-daemon.pid on startup. Second invocation discovers the
+// ~/.paysec/ios-qa-daemon.pid on startup. Second invocation discovers the
 // existing daemon's port + connects. Stale lock (PID dead) is reclaimed.
 //
 // Readiness protocol: daemon writes `READY: port=<n> pid=<pid>` to stdout
@@ -18,8 +18,8 @@ export interface PidfileContents {
 }
 
 export function defaultPidfilePath(): string {
-  return process.env.GSTACK_IOS_DAEMON_PIDFILE
-    ?? join(homedir(), '.gstack', 'ios-qa-daemon.pid');
+  return process.env.PAYSEC_IOS_DAEMON_PIDFILE
+    ?? join(homedir(), '.paysec', 'ios-qa-daemon.pid');
 }
 
 /**
@@ -126,7 +126,7 @@ function isAlive(pid: number): boolean {
  * Spawn a daemon process and wait for the READY line. Returns the port the
  * daemon claims to be listening on.
  *
- * Used by /ios-qa skill to spawn-on-demand. If another daemon is already
+ * Used by /ios-device-qa skill to spawn-on-demand. If another daemon is already
  * running, the spawned child detects the existing pidfile and prints a
  * READY line with the existing port (loaded from the pidfile).
  */

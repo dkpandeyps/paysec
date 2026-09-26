@@ -1,5 +1,5 @@
 /**
- * Regression tests for #1539 — /review false positive rate on mature
+ * Regression tests for #1539 — /pr-review false positive rate on mature
  * frameworks (Django, 4/8 FPs).
  *
  * The fix extends the Confidence Calibration resolver with a Pre-emit
@@ -77,10 +77,10 @@ describe("#1539 confidence resolver — pre-emit verification gate present", () 
 
 describe("#1539 generated SKILL.md files — gate propagated to all consumers", () => {
   const consumers = [
-    "review/SKILL.md",
-    "cso/SKILL.md",
-    "plan-eng-review/SKILL.md",
-    "ship/SKILL.md",
+    "pr-review/SKILL.md",
+    "security-audit/SKILL.md",
+    "plan-tech-review/SKILL.md",
+    "ship-pr/SKILL.md",
   ];
 
   // ship's confidence-calibration gate moved into sections/review-army.md (T9 carve);

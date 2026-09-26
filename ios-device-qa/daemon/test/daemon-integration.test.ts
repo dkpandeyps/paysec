@@ -500,10 +500,10 @@ describe('daemon — tailnet listener (mocked tailscaled)', () => {
       bootTokenRotated: STATE_SERVER_TOKEN,
     };
 
-    process.env.GSTACK_IOS_ALLOWLIST_PATH = listPath;
-    process.env.GSTACK_IOS_AUDIT_PATH = join(workDir, 'audit.jsonl');
-    process.env.GSTACK_IOS_ATTEMPTS_PATH = join(workDir, 'attempts.jsonl');
-    process.env.GSTACK_IOS_TAILNET_BIND = '127.0.0.1'; // safe test bind
+    process.env.PAYSEC_IOS_ALLOWLIST_PATH = listPath;
+    process.env.PAYSEC_IOS_AUDIT_PATH = join(workDir, 'audit.jsonl');
+    process.env.PAYSEC_IOS_ATTEMPTS_PATH = join(workDir, 'attempts.jsonl');
+    process.env.PAYSEC_IOS_TAILNET_BIND = '127.0.0.1'; // safe test bind
 
     const d = await startDaemon({
       loopbackPort: 0,
@@ -519,10 +519,10 @@ describe('daemon — tailnet listener (mocked tailscaled)', () => {
 
   afterEach(async () => {
     if (daemon) await daemon.close();
-    delete process.env.GSTACK_IOS_ALLOWLIST_PATH;
-    delete process.env.GSTACK_IOS_AUDIT_PATH;
-    delete process.env.GSTACK_IOS_ATTEMPTS_PATH;
-    delete process.env.GSTACK_IOS_TAILNET_BIND;
+    delete process.env.PAYSEC_IOS_ALLOWLIST_PATH;
+    delete process.env.PAYSEC_IOS_AUDIT_PATH;
+    delete process.env.PAYSEC_IOS_ATTEMPTS_PATH;
+    delete process.env.PAYSEC_IOS_TAILNET_BIND;
     if (workDir) rmSync(workDir, { recursive: true, force: true });
     stub.server.close();
   });
@@ -649,7 +649,7 @@ describe('daemon — tailnet listener (mocked tailscaled)', () => {
 
     // Allow async file write to complete.
     await new Promise(r => setTimeout(r, 100));
-    const auditPath = process.env.GSTACK_IOS_AUDIT_PATH!;
+    const auditPath = process.env.PAYSEC_IOS_AUDIT_PATH!;
     const { readFileSync, existsSync } = await import('fs');
     expect(existsSync(auditPath)).toBe(true);
     const rows = readFileSync(auditPath, 'utf-8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l));

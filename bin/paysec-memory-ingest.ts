@@ -1,32 +1,32 @@
 #!/usr/bin/env bun
 /**
- * gstack-memory-ingest — V1 memory ingest helper.
+ * paysec-memory-ingest — V1 memory ingest helper.
  *
- * Walks coding-agent transcript sources + ~/.gstack/ curated artifacts and writes
+ * Walks coding-agent transcript sources + ~/.paysec/ curated artifacts and writes
  * each one to gbrain as a typed page. Per plan §"Storage tiering": curated memory
  * rides the existing gbrain Postgres + git pipeline; code/transcripts go to the
  * Supabase tier when configured (or local PGLite otherwise) — never double-store.
  *
  * Usage:
- *   gstack-memory-ingest --probe                 # count what would ingest, no writes
- *   gstack-memory-ingest --incremental [--quiet] # default; mtime fast-path; cheap
- *   gstack-memory-ingest --bulk [--all-history]  # first-run; full walk
- *   gstack-memory-ingest --bulk --benchmark      # time the bulk pass + report
- *   gstack-memory-ingest --include-unattributed  # also ingest sessions with no git remote
+ *   paysec-memory-ingest --probe                 # count what would ingest, no writes
+ *   paysec-memory-ingest --incremental [--quiet] # default; mtime fast-path; cheap
+ *   paysec-memory-ingest --bulk [--all-history]  # first-run; full walk
+ *   paysec-memory-ingest --bulk --benchmark      # time the bulk pass + report
+ *   paysec-memory-ingest --include-unattributed  # also ingest sessions with no git remote
  *
  * Sources walked:
  *   ~/.claude/projects/<encoded-cwd>/<uuid>.jsonl   — Claude Code sessions
  *   ~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl    — Codex CLI sessions
  *   ~/Library/Application Support/Cursor/User/*.vscdb — Cursor (V1.0.1 follow-up)
- *   ~/.gstack/projects/<slug>/learnings.jsonl       — typed: learning
- *   ~/.gstack/projects/<slug>/timeline.jsonl        — typed: timeline
- *   ~/.gstack/projects/<slug>/ceo-plans/*.md        — typed: ceo-plan
- *   ~/.gstack/projects/<slug>/*-design-*.md         — typed: design-doc
- *   ~/.gstack/analytics/eureka.jsonl                — typed: eureka
- *   ~/.gstack/builder-profile.jsonl                 — typed: builder-profile-entry
+ *   ~/.paysec/projects/<slug>/learnings.jsonl       — typed: learning
+ *   ~/.paysec/projects/<slug>/timeline.jsonl        — typed: timeline
+ *   ~/.paysec/projects/<slug>/ceo-plans/*.md        — typed: ceo-plan
+ *   ~/.paysec/projects/<slug>/*-design-*.md         — typed: design-doc
+ *   ~/.paysec/analytics/eureka.jsonl                — typed: eureka
+ *   ~/.paysec/builder-profile.jsonl                 — typed: builder-profile-entry
  *
- * State: ~/.gstack/.transcript-ingest-state.json (LOCAL per ED1, never synced).
- * Secret scanning: gitleaks via lib/gstack-memory-helpers#secretScanFile (D19).
+ * State: ~/.paysec/.transcript-ingest-state.json (LOCAL per ED1, never synced).
+ * Secret scanning: gitleaks via lib/paysec-memory-helpers#secretScanFile (D19).
  * Concurrent-write handling: partial-flag + re-ingest on next pass (D10).
  *
  * V1.0 NOTE: Cursor SQLite extraction is a V1.0.1 follow-up. The plan promoted it to
@@ -64,7 +64,7 @@ import {
   secretScanFile,
   detectEngineTier,
   withErrorContext,
-} from "../lib/gstack-memory-helpers";
+} from "../lib/paysec-memory-helpers";
 import { execGbrainText, spawnGbrainAsync } from "../lib/gbrain-exec";
 import { writeReceipt } from "../lib/egress-receipt";
 import { checkOwnedStagingDir, STAGING_MARKER } from "../lib/staging-guard";
@@ -84,7 +84,7 @@ interface CliArgs {
   noWrite: boolean;
   /**
    * Opt-in per-file gitleaks scan during the prepare phase. Off by
-   * default — the cross-machine boundary (gstack-brain-sync, git push)
+   * default — the cross-machine boundary (paysec-brain-sync, git push)
    * has its own scanner. Setting this adds ~4-8 min to cold runs.
    */
   scanSecrets: boolean;
@@ -165,8 +165,8 @@ interface BulkResult {
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const HOME = homedir();
-const GSTACK_HOME = process.env.GSTACK_HOME || join(HOME, ".gstack");
-const STATE_PATH = join(GSTACK_HOME, ".transcript-ingest-state.json");
+const PAYSEC_HOME = process.env.PAYSEC_HOME || join(HOME, ".paysec");
+const STATE_PATH = join(PAYSEC_HOME, ".transcript-ingest-state.json");
 const DEFAULT_INCREMENTAL_BUDGET_MS = 50;
 
 const ALL_TYPES: MemoryType[] = [
@@ -183,7 +183,7 @@ const ALL_TYPES: MemoryType[] = [
 // ── CLI ────────────────────────────────────────────────────────────────────
 
 function printUsage(): void {
-  console.error(`Usage: gstack-memory-ingest [--probe|--incremental|--bulk] [options]
+  console.error(`Usage: paysec-memory-ingest [--probe|--incremental|--bulk] [options]
 
 Modes:
   --probe              Count what would ingest; no writes. Fastest.
@@ -200,7 +200,7 @@ Options:
   --no-write           Skip gbrain put calls (still updates state file).
                        Used by tests + dry runs without actual ingest.
   --scan-secrets       Opt-in per-file gitleaks scan during prepare. Off by
-                       default; gstack-brain-sync already gates the git-push
+                       default; paysec-brain-sync already gates the git-push
                        boundary. Adds ~4-8 min to cold runs.
   --help               This text.
 `);
@@ -215,8 +215,8 @@ function parseArgs(): CliArgs {
   let allHistory = false;
   let limit: number | null = null;
   let sources: Set<MemoryType> = new Set(ALL_TYPES);
-  let noWrite = process.env.GSTACK_MEMORY_INGEST_NO_WRITE === "1";
-  let scanSecrets = process.env.GSTACK_MEMORY_INGEST_SCAN_SECRETS === "1";
+  let noWrite = process.env.PAYSEC_MEMORY_INGEST_NO_WRITE === "1";
+  let scanSecrets = process.env.PAYSEC_MEMORY_INGEST_SCAN_SECRETS === "1";
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
@@ -266,7 +266,7 @@ function loadState(): IngestState {
   if (!existsSync(STATE_PATH)) {
     return {
       schema_version: 1,
-      last_writer: "gstack-memory-ingest",
+      last_writer: "paysec-memory-ingest",
       sessions: {},
     };
   }
@@ -280,7 +280,7 @@ function loadState(): IngestState {
       } catch {
         // backup failure is non-fatal
       }
-      return { schema_version: 1, last_writer: "gstack-memory-ingest", sessions: {} };
+      return { schema_version: 1, last_writer: "paysec-memory-ingest", sessions: {} };
     }
     return parsed;
   } catch (err) {
@@ -291,14 +291,14 @@ function loadState(): IngestState {
     } catch {
       // best-effort
     }
-    return { schema_version: 1, last_writer: "gstack-memory-ingest", sessions: {} };
+    return { schema_version: 1, last_writer: "paysec-memory-ingest", sessions: {} };
   }
 }
 
 function saveState(state: IngestState): void {
   // F6 (Codex finding 6): tmp+rename atomic write so a crash mid-write
   // never leaves a truncated/corrupt state file. Matches the pattern
-  // in gstack-gbrain-sync.ts:saveSyncState.
+  // in paysec-gbrain-sync.ts:saveSyncState.
   try {
     mkdirSync(dirname(STATE_PATH), { recursive: true });
     const tmp = `${STATE_PATH}.tmp.${process.pid}`;
@@ -424,17 +424,17 @@ function* walkCodexSessions(ctx: WalkContext): Generator<{ path: string; type: M
   }
 }
 
-function* walkGstackArtifacts(ctx: WalkContext): Generator<{ path: string; type: MemoryType }> {
-  const projectsRoot = join(GSTACK_HOME, "projects");
+function* walkPaysecArtifacts(ctx: WalkContext): Generator<{ path: string; type: MemoryType }> {
+  const projectsRoot = join(PAYSEC_HOME, "projects");
 
-  // Eureka log: ~/.gstack/analytics/eureka.jsonl
-  const eurekaLog = join(GSTACK_HOME, "analytics", "eureka.jsonl");
+  // Eureka log: ~/.paysec/analytics/eureka.jsonl
+  const eurekaLog = join(PAYSEC_HOME, "analytics", "eureka.jsonl");
   if (existsSync(eurekaLog) && ctx.args.sources.has("eureka")) {
     yield { path: eurekaLog, type: "eureka" };
   }
 
-  // Builder profile: ~/.gstack/builder-profile.jsonl
-  const builderProfile = join(GSTACK_HOME, "builder-profile.jsonl");
+  // Builder profile: ~/.paysec/builder-profile.jsonl
+  const builderProfile = join(PAYSEC_HOME, "builder-profile.jsonl");
   if (existsSync(builderProfile) && ctx.args.sources.has("builder-profile-entry")) {
     yield { path: builderProfile, type: "builder-profile-entry" };
   }
@@ -526,7 +526,7 @@ function* walkAllSources(ctx: WalkContext): Generator<{ path: string; type: Memo
     yield* walkClaudeCodeProjects(ctx);
     yield* walkCodexSessions(ctx);
   }
-  yield* walkGstackArtifacts(ctx);
+  yield* walkPaysecArtifacts(ctx);
 }
 
 // ── Renderers ──────────────────────────────────────────────────────────────
@@ -772,9 +772,9 @@ function buildArtifactPage(path: string, type: MemoryType): PageRecord {
   const sha = fileSha256(path);
   const raw = readFileSync(path, "utf-8");
 
-  // Extract repo slug from path: ~/.gstack/projects/<slug>/...
+  // Extract repo slug from path: ~/.paysec/projects/<slug>/...
   let slug_repo = "_unattributed";
-  const m = path.match(/\/\.gstack\/projects\/([^/]+)\//);
+  const m = path.match(/\/\.paysec\/projects\/([^/]+)\//);
   if (m) slug_repo = m[1];
 
   const date = new Date(stats.mtimeMs).toISOString().slice(0, 10);
@@ -803,7 +803,7 @@ function buildArtifactPage(path: string, type: MemoryType): PageRecord {
 
 // ── Writer (batch via `gbrain import <dir>`) ───────────────────────────────
 //
-// Architecture (post plan-eng-review + Codex outside-voice):
+// Architecture (post plan-tech-review + Codex outside-voice):
 //
 //   walkAllSources(ctx)
 //     → for each path: mtime-skip / source-file gitleaks (D3) / parse / buildPage
@@ -1108,9 +1108,9 @@ async function probeMode(args: CliArgs): Promise<ProbeReport> {
  *
  * Secret scanning policy (post 2026-05-10 perf review):
  *
- *   The actual cross-machine exfiltration boundary is `gstack-brain-sync`,
+ *   The actual cross-machine exfiltration boundary is `paysec-brain-sync`,
  *   which runs a regex-based secret scanner on the staged diff before
- *   `git commit` (see bin/gstack-brain-sync:78-110: AWS keys, GitHub
+ *   `git commit` (see bin/paysec-brain-sync:78-110: AWS keys, GitHub
  *   tokens, OpenAI keys, PEM blocks, JWTs, bearer-token-in-JSON). That's
  *   the right place — it gates content leaving the machine.
  *
@@ -1151,7 +1151,7 @@ function preparePages(
 
     // Optional belt-and-suspenders: when --scan-secrets is set, scan the
     // source file with gitleaks and skip dirty ones. Off by default
-    // because gstack-brain-sync already gates the cross-machine boundary
+    // because paysec-brain-sync already gates the cross-machine boundary
     // and per-file gitleaks costs ~256ms/file (4-8 min on a real corpus).
     if (args.scanSecrets) {
       const scan = secretScanFile(path);
@@ -1215,13 +1215,13 @@ function preparePages(
 }
 
 /**
- * Make a per-run staging directory at ~/.gstack/.staging-ingest-<pid>-<ts>/
+ * Make a per-run staging directory at ~/.paysec/.staging-ingest-<pid>-<ts>/
  * The pid+ts namespace avoids collisions when two ingest passes run
  * concurrently (the orchestrator's lock should prevent this, but
  * defense-in-depth).
  */
 function makeStagingDir(): string {
-  const dir = join(GSTACK_HOME, `.staging-ingest-${process.pid}-${Date.now()}`);
+  const dir = join(PAYSEC_HOME, `.staging-ingest-${process.pid}-${Date.now()}`);
   mkdirSync(dir, { recursive: true });
   // Mint the ownership marker (#1802) so cleanupStagingDir() and decideResume()
   // can prove this dir was created by us before any recursive delete or resume.
@@ -1240,18 +1240,18 @@ function makeStagingDir(): string {
 /**
  * Persistent staging dir used in remote-http MCP mode (split-engine D11).
  *
- * Instead of staging to ~/.gstack/.staging-ingest-<pid>-<ts>/ and cleaning up
+ * Instead of staging to ~/.paysec/.staging-ingest-<pid>-<ts>/ and cleaning up
  * after `gbrain import`, remote-http users get a stable path that survives.
- * gstack-brain-sync's allowlist pushes ~/.gstack/transcripts/** to the
+ * paysec-brain-sync's allowlist pushes ~/.paysec/transcripts/** to the
  * artifacts repo; the brain admin's pull job indexes them into the remote
  * brain. Local PGLite (if present) stays code-only.
  *
- * Path: ~/.gstack/transcripts/<run-id>/  (run-id pid+ts so concurrent passes
+ * Path: ~/.paysec/transcripts/<run-id>/  (run-id pid+ts so concurrent passes
  * stay separate; brain-sync push doesn't care about subdir naming).
  */
 function makePersistentTranscriptDir(): string {
   const dir = join(
-    GSTACK_HOME,
+    PAYSEC_HOME,
     "transcripts",
     `run-${process.pid}-${Date.now()}`,
   );
@@ -1264,7 +1264,7 @@ function makePersistentTranscriptDir(): string {
  * should NOT call `gbrain import` because we don't want the local PGLite
  * polluted with transcripts (per plan D11).
  *
- * Reads ~/.claude.json directly (same fallback chain as gstack-gbrain-detect
+ * Reads ~/.claude.json directly (same fallback chain as paysec-gbrain-detect
  * Tier 3). Cheap: one fs read, no fork-exec.
  */
 function isRemoteHttpMcpMode(): boolean {
@@ -1297,7 +1297,7 @@ function isRemoteHttpMcpMode(): boolean {
 function cleanupStagingDir(dir: string): void {
   // #1802 deletion chokepoint: never recurse-delete a path we cannot PROVE we
   // own. A poisoned resume could otherwise route the repo root here.
-  const verdict = checkOwnedStagingDir(dir, GSTACK_HOME);
+  const verdict = checkOwnedStagingDir(dir, PAYSEC_HOME);
   if (!verdict.ok) {
     console.error(
       `[gbrain] staging cleanup REFUSED: "${dir}" is not an owned staging dir ` +
@@ -1322,7 +1322,7 @@ function cleanupStagingDir(dir: string): void {
  *      PGLite write lock, and burns CPU — observed during 2026-05-10 cold-run
  *      testing)
  *   2. PRESERVE the staging dir when gbrain has written an import-checkpoint
- *      pointing at it (the next /sync-gbrain run can resume from
+ *      pointing at it (the next /brain-sync run can resume from
  *      processedIndex+1). Otherwise synchronously clean up before
  *      process.exit, since `finally` blocks in ingestPass never run after
  *      process.exit fires from inside a signal handler.
@@ -1368,7 +1368,7 @@ function installSignalForwarder(): void {
     if (_activeStagingDir) {
       if (stagingDirIsCheckpointed(_activeStagingDir)) {
         // Preserve for next-run resume. The orchestrator's decideResume()
-        // (in gstack-gbrain-sync.ts) will see the checkpoint + dir and
+        // (in paysec-gbrain-sync.ts) will see the checkpoint + dir and
         // re-invoke gbrain import against this same staging dir, picking
         // up from processedIndex+1. See #1611.
         try {
@@ -1400,20 +1400,20 @@ function installSignalForwarder(): void {
  */
 /**
  * #1611: the `gbrain import` is the long pole on big brains. Its timeout is
- * configurable via GSTACK_INGEST_TIMEOUT_MS (default 30 min, 1min–24h) so large
+ * configurable via PAYSEC_INGEST_TIMEOUT_MS (default 30 min, 1min–24h) so large
  * memory corpora aren't SIGTERM'd mid-import. On timeout we SIGTERM the child,
  * which preserves gbrain's import-checkpoint.json (see installSignalForwarder)
  * so the next run resumes instead of restarting from scratch.
  */
 const DEFAULT_IMPORT_TIMEOUT_MS = 30 * 60 * 1000;
 export function resolveImportTimeoutMs(
-  raw: string | undefined = process.env.GSTACK_INGEST_TIMEOUT_MS,
+  raw: string | undefined = process.env.PAYSEC_INGEST_TIMEOUT_MS,
 ): number {
   if (raw === undefined || raw === "") return DEFAULT_IMPORT_TIMEOUT_MS;
   const n = Number.parseInt(raw, 10);
   if (!Number.isFinite(n) || Number.isNaN(n) || n < 60_000 || n > 86_400_000) {
     console.error(
-      `[memory-ingest] GSTACK_INGEST_TIMEOUT_MS="${raw}" invalid (need 60000–86400000ms); using ${DEFAULT_IMPORT_TIMEOUT_MS}ms`,
+      `[memory-ingest] PAYSEC_INGEST_TIMEOUT_MS="${raw}" invalid (need 60000–86400000ms); using ${DEFAULT_IMPORT_TIMEOUT_MS}ms`,
     );
     return DEFAULT_IMPORT_TIMEOUT_MS;
   }
@@ -1446,7 +1446,7 @@ async function runGbrainImport(
     console.error(
       "[memory-ingest] installed gbrain does not support --include-gitignored — " +
         "retrying without it. If the import then collects 0 files, upgrade gbrain " +
-        "(gstack-gbrain-install) so staged pages inside gitignored dirs are visible.",
+        "(paysec-gbrain-install) so staged pages inside gitignored dirs are visible.",
     );
     return runGbrainImportOnce(stagingDir, timeoutMs, false);
   }
@@ -1463,9 +1463,9 @@ function runGbrainImportOnce(
     // Seed DATABASE_URL from gbrain's own config so this stage works
     // inside Next.js / Prisma / Rails projects with their own
     // .env.local (codex review #7 — defense in depth on top of the
-    // parent gstack-gbrain-sync seeding the bun grandchild's env).
+    // parent paysec-gbrain-sync seeding the bun grandchild's env).
     // --include-gitignored is load-bearing, not a convenience. Pages are
-    // staged into ~/.gstack/.staging-ingest-<pid>-<ts>/, and ~/.gstack is a
+    // staged into ~/.paysec/.staging-ingest-<pid>-<ts>/, and ~/.paysec is a
     // git repo whose .gitignore is `*`. `gbrain import` honours .gitignore,
     // so without this flag it collects files=0 and imports NOTHING, while
     // still reporting `written: N` from the staged count. Silent data loss
@@ -1478,7 +1478,7 @@ function runGbrainImportOnce(
     // falls back to its plain FS walk even on gbrain builds whose flag
     // semantics drift. The ceiling must be the REAL path — git compares
     // canonicalized directories during discovery, and a staging dir reached
-    // through a symlink (macOS /var -> /private/var, symlinked $GSTACK_HOME)
+    // through a symlink (macOS /var -> /private/var, symlinked $PAYSEC_HOME)
     // otherwise never matches the ceiling entry. Scoped to this one child;
     // no on-disk state, staging-guard/resume contracts untouched.
     let ceiling: string;
@@ -1578,7 +1578,7 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
       }
     }
     state.last_full_walk = new Date().toISOString();
-    state.last_writer = "gstack-memory-ingest";
+    state.last_writer = "paysec-memory-ingest";
     saveState(state);
     return {
       written,
@@ -1594,7 +1594,7 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
   if (prep.prepared.length === 0) {
     // Nothing to import — still touch state.last_full_walk and exit.
     state.last_full_walk = new Date().toISOString();
-    state.last_writer = "gstack-memory-ingest";
+    state.last_writer = "paysec-memory-ingest";
     saveState(state);
     return {
       written: 0,
@@ -1609,7 +1609,7 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
 
   if (!gbrainAvailable()) {
     const msg =
-      "gbrain CLI not in PATH or missing `import` subcommand. Run /setup-gbrain.";
+      "gbrain CLI not in PATH or missing `import` subcommand. Run /brain-setup.";
     console.error(`[memory-ingest] ERR: ${msg}`);
     return {
       written: 0,
@@ -1626,30 +1626,30 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
   // Phase 2: stage + (optionally) invoke gbrain import.
   //
   // Split-engine branch per plan D11: in remote-http MCP mode, we stage to a
-  // PERSISTENT dir under ~/.gstack/transcripts/ and SKIP `gbrain import`
-  // entirely. gstack-brain-sync push will pick the dir up via its allowlist
+  // PERSISTENT dir under ~/.paysec/transcripts/ and SKIP `gbrain import`
+  // entirely. paysec-brain-sync push will pick the dir up via its allowlist
   // and the brain admin's pull job will index transcripts into the remote
   // brain. Local PGLite (if any) stays code-only.
   //
   // Resume branch for #1611: when the orchestrator sets
-  // GSTACK_INGEST_RESUME_DIR (because gbrain's import-checkpoint.json points
+  // PAYSEC_INGEST_RESUME_DIR (because gbrain's import-checkpoint.json points
   // at an existing dir from a prior SIGTERM'd run), reuse that staging dir
   // and skip the prepare/writeStaged phase entirely. gbrain's checkpoint
   // tells it where to resume.
   const remoteHttpMode = isRemoteHttpMcpMode();
-  const resumeDir = process.env.GSTACK_INGEST_RESUME_DIR;
+  const resumeDir = process.env.PAYSEC_INGEST_RESUME_DIR;
   // #1802 second entry point: this binary is runnable directly, so it must not
-  // trust GSTACK_INGEST_RESUME_DIR just because it exists — a stale/poisoned env
+  // trust PAYSEC_INGEST_RESUME_DIR just because it exists — a stale/poisoned env
   // could make us `gbrain import` (and later clean up) an arbitrary directory.
   // Prove ownership here too, independently of the orchestrator's decideResume.
   const resuming = !remoteHttpMode
     && typeof resumeDir === "string"
     && resumeDir.length > 0
     && existsSync(resumeDir)
-    && checkOwnedStagingDir(resumeDir, GSTACK_HOME).ok;
+    && checkOwnedStagingDir(resumeDir, PAYSEC_HOME).ok;
   if (!remoteHttpMode && resumeDir && resumeDir.length > 0 && !resuming) {
     console.error(
-      `[memory-ingest] ignoring GSTACK_INGEST_RESUME_DIR="${resumeDir}" — not a proven staging dir (#1802); staging fresh.`,
+      `[memory-ingest] ignoring PAYSEC_INGEST_RESUME_DIR="${resumeDir}" — not a proven staging dir (#1802); staging fresh.`,
     );
   }
   const stagingDir = resuming
@@ -1722,8 +1722,8 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
     }
 
     // Remote-http branch (split-engine D11): no local gbrain import. The
-    // staged markdown lives under ~/.gstack/transcripts/<run-id>/ and the
-    // next gstack-brain-sync push will move it to the artifacts repo. From
+    // staged markdown lives under ~/.paysec/transcripts/<run-id>/ and the
+    // next paysec-brain-sync push will move it to the artifacts repo. From
     // there the brain admin's pull job indexes into the remote brain.
     //
     // We treat ALL prepared pages as "written" since the import didn't run
@@ -1749,7 +1749,7 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
         }
       }
       state.last_full_walk = nowIso;
-      state.last_writer = "gstack-memory-ingest (remote-http mode)";
+      state.last_writer = "paysec-memory-ingest (remote-http mode)";
       saveState(state);
       if (!args.quiet) {
         console.error(
@@ -1783,7 +1783,7 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
     // remote Postgres, so the ingest is a potential off-machine send. The
     // gbrain subprocess owns the wire bytes (content-free receipt, sha256
     // null). The remote-http branch above stages locally only — its egress
-    // happens in gstack-brain-sync, which writes its own receipt at the push.
+    // happens in paysec-brain-sync, which writes its own receipt at the push.
     try {
       writeReceipt({
         sink: "memory-ingest",
@@ -1791,7 +1791,7 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
         payloadClass: `transcript-pages count=${staging.written} (sent by gbrain subprocess)`,
         bytes: 0,
         sha256: null,
-        consent: "gbrain setup consent (/setup-gbrain)",
+        consent: "gbrain setup consent (/brain-setup)",
       });
     } catch (err) {
       const msg = `EGRESS_RECEIPT_FAILED: ${(err as Error).message} — ingest refused`;
@@ -1816,7 +1816,7 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
 
     if (importResult.status !== 0) {
       // #1611/#1802 C3: on timeout, gbrain may have written
-      // import-checkpoint.json so the next /sync-gbrain can resume. But an
+      // import-checkpoint.json so the next /brain-sync can resume. But an
       // INTERNAL timeout (runGbrainImport kills the child and returns here)
       // never signals the parent, so the SIGTERM forwarder's preserve branch
       // doesn't run — and the finally would otherwise delete the staging dir
@@ -1828,9 +1828,9 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
         const checkpointed = stagingDirIsCheckpointed(stagingDir);
         const msg = checkpointed
           ? `gbrain import timed out after ${mins}min; checkpoint preserved — re-run ` +
-            `/sync-gbrain to resume (raise GSTACK_INGEST_TIMEOUT_MS for big brains)`
+            `/brain-sync to resume (raise PAYSEC_INGEST_TIMEOUT_MS for big brains)`
           : `gbrain import timed out after ${mins}min before writing a checkpoint; ` +
-            `re-run /sync-gbrain to restage (raise GSTACK_INGEST_TIMEOUT_MS for big brains)`;
+            `re-run /brain-sync to restage (raise PAYSEC_INGEST_TIMEOUT_MS for big brains)`;
         if (checkpointed) preserveStaging = true;
         console.error(`[memory-ingest] ${msg}`);
         return {
@@ -1910,8 +1910,8 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
     // no future run retries. Silent, permanent data loss.
     //
     // Observed cause: `gbrain import` honours .gitignore, and
-    // `gstack-artifacts-init` writes `.gitignore = "*"` into $GSTACK_HOME.
-    // makeStagingDir() stages under $GSTACK_HOME, so on any machine that has
+    // `paysec-artifacts-init` writes `.gitignore = "*"` into $PAYSEC_HOME.
+    // makeStagingDir() stages under $PAYSEC_HOME, so on any machine that has
     // run artifacts-init, collect_files returns 0 for every batch.
     //
     // `skipped` counts content_hash no-ops, which ARE successful landings.
@@ -1995,8 +1995,8 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
     }
   } finally {
     // #1802 D1: in remote-http mode `stagingDir` is the PERSISTENT transcript
-    // dir (makePersistentTranscriptDir, under ~/.gstack/transcripts/) that
-    // gstack-brain-sync push must pick up — it is NOT a `.staging-ingest-*` dir
+    // dir (makePersistentTranscriptDir, under ~/.paysec/transcripts/) that
+    // paysec-brain-sync push must pick up — it is NOT a `.staging-ingest-*` dir
     // and must never be deleted here. The remote-http branch above already
     // documents this intent ("Skip the ... cleanupStagingDir paths"), but a
     // `finally` runs on its `return`, so the gate has to live here. Gating on
@@ -2007,7 +2007,7 @@ async function ingestPass(args: CliArgs): Promise<BulkResult> {
   }
 
   state.last_full_walk = new Date().toISOString();
-  state.last_writer = "gstack-memory-ingest";
+  state.last_writer = "paysec-memory-ingest";
   saveState(state);
 
   return {
@@ -2103,11 +2103,11 @@ async function main(): Promise<void> {
 }
 
 // Guard so the module is import-safe for unit tests (e.g. resolveImportTimeoutMs).
-// The orchestrator runs it as `bun gstack-memory-ingest.ts ...`, where
+// The orchestrator runs it as `bun paysec-memory-ingest.ts ...`, where
 // import.meta.main is true, so the CLI path is unaffected.
 if (import.meta.main) {
   main().catch((err) => {
-    console.error(`gstack-memory-ingest fatal: ${err instanceof Error ? err.message : String(err)}`);
+    console.error(`paysec-memory-ingest fatal: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
   });
 }

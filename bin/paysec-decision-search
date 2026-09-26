@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 /**
- * gstack-decision-search — read active decisions (the curated "what did we decide" view).
+ * paysec-decision-search — read active decisions (the curated "what did we decide" view).
  *
  * Usage:
- *   gstack-decision-search [--query KW] [--scope repo|branch|issue]
+ *   paysec-decision-search [--query KW] [--scope repo|branch|issue]
  *                          [--branch B] [--issue I] [--recent N] [--all] [--json]
  *                          [--semantic]
  *
@@ -27,13 +27,13 @@ import {
   filterByScope,
   datamark,
   type ActiveDecision,
-} from "../lib/gstack-decision";
+} from "../lib/paysec-decision";
 import { resolveSlug, gitBranch, flagValue } from "../lib/bin-context";
 
 const HERE = import.meta.dir;
 const args = process.argv.slice(2);
 
-const slug = resolveSlug(`${HERE}/gstack-slug`);
+const slug = resolveSlug(`${HERE}/paysec-slug`);
 const paths = decisionPaths(slug);
 const queryRaw = flagValue(args, "--query");
 const query = queryRaw?.toLowerCase();
@@ -94,7 +94,7 @@ for (const d of rows) {
 // gbrain code. Degrades silently: null (gbrain off) or [] (nothing found) leaves the
 // reliable results above as the answer.
 if (semantic && queryRaw) {
-  const { semanticRecall } = await import("../lib/gstack-decision-semantic");
+  const { semanticRecall } = await import("../lib/paysec-decision-semantic");
   const hits = semanticRecall(queryRaw);
   if (hits && hits.length) {
     console.log("\nRelated from memory (gbrain semantic recall):");

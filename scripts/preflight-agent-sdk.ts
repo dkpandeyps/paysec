@@ -19,7 +19,7 @@
 import '../lib/conductor-env-shim';
 import { query, type SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import { readOverlay } from './resolvers/model-overlay';
-import { resolveClaudeBinary } from '../browse/src/claude-bin';
+import { resolveClaudeBinary } from '../browser/src/claude-bin';
 
 async function main() {
   const failures: string[] = [];
@@ -49,7 +49,7 @@ async function main() {
   if (claudePath) {
     pass(`local claude binary: ${claudePath}`);
   } else {
-    fail('`Bun.which("claude")` failed — cannot pin binary (set GSTACK_CLAUDE_BIN to override)');
+    fail('`Bun.which("claude")` failed — cannot pin binary (set PAYSEC_CLAUDE_BIN to override)');
   }
 
   // 3. SDK query end-to-end

@@ -12,7 +12,7 @@ import path from "path";
 // `model: "gpt-image-2"` next to the existing `model: "gpt-4o"`
 // orchestrator across variants / iterate / evolve, taking all five
 // `design` subcommands (`generate`, `variants`, `iterate`, `evolve`,
-// `/design-shotgun`) offline with a generic
+// `/design-variants`) offline with a generic
 // `400 invalid_request_error`. This tripwire fails CI if any
 // `design/src/*.ts` file reintroduces the unsupported pairing.
 //

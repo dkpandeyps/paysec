@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const PROBE = path.join(ROOT, 'bin/gstack-codex-probe');
+const PROBE = path.join(ROOT, 'bin/paysec-codex-probe');
 
 // Run a bash snippet that sources the probe and evaluates one of its functions.
 // Controlled env + optional tempdir for HOME isolation.
@@ -44,15 +44,15 @@ function runProbe(opts: {
 }
 
 function tempHome(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-codex-probe-home-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-codex-probe-home-'));
 }
 
-describe('gstack-codex-probe: auth probe', () => {
+describe('paysec-codex-probe: auth probe', () => {
   test('CODEX_API_KEY set → AUTH_OK', () => {
     const home = tempHome();
     try {
       const r = runProbe({
-        snippet: '_gstack_codex_auth_probe',
+        snippet: '_paysec_codex_auth_probe',
         env: { CODEX_API_KEY: 'sk-test' },
         home,
       });
@@ -67,7 +67,7 @@ describe('gstack-codex-probe: auth probe', () => {
     const home = tempHome();
     try {
       const r = runProbe({
-        snippet: '_gstack_codex_auth_probe',
+        snippet: '_paysec_codex_auth_probe',
         env: { OPENAI_API_KEY: 'sk-openai' },
         home,
       });
@@ -83,7 +83,7 @@ describe('gstack-codex-probe: auth probe', () => {
     try {
       fs.mkdirSync(path.join(home, '.codex'), { recursive: true });
       fs.writeFileSync(path.join(home, '.codex', 'auth.json'), '{}');
-      const r = runProbe({ snippet: '_gstack_codex_auth_probe', home });
+      const r = runProbe({ snippet: '_paysec_codex_auth_probe', home });
       expect(r.stdout.trim()).toBe('AUTH_OK');
       expect(r.status).toBe(0);
     } finally {
@@ -94,7 +94,7 @@ describe('gstack-codex-probe: auth probe', () => {
   test('no env + no file → AUTH_FAILED with exit 1', () => {
     const home = tempHome();
     try {
-      const r = runProbe({ snippet: '_gstack_codex_auth_probe', home });
+      const r = runProbe({ snippet: '_paysec_codex_auth_probe', home });
       expect(r.stdout.trim()).toBe('AUTH_FAILED');
       expect(r.status).toBe(1);
     } finally {
@@ -106,7 +106,7 @@ describe('gstack-codex-probe: auth probe', () => {
     const home = tempHome();
     try {
       const r = runProbe({
-        snippet: '_gstack_codex_auth_probe',
+        snippet: '_paysec_codex_auth_probe',
         env: { CODEX_API_KEY: 'k1', OPENAI_API_KEY: 'k2' },
         home,
       });
@@ -121,7 +121,7 @@ describe('gstack-codex-probe: auth probe', () => {
     const home = tempHome();
     try {
       const r = runProbe({
-        snippet: '_gstack_codex_auth_probe',
+        snippet: '_paysec_codex_auth_probe',
         env: { CODEX_API_KEY: '', OPENAI_API_KEY: '' },
         home,
       });
@@ -136,7 +136,7 @@ describe('gstack-codex-probe: auth probe', () => {
     const home = tempHome();
     try {
       const r = runProbe({
-        snippet: '_gstack_codex_auth_probe',
+        snippet: '_paysec_codex_auth_probe',
         env: { CODEX_API_KEY: '   ', OPENAI_API_KEY: '\t\n' },
         home,
       });
@@ -149,11 +149,11 @@ describe('gstack-codex-probe: auth probe', () => {
 
   test('alternate $CODEX_HOME → checks the alternate path', () => {
     const home = tempHome();
-    const altCodex = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-alt-codex-'));
+    const altCodex = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-alt-codex-'));
     try {
       fs.writeFileSync(path.join(altCodex, 'auth.json'), '{}');
       const r = runProbe({
-        snippet: '_gstack_codex_auth_probe',
+        snippet: '_paysec_codex_auth_probe',
         env: { CODEX_HOME: altCodex },
         home,
       });
@@ -172,7 +172,7 @@ function tempStubCodex(versionOutput: string, bool_command_fails = false): {
   dir: string;
   pathEntry: string;
 } {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-codex-stub-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-codex-stub-'));
   const bin = path.join(dir, 'codex');
   const script = bool_command_fails
     ? '#!/bin/bash\nexit 1\n'
@@ -186,7 +186,7 @@ function runVersionCheck(versionOutput: string): string {
   const stub = tempStubCodex(versionOutput);
   try {
     const r = runProbe({
-      snippet: '_gstack_codex_version_check',
+      snippet: '_paysec_codex_version_check',
       env: { PATH: `${stub.pathEntry}:${process.env.PATH}` },
     });
     return r.stdout + r.stderr;
@@ -195,7 +195,7 @@ function runVersionCheck(versionOutput: string): string {
   }
 }
 
-describe('gstack-codex-probe: version check (anchored regex per Tension I)', () => {
+describe('paysec-codex-probe: version check (anchored regex per Tension I)', () => {
   // Matches (should WARN)
   test('codex-cli 0.120.0 → WARN', () => {
     const out = runVersionCheck('codex-cli 0.120.0\n');
@@ -254,8 +254,8 @@ describe('gstack-codex-probe: version check (anchored regex per Tension I)', () 
 
 // --- Group 3: Timeout wrapper + namespace hygiene ---------------------------
 
-describe('gstack-codex-probe: timeout wrapper + namespace hygiene', () => {
-  test('bin/gstack-codex-probe is syntactically valid bash (bash -n)', () => {
+describe('paysec-codex-probe: timeout wrapper + namespace hygiene', () => {
+  test('bin/paysec-codex-probe is syntactically valid bash (bash -n)', () => {
     const result = spawnSync('bash', ['-n', PROBE], { timeout: 5000 });
     expect(result.status).toBe(0);
   });
@@ -263,7 +263,7 @@ describe('gstack-codex-probe: timeout wrapper + namespace hygiene', () => {
   test('timeout wrapper executes command directly when neither binary present', () => {
     // Clear PATH to simulate no timeout/gtimeout. Use only /bin for `echo`.
     const r = runProbe({
-      snippet: `_gstack_codex_timeout_wrapper 5 echo hello_world`,
+      snippet: `_paysec_codex_timeout_wrapper 5 echo hello_world`,
       env: { PATH: '/bin:/usr/bin' }, // these usually lack gtimeout; timeout may exist on linux
     });
     // Regardless of whether timeout is on this PATH, echo hello_world should succeed.
@@ -272,13 +272,13 @@ describe('gstack-codex-probe: timeout wrapper + namespace hygiene', () => {
 
   test('timeout wrapper resolves gtimeout preferentially when on PATH', () => {
     // Create a stub gtimeout that prints a sentinel so we can verify it was chosen.
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-gto-stub-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-gto-stub-'));
     try {
       const stub = path.join(dir, 'gtimeout');
       fs.writeFileSync(stub, '#!/bin/bash\necho gtimeout_chosen_$1\n');
       fs.chmodSync(stub, 0o755);
       const r = runProbe({
-        snippet: `_gstack_codex_timeout_wrapper 5 echo nope`,
+        snippet: `_paysec_codex_timeout_wrapper 5 echo nope`,
         env: { PATH: `${dir}:/bin:/usr/bin` },
       });
       expect(r.stdout.trim()).toBe('gtimeout_chosen_5');
@@ -294,14 +294,14 @@ describe('gstack-codex-probe: timeout wrapper + namespace hygiene', () => {
     // via usrmerge) with a PATH holding ONLY bash and sleep, then prove a
     // 30s sleep dies at the 1s deadline with timeout(1)'s exit code. The
     // runProbe 5s spawnSync cap doubles as the "actually killed fast" bound.
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-watchdog-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-watchdog-'));
     try {
       const which = (tool: string) =>
         spawnSync('bash', ['-c', `command -v ${tool}`]).stdout.toString().trim() || `/bin/${tool}`;
       fs.symlinkSync(which('bash'), path.join(dir, 'bash'));
       fs.symlinkSync(which('sleep'), path.join(dir, 'sleep'));
       const r = runProbe({
-        snippet: `_gstack_codex_timeout_wrapper 1 sleep 30; echo "rc=$?"`,
+        snippet: `_paysec_codex_timeout_wrapper 1 sleep 30; echo "rc=$?"`,
         env: { PATH: dir },
       });
       expect(r.stdout).toContain('rc=124');
@@ -332,12 +332,12 @@ fi
 
 // --- Group 4: Telemetry event emission --------------------------------------
 
-describe('gstack-codex-probe: telemetry event emission', () => {
-  test('_gstack_codex_log_event writes jsonl when _TEL != off', () => {
+describe('paysec-codex-probe: telemetry event emission', () => {
+  test('_paysec_codex_log_event writes jsonl when _TEL != off', () => {
     const home = tempHome();
     try {
       const r = runProbe({
-        snippet: `_gstack_codex_log_event "codex_test_event" "42"; cat "$HOME/.gstack/analytics/skill-usage.jsonl"`,
+        snippet: `_paysec_codex_log_event "codex_test_event" "42"; cat "$HOME/.paysec/analytics/skill-usage.jsonl"`,
         env: { _TEL: 'community' },
         home,
       });
@@ -348,15 +348,15 @@ describe('gstack-codex-probe: telemetry event emission', () => {
     }
   });
 
-  test('_gstack_codex_log_event skips write when _TEL = off', () => {
+  test('_paysec_codex_log_event skips write when _TEL = off', () => {
     const home = tempHome();
     try {
       runProbe({
-        snippet: `_gstack_codex_log_event "codex_test_event" "99"`,
+        snippet: `_paysec_codex_log_event "codex_test_event" "99"`,
         env: { _TEL: 'off' },
         home,
       });
-      const jsonl = path.join(home, '.gstack/analytics/skill-usage.jsonl');
+      const jsonl = path.join(home, '.paysec/analytics/skill-usage.jsonl');
       expect(fs.existsSync(jsonl)).toBe(false);
     } finally {
       fs.rmSync(home, { recursive: true, force: true });
@@ -367,7 +367,7 @@ describe('gstack-codex-probe: telemetry event emission', () => {
     const home = tempHome();
     try {
       const r = runProbe({
-        snippet: `_gstack_codex_log_event "codex_test_event" "1"; cat "$HOME/.gstack/analytics/skill-usage.jsonl"`,
+        snippet: `_paysec_codex_log_event "codex_test_event" "1"; cat "$HOME/.paysec/analytics/skill-usage.jsonl"`,
         env: {
           _TEL: 'community',
           CODEX_API_KEY: 'SECRET_TOKEN_SHOULD_NOT_LEAK',
@@ -405,7 +405,7 @@ describe('codex SKILL.md.tmpl Step 2A: PROMPT + --base mutual exclusion guard', 
     return nextHeading === -1 ? tail : tail.slice(0, nextHeading + 2);
   }
 
-  for (const relPath of ['codex/SKILL.md.tmpl', 'codex/SKILL.md']) {
+  for (const relPath of ['codex-second-opinion/SKILL.md.tmpl', 'codex-second-opinion/SKILL.md']) {
     test(`${relPath}: no \`codex review\` line combines a quoted prompt argument with --base`, () => {
       const section = extractStep2A(path.join(ROOT, relPath));
       // Find all lines invoking `codex review` (any prefix wrapper allowed).
@@ -452,16 +452,16 @@ describe('codex SKILL.md.tmpl Step 2A: PROMPT + --base mutual exclusion guard', 
 });
 
 // Regression guard for #1036. The wrapper added in #1056 was wired into
-// codex/SKILL.md but not into the /review and /ship diff passes, which kept
+// codex-second-opinion/SKILL.md but not into the /pr-review and /ship-pr diff passes, which kept
 // running under a bare 5-minute Bash gate. Measured on codex-cli 0.145.0: a
 // pass was killed at 287s of a 300s budget mid-tool-call, and the same prompt
 // completed in 336s. An unwrapped stall returns no exit code and no output,
 // which downstream reads as "Codex reviewed and found nothing".
-describe('codex timeout wrapper: /review + /ship diff passes', () => {
+describe('codex timeout wrapper: /pr-review + /ship-pr diff passes', () => {
   const WRAPPED_SITES = [
     'scripts/resolvers/review.ts', // generator (source of truth)
-    'review/SKILL.md', // generated
-    'ship/sections/adversarial.md', // ship section source
+    'pr-review/SKILL.md', // generated
+    'ship-pr/sections/adversarial.md', // ship section source
   ];
 
   // Outer Bash gate for the wrapped passes. The wrapper must be strictly
@@ -473,20 +473,20 @@ describe('codex timeout wrapper: /review + /ship diff passes', () => {
 
     test(`${relPath}: both diff-review Codex calls run under the wrapper`, () => {
       const wrapped =
-        read().match(/_gstack_codex_timeout_wrapper\s+\d+\s+codex\s+(exec|review)\b/g) ?? [];
+        read().match(/_paysec_codex_timeout_wrapper\s+\d+\s+codex\s+(exec|review)\b/g) ?? [];
       // Adversarial pass + structured review pass.
       expect(wrapped.length).toBeGreaterThanOrEqual(2);
     });
 
     test(`${relPath}: does not claim \`timeout\` is unavailable on macOS`, () => {
-      // _gstack_codex_timeout_wrapper resolves gtimeout -> timeout -> unwrapped,
+      // _paysec_codex_timeout_wrapper resolves gtimeout -> timeout -> unwrapped,
       // so the coreutils-less case is already handled. The old claim is what
       // steered these call sites away from the wrapper in the first place.
       expect(read()).not.toMatch(/doesn't exist on macOS/);
     });
 
     test(`${relPath}: wrapper budget stays under the outer Bash gate`, () => {
-      const budgets = [...read().matchAll(/_gstack_codex_timeout_wrapper\s+(\d+)\s+codex\b/g)].map(
+      const budgets = [...read().matchAll(/_paysec_codex_timeout_wrapper\s+(\d+)\s+codex\b/g)].map(
         (m) => Number(m[1]) * 1000,
       );
       expect(budgets.length).toBeGreaterThan(0);
@@ -500,7 +500,7 @@ describe('codex timeout wrapper: /review + /ship diff passes', () => {
 });
 
 // Regression guards for #2496 / #2524 / #2477 — three "guard reports success
-// while doing nothing" defects in codex/SKILL.md:
+// while doing nothing" defects in codex-second-opinion/SKILL.md:
 //   (a) the default `codex review` path set NO sandbox override, inheriting
 //       whatever ~/.codex/config.toml grants (write access on trusted
 //       projects) while the skill's Important Rules claimed read-only;
@@ -510,17 +510,17 @@ describe('codex timeout wrapper: /review + /ship diff passes', () => {
 //   (c) Step 2A's Bash tool gate (300000 ms) sat BELOW the 330s wrapper
 //       budget, so the harness killed the call before the wrapper could emit
 //       its diagnosable exit-124 message — the same inversion #1036 fixed for
-//       /review and /ship.
+//       /pr-review and /ship-pr.
 // Asserted across both the .tmpl source and the generated SKILL.md so a regen
 // or hand-edit of one but not the other can't silently reopen any of them.
 describe('codex SKILL.md.tmpl: review sandbox + fail-closed gate + timeout ordering', () => {
-  for (const relPath of ['codex/SKILL.md.tmpl', 'codex/SKILL.md']) {
+  for (const relPath of ['codex-second-opinion/SKILL.md.tmpl', 'codex-second-opinion/SKILL.md']) {
     const read = () => fs.readFileSync(path.join(ROOT, relPath), 'utf-8');
 
     test(`${relPath}: (a) every scoped codex review invocation pins sandbox_mode="read-only"`, () => {
       const invocations = read()
         .split('\n')
-        .filter((l) => /_gstack_codex_timeout_wrapper\s+\d+\s+codex\s+review\b/.test(l));
+        .filter((l) => /_paysec_codex_timeout_wrapper\s+\d+\s+codex\s+review\b/.test(l));
       expect(invocations.length).toBeGreaterThanOrEqual(1);
       for (const line of invocations) {
         expect(line).toContain('sandbox_mode="read-only"');
@@ -551,13 +551,13 @@ describe('codex SKILL.md.tmpl: review sandbox + fail-closed gate + timeout order
     test(`${relPath}: (c) every Bash gate sits strictly above its section's wrapper budgets`, () => {
       // Split on `## ` headings; within any section that declares BOTH a Bash
       // tool gate (`timeout: N` in ms) and a wrapper budget
-      // (`_gstack_codex_timeout_wrapper S codex`), every gate must be strictly
+      // (`_paysec_codex_timeout_wrapper S codex`), every gate must be strictly
       // greater than every wrapper budget so the wrapper fires first.
       const sections = read().split(/\n## /);
       const inspected: string[] = [];
       for (const section of sections) {
         const gates = [...section.matchAll(/timeout:\s*(\d{4,})/g)].map((m) => Number(m[1]));
-        const wrappers = [...section.matchAll(/_gstack_codex_timeout_wrapper\s+(\d+)\s+codex\b/g)].map(
+        const wrappers = [...section.matchAll(/_paysec_codex_timeout_wrapper\s+(\d+)\s+codex\b/g)].map(
           (m) => Number(m[1]) * 1000,
         );
         if (gates.length === 0 || wrappers.length === 0) continue;

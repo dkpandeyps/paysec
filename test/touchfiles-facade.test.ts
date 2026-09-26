@@ -25,7 +25,7 @@ const DATA_PATH = path.join(import.meta.dir, 'helpers', 'touchfiles-data.ts');
 // appeared in code position.
 //
 // Why a state machine instead of regexes: the data strings contain glob
-// patterns like 'browse/src/' + '**' (a block-comment OPENER to a naive
+// patterns like 'browser/src/' + '**' (a block-comment OPENER to a naive
 // regex) and '*' + '/SKILL.md.tmpl' (a block-comment CLOSER), so regex
 // comment-stripping would treat string content as comment delimiters.
 // Conversely, comments contain apostrophes ("the model's interpretation"),

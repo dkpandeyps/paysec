@@ -1,5 +1,5 @@
 /**
- * /diagram skill E2E (paid, claude -p).
+ * /make-diagram skill E2E (paid, claude -p).
  *
  * Two tests with deliberately different tiers (eng-review D5):
  *
@@ -13,7 +13,7 @@
  *   readable size). Non-deterministic by nature → never blocks merge.
  *
  * Per the extract-don't-copy fixture rule, the prompt embeds only the skill's
- * working section (from "# /diagram" onward), not the full generated SKILL.md
+ * working section (from "# /make-diagram" onward), not the full generated SKILL.md
  * with its preamble.
  */
 import { describe, expect } from 'bun:test';
@@ -33,9 +33,9 @@ const BUNDLE = path.join(ROOT, 'lib', 'diagram-render', 'dist', 'diagram-render.
 
 /** Extract the working section of the generated skill doc (post-preamble). */
 function skillExtract(): string {
-  const full = fs.readFileSync(path.join(ROOT, 'diagram', 'SKILL.md'), 'utf-8');
-  const start = full.indexOf('# /diagram');
-  if (start < 0) throw new Error('diagram/SKILL.md missing "# /diagram" section — regenerate skill docs');
+  const full = fs.readFileSync(path.join(ROOT, 'make-diagram', 'SKILL.md'), 'utf-8');
+  const start = full.indexOf('# /make-diagram');
+  if (start < 0) throw new Error('make-diagram/SKILL.md missing "# /make-diagram" section — regenerate skill docs');
   return full.slice(start);
 }
 
@@ -50,7 +50,7 @@ function setupDir(prefix: string): string {
 }
 
 function basePrompt(dir: string, ask: string): string {
-  return `You have the /diagram skill instructions at ./diagram-skill.md — read them and follow Steps 1-4.
+  return `You have the /make-diagram skill instructions at ./diagram-skill.md — read them and follow Steps 1-4.
 
 Environment notes (already set up — skip Step 2's bundle discovery):
 - The browse binary is at ${browseBin} — use it wherever the skill says $B.
@@ -61,7 +61,7 @@ Environment notes (already set up — skip Step 2's bundle discovery):
 The diagram to create: ${ask}`;
 }
 
-describeIfSelected('/diagram skill E2E', ['diagram-triplet', 'diagram-authoring-quality'], () => {
+describeIfSelected('/make-diagram skill E2E', ['diagram-triplet', 'diagram-authoring-quality'], () => {
   testConcurrentIfSelected('diagram-triplet', async () => {
     const dir = setupDir('diagram-triplet-');
     try {
@@ -106,7 +106,7 @@ describeIfSelected('/diagram skill E2E', ['diagram-triplet', 'diagram-authoring-
       const result = await runSkillTest({
         prompt: basePrompt(
           dir,
-          'how gstack renders diagrams in PDFs: markdown containing mermaid fences goes through a pre-pass that extracts the fences, renders them in a browse daemon tab using an offline bundle, substitutes the SVG back in, inlines local images, and prints via Chromium. Failures become visible diagnostic blocks.',
+          'how paysec renders diagrams in PDFs: markdown containing mermaid fences goes through a pre-pass that extracts the fences, renders them in a browse daemon tab using an offline bundle, substitutes the SVG back in, inlines local images, and prints via Chromium. Failures become visible diagnostic blocks.',
         ),
         workingDirectory: dir,
         maxTurns: 25,
@@ -125,7 +125,7 @@ describeIfSelected('/diagram skill E2E', ['diagram-triplet', 'diagram-authoring-
       const verdict = await callJudge<{ score: number; reasoning: string }>(
         `You are judging the quality of an agent-authored mermaid diagram.
 
-THE ASK: a diagram of gstack's PDF diagram-rendering flow — mermaid fences are
+THE ASK: a diagram of paysec's PDF diagram-rendering flow — mermaid fences are
 extracted by a pre-pass, rendered in a browse tab via an offline bundle,
 substituted back as SVG, images inlined, printed by Chromium, with render
 failures becoming visible diagnostic blocks.

@@ -1,5 +1,5 @@
 /**
- * Tier-2 hardening tests for context-save + context-restore.
+ * Tier-2 hardening tests for save-context + restore-context.
  *
  * These exercise the exact bash snippets from the SKILL.md templates,
  * without spawning claude -p. Free tier, runs in milliseconds.
@@ -20,8 +20,8 @@ import * as os from 'os';
 
 const ROOT = path.resolve(import.meta.dir, '..');
 
-// The exact sanitize+collision bash used by context-save/SKILL.md Step 4.
-// Kept in sync with context-save/SKILL.md.tmpl. If the template changes
+// The exact sanitize+collision bash used by save-context/SKILL.md Step 4.
+// Kept in sync with save-context/SKILL.md.tmpl. If the template changes
 // this helper out of alignment, the title-sanitize tests fail — intended.
 const TITLE_BASH = `
 RAW="\${TITLE_RAW:-untitled}"
@@ -36,7 +36,7 @@ echo "TITLE_SLUG=$TITLE_SLUG"
 echo "FILE=$FILE"
 `;
 
-// The exact selection used by context-restore/SKILL.md Step 1: scan newest 200,
+// The exact selection used by restore-context/SKILL.md Step 1: scan newest 200,
 // order current-branch checkpoints first (fallback: all branches), cap at 20.
 // CURRENT_BRANCH is injected via env in tests; the skill resolves it from git.
 const RESTORE_FIND_BASH = `
@@ -92,7 +92,7 @@ function parseKV(stdout: string): Record<string, string> {
 
 // ─── Title sanitizer ───────────────────────────────────────────────────────
 
-describe('context-save: title sanitizer', () => {
+describe('save-context: title sanitizer', () => {
   let tmp: string;
   beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ctx-san-')); });
   afterEach(() => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {} });
@@ -193,7 +193,7 @@ describe('context-save: title sanitizer', () => {
 
 // ─── Filename collision handling ───────────────────────────────────────────
 
-describe('context-save: filename collision', () => {
+describe('save-context: filename collision', () => {
   let tmp: string;
   beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ctx-col-')); });
   afterEach(() => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {} });
@@ -252,7 +252,7 @@ describe('context-save: filename collision', () => {
 
 // ─── Restore flow: head-20 cap + empty-set ─────────────────────────────────
 
-describe('context-restore: find + sort + head cap', () => {
+describe('restore-context: find + sort + head cap', () => {
   let tmp: string;
   beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ctx-rest-')); });
   afterEach(() => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {} });
@@ -321,7 +321,7 @@ describe('context-restore: find + sort + head cap', () => {
     // NOT have that behavior. Running from a dir with many .md files.
     const out = runBash(RESTORE_FIND_BASH, {
       CHECKPOINT_DIR: tmp,
-      // Intentionally: working directory is the gstack repo which has many .md files.
+      // Intentionally: working directory is the paysec repo which has many .md files.
     }).stdout;
     expect(out.trim()).toBe('NO_CHECKPOINTS');
     // Must NOT contain any .md filename from cwd.
@@ -337,7 +337,7 @@ describe('context-restore: find + sort + head cap', () => {
 // worktree's newer save can't shadow it, while still falling back across
 // branches (Conductor handoff) when the current branch has none.
 
-describe('context-restore: current-branch preference (#2052)', () => {
+describe('restore-context: current-branch preference (#2052)', () => {
   let tmp: string;
   beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ctx-branch-')); });
   afterEach(() => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {} });
@@ -401,13 +401,13 @@ describe('context-restore: current-branch preference (#2052)', () => {
 
 describe('migration v1.1.3.0: HOME guard', () => {
   let tmp: string;
-  const MIGRATION = path.join(ROOT, 'gstack-upgrade', 'migrations', 'v1.1.3.0.sh');
+  const MIGRATION = path.join(ROOT, 'paysec-upgrade', 'migrations', 'v1.1.3.0.sh');
 
   beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ctx-home-')); });
   afterEach(() => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {} });
 
   test('HOME unset → exits 0 with diagnostic, no filesystem changes', () => {
-    // Create a file that would be wiped by an HOME="" bug: /.claude/skills/gstack/checkpoint
+    // Create a file that would be wiped by an HOME="" bug: /.claude/skills/paysec/checkpoint
     // (not actually writable by the test, but we verify the script doesn't TRY).
     // Spawn without HOME in env.
     const env = { PATH: process.env.PATH || '/usr/bin:/bin' } as Record<string, string>;

@@ -1,8 +1,8 @@
 /**
- * Regression tests for #1624 — /retro silently produced empty/misleading
+ * Regression tests for #1624 — /weekly-retro silently produced empty/misleading
  * output when "today" anchor was wrong or origin/<default> was stale.
  *
- * The fix is Step 0.5 in retro/SKILL.md.tmpl: four ordered pre-check
+ * The fix is Step 0.5 in weekly-retro/SKILL.md.tmpl: four ordered pre-check
  * branches before any window analysis. These tests are static invariants
  * against the template body — they fail the build if the guard is removed,
  * weakened, or its ordering broken.
@@ -22,8 +22,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 const ROOT = path.resolve(import.meta.dir, "..");
-const RETRO_TMPL = path.join(ROOT, "retro", "SKILL.md.tmpl");
-const RETRO_MD = path.join(ROOT, "retro", "SKILL.md");
+const RETRO_TMPL = path.join(ROOT, "weekly-retro", "SKILL.md.tmpl");
+const RETRO_MD = path.join(ROOT, "weekly-retro", "SKILL.md");
 
 function readTmpl(): string {
   return fs.readFileSync(RETRO_TMPL, "utf-8");

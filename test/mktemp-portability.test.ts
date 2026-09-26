@@ -1,5 +1,5 @@
 /**
- * Regression pin for #2091: /codex was broken on every macOS install because
+ * Regression pin for #2091: /codex-second-opinion was broken on every macOS install because
  * its mktemp templates carried a suffix after the X's ("codex-err-XXXXXX.txt").
  * BSD mktemp (macOS) requires the X's to be the trailing characters of the
  * template; with a suffix it fails ("mkstemp failed ... File exists"), the
@@ -48,7 +48,7 @@ describe("mktemp portability (#2091)", () => {
   it("BSD-portable form actually works on this platform", () => {
     // Live sanity: the exact template shape the skills now emit.
     const tmp = process.env.TMPDIR || "/tmp";
-    const created = execFileSync("mktemp", [`${tmp.replace(/\/$/, "")}/gstack-portability-XXXXXX`], {
+    const created = execFileSync("mktemp", [`${tmp.replace(/\/$/, "")}/paysec-portability-XXXXXX`], {
       encoding: "utf-8",
     }).trim();
     expect(created.length).toBeGreaterThan(0);

@@ -22,8 +22,8 @@ function readScript(rel: string): string {
   return fs.readFileSync(path.join(ROOT, rel), "utf-8");
 }
 
-describe("PR #1169 bug #4: gstack-telemetry-sync mktemp fallback", () => {
-  const SCRIPT = "bin/gstack-telemetry-sync";
+describe("PR #1169 bug #4: paysec-telemetry-sync mktemp fallback", () => {
+  const SCRIPT = "bin/paysec-telemetry-sync";
 
   test("no `mktemp ... || echo <path>` fallback shape anywhere in the script", () => {
     const body = readScript(SCRIPT);

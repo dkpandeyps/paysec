@@ -1,16 +1,16 @@
 ---
-name: ios-fix
+name: ios-auto-fix
 preamble-tier: 3
 version: 1.0.0
 description: |
-  Autonomous iOS bug fixer. Takes a bug found by /ios-qa, reads the source,
+  Autonomous iOS bug fixer. Takes a bug found by /ios-device-qa, reads the source,
   writes the fix, rebuilds, redeploys, and verifies the fix on the real
   device. Closes the loop: find bug → fix bug → confirm fix — zero human
   intervention. Captures the pre-bug state snapshot as a regression test
   fixture, so the bug can never recur silently.
-  Use when /ios-qa reports a bug and you want it fixed automatically, or
+  Use when /ios-device-qa reports a bug and you want it fixed automatically, or
   when asked to "fix this iOS bug", "patch the iPhone app", or "auto-fix
-  the iOS issue". (gstack)
+  the iOS issue". (paysec)
 voice-triggers:
   - "fix the iOS bug"
   - "patch the iPhone app"
@@ -37,25 +37,25 @@ triggers:
 
 **NO FIX WITHOUT A REPRODUCING SNAPSHOT.** Before editing any Swift source,
 the agent MUST capture a `GET /state/snapshot` that reproduces the bug.
-That snapshot becomes a regression test fixture (`test/fixtures/ios-fix/`).
+That snapshot becomes a regression test fixture (`test/fixtures/ios-auto-fix/`).
 A fix that lands without a reproducing snapshot is a fix you'll be re-fixing
 in three months.
 
 ## Phase 1: Reproduce the bug
 
-1. Read the `/ios-qa` finding (bug description, screenshot, suspected
+1. Read the `/ios-device-qa` finding (bug description, screenshot, suspected
    accessibility-tree node).
 2. Bring the device into the bug state via `POST /tap`, `/swipe`, `/type`,
    or `POST /state/<key>` (snapshot-eligible fields only).
 3. Capture `GET /state/snapshot` → write to
-   `test/fixtures/ios-fix/<bug-slug>-pre.json`.
+   `test/fixtures/ios-auto-fix/<bug-slug>-pre.json`.
 4. Capture `GET /screenshot` → write to
-   `test/fixtures/ios-fix/<bug-slug>-pre.png`.
+   `test/fixtures/ios-auto-fix/<bug-slug>-pre.png`.
 5. Persist a one-line description of what's wrong + expected behavior.
 
 ## Phase 2: Locate root cause
 
-Per `/investigate`'s Iron Law: no fix without root cause. The agent reads the
+Per `/debug-root-cause`'s Iron Law: no fix without root cause. The agent reads the
 Swift source, traces from the buggy screen back to the view model, the data
 flow, and the state mutation. Identify the smallest change that fixes the
 behavior.
@@ -75,19 +75,19 @@ user pick the one to fix.
 
 1. `POST /state/restore` with the pre-bug snapshot → reproduces the state.
 2. Take a fresh screenshot. Compare against
-   `test/fixtures/ios-fix/<bug-slug>-pre.png`.
+   `test/fixtures/ios-auto-fix/<bug-slug>-pre.png`.
 3. If the bug visibly persists, the fix didn't work — revert and try again
    (max 3 iterations before escalating to the user).
 4. If the bug is gone, capture `<bug-slug>-post.png` for the regression test.
 
 ## Phase 5: Add regression test
 
-Write a test in `test/fixtures/ios-fix/<bug-slug>.test.ts` that:
+Write a test in `test/fixtures/ios-auto-fix/<bug-slug>.test.ts` that:
 
 1. Loads the pre-bug snapshot.
 2. Restores it via `POST /state/restore`.
 3. Asserts the post-fix behavior on a real device (gated
-   `GSTACK_HAS_IOS_DEVICE=1`, periodic tier).
+   `PAYSEC_HAS_IOS_DEVICE=1`, periodic tier).
 
 Commit the snapshot fixture + test file alongside the fix.
 

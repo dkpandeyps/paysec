@@ -7,8 +7,8 @@
  * evals silently re-contaminate and nothing fails until a human notices
  * weird results again — which took three burned suites last time.
  *
- * Pattern mirrors browse/test/terminal-agent-pid-identity.test.ts and
- * browse/test/server-embedder-terminal-port.test.ts: read source files as
+ * Pattern mirrors browser/test/terminal-agent-pid-identity.test.ts and
+ * browser/test/server-embedder-terminal-port.test.ts: read source files as
  * text, assert invariants on their contents. Brittle by design — renaming
  * the helper must force the author to look here.
  */
@@ -75,9 +75,9 @@ describe('hermetic wiring tripwire', () => {
   });
 
   test('no test callsite passes the whole operator env as a RUNNER override', () => {
-    // Overrides merge last by design (per-test GSTACK_HOME etc.) — passing
+    // Overrides merge last by design (per-test PAYSEC_HOME etc.) — passing
     // process.env itself through that hole defeats the entire scrub. Scoped
-    // to OUR runner calls: unit tests that spawnSync gstack bin scripts with
+    // to OUR runner calls: unit tests that spawnSync paysec bin scripts with
     // `...process.env` are test-process spawns, not eval children, and are
     // legitimately the test's own business.
     const RUNNER_CALL =
@@ -131,7 +131,7 @@ describe('hermetic wiring tripwire', () => {
       const resolved = fs.realpathSync(target);
       // Targets inside the live repo checkout are the blessed edge — exempt
       // them BEFORE the operator-~/.claude ban. On the default global-git
-      // install the repo itself lives at ~/.claude/skills/gstack, so every
+      // install the repo itself lives at ~/.claude/skills/paysec, so every
       // CORRECT symlink carries the operatorClaude prefix and an unexempted
       // ban can never pass (regression 2026-08-15: pristine v1.64.1.0 fails
       // this test in any worktree under ~/.claude/skills/ and passes

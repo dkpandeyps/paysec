@@ -3,19 +3,19 @@
  *
  * Telemetry is OPT-IN: it emits only when the user granted a tier through
  * the consent prompt (`telemetry: community` or `telemetry: anonymous` in
- * ~/.gstack/config.yaml). An absent key, an absent config file, an explicit
+ * ~/.paysec/config.yaml). An absent key, an absent config file, an explicit
  * `off`, or any unrecognized value all mean DISABLED — the same default
- * bin/gstack-config's DEFAULTS table reports for an unset key, so a daemon
+ * bin/paysec-config's DEFAULTS table reports for an unset key, so a daemon
  * spawned outside a skill preamble (direct $B use, embedders) can never
- * emit while `gstack-config get telemetry` tells the user 'off'.
+ * emit while `paysec-config get telemetry` tells the user 'off'.
  *
  * The persistent tier reads through the shared flat-YAML helper in
- * config.ts (readGstackConfigYamlKey), same parser as the pair-agent gate.
- * Env tier: GSTACK_TELEMETRY_OFF=1 always disables; =0 is a harness-side
+ * config.ts (readPaysecConfigYamlKey), same parser as the pair-remote-agent gate.
+ * Env tier: PAYSEC_TELEMETRY_OFF=1 always disables; =0 is a harness-side
  * consent assertion that covers the no-config default only — it never
  * overrides an explicit `telemetry: off`.
  *
- * Harness mirrors pair-agent-optin-gate.test.ts: GSTACK_HOME → temp dir,
+ * Harness mirrors pair-agent-optin-gate.test.ts: PAYSEC_HOME → temp dir,
  * env saved/restored per test, cache reset via _resetTelemetryCache.
  */
 
@@ -26,26 +26,26 @@ import * as path from 'path';
 import { isTelemetryDisabled, logTelemetry, _resetTelemetryCache } from '../src/telemetry';
 
 const savedEnv = {
-  GSTACK_HOME: process.env.GSTACK_HOME,
-  GSTACK_TELEMETRY_OFF: process.env.GSTACK_TELEMETRY_OFF,
+  PAYSEC_HOME: process.env.PAYSEC_HOME,
+  PAYSEC_TELEMETRY_OFF: process.env.PAYSEC_TELEMETRY_OFF,
 };
 const tmpHomes: string[] = [];
 
-/** Fresh GSTACK_HOME with the given config.yaml body (null = no file). */
+/** Fresh PAYSEC_HOME with the given config.yaml body (null = no file). */
 function tmpHomeWith(configYaml: string | null): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-telemetry-optout-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-telemetry-optout-'));
   tmpHomes.push(dir);
   if (configYaml !== null) {
     fs.writeFileSync(path.join(dir, 'config.yaml'), configYaml);
   }
-  process.env.GSTACK_HOME = dir;
-  delete process.env.GSTACK_TELEMETRY_OFF;
+  process.env.PAYSEC_HOME = dir;
+  delete process.env.PAYSEC_TELEMETRY_OFF;
   _resetTelemetryCache();
   return dir;
 }
 
 afterEach(() => {
-  for (const k of ['GSTACK_HOME', 'GSTACK_TELEMETRY_OFF'] as const) {
+  for (const k of ['PAYSEC_HOME', 'PAYSEC_TELEMETRY_OFF'] as const) {
     if (savedEnv[k] === undefined) delete process.env[k];
     else process.env[k] = savedEnv[k]!;
   }
@@ -90,7 +90,7 @@ describe('telemetry persistent opt-out tier (config.yaml)', () => {
   });
 
   test('DISABLED when the key is absent — consent was never granted', () => {
-    // bin/gstack-config's DEFAULTS table reports 'off' for an unset telemetry
+    // bin/paysec-config's DEFAULTS table reports 'off' for an unset telemetry
     // key; the daemon must agree or direct-$B spawns emit while the user is
     // told telemetry is off (default-polarity split-brain).
     tmpHomeWith('pair_agent: on\n');
@@ -114,25 +114,25 @@ describe('telemetry persistent opt-out tier (config.yaml)', () => {
 });
 
 describe('telemetry env tier + cache semantics', () => {
-  test('GSTACK_TELEMETRY_OFF=1 disables even when config says anonymous', () => {
+  test('PAYSEC_TELEMETRY_OFF=1 disables even when config says anonymous', () => {
     tmpHomeWith('telemetry: anonymous\n');
-    process.env.GSTACK_TELEMETRY_OFF = '1';
+    process.env.PAYSEC_TELEMETRY_OFF = '1';
     _resetTelemetryCache();
     expect(isTelemetryDisabled()).toBe(true);
   });
 
-  test('GSTACK_TELEMETRY_OFF=0 never overrides an explicit `telemetry: off`', () => {
+  test('PAYSEC_TELEMETRY_OFF=0 never overrides an explicit `telemetry: off`', () => {
     // The =0 hint is a harness-side consent assertion for scratch homes with
     // no config store; a user's written opt-out always wins over it.
     tmpHomeWith('telemetry: off\n');
-    process.env.GSTACK_TELEMETRY_OFF = '0';
+    process.env.PAYSEC_TELEMETRY_OFF = '0';
     _resetTelemetryCache();
     expect(isTelemetryDisabled()).toBe(true);
   });
 
-  test('GSTACK_TELEMETRY_OFF=0 enables when no config store exists (harness seam)', () => {
+  test('PAYSEC_TELEMETRY_OFF=0 enables when no config store exists (harness seam)', () => {
     tmpHomeWith(null);
-    process.env.GSTACK_TELEMETRY_OFF = '0';
+    process.env.PAYSEC_TELEMETRY_OFF = '0';
     _resetTelemetryCache();
     expect(isTelemetryDisabled()).toBe(false);
   });

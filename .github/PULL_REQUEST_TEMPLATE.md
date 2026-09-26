@@ -1,5 +1,5 @@
 <!--
-gstack is AI-coded and proud of it. The bar is EVIDENCE OF REAL USE, not lines
+paysec is AI-coded and proud of it. The bar is EVIDENCE OF REAL USE, not lines
 of code. A PR with no proof behind it gets closed, no matter how clean it looks.
 Fill every section below. See CONTRIBUTING.md → "The evidence bar".
 -->
@@ -29,15 +29,15 @@ changed. -->
 
 ## Liveness proof (required)
 
-<!-- Attach a screenshot of your own machine with the text `GSTACK PR` typed LIVE
+<!-- Attach a screenshot of your own machine with the text `PAYSEC PR` typed LIVE
 into a real surface — terminal prompt, a shell command, your browser
 address/search bar, an editor buffer. It must be TYPED INTO A LIVE UI, not drawn,
-overlaid, or edited onto the image. A painted-on `GSTACK PR` is an automatic
+overlaid, or edited onto the image. A painted-on `PAYSEC PR` is an automatic
 close. This confirms a human opened this PR. -->
 
 ## Checklist
 
-- [ ] Liveness screenshot attached: `GSTACK PR` typed live into a real surface (not edited onto the image)
+- [ ] Liveness screenshot attached: `PAYSEC PR` typed live into a real surface (not edited onto the image)
 - [ ] This is not a generated-file-only diff (I edited the source/template and regenerated)
 - [ ] No ETHOS.md edits, and no changes to voice / founder perspective / YC references
 - [ ] New public command / external service / host adapter has an accepted issue linked (or N/A)

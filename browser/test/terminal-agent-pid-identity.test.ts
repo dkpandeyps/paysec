@@ -17,17 +17,17 @@ import {
 // by argv regex — any process whose command line contains the string
 // `terminal-agent.ts` got SIGTERM'd. In practice this killed:
 //
-//   * sibling gstack sessions on the same host
+//   * sibling paysec sessions on the same host
 //   * editor processes (vim, code, less) that had the file open
-//   * any second gstack run on the host
+//   * any second paysec run on the host
 //
 // The v1.44 migration replaces both kill sites with identity-based PID kill
 // against the record written at `<stateDir>/terminal-agent-pid` by the
 // agent's own boot path. This test is the static-grep tripwire that prevents
 // reintroducing the regex teardown anywhere in the source tree.
 //
-// Pattern mirrors browse/test/server-embedder-terminal-port.test.ts (Test 4)
-// and browse/test/server-sanitize-surrogates.test.ts: read source files
+// Pattern mirrors browser/test/server-embedder-terminal-port.test.ts (Test 4)
+// and browser/test/server-sanitize-surrogates.test.ts: read source files
 // directly, assert an invariant on their contents.
 
 const SRC_DIR = path.resolve(import.meta.path, '..', '..', 'src');
@@ -78,7 +78,7 @@ describe('terminal-agent PID identity (v1.44+)', () => {
   });
 
   test('3. readAgentRecord round-trips writeAgentRecord', () => {
-    const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gstack-pid-id-'));
+    const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'paysec-pid-id-'));
     try {
       const record: AgentRecord = {
         pid: 12345,
@@ -99,7 +99,7 @@ describe('terminal-agent PID identity (v1.44+)', () => {
   });
 
   test('4. readAgentRecord returns null on missing or malformed file', () => {
-    const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gstack-pid-id-'));
+    const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'paysec-pid-id-'));
     try {
       // Missing.
       expect(readAgentRecord(tmpDir)).toBeNull();

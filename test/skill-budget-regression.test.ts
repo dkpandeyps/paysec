@@ -4,12 +4,12 @@
  * Asserts: no test in the most recent eval run grew its tool calls or
  * turns by more than 2× vs the prior recorded run. Pure library — does
  * not spawn `claude` or pay any API cost. Reads the project eval dir
- * (~/.gstack/projects/<slug>/evals/) and compares the latest run against
+ * (~/.paysec/projects/<slug>/evals/) and compares the latest run against
  * its predecessor.
  *
  * First-run grace: if there's no prior run, the test passes vacuously.
  * The purpose is to catch a SECOND-run regression — a real-world scenario
- * is "preamble change shipped, /qa eval went from 30 tool calls to 90".
+ * is "preamble change shipped, /qa-fix eval went from 30 tool calls to 90".
  *
  * Why two metrics (tools and turns): a regression that adds tool calls
  * usually reflects an inefficient skill prompt; a regression that adds
@@ -17,7 +17,7 @@
  * worth catching. We use a noise floor (5 tool calls / 3 turns) to
  * avoid flagging tests that started tiny and got slightly bigger.
  *
- * Override: GSTACK_BUDGET_RATIO=<n> (default 2.0).
+ * Override: PAYSEC_BUDGET_RATIO=<n> (default 2.0).
  *
  * Skipping: only the gate-level CI-blocking variant runs in EVALS_TIER=gate.
  * The same logic runs anywhere `bun test` is invoked because comparison
@@ -45,7 +45,7 @@ import { logBudgetOverride } from './helpers/budget-override';
  *   EVALS_BUDGET_HARD_CAP_PERIODIC  default $500/run
  *   EVALS_BUDGET_HARD_CAP           umbrella cap if a tier-specific isn't set; default $300
  *   EVALS_BUDGET_OVERRIDE_REASON    if set, override fires AND audit-logs to
- *                                   ~/.gstack/analytics/spend-overrides.jsonl
+ *                                   ~/.paysec/analytics/spend-overrides.jsonl
  *
  * Caps are dollars-per-run, not dollars-per-test. The cap exists to catch
  * runaway evals (infinite retry, model price change, prompt-blowup bug),

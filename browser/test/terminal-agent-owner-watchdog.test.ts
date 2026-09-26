@@ -36,7 +36,7 @@ afterEach(() => {
 
 describe('terminal-agent owner lifecycle', () => {
   test('exits after its owning browse server process exits', async () => {
-    const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-term-owner-'));
+    const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-term-owner-'));
     tempDirs.push(stateDir);
     const stateFile = path.join(stateDir, 'browse.json');
     fs.writeFileSync(stateFile, JSON.stringify({ token: 'test-token' }));
@@ -55,7 +55,7 @@ describe('terminal-agent owner lifecycle', () => {
         BROWSE_STATE_FILE: stateFile,
         BROWSE_SERVER_PORT: '0',
         BROWSE_OWNER_PID: String(owner.pid),
-        GSTACK_TERMINAL_OWNER_WATCHDOG_MS: '25',
+        PAYSEC_TERMINAL_OWNER_WATCHDOG_MS: '25',
       },
       stdio: ['ignore', 'ignore', 'ignore'],
     });

@@ -57,27 +57,27 @@ afterEach(() => {
 describe('parseJSONL', () => {
   test('parses valid JSONL lines', () => {
     const content = [
-      '{"skill":"ship","ts":"2026-03-18T15:30:00Z","repo":"my-app"}',
-      '{"skill":"qa","ts":"2026-03-18T16:00:00Z","repo":"my-api"}',
+      '{"skill":"ship-pr","ts":"2026-03-18T15:30:00Z","repo":"my-app"}',
+      '{"skill":"qa-fix","ts":"2026-03-18T16:00:00Z","repo":"my-api"}',
     ].join('\n');
     const events = parseJSONL(content);
     expect(events).toHaveLength(2);
-    expect(events[0].skill).toBe('ship');
-    expect(events[1].skill).toBe('qa');
+    expect(events[0].skill).toBe('ship-pr');
+    expect(events[1].skill).toBe('qa-fix');
   });
 
   test('skips malformed lines', () => {
     const content = [
-      '{"skill":"ship","ts":"2026-03-18T15:30:00Z","repo":"my-app"}',
+      '{"skill":"ship-pr","ts":"2026-03-18T15:30:00Z","repo":"my-app"}',
       'not valid json',
       '{broken',
       '',
-      '{"skill":"qa","ts":"2026-03-18T16:00:00Z","repo":"my-api"}',
+      '{"skill":"qa-fix","ts":"2026-03-18T16:00:00Z","repo":"my-api"}',
     ].join('\n');
     const events = parseJSONL(content);
     expect(events).toHaveLength(2);
-    expect(events[0].skill).toBe('ship');
-    expect(events[1].skill).toBe('qa');
+    expect(events[0].skill).toBe('ship-pr');
+    expect(events[1].skill).toBe('qa-fix');
   });
 
   test('returns empty array for empty string', () => {
@@ -85,7 +85,7 @@ describe('parseJSONL', () => {
   });
 
   test('skips objects missing ts field', () => {
-    const content = '{"skill":"ship","repo":"my-app"}\n';
+    const content = '{"skill":"ship-pr","repo":"my-app"}\n';
     const events = parseJSONL(content);
     expect(events).toHaveLength(0);
   });
@@ -96,10 +96,10 @@ describe('filterByPeriod', () => {
   const daysAgo = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000).toISOString();
 
   const events: AnalyticsEvent[] = [
-    { skill: 'ship', ts: daysAgo(1), repo: 'app' },
-    { skill: 'qa', ts: daysAgo(3), repo: 'app' },
-    { skill: 'review', ts: daysAgo(10), repo: 'app' },
-    { skill: 'retro', ts: daysAgo(40), repo: 'app' },
+    { skill: 'ship-pr', ts: daysAgo(1), repo: 'app' },
+    { skill: 'qa-fix', ts: daysAgo(3), repo: 'app' },
+    { skill: 'pr-review', ts: daysAgo(10), repo: 'app' },
+    { skill: 'weekly-retro', ts: daysAgo(40), repo: 'app' },
   ];
 
   test('period "all" returns all events', () => {
@@ -109,8 +109,8 @@ describe('filterByPeriod', () => {
   test('period "7d" returns only last 7 days', () => {
     const filtered = filterByPeriod(events, '7d');
     expect(filtered).toHaveLength(2);
-    expect(filtered[0].skill).toBe('ship');
-    expect(filtered[1].skill).toBe('qa');
+    expect(filtered[0].skill).toBe('ship-pr');
+    expect(filtered[1].skill).toBe('qa-fix');
   });
 
   test('period "30d" returns last 30 days', () => {
@@ -126,7 +126,7 @@ describe('filterByPeriod', () => {
 describe('formatReport', () => {
   test('includes header and period label', () => {
     const report = formatReport([], 'all');
-    expect(report).toContain('gstack skill usage analytics');
+    expect(report).toContain('paysec skill usage analytics');
     expect(report).toContain('Period: all time');
   });
 
@@ -142,31 +142,31 @@ describe('formatReport', () => {
 
   test('counts skill invocations correctly', () => {
     const events: AnalyticsEvent[] = [
-      { skill: 'ship', ts: '2026-03-18T15:30:00Z', repo: 'app' },
-      { skill: 'ship', ts: '2026-03-18T16:00:00Z', repo: 'app' },
-      { skill: 'qa', ts: '2026-03-18T16:30:00Z', repo: 'app' },
+      { skill: 'ship-pr', ts: '2026-03-18T15:30:00Z', repo: 'app' },
+      { skill: 'ship-pr', ts: '2026-03-18T16:00:00Z', repo: 'app' },
+      { skill: 'qa-fix', ts: '2026-03-18T16:30:00Z', repo: 'app' },
     ];
     const report = formatReport(events);
-    expect(report).toContain('/ship');
+    expect(report).toContain('/ship-pr');
     expect(report).toContain('2 invocations');
-    expect(report).toContain('/qa');
+    expect(report).toContain('/qa-fix');
     expect(report).toContain('1 invocation');
   });
 
   test('groups by repo', () => {
     const events: AnalyticsEvent[] = [
-      { skill: 'ship', ts: '2026-03-18T15:30:00Z', repo: 'app-a' },
-      { skill: 'qa', ts: '2026-03-18T16:00:00Z', repo: 'app-a' },
-      { skill: 'ship', ts: '2026-03-18T16:30:00Z', repo: 'app-b' },
+      { skill: 'ship-pr', ts: '2026-03-18T15:30:00Z', repo: 'app-a' },
+      { skill: 'qa-fix', ts: '2026-03-18T16:00:00Z', repo: 'app-a' },
+      { skill: 'ship-pr', ts: '2026-03-18T16:30:00Z', repo: 'app-b' },
     ];
     const report = formatReport(events);
-    expect(report).toContain('app-a: ship(1) qa(1)');
-    expect(report).toContain('app-b: ship(1)');
+    expect(report).toContain('app-a: ship-pr(1) qa-fix(1)');
+    expect(report).toContain('app-b: ship-pr(1)');
   });
 
   test('counts hook fire events separately', () => {
     const events: AnalyticsEvent[] = [
-      { skill: 'ship', ts: '2026-03-18T15:30:00Z', repo: 'app' },
+      { skill: 'ship-pr', ts: '2026-03-18T15:30:00Z', repo: 'app' },
       { skill: 'careful', ts: '2026-03-18T16:00:00Z', repo: 'app', event: 'hook_fire', pattern: 'rm_recursive' },
       { skill: 'careful', ts: '2026-03-18T16:30:00Z', repo: 'app', event: 'hook_fire', pattern: 'rm_recursive' },
       { skill: 'careful', ts: '2026-03-18T17:00:00Z', repo: 'app', event: 'hook_fire', pattern: 'git_force_push' },
@@ -182,9 +182,9 @@ describe('formatReport', () => {
 
   test('handles mixed events correctly', () => {
     const events: AnalyticsEvent[] = [
-      { skill: 'ship', ts: '2026-03-18T15:30:00Z', repo: 'my-app' },
-      { skill: 'ship', ts: '2026-03-18T15:35:00Z', repo: 'my-app' },
-      { skill: 'qa', ts: '2026-03-18T16:00:00Z', repo: 'my-api' },
+      { skill: 'ship-pr', ts: '2026-03-18T15:30:00Z', repo: 'my-app' },
+      { skill: 'ship-pr', ts: '2026-03-18T15:35:00Z', repo: 'my-app' },
+      { skill: 'qa-fix', ts: '2026-03-18T16:00:00Z', repo: 'my-api' },
       { skill: 'careful', ts: '2026-03-18T16:30:00Z', repo: 'my-app', event: 'hook_fire', pattern: 'rm_recursive' },
     ];
     const report = formatReport(events);
@@ -228,17 +228,17 @@ describe('integration via runScript helper', () => {
 
   test('normal aggregation produces correct output', () => {
     const p = writeTempJSONL('normal.jsonl', [
-      '{"skill":"ship","ts":"2026-03-18T15:30:00Z","repo":"my-app"}',
-      '{"skill":"ship","ts":"2026-03-18T15:35:00Z","repo":"my-app"}',
-      '{"skill":"qa","ts":"2026-03-18T16:00:00Z","repo":"my-app"}',
-      '{"skill":"review","ts":"2026-03-18T16:30:00Z","repo":"my-api"}',
+      '{"skill":"ship-pr","ts":"2026-03-18T15:30:00Z","repo":"my-app"}',
+      '{"skill":"ship-pr","ts":"2026-03-18T15:35:00Z","repo":"my-app"}',
+      '{"skill":"qa-fix","ts":"2026-03-18T16:00:00Z","repo":"my-app"}',
+      '{"skill":"pr-review","ts":"2026-03-18T16:30:00Z","repo":"my-api"}',
     ]);
     const output = runScript(p);
-    expect(output).toContain('/ship');
+    expect(output).toContain('/ship-pr');
     expect(output).toContain('2 invocations');
-    expect(output).toContain('/qa');
+    expect(output).toContain('/qa-fix');
     expect(output).toContain('1 invocation');
-    expect(output).toContain('/review');
+    expect(output).toContain('/pr-review');
     expect(output).toContain('Total: 4 skill invocations, 0 hook fires');
   });
 
@@ -248,20 +248,20 @@ describe('integration via runScript helper', () => {
     const old = new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000).toISOString();
 
     const p = writeTempJSONL('period.jsonl', [
-      `{"skill":"ship","ts":"${recent}","repo":"app"}`,
-      `{"skill":"qa","ts":"${old}","repo":"app"}`,
+      `{"skill":"ship-pr","ts":"${recent}","repo":"app"}`,
+      `{"skill":"qa-fix","ts":"${old}","repo":"app"}`,
     ]);
     const output = runScript(p, '--period 7d');
     expect(output).toContain('Period: last 7 days');
-    expect(output).toContain('/ship');
+    expect(output).toContain('/ship-pr');
     expect(output).toContain('Total: 1 skill invocation, 0 hook fires');
     // qa should be filtered out
-    expect(output).not.toContain('/qa');
+    expect(output).not.toContain('/qa-fix');
   });
 
   test('hook fire events counted in full pipeline', () => {
     const p = writeTempJSONL('hooks.jsonl', [
-      '{"skill":"ship","ts":"2026-03-18T15:30:00Z","repo":"app"}',
+      '{"skill":"ship-pr","ts":"2026-03-18T15:30:00Z","repo":"app"}',
       '{"event":"hook_fire","skill":"careful","pattern":"rm_recursive","ts":"2026-03-18T16:00:00Z","repo":"app"}',
       '{"event":"hook_fire","skill":"careful","pattern":"rm_recursive","ts":"2026-03-18T16:30:00Z","repo":"app"}',
       '{"event":"hook_fire","skill":"careful","pattern":"git_force_push","ts":"2026-03-18T17:00:00Z","repo":"app"}',

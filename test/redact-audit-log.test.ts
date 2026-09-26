@@ -19,10 +19,10 @@ function logPath(): string {
 
 beforeEach(() => {
   home = fs.mkdtempSync(path.join(os.tmpdir(), "audit-"));
-  process.env.GSTACK_HOME = home;
+  process.env.PAYSEC_HOME = home;
 });
 afterEach(() => {
-  delete process.env.GSTACK_HOME;
+  delete process.env.PAYSEC_HOME;
   fs.rmSync(home, { recursive: true, force: true });
 });
 
@@ -91,7 +91,7 @@ describe("CLI", () => {
     const r = spawnSync(
       "bun",
       [LIB, JSON.stringify({ repo_visibility: "public", outcome: "flagged", categories_flagged: ["pii"] }), bodyFile],
-      { env: { ...process.env, GSTACK_HOME: home }, encoding: "utf8" },
+      { env: { ...process.env, PAYSEC_HOME: home }, encoding: "utf8" },
     );
     expect(r.status).toBe(0);
     const line = JSON.parse(fs.readFileSync(logPath(), "utf8").trim());

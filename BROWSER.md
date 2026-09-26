@@ -1,14 +1,14 @@
 # Browser — Complete Reference
 
-gstack's browser surface in one document. Headless Chromium daemon, ~70+
+paysec's browser surface in one document. Headless Chromium daemon, ~70+
 commands, ref-based element selection, codifiable browser-skills, real-browser
-mode with a Chrome side panel, an in-sidebar Claude PTY, an ngrok pair-agent
+mode with a Chrome side panel, an in-sidebar Claude PTY, an ngrok pair-remote-agent
 flow, and a layered prompt-injection defense — all behind a compiled CLI that
 prints plain text to stdout. ~100-200ms per call. Zero context-token overhead.
 
-If you've used gstack in the last release or two, the productivity loop is the
-new headline: `/scrape <intent>` drives a page once, `/skillify` codifies the
-flow into a deterministic Playwright script, and the next `/scrape` on the
+If you've used paysec in the last release or two, the productivity loop is the
+new headline: `/web-scrape <intent>` drives a page once, `/save-scrape-skill` codifies the
+flow into a deterministic Playwright script, and the next `/web-scrape` on the
 same intent runs in ~200ms instead of ~30 seconds of agent re-exploration.
 
 ---
@@ -16,11 +16,11 @@ same intent runs in ~200ms instead of ~30 seconds of agent re-exploration.
 ## Quick start
 
 ```bash
-# One-time: build the binary (browse/dist/browse, ~58MB)
+# One-time: build the binary (browser/dist/browse, ~58MB)
 bun install && bun run build
 
 # Set $B once and forget about it
-B=./browse/dist/browse           # or ~/.claude/skills/gstack/browse/dist/browse
+B=./browser/dist/browse           # or ~/.claude/skills/paysec/browser/dist/browse
 
 # Drive a page
 $B goto https://news.ycombinator.com
@@ -30,9 +30,9 @@ $B text                          # get clean page text
 $B screenshot /tmp/hn.png
 
 # Codify a repeated flow
-/scrape latest hacker news stories
-/skillify                        # writes ~/.gstack/browser-skills/hn-front/...
-/scrape hacker news front page   # second call: 200ms via the codified skill
+/web-scrape latest hacker news stories
+/save-scrape-skill                        # writes ~/.paysec/browser-skills/hn-front/...
+/web-scrape hacker news front page   # second call: 200ms via the codified skill
 
 # Watch Claude work in real time
 $B connect                       # headed Chromium + Side Panel extension
@@ -43,7 +43,7 @@ $B connect                       # headed Chromium + Side Panel extension
 ## Table of contents
 
 1. [What it is](#what-it-is)
-2. [The productivity loop — `/scrape` + `/skillify`](#the-productivity-loop)
+2. [The productivity loop — `/web-scrape` + `/save-scrape-skill`](#the-productivity-loop)
 3. [Architecture](#architecture)
 4. [Command reference](#command-reference)
 5. [Snapshot system + ref-based selection](#snapshot-system)
@@ -51,7 +51,7 @@ $B connect                       # headed Chromium + Side Panel extension
 7. [Domain-skills (per-site agent notes)](#domain-skills)
 8. [Real-browser mode (`$B connect`)](#real-browser-mode) — including [`--headed` + `--proxy` + `--navigate` (v1.28.0.0)](#headed-mode--proxy--browser-native-downloads-v12800)
 9. [Side Panel + sidebar agent](#side-panel--sidebar-agent)
-10. [Pair-agent — remote agents over an ngrok tunnel](#pair-agent)
+10. [Pair-agent — remote agents over an ngrok tunnel](#pair-remote-agent)
 11. [Authentication + tokens](#authentication)
 12. [Prompt-injection security stack (L1–L6)](#security-stack)
 13. [Screenshots, PDFs, visual inspection](#screenshots-pdfs-visual)
@@ -85,10 +85,10 @@ WebSocket — Claude's Bash tool already exists, so we use it.
 Three escalating modes:
 
 - **Headless** (default). Daemon runs Chromium with no visible window. Fastest,
-  cheapest, what skills like `/qa`, `/design-review`, `/benchmark` use by
+  cheapest, what skills like `/qa-fix`, `/design-qa`, `/perf-check` use by
   default.
 - **Headed via `$B connect`**. Same daemon, but Chromium is visible (rebranded
-  as "GStack Browser") with the Side Panel extension auto-loaded. You watch
+  as "PaySec Browser") with the Side Panel extension auto-loaded. You watch
   every command tick through in real time.
 - **Pair-agent over a tunnel**. Daemon binds a second listener that ngrok
   forwards. A remote agent (Codex, OpenClaw, Hermes, anything that can speak
@@ -99,10 +99,10 @@ Three escalating modes:
 
 ## The productivity loop
 
-The shipped headline of v1.19.0.0. Two gstack skills wrap the browser-skills
+The shipped headline of v1.19.0.0. Two paysec skills wrap the browser-skills
 runtime so the second time you ask Claude to scrape a page, it runs in ~200ms.
 
-### `/scrape <intent>`
+### `/web-scrape <intent>`
 
 One entry point for pulling page data. Three paths under the hood:
 
@@ -111,29 +111,29 @@ One entry point for pulling page data. Three paths under the hood:
    and runs `$B skill run <name>` if a confident match exists.
 2. **Prototype path (~30s)** — no match, agent drives the page with `$B goto`,
    `$B text`, `$B html`, `$B links`, etc., returns the JSON, and appends a
-   one-line "say `/skillify`" suggestion.
+   one-line "say `/save-scrape-skill`" suggestion.
 3. **Mutating-intent refusal** — verbs like *submit*, *click*, *fill* route
-   to `/automate` (Phase 2b, P0 in `TODOS.md`). `/scrape` is read-only by
+   to `/automate` (Phase 2b, P0 in `TODOS.md`). `/web-scrape` is read-only by
    contract.
 
-### `/skillify`
+### `/save-scrape-skill`
 
-Codifies the most recent successful `/scrape` prototype into a permanent
+Codifies the most recent successful `/web-scrape` prototype into a permanent
 browser-skill on disk. Eleven steps, three locked contracts:
 
 - **D1 — Provenance guard.** Walks back ≤10 agent turns for a clearly-bounded
-  `/scrape` result. Refuses with one specific message if cold. No silent
+  `/web-scrape` result. Refuses with one specific message if cold. No silent
   synthesis from chat fragments.
 - **D2 — Synthesis input slice.** Extracts ONLY the final-attempt `$B` calls
   that produced the JSON the user accepted, plus the user's intent string.
   Drops failed selectors, drops chat, drops earlier-session content.
-- **D3 — Atomic write.** Stages everything to `~/.gstack/.tmp/skillify-<spawnId>/`,
+- **D3 — Atomic write.** Stages everything to `~/.paysec/.tmp/skillify-<spawnId>/`,
   runs `$B skill test` against the temp dir, and only renames into the final
   tier path on test pass + user approval. Test fail or rejection: `rm -rf` the
   temp dir entirely. No half-written skill ever appears in `$B skill list`.
 
 Mutating-flow sibling `/automate` is split out as P0 in `TODOS.md` and ships
-on the next branch — same skillify machinery, per-mutating-step confirmation
+on the next branch — same save-scrape-skill machinery, per-mutating-step confirmation
 gate when running non-codified.
 
 See [`docs/designs/BROWSER_SKILLS_V1.md`](docs/designs/BROWSER_SKILLS_V1.md)
@@ -165,8 +165,8 @@ for the full design + decision trail.
 
 ### Daemon lifecycle
 
-1. **First call.** CLI checks `<project>/.gstack/browse.json` for a running
-   server. None found — it spawns `bun run browse/src/server.ts` in the
+1. **First call.** CLI checks `<project>/.paysec/browse.json` for a running
+   server. None found — it spawns `bun run browser/src/server.ts` in the
    background. Daemon launches headless Chromium via Playwright, picks a
    random port (10000–49151, deliberately below the macOS ephemeral pool
    49152-65535 so the OS never hands a colliding port to another process),
@@ -175,11 +175,11 @@ for the full design + decision trail.
    when a macOS XProtect definition update SIGKILLs the pinned Chromium at
    spawn, the daemon classifies the kill signature, clears the quarantine
    flag on the Playwright cache, reinstalls the pinned revision from the
-   gstack install root (bounded ~120s), and retries once — at most once per
+   paysec install root (bounded ~120s), and retries once — at most once per
    daemon process. If the heal can't complete, the original launch error
    plus manual `bunx playwright install chromium` guidance lands on daemon
    stderr (see `browse-daemon.log`). Wired at all three launch sites in
-   `browser-manager.ts` via `browse/src/xprotect-heal.ts`.
+   `browser-manager.ts` via `browser/src/xprotect-heal.ts`.
 2. **Subsequent calls.** CLI reads the state file, sends an HTTP POST with
    the bearer token, prints the response. ~100-200ms round trip.
 3. **Idle shutdown.** After 30 minutes of no commands, daemon shuts down and
@@ -188,7 +188,7 @@ for the full design + decision trail.
    no self-healing, don't hide failure. CLI detects the dead daemon on the
    next call and starts a fresh one.
 5. **Busy vs dead.** A daemon that stops answering HTTP while its process is
-   alive is busy, not dead. The CLI gives `/health` a bounded ~8s to recover,
+   alive is busy, not dead. The CLI gives `/code-health` a bounded ~8s to recover,
    then reports busy with a nonzero exit — it never kills an alive pid.
    Only an explicit `--force-restart` replaces a live-but-unresponsive
    daemon (tabs, cookies, and logins are lost). `browse stop` against a
@@ -199,12 +199,12 @@ for the full design + decision trail.
 
 Each project root (detected via `git rev-parse --show-toplevel`) gets its
 own daemon, port, state file, cookies, and logs. No cross-workspace
-collisions. State at `<project>/.gstack/browse.json`.
+collisions. State at `<project>/.paysec/browse.json`.
 
 | Workspace | State file | Port |
 |-----------|-----------|------|
-| `/code/project-a` | `/code/project-a/.gstack/browse.json` | random (10000–49151) |
-| `/code/project-b` | `/code/project-b/.gstack/browse.json` | random (10000–49151) |
+| `/code/project-a` | `/code/project-a/.paysec/browse.json` | random (10000–49151) |
+| `/code/project-b` | `/code/project-b/.paysec/browse.json` | random (10000–49151) |
 
 ---
 
@@ -330,13 +330,13 @@ from `snapshot`, or `@c` refs from `snapshot -C`. Full table:
 | `status` | Daemon health + mode (headless / headed / cdp) |
 | `stop` | Shut down daemon (succeeds even if the daemon already died — never boots one just to stop it) |
 | `restart` | Restart daemon |
-| `connect` | Launch headed GStack Browser with Side Panel extension |
+| `connect` | Launch headed PaySec Browser with Side Panel extension |
 | `disconnect` | Close headed Chrome, return to headless |
 | `focus [@ref]` | Bring headed Chrome to foreground (macOS); `@ref` also scrolls into view |
 | `state save\|load <name>` | Save or load browser state (cookies + URLs) |
 | `memory [--json]` | Snapshot Bun heap + per-tab JS heap + Chromium process tree + bounded buffer sizes. Use `--json` for programmatic consumers; text mode renders sorted top-10 tabs with "and N more" tail. |
 
-The daemon's own stdout/stderr persists to `<project>/.gstack/browse-daemon.log`
+The daemon's own stdout/stderr persists to `<project>/.paysec/browse-daemon.log`
 (append mode, rotated to `.log.1` at the size cap, single generation), with
 tokens and unsanitized page content kept out — check it when a daemon dies
 without an obvious cause. A live-but-unresponsive daemon is never auto-killed;
@@ -450,9 +450,9 @@ tier is printed inline next to each skill name:
 
 | Tier | Path | When |
 |------|------|------|
-| **Project** | `<project>/.gstack/browser-skills/<name>/` | Project-specific skills (committed or gitignored) |
-| **Global** | `~/.gstack/browser-skills/<name>/` | Per-user skills, all projects |
-| **Bundled** | `<gstack-install>/browser-skills/<name>/` | Ships with gstack, read-only |
+| **Project** | `<project>/.paysec/browser-skills/<name>/` | Project-specific skills (committed or gitignored) |
+| **Global** | `~/.paysec/browser-skills/<name>/` | Per-user skills, all projects |
+| **Bundled** | `<paysec-install>/browser-skills/<name>/` | Ships with paysec, read-only |
 
 ### Trust model
 
@@ -462,9 +462,9 @@ configured.
 | Axis | Mechanism | Default |
 |------|-----------|---------|
 | **Daemon-side capability** | Per-spawn scoped token bound to read+write scope (browser-driving commands minus admin: `eval`, `js`, `cookies`, `storage`). Single-use clientId encodes skill name + spawn id. Revoked when spawn exits. | Always scoped — never the daemon root token |
-| **Process-side env** | `trusted: true` frontmatter passes `process.env` minus `GSTACK_TOKEN`. `trusted: false` (default) drops everything except a minimal allowlist (LANG, LC_ALL, TERM, TZ) and pattern-strips secrets (TOKEN/KEY/SECRET/PASSWORD, AWS_*, ANTHROPIC_*, OPENAI_*, GITHUB_*, etc.) | Untrusted (must opt in) |
+| **Process-side env** | `trusted: true` frontmatter passes `process.env` minus `PAYSEC_TOKEN`. `trusted: false` (default) drops everything except a minimal allowlist (LANG, LC_ALL, TERM, TZ) and pattern-strips secrets (TOKEN/KEY/SECRET/PASSWORD, AWS_*, ANTHROPIC_*, OPENAI_*, GITHUB_*, etc.) | Untrusted (must opt in) |
 
-`GSTACK_PORT` and `GSTACK_SKILL_TOKEN` are injected last, so a parent process
+`PAYSEC_PORT` and `PAYSEC_SKILL_TOKEN` are injected last, so a parent process
 can't override them.
 
 ### Output protocol
@@ -476,16 +476,16 @@ exit if exceeded). Matches `gh` / `kubectl` / `docker` conventions.
 ### How the SDK distribution works
 
 Each skill ships its own copy of `browse-client.ts` at `_lib/browse-client.ts`,
-byte-identical to the canonical `browse/src/browse-client.ts`. `/skillify`
+byte-identical to the canonical `browser/src/browse-client.ts`. `/save-scrape-skill`
 copies the canonical SDK alongside every generated script. Each skill is
 fully self-contained: copy the directory anywhere, it runs. Version drift
 impossible — the SDK is frozen at the version the skill was authored against.
 
-### Atomic write discipline (`/skillify` D3)
+### Atomic write discipline (`/save-scrape-skill` D3)
 
-`browse/src/browser-skill-write.ts` provides three primitives:
+`browser/src/browser-skill-write.ts` provides three primitives:
 
-- `stageSkill(opts)` — writes files to `~/.gstack/.tmp/skillify-<spawnId>/<name>/`
+- `stageSkill(opts)` — writes files to `~/.paysec/.tmp/skillify-<spawnId>/<name>/`
   with restrictive perms.
 - `commitSkill(opts)` — atomic `fs.renameSync` into the final tier path.
   Refuses to follow symlinked staging dirs (`lstat` check), refuses to
@@ -519,22 +519,22 @@ The classifier flag is set automatically by the L4 prompt-injection scan;
 agents do not set it manually.
 
 Storage:
-- Per-project: `<project>/.gstack/domain-skills/<host>.md`
-- Global: `~/.gstack/domain-skills/<host>.md`
+- Per-project: `<project>/.paysec/domain-skills/<host>.md`
+- Global: `~/.paysec/domain-skills/<host>.md`
 
-Source: `browse/src/domain-skills.ts`, `domain-skill-commands.ts`.
+Source: `browser/src/domain-skills.ts`, `domain-skill-commands.ts`.
 
 ---
 
 ## Real-browser mode
 
-`$B connect` launches **GStack Browser** — a rebranded Chromium controlled by
+`$B connect` launches **PaySec Browser** — a rebranded Chromium controlled by
 Playwright with the Side Panel extension auto-loaded and anti-bot stealth
 patches applied. You watch every command tick through a visible window in
 real time.
 
 ```bash
-$B connect              # launches GStack Browser, headed
+$B connect              # launches PaySec Browser, headed
 $B goto https://app.com # navigates in the visible window
 $B snapshot -i          # refs from the real page
 $B click @e3            # clicks in the real window
@@ -544,18 +544,18 @@ $B disconnect           # back to headless mode
 ```
 
 The window has a subtle golden shimmer line at the top and a floating
-"gstack" pill in the bottom-right corner so you always know which Chrome
+"paysec" pill in the bottom-right corner so you always know which Chrome
 window is being controlled.
 
-### What "GStack Browser" means
+### What "PaySec Browser" means
 
 Not your daily Chrome — a Playwright-managed Chromium with custom branding
 in the Dock and menu bar (the `.app` name, Dock icon, and tray, NOT the UA
 string), always-on Layer C anti-bot stealth (most JS-observable automation
 tells are masked, so many anti-bot-protected sites load cleanly), a
 stock-Chrome user agent that reports the underlying Chromium version, and the
-gstack extension pre-loaded via `launchPersistentContext`. The UA no longer
-carries a `GStackBrowser` suffix — that branding string was itself a
+paysec extension pre-loaded via `launchPersistentContext`. The UA no longer
+carries a `PaySecBrowser` suffix — that branding string was itself a
 high-entropy tell, so the browser now reports a plain `Chrome/<version>` UA.
 Deepest-layer CDP-protocol detection still gets through (Google can still
 trigger captchas; see the CDP-patch item in `TODOS.md`). Your regular Chrome
@@ -571,7 +571,7 @@ with your tabs and bookmarks stays untouched.
 
 ### CDP-aware skills
 
-When in real-browser mode, `/qa` and `/design-review` automatically skip
+When in real-browser mode, `/qa-fix` and `/design-qa` automatically skip
 cookie import prompts and headless workarounds — the headed browser already
 has whatever session you logged into.
 
@@ -625,17 +625,17 @@ cross-check those for consistency, and synthesizing fixed values flags MORE
 bot-like, not less. ChromeDriver's `cdc_`/`__webdriver` runtime artifacts and
 the Permissions notifications tell are also cleaned up on every path.
 
-`GSTACK_STEALTH=extended` (also accepts `1` or `true`; off by default) layers
+`PAYSEC_STEALTH=extended` (also accepts `1` or `true`; off by default) layers
 six more aggressive patches on top — WebGL renderer spoof, a faked
 `navigator.plugins` PluginArray, `navigator.mediaDevices`. That mode actively
 lies and can break sites that reflect on those properties; use it only when
 the default triggers detection. For gbrowser builds with the C++ patches, the
-`GSTACK_*` host-profile env (GPU vendor/renderer, UA-CH platform/model,
-hardware) emits the Pack 1 `--gstack-gpu-vendor` / `--gstack-gpu-renderer` /
-`--gstack-ua-platform` / `--gstack-ua-model` / `--gstack-hw-concurrency` /
-`--gstack-device-memory` switches that push the GPU/UA-CH/hardware spoof down
-to native code, and `GSTACK_CDP_STEALTH=on` (or `1`/`true`) emits the Pack 2
-`--gstack-suppress-prepare-stack-trace` switch (closes the Cloudflare
+`PAYSEC_*` host-profile env (GPU vendor/renderer, UA-CH platform/model,
+hardware) emits the Pack 1 `--paysec-gpu-vendor` / `--paysec-gpu-renderer` /
+`--paysec-ua-platform` / `--paysec-ua-model` / `--paysec-hw-concurrency` /
+`--paysec-device-memory` switches that push the GPU/UA-CH/hardware spoof down
+to native code, and `PAYSEC_CDP_STEALTH=on` (or `1`/`true`) emits the Pack 2
+`--paysec-suppress-prepare-stack-trace` switch (closes the Cloudflare
 `Error.prepareStackTrace` canary). On stock Playwright Chromium every one of
 these switches is a safe no-op.
 
@@ -665,7 +665,7 @@ transport retries that could corrupt browser traffic.
 
 ## Side Panel + sidebar agent
 
-The Chrome extension that ships baked into GStack Browser shows a live
+The Chrome extension that ships baked into PaySec Browser shows a live
 activity feed of every browse command in a Side Panel, plus `@ref` overlays
 on the page, plus an interactive Claude PTY inside the sidebar.
 
@@ -679,7 +679,7 @@ upgrade), and the PTY session token is a 30-minute HttpOnly cookie minted
 via `POST /pty-session`.
 
 The toolbar's Cleanup button and the Inspector's "Send to Code" action both
-pipe text into the live Claude PTY via `window.gstackInjectToTerminal(text)`,
+pipe text into the live Claude PTY via `window.paysecInjectToTerminal(text)`,
 exposed by `sidepanel-terminal.js`. There's no separate `/sidebar-command`
 POST — the live REPL is the only execution surface.
 
@@ -687,7 +687,7 @@ POST — the live REPL is the only execution surface.
 
 A scrolling feed of every browse command — name, args, duration, status,
 errors. Shows up in real time as Claude works. Backed by SSE (`/activity/stream`)
-that accepts the Bearer token OR the HttpOnly `gstack_sse` session cookie
+that accepts the Bearer token OR the HttpOnly `paysec_sse` session cookie
 (30-minute stream-scope cookie minted via `POST /sse-session`).
 
 ### Refs tab
@@ -707,9 +707,9 @@ The "Send to Code" button injects a description into the Claude PTY.
 |-----------|----------------|-------|
 | Side Panel UI | `extension/sidepanel.js`, `sidepanel-terminal.js` | Chrome extension surface |
 | Background SW | `extension/background.js` | Manages tab events, port management |
-| Content script | `extension/content.js` | Page overlays, `gstack` pill |
-| Terminal agent | `browse/src/terminal-agent.ts` | PTY spawn, lifecycle, auth |
-| Sidebar utilities | `browse/src/sidebar-utils.ts` | URL sanitization, helpers |
+| Content script | `extension/content.js` | Page overlays, `paysec` pill |
+| Terminal agent | `browser/src/terminal-agent.ts` | PTY spawn, lifecycle, auth |
+| Sidebar utilities | `browser/src/sidebar-utils.ts` | URL sanitization, helpers |
 
 Before modifying any of these, read the comment block in `CLAUDE.md` under
 "Sidebar architecture" — silent failures here usually trace to not understanding
@@ -721,11 +721,11 @@ If you want the extension in your everyday Chrome (not the Playwright-controlled
 one):
 
 ```bash
-bin/gstack-extension    # opens chrome://extensions, copies path to clipboard
+bin/paysec-extension    # opens chrome://extensions, copies path to clipboard
 ```
 
 Or do it manually: `chrome://extensions` → toggle Developer mode → Load
-unpacked → navigate to `~/.claude/skills/gstack/extension` → pin the
+unpacked → navigate to `~/.claude/skills/paysec/extension` → pin the
 extension → enter the port from `$B status`.
 
 v1.63 pinned the extension identity via the manifest `key` field, so existing
@@ -743,7 +743,7 @@ by a 26-command allowlist, scoped tokens, and a denial log.
 ### How it works
 
 ```bash
-/pair-agent                     # generates a setup key, prints connection instructions
+/pair-remote-agent                     # generates a setup key, prints connection instructions
 # Copy the instructions to the remote agent
 # Remote agent runs:
 #   POST <tunnel-url>/connect with setup key → gets a scoped token (24h, single client)
@@ -752,7 +752,7 @@ by a 26-command allowlist, scoped tokens, and a denial log.
 
 ### Dual-listener architecture (v1.6.0.0+)
 
-When `pair-agent` activates, the daemon binds **two HTTP listeners**:
+When `pair-remote-agent` activates, the daemon binds **two HTTP listeners**:
 
 - **Local listener** (`127.0.0.1:LOCAL_PORT`). Full command surface. Never
   forwarded by ngrok. Used by your Claude Code, the Side Panel, anything
@@ -762,11 +762,11 @@ When `pair-agent` activates, the daemon binds **two HTTP listeners**:
   allowlist), `/sidebar-chat`. ngrok forwards only this port.
 
 Root tokens sent over the tunnel return 403. SSE endpoints use a 30-minute
-HttpOnly `gstack_sse` cookie (never valid against `/command`).
+HttpOnly `paysec_sse` cookie (never valid against `/command`).
 
 ### The 26-command tunnel allowlist
 
-Defined in `browse/src/server.ts` as `TUNNEL_COMMANDS`. Pure gate function
+Defined in `browser/src/server.ts` as `TUNNEL_COMMANDS`. Pure gate function
 `canDispatchOverTunnel(command)` is exported for unit testing. Set:
 
 ```
@@ -781,18 +781,18 @@ remote agent that tries them gets a 403 plus a fresh entry in the denial log.
 
 ### Tunnel denial log
 
-`~/.gstack/security/attempts.jsonl` — append-only, salted SHA-256 of source
+`~/.paysec/security/attempts.jsonl` — append-only, salted SHA-256 of source
 + domain only (no raw IP, no full request body), rotates at 10MB with 5
-generations. Per-device salt at `~/.gstack/security/device-salt` (mode 0600).
+generations. Per-device salt at `~/.paysec/security/device-salt` (mode 0600).
 
 ### Tunnel egress receipts (v1.63+)
 
 Every tunnel session open writes a hash-chained egress receipt (sink
-`browse-tunnel`) to `~/.gstack/security/egress.jsonl` BEFORE ngrok forwards
+`browse-tunnel`) to `~/.paysec/security/egress.jsonl` BEFORE ngrok forwards
 anything. Fail-closed: if the receipt can't be written, the tunnel listener
 is torn down and the start is refused. Inspect the ledger with
-`bin/gstack-egress list` and verify chain integrity with
-`bin/gstack-egress verify` (exit 3 on tamper).
+`bin/paysec-egress list` and verify chain integrity with
+`bin/paysec-egress verify` (exit 3 on tamper).
 
 See [`docs/REMOTE_BROWSER_ACCESS.md`](docs/REMOTE_BROWSER_ACCESS.md) for the
 full operator guide.
@@ -817,41 +817,41 @@ Three token types, three lifetimes, three scopes.
 | **Setup key** | `POST /pair` | 5 minutes, one-time use | Single redemption: present at `/connect`, get a scoped token |
 | **Scoped token** | `POST /connect` (with setup key) | 24 hours | Per-client, allowlist-bound, optionally tab-scoped |
 
-The root token is written to `<project>/.gstack/browse.json` with chmod 600.
+The root token is written to `<project>/.paysec/browse.json` with chmod 600.
 Every command that mutates browser state must include
 `Authorization: Bearer <token>`.
 
 ### SSE session cookie (v1.6.0.0+)
 
 SSE endpoints (`/activity/stream`, `/inspector/events`) accept the Bearer
-token OR a 30-minute HttpOnly `gstack_sse` cookie minted via
+token OR a 30-minute HttpOnly `paysec_sse` cookie minted via
 `POST /sse-session`. The `?token=<ROOT>` query-param auth is no longer
 supported. This is what lets the Chrome extension subscribe to the activity
 feed without putting the root token in extension storage.
 
 ### PTY session cookie
 
-The Terminal pane uses a separate session cookie, `gstack_pty`, minted via
+The Terminal pane uses a separate session cookie, `paysec_pty`, minted via
 `POST /pty-session`. Different scope — can spawn / drive the live `claude`
-PTY, can't dispatch arbitrary `/command` calls. `/health` endpoint MUST NOT
+PTY, can't dispatch arbitrary `/command` calls. `/code-health` endpoint MUST NOT
 surface this token.
 
 ### Extension token bootstrap (v1.63+)
 
-`GET /health` is liveness/status only — it never carries a token, in any
+`GET /code-health` is liveness/status only — it never carries a token, in any
 mode. The Side Panel extension bootstraps the root token via
 `POST /extension-token` on the local listener. The server releases the
 token only when the caller's Origin is exactly
-`chrome-extension://<GSTACK_EXTENSION_ID>` — the `key` field in
-`extension/manifest.json` pins the extension ID (`GSTACK_EXTENSION_ID` in
-`browse/src/server.ts`; derivation reproducible via
-`bun browse/scripts/extension-id.ts`) — AND the parsed Host hostname is
+`chrome-extension://<PAYSEC_EXTENSION_ID>` — the `key` field in
+`extension/manifest.json` pins the extension ID (`PAYSEC_EXTENSION_ID` in
+`browser/src/server.ts`; derivation reproducible via
+`bun browser/scripts/extension-id.ts`) — AND the parsed Host hostname is
 loopback. Anything else gets a detail-free 403. The endpoint is never
 added to `TUNNEL_PATHS`, so the tunnel surface 404s it by default-deny.
 
 ### Token registry
 
-`browse/src/token-registry.ts` handles mint/validate/revoke for all three
+`browser/src/token-registry.ts` handles mint/validate/revoke for all three
 types, plus per-token rate limiting. Setup keys are single-use; scoped
 tokens have a sliding 24h window; the root token is rotated on each daemon
 startup.
@@ -896,16 +896,16 @@ sidebar chat pipeline that hosted them. **Canary leak always BLOCKs
 
 ### Env knobs
 
-- `GSTACK_SECURITY_OFF=1` — emergency kill switch. Classifier stays off
+- `PAYSEC_SECURITY_OFF=1` — emergency kill switch. Classifier stays off
   even if warmed. Just the ML scan is skipped.
-- Classifier model cache: `~/.gstack/models/testsavant-small/` (112MB, first
+- Classifier model cache: `~/.paysec/models/testsavant-small/` (112MB, first
   run only).
-- Attack log: `~/.gstack/security/attempts.jsonl` (salted SHA-256 + domain
+- Attack log: `~/.paysec/security/attempts.jsonl` (salted SHA-256 + domain
   only, rotates at 10MB, 5 generations).
-- Per-device salt: `~/.gstack/security/device-salt` (0600).
+- Per-device salt: `~/.paysec/security/device-salt` (0600).
 
 There is no security status indicator in the sidebar and no `security`
-field on `/health` (#2557): the session-state file that fed them lost its
+field on `/code-health` (#2557): the session-state file that fed them lost its
 only writer when the chat-path agent was removed, so they reported stale or
 empty data. The live defenses report through their own call sites. See
 ARCHITECTURE.md § "Prompt injection defense" for the full threat model.
@@ -996,7 +996,7 @@ routes work).
 
 `load-html` has an extension allowlist (`.html`, `.htm`, `.xhtml`, `.svg`) and
 a magic-byte sniff to reject binary files mis-renamed as HTML. 50MB size cap
-(override via `GSTACK_BROWSE_MAX_HTML_BYTES`).
+(override via `PAYSEC_BROWSE_MAX_HTML_BYTES`).
 
 `load-html` content survives later `viewport --scale` calls via in-memory
 replay (TabSession tracks the loaded HTML + waitUntil). The replay is
@@ -1042,9 +1042,9 @@ batch), then `POST /batch` with 20 `text` commands → 20 page contents in
 Console, network, and dialog events flow into O(1) circular buffers (50,000
 capacity each), flushed to disk asynchronously via `Bun.write()`:
 
-- Console: `.gstack/browse-console.log`
-- Network: `.gstack/browse-network.log`
-- Dialog: `.gstack/browse-dialog.log`
+- Console: `.paysec/browse-console.log`
+- Network: `.paysec/browse-network.log`
+- Dialog: `.paysec/browse-dialog.log`
 
 The `console`, `network`, and `dialog` commands read from the in-memory
 buffers (not disk) so capture is real-time even when disk is slow.
@@ -1108,7 +1108,7 @@ Refs are cleared on switch (the iframe has its own AX tree).
 ### State save/load
 
 ```bash
-$B state save my-session         # save cookies + URLs to .gstack/browse-state-my-session.json
+$B state save my-session         # save cookies + URLs to .paysec/browse-state-my-session.json
 $B state load my-session         # restore
 ```
 
@@ -1147,7 +1147,7 @@ $B inbox --clear                 # clear after reading
 
 The sidebar scout (a background process the Chrome extension can spawn) drops
 notes for Claude when the user surfaces something they want noticed. Stored
-in `.gstack/browser-scout.jsonl`.
+in `.paysec/browser-scout.jsonl`.
 
 ---
 
@@ -1155,7 +1155,7 @@ in `.gstack/browser-scout.jsonl`.
 
 ### `$B cdp` — raw Chrome DevTools Protocol dispatch
 
-Deny-default. Only methods enumerated in `browse/src/cdp-allowlist.ts`
+Deny-default. Only methods enumerated in `browser/src/cdp-allowlist.ts`
 (`CDP_ALLOWLIST` const) are reachable; any other method returns 403. Each
 allowlist entry declares scope (tab vs browser) and output (trusted vs
 untrusted). Untrusted methods (data-exfil-shaped, e.g.
@@ -1167,7 +1167,7 @@ $B cdp Network.enable
 $B cdp Accessibility.getFullAXTree --json '{"max_depth":5}'
 ```
 
-To discover allowed methods: read `browse/src/cdp-allowlist.ts`.
+To discover allowed methods: read `browser/src/cdp-allowlist.ts`.
 
 ### `$B inspect` — CDP-based CSS inspector
 
@@ -1180,7 +1180,7 @@ $B inspect ".header" --history      # show modification history
 Returns the matched rule cascade with specificity, computed styles, the box
 model, and (with `--history`) every CSS modification made via `$B style` since
 the page loaded. Powered by a persistent CDP session per page in
-`browse/src/cdp-inspector.ts`.
+`browser/src/cdp-inspector.ts`.
 
 ### `$B ux-audit`
 
@@ -1190,7 +1190,7 @@ $B ux-audit
 
 Returns JSON with site identity, navigation, headings (capped 50), text
 blocks, interactive elements (capped 200) — page structure for behavioral
-analysis without dumping the full HTML. Used by `/qa` and `/design-review`
+analysis without dumping the full HTML. Used by `/qa-fix` and `/design-qa`
 for cheap coverage maps.
 
 ---
@@ -1201,11 +1201,11 @@ for cheap coverage maps.
 |------|-----------|------------------|---------------------------|
 | Chrome MCP | ~5s | ~2-5s | ~2000 tokens (schema + protocol) |
 | Playwright MCP | ~3s | ~1-3s | ~1500 tokens (schema + protocol) |
-| **gstack browse** | **~3s** | **~100-200ms** | **0 tokens** (plain text stdout) |
-| **gstack browse + codified skill** | **~3s** | **~200ms** | **0 tokens** (single skill invocation) |
+| **paysec browse** | **~3s** | **~100-200ms** | **0 tokens** (plain text stdout) |
+| **paysec browse + codified skill** | **~3s** | **~200ms** | **0 tokens** (single skill invocation) |
 
 In a 20-command browser session, MCP tools burn 30,000–40,000 tokens on
-protocol framing alone. gstack burns zero. The codified-skill path takes a
+protocol framing alone. paysec burns zero. The codified-skill path takes a
 20-command session down to a single `$B skill run` call.
 
 ### Why CLI over MCP
@@ -1220,7 +1220,7 @@ pure overhead:
 - **Unnecessary abstraction** — Claude already has a Bash tool. A CLI that
   prints to stdout is the simplest possible interface.
 
-gstack skips all of this. Compiled binary. Plain text in, plain text out.
+paysec skips all of this. Compiled binary. Plain text in, plain text out.
 No protocol. No schema. No connection management.
 
 ---
@@ -1233,12 +1233,12 @@ collisions.
 
 | Workspace | State file | Port |
 |-----------|-----------|------|
-| `/code/project-a` | `/code/project-a/.gstack/browse.json` | random (10000–49151) |
-| `/code/project-b` | `/code/project-b/.gstack/browse.json` | random (10000–49151) |
+| `/code/project-a` | `/code/project-a/.paysec/browse.json` | random (10000–49151) |
+| `/code/project-b` | `/code/project-b/.paysec/browse.json` | random (10000–49151) |
 
 Browser-skills three-tier lookup walks project → global → bundled, so a
-project-tier skill at `/code/project-a/.gstack/browser-skills/foo/` shadows
-the global `~/.gstack/browser-skills/foo/` only inside project-a.
+project-tier skill at `/code/project-a/.paysec/browser-skills/foo/` shadows
+the global `~/.paysec/browser-skills/foo/` only inside project-a.
 
 ---
 
@@ -1248,20 +1248,20 @@ the global `~/.gstack/browser-skills/foo/` only inside project-a.
 |----------|---------|-------------|
 | `BROWSE_PORT` | 0 (random 10000–49151) | Fixed port for the HTTP server (debug override) |
 | `BROWSE_IDLE_TIMEOUT` | 1800000 (30 min) | Idle shutdown timeout in ms |
-| `BROWSE_STATE_FILE` | `.gstack/browse.json` | Path to state file |
+| `BROWSE_STATE_FILE` | `.paysec/browse.json` | Path to state file |
 | `BROWSE_SERVER_SCRIPT` | auto-detected | Path to `server.ts` |
 | `BROWSE_CDP_URL` | (none) | Set to `channel:chrome` for real-browser mode |
 | `BROWSE_CDP_PORT` | 0 | CDP port (used internally) |
 | `BROWSE_HEADLESS_SKIP` | 0 | Skip Chromium launch entirely (test harness only) |
 | `BROWSE_TUNNEL` | 0 | Activate the dual-listener tunnel architecture (requires `NGROK_AUTHTOKEN`) |
 | `BROWSE_TUNNEL_LOCAL_ONLY` | 0 | Test-only — bind both listeners locally without ngrok |
-| `GSTACK_BROWSE_MAX_HTML_BYTES` | 52428800 (50MB) | `load-html` size cap |
-| `GSTACK_SECURITY_OFF` | unset | Emergency kill switch — disable ML classifier |
-| `GSTACK_STEALTH` | unset | Set to `extended` (also accepts `1`/`true`) to layer six aggressive patches (WebGL spoof, faked plugins, mediaDevices) on top of Layer C. Actively lies; can break sites. |
-| `GSTACK_CDP_STEALTH` | unset | Set to `on`/`1`/`true` to emit `--gstack-suppress-prepare-stack-trace` (gbrowser Pack 2 / B11 C++ patch only; no-op on stock Chromium) |
-| `GSTACK_GPU_VENDOR`, `GSTACK_GPU_RENDERER`, `GSTACK_GPU_CHIPSET` | unset | Per-install GPU spoof fed to the Pack 1 WebGL/UA-CH C++ patches. Set by gbd from the host profile; emitted as `--gstack-gpu-vendor` / `--gstack-gpu-renderer` / `--gstack-ua-model` cmdline switches only when present. |
-| `GSTACK_PLATFORM` | unset | Host platform classification (`MacARM`/`MacIntel` → `macOS`, `Win32` → `Windows`, `Linux*` → `Linux`) emitted as `--gstack-ua-platform` |
-| `GSTACK_HW_CONCURRENCY`, `GSTACK_DEVICE_MEMORY` | host profile (fallback 8) | Per-install `hardwareConcurrency`/`deviceMemory` reported by Layer C and emitted as `--gstack-hw-concurrency` / `--gstack-device-memory` for the worker-navigator C++ patch |
+| `PAYSEC_BROWSE_MAX_HTML_BYTES` | 52428800 (50MB) | `load-html` size cap |
+| `PAYSEC_SECURITY_OFF` | unset | Emergency kill switch — disable ML classifier |
+| `PAYSEC_STEALTH` | unset | Set to `extended` (also accepts `1`/`true`) to layer six aggressive patches (WebGL spoof, faked plugins, mediaDevices) on top of Layer C. Actively lies; can break sites. |
+| `PAYSEC_CDP_STEALTH` | unset | Set to `on`/`1`/`true` to emit `--paysec-suppress-prepare-stack-trace` (gbrowser Pack 2 / B11 C++ patch only; no-op on stock Chromium) |
+| `PAYSEC_GPU_VENDOR`, `PAYSEC_GPU_RENDERER`, `PAYSEC_GPU_CHIPSET` | unset | Per-install GPU spoof fed to the Pack 1 WebGL/UA-CH C++ patches. Set by gbd from the host profile; emitted as `--paysec-gpu-vendor` / `--paysec-gpu-renderer` / `--paysec-ua-model` cmdline switches only when present. |
+| `PAYSEC_PLATFORM` | unset | Host platform classification (`MacARM`/`MacIntel` → `macOS`, `Win32` → `Windows`, `Linux*` → `Linux`) emitted as `--paysec-ua-platform` |
+| `PAYSEC_HW_CONCURRENCY`, `PAYSEC_DEVICE_MEMORY` | host profile (fallback 8) | Per-install `hardwareConcurrency`/`deviceMemory` reported by Layer C and emitted as `--paysec-hw-concurrency` / `--paysec-device-memory` for the worker-navigator C++ patch |
 
 ---
 
@@ -1279,7 +1279,7 @@ browse/
 │   ├── proxy-config.ts          # --proxy URL parsing + cred resolution (URL vs env, fail-fast on both)
 │   ├── proxy-redact.ts          # Cred-redaction helper for any proxy URL surfaced to logs/errors
 │   ├── xvfb.ts                  # Xvfb auto-spawn + orphan cleanup with PID + start-time validation
-│   ├── stealth.ts               # Layer C: webdriver mask + window.chrome.* + Notification/Permissions + per-install hardware + toString proxy + automation-global sweep; buildGStackLaunchArgs (GSTACK_* cmdline switches); GSTACK_STEALTH=extended opt-in
+│   ├── stealth.ts               # Layer C: webdriver mask + window.chrome.* + Notification/Permissions + per-install hardware + toString proxy + automation-global sweep; buildPaySecLaunchArgs (PAYSEC_* cmdline switches); PAYSEC_STEALTH=extended opt-in
 │   ├── browse-client.ts         # Canonical SDK — what skills import as _lib/browse-client.ts
 │   ├── snapshot.ts              # AX tree → @e/@c refs → Locator map; -D/-a/-C handling
 │   ├── read-commands.ts         # Non-mutating: text, html, links, js, css, is, dialog, ...
@@ -1287,7 +1287,7 @@ browse/
 │   ├── meta-commands.ts         # state, watch, inbox, frame, ux-audit, chain, diff, ...
 │   ├── browser-skills.ts        # 3-tier walk + frontmatter parser + tombstones
 │   ├── browser-skill-commands.ts # $B skill list/show/run/test/rm + spawnSkill
-│   ├── browser-skill-write.ts   # D3 atomic stage/commit/discard helper for /skillify
+│   ├── browser-skill-write.ts   # D3 atomic stage/commit/discard helper for /save-scrape-skill
 │   ├── skill-token.ts           # mintSkillToken / revokeSkillToken (per-spawn, scoped)
 │   ├── domain-skills.ts         # Per-site agent notes (state machine: quarantined→active→global)
 │   ├── domain-skill-commands.ts # $B domain-skill save/list/show/edit/promote/rollback/rm
@@ -1301,7 +1301,7 @@ browse/
 │   ├── token-registry.ts        # Mint/validate/revoke for root + setup keys + scoped tokens
 │   ├── sse-session-cookie.ts    # 30-min HttpOnly cookie for /activity/stream + /inspector/events
 │   ├── pty-session-cookie.ts    # Separate scope: live Claude PTY auth
-│   ├── tunnel-denial-log.ts     # ~/.gstack/security/attempts.jsonl writer (salted)
+│   ├── tunnel-denial-log.ts     # ~/.paysec/security/attempts.jsonl writer (salted)
 │   ├── path-security.ts         # validateOutputPath / validateReadPath / validateTempPath
 │   ├── url-validation.ts        # URL safety checks for goto
 │   ├── content-security.ts      # L1-L3: datamarking, hidden strip, ARIA, URL blocklist, envelopes
@@ -1334,8 +1334,8 @@ browser-skills/
     ├── fixtures/hn-2026-04-26.html
     └── script.test.ts
 
-scrape/SKILL.md.tmpl             # /scrape gstack skill — match-or-prototype entry point
-skillify/SKILL.md.tmpl           # /skillify gstack skill — codify last /scrape into permanent skill
+web-scrape/SKILL.md.tmpl             # /web-scrape paysec skill — match-or-prototype entry point
+save-scrape-skill/SKILL.md.tmpl           # /save-scrape-skill paysec skill — codify last /web-scrape into permanent skill
 ```
 
 ---
@@ -1353,13 +1353,13 @@ skillify/SKILL.md.tmpl           # /skillify gstack skill — codify last /scrap
 bun install                      # install deps + Playwright Chromium
 bun test                         # all integration tests (~3s for browse-only)
 bun run dev <cmd>                # run CLI from source (no compile)
-bun run build                    # compile to browse/dist/browse
+bun run build                    # compile to browser/dist/browse
 ```
 
 ### Dev mode vs compiled binary
 
 During development, use `bun run dev` instead of the compiled binary. It runs
-`browse/src/cli.ts` directly with Bun, so you get instant feedback:
+`browser/src/cli.ts` directly with Bun, so you get instant feedback:
 
 ```bash
 bun run dev goto https://example.com
@@ -1369,22 +1369,22 @@ bun run dev click @e3
 ```
 
 The compiled binary (`bun run build`) is only needed for distribution. It
-produces a single ~58MB executable at `browse/dist/browse` using Bun's
+produces a single ~58MB executable at `browser/dist/browse` using Bun's
 `--compile` flag.
 
 ### Running tests
 
 ```bash
 bun test                                    # all tests
-bun test browse/test/commands               # command integration tests
-bun test browse/test/snapshot               # snapshot tests
-bun test browse/test/cookie-import-browser  # cookie import unit tests
-bun test browse/test/browser-skill-write    # D3 atomic-write helper tests
-bun test browse/test/tunnel-gate-unit       # canDispatchOverTunnel pure tests
+bun test browser/test/commands               # command integration tests
+bun test browser/test/snapshot               # snapshot tests
+bun test browser/test/cookie-import-browser  # cookie import unit tests
+bun test browser/test/browser-skill-write    # D3 atomic-write helper tests
+bun test browser/test/tunnel-gate-unit       # canDispatchOverTunnel pure tests
 ```
 
-Tests spin up a local HTTP server (`browse/test/test-server.ts`) serving HTML
-fixtures from `browse/test/fixtures/`, then exercise the CLI against those
+Tests spin up a local HTTP server (`browser/test/test-server.ts`) serving HTML
+fixtures from `browser/test/fixtures/`, then exercise the CLI against those
 pages.
 
 ### Adding a new command
@@ -1392,10 +1392,10 @@ pages.
 1. Add the handler in `read-commands.ts` (non-mutating) or `write-commands.ts`
    (mutating), or `meta-commands.ts` (server / lifecycle).
 2. Register the route in `server.ts`.
-3. Add the entry to `COMMAND_DESCRIPTIONS` in `browse/src/commands.ts` (with
+3. Add the entry to `COMMAND_DESCRIPTIONS` in `browser/src/commands.ts` (with
    a clear `description` and `usage` — the `gen-skill-docs` validation
    suite enforces no `|` characters in `description`).
-4. Add a test case in `browse/test/commands.test.ts` with an HTML fixture
+4. Add a test case in `browser/test/commands.test.ts` with an HTML fixture
    if needed.
 5. Run `bun test` to verify.
 6. Run `bun run build` to compile.
@@ -1409,16 +1409,16 @@ update SKILL.md frontmatter, rewrite `script.ts` against your target site,
 re-capture the fixture, update the parser test. `bun test` validates the
 SKILL.md contract (sibling SDK byte-identity, frontmatter schema).
 
-For an agent-written skill: drive the page once with `/scrape <intent>`,
-say `/skillify`, accept the proposed name in the approval gate. The skill
-lands at `~/.gstack/browser-skills/<name>/` after the test passes.
+For an agent-written skill: drive the page once with `/web-scrape <intent>`,
+say `/save-scrape-skill`, accept the proposed name in the approval gate. The skill
+lands at `~/.paysec/browser-skills/<name>/` after the test passes.
 
 ### Deploying to the active skill
 
-The active skill lives at `~/.claude/skills/gstack/`. After making changes:
+The active skill lives at `~/.claude/skills/paysec/`. After making changes:
 
 ```bash
-cd ~/.claude/skills/gstack
+cd ~/.claude/skills/paysec
 git fetch origin && git reset --hard origin/main
 bun run build
 ```
@@ -1426,7 +1426,7 @@ bun run build
 Or copy the binary directly:
 
 ```bash
-cp browse/dist/browse ~/.claude/skills/gstack/browse/dist/browse
+cp browser/dist/browse ~/.claude/skills/paysec/browser/dist/browse
 ```
 
 ---
@@ -1435,10 +1435,10 @@ cp browse/dist/browse ~/.claude/skills/gstack/browse/dist/browse
 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — system-level architecture, dual-listener tunnel design, prompt-injection defense threat model
 - [`CLAUDE.md`](CLAUDE.md) — project-level instructions, sidebar architecture notes, security-stack constraints
-- [`docs/REMOTE_BROWSER_ACCESS.md`](docs/REMOTE_BROWSER_ACCESS.md) — operator guide for `/pair-agent` (setup keys, scoped tokens, denial log)
+- [`docs/REMOTE_BROWSER_ACCESS.md`](docs/REMOTE_BROWSER_ACCESS.md) — operator guide for `/pair-remote-agent` (setup keys, scoped tokens, denial log)
 - [`docs/designs/BROWSER_SKILLS_V1.md`](docs/designs/BROWSER_SKILLS_V1.md) — design doc for browser-skills runtime (Phase 1 + 2a + roadmap)
-- [`scrape/SKILL.md`](scrape/SKILL.md) — `/scrape` skill: match-or-prototype data extraction
-- [`skillify/SKILL.md`](skillify/SKILL.md) — `/skillify` skill: codify last `/scrape` into permanent skill
+- [`web-scrape/SKILL.md`](web-scrape/SKILL.md) — `/web-scrape` skill: match-or-prototype data extraction
+- [`save-scrape-skill/SKILL.md`](save-scrape-skill/SKILL.md) — `/save-scrape-skill` skill: codify last `/web-scrape` into permanent skill
 - [`TODOS.md`](TODOS.md) — `/automate` (Phase 2b P0), Phase 3 resolver injection, Phase 4 eval + sandbox
 
 ---

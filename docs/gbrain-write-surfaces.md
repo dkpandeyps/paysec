@@ -13,21 +13,21 @@ This doc serves two audiences:
 
 | Host + detection state | What renders in the planning-skill SKILL.md |
 |---|---|
-| Any host + `gstack-config gbrain-refresh` reports `gbrain_local_status: "ok"` | Compressed brain-aware blocks render. Agent reads this doc on-demand when it actually saves. ~250 token overhead per planning skill. |
+| Any host + `paysec-config gbrain-refresh` reports `gbrain_local_status: "ok"` | Compressed brain-aware blocks render. Agent reads this doc on-demand when it actually saves. ~250 token overhead per planning skill. |
 | Any host + gbrain not detected | Blocks suppressed at gen-time. Zero token overhead. Calibration takes still render (separate resolver, host-agnostic). |
 | GBrain or Hermes host | Blocks always render regardless of detection — these hosts ship gbrain integration as a first-class concern. |
 
 `.gbrain-source` pins **reads** only — writes go to the default engine
 configured in `~/.gbrain/config.json`. Documented at
-`bin/gstack-gbrain-sync.ts` for code-lookup resolvers; gstack treats the
+`bin/paysec-gbrain-sync.ts` for code-lookup resolvers; paysec treats the
 same contract as load-bearing for artifact `put` semantics. If a user
 reports writes landing in the wrong source, look here first.
 
 Trust policy (`personal` vs `shared`, per endpoint hash) gates auto-push
-and writeback. Set via `gstack-config set
+and writeback. Set via `paysec-config set
 brain_trust_policy@<endpoint-hash> personal`. Local PGLite installs
 auto-default to `personal`; remote-MCP installs prompt during
-`/setup-gbrain` step 9.5.
+`/brain-setup` step 9.5.
 
 ## §Context Load (agent reads this when running a planning skill)
 
@@ -114,7 +114,7 @@ companies/teams.
   is busy; the content isn't lost, just not persisted this run.
 - **Any other non-zero exit**: treat as transient failure. Do not retry
   inline — the user can re-run the skill or run
-  `gstack-config gbrain-refresh` if they suspect gbrain itself is
+  `paysec-config gbrain-refresh` if they suspect gbrain itself is
   misconfigured.
 - **`gbrain: command not found`**: gbrain isn't on PATH. The compact
   resolver block told you to skip — you shouldn't reach this code. If
@@ -162,7 +162,7 @@ should have saved):
 ```bash
 gbrain get "<prefix>/<slug>"           # expect markdown + frontmatter
 gbrain search "<slug fragment>"        # expect slug in top results
-gbrain sources list                    # confirm gstack-brain-<user> source
+gbrain sources list                    # confirm paysec-brain-<user> source
 gbrain get "entities/<person>"         # expect stub per named person
 ```
 
@@ -171,7 +171,7 @@ gbrain get "entities/<person>"         # expect stub per named person
 The resolver emits a single CLI shape — `gbrain put "<slug>" --content
 "..."` — that works against every engine gbrain supports. The CLI
 internally routes to local PGLite, remote Supabase, or a remote MCP
-endpoint depending on the user's `~/.gbrain/config.json`. **gstack
+endpoint depending on the user's `~/.gbrain/config.json`. **paysec
 doesn't test that routing**: the storage layer is gbrain's contract to
 honor, and the same CLI invocation we test against local PGLite is the
 one that fires against any other engine.
@@ -180,12 +180,12 @@ If you're on Supabase or thin-client MCP and writes aren't landing:
 
 1. `gbrain doctor --fast --json` — engine health check. If anything
    reports `error`, fix that first.
-2. `gstack-config get brain_trust_policy@<endpoint-hash>` must be
-   `personal` for auto-write. Run `gstack-config endpoint-hash` to get
+2. `paysec-config get brain_trust_policy@<endpoint-hash>` must be
+   `personal` for auto-write. Run `paysec-config endpoint-hash` to get
    the active hash. If `shared`, the agent prompts before writes — if
    you declined, re-run the skill.
 3. If trust policy is `personal` and `gbrain doctor` is clean but the
-   page still isn't there, file an issue against gbrain — gstack's
+   page still isn't there, file an issue against gbrain — paysec's
    CLI call shape is the same as what T11 (`gbrain-roundtrip-local`)
    exercises.
 
@@ -195,14 +195,14 @@ If you're on Supabase or thin-client MCP and writes aren't landing:
   fence-block writes inside a `gbrain put` because
   `BRAIN_CALIBRATION_WRITEBACK` is FALSE pending gbrain v0.42+ shipping
   the `takes_add` MCP op. When the flag flips, re-run the probe in this
-  doc against `/office-hours` and confirm `gbrain takes_list` surfaces a
-  `kind=bet` entry with the expected weight (0.9 for office-hours, per
+  doc against `/idea-review` and confirm `gbrain takes_list` surfaces a
+  `kind=bet` entry with the expected weight (0.9 for idea-review, per
   `scripts/brain-cache-spec.ts:151-157`).
-- **Per-skill E2E for the other 4 planning skills**: only `/office-hours`
-  has fake-CLI E2E coverage (`test/skill-e2e-office-hours-brain-writeback.test.ts`).
+- **Per-skill E2E for the other 4 planning skills**: only `/idea-review`
+  has fake-CLI E2E coverage (`test/skill-e2e-idea-review-brain-writeback.test.ts`).
   The resolver unit test (`test/resolvers-gbrain-save-results.test.ts`)
   covers wiring for all 5. Per-skill E2E expansion is tracked in TODOS.md.
-- **`.gbrain-source` write semantics**: gstack treats the documented
+- **`.gbrain-source` write semantics**: paysec treats the documented
   reads-only contract as load-bearing, but doesn't independently verify
   that gbrain CLI never re-routes writes based on the pin. If you find a
   case where it does, that's a gbrain bug to file upstream.

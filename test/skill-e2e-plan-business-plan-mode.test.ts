@@ -1,7 +1,7 @@
 /**
- * plan-ceo-review plan-mode smoke (gate, paid, real-PTY).
+ * plan-business-review plan-mode smoke (gate, paid, real-PTY).
  *
- * Asserts: when /plan-ceo-review is invoked in plan mode, the FIRST terminal
+ * Asserts: when /plan-business-review is invoked in plan mode, the FIRST terminal
  * outcome is 'asked' — a skill-question numbered list. Permission dialogs
  * (which also render numbered lists) are filtered out by `runPlanSkillObservation`
  * via its `isPermissionDialogVisible(visible.slice(-1500))` short-circuit.
@@ -12,18 +12,18 @@
  * call ExitPlanMode without ever firing AskUserQuestion — the user had to
  * manually call out the missing per-issue questions.
  *
- * Why this skill is special: unlike plan-eng-review / plan-design-review /
- * plan-devex-review (whose smokes accept either 'asked' or 'plan_ready'),
- * plan-ceo-review's template mandates Step 0A premise challenge (3 baked-in
+ * Why this skill is special: unlike plan-tech-review / plan-ux-review /
+ * plan-dx-review (whose smokes accept either 'asked' or 'plan_ready'),
+ * plan-business-review's template mandates Step 0A premise challenge (3 baked-in
  * questions) AND Step 0F mode selection BEFORE any plan write. There is no
  * legitimate path to plan_ready that does not first emit a skill-question
  * numbered prompt.
  *
  * Env passthrough: passes `QUESTION_TUNING=false` and `EXPLAIN_LEVEL=default`
- * via the runner's env option. Today these are advisory — `gstack-config`
- * reads `~/.gstack/config.yaml`, not env vars, so a contributor with
+ * via the runner's env option. Today these are advisory — `paysec-config`
+ * reads `~/.paysec/config.yaml`, not env vars, so a contributor with
  * `question_tuning: true` set in their YAML config can still see AUTO_DECIDE
- * masking. The env passthrough is wired so a future gstack-config change to
+ * masking. The env passthrough is wired so a future paysec-config change to
  * honor env overrides will make this test hermetic without further edits.
  * Tracked as a post-merge follow-up.
  *
@@ -42,10 +42,10 @@ import {
 
 const describeE2E = describeE2ETier('gate');
 
-describeE2E('plan-ceo-review plan-mode smoke (gate)', () => {
+describeE2E('plan-business-review plan-mode smoke (gate)', () => {
   test('first terminal outcome is asked (Step 0 fires before any plan write)', async () => {
     const obs = await runPlanSkillObservation({
-      skillName: 'plan-ceo-review',
+      skillName: 'plan-business-review',
       inPlanMode: true,
       // 420s, not 300s: measured 2026-08-11, a clean isolated pass took
       // 295.7s (80s on a quiet main run) — 4s under the old budget — and the
@@ -66,9 +66,9 @@ describeE2E('plan-ceo-review plan-mode smoke (gate)', () => {
               ? `Silent Write/Edit fired to an unsanctioned path before any AskUserQuestion — also a Step 0 skip.`
               : `Outcome '${obs.outcome}' is unexpected; investigate the evidence below.`;
       throw new Error(
-        `plan-ceo-review smoke FAILED: outcome=${obs.outcome}\n` +
+        `plan-business-review smoke FAILED: outcome=${obs.outcome}\n` +
           `${diagnosis}\n` +
-          `Expected 'asked'. See plan-ceo-review/SKILL.md.tmpl: the Step 0 STOP rules ` +
+          `Expected 'asked'. See plan-business-review/SKILL.md.tmpl: the Step 0 STOP rules ` +
           `and the "One issue = one AskUserQuestion call" rule under "CRITICAL RULE — ` +
           `How to ask questions".\n` +
           `summary: ${obs.summary}\n` +

@@ -8,7 +8,7 @@
   "estTotalCatalogTokens": 4116,
   "topHeaviest": [
     {
-      "skill": "ship",
+      "skill": "ship-pr",
       "skillMdBytes": 166782,
       "skillMdLines": 3099,
       "estTokens": 41696,
@@ -18,7 +18,7 @@
       "hasPeriodicEval": true
     },
     {
-      "skill": "plan-ceo-review",
+      "skill": "plan-business-review",
       "skillMdBytes": 132488,
       "skillMdLines": 2197,
       "estTokens": 33122,
@@ -28,7 +28,7 @@
       "hasPeriodicEval": true
     },
     {
-      "skill": "office-hours",
+      "skill": "idea-review",
       "skillMdBytes": 112842,
       "skillMdLines": 2066,
       "estTokens": 28211,
@@ -38,7 +38,7 @@
       "hasPeriodicEval": false
     },
     {
-      "skill": "plan-design-review",
+      "skill": "plan-ux-review",
       "skillMdBytes": 107855,
       "skillMdLines": 1928,
       "estTokens": 26964,
@@ -48,7 +48,7 @@
       "hasPeriodicEval": true
     },
     {
-      "skill": "plan-devex-review",
+      "skill": "plan-dx-review",
       "skillMdBytes": 106167,
       "skillMdLines": 2119,
       "estTokens": 26542,
@@ -58,7 +58,7 @@
       "hasPeriodicEval": true
     },
     {
-      "skill": "plan-eng-review",
+      "skill": "plan-tech-review",
       "skillMdBytes": 103009,
       "skillMdLines": 1762,
       "estTokens": 25752,
@@ -68,7 +68,7 @@
       "hasPeriodicEval": true
     },
     {
-      "skill": "spec",
+      "skill": "write-spec",
       "skillMdBytes": 102629,
       "skillMdLines": 2141,
       "estTokens": 25657,
@@ -78,7 +78,7 @@
       "hasPeriodicEval": false
     },
     {
-      "skill": "design-review",
+      "skill": "design-qa",
       "skillMdBytes": 95654,
       "skillMdLines": 1932,
       "estTokens": 23914,
@@ -88,7 +88,7 @@
       "hasPeriodicEval": false
     },
     {
-      "skill": "review",
+      "skill": "pr-review",
       "skillMdBytes": 94048,
       "skillMdLines": 1762,
       "estTokens": 23512,
@@ -98,7 +98,7 @@
       "hasPeriodicEval": false
     },
     {
-      "skill": "land-and-deploy",
+      "skill": "merge-and-deploy",
       "skillMdBytes": 91886,
       "skillMdLines": 1856,
       "estTokens": 22972,
@@ -109,8 +109,8 @@
     }
   ],
   "skills": {
-    "autoplan": {
-      "skill": "autoplan",
+    "auto-plan-review": {
+      "skill": "auto-plan-review",
       "skillMdBytes": 90870,
       "skillMdLines": 1784,
       "estTokens": 22718,
@@ -119,8 +119,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": true
     },
-    "benchmark": {
-      "skill": "benchmark",
+    "perf-check": {
+      "skill": "perf-check",
       "skillMdBytes": 33266,
       "skillMdLines": 747,
       "estTokens": 8317,
@@ -129,8 +129,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "benchmark-models": {
-      "skill": "benchmark-models",
+    "model-benchmark": {
+      "skill": "model-benchmark",
       "skillMdBytes": 29333,
       "skillMdLines": 622,
       "estTokens": 7333,
@@ -139,8 +139,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "browse": {
-      "skill": "browse",
+    "browser": {
+      "skill": "browser",
       "skillMdBytes": 48018,
       "skillMdLines": 929,
       "estTokens": 12005,
@@ -149,8 +149,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "canary": {
-      "skill": "canary",
+    "post-deploy-monitor": {
+      "skill": "post-deploy-monitor",
       "skillMdBytes": 47105,
       "skillMdLines": 990,
       "estTokens": 11776,
@@ -159,8 +159,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "careful": {
-      "skill": "careful",
+    "safe-mode": {
+      "skill": "safe-mode",
       "skillMdBytes": 2551,
       "skillMdLines": 68,
       "estTokens": 638,
@@ -169,8 +169,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "codex": {
-      "skill": "codex",
+    "codex-second-opinion": {
+      "skill": "codex-second-opinion",
       "skillMdBytes": 79620,
       "skillMdLines": 1519,
       "estTokens": 19905,
@@ -179,8 +179,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "context-restore": {
-      "skill": "context-restore",
+    "restore-context": {
+      "skill": "restore-context",
       "skillMdBytes": 41493,
       "skillMdLines": 848,
       "estTokens": 10373,
@@ -189,8 +189,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "context-save": {
-      "skill": "context-save",
+    "save-context": {
+      "skill": "save-context",
       "skillMdBytes": 45690,
       "skillMdLines": 966,
       "estTokens": 11423,
@@ -199,8 +199,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "cso": {
-      "skill": "cso",
+    "security-audit": {
+      "skill": "security-audit",
       "skillMdBytes": 77397,
       "skillMdLines": 1451,
       "estTokens": 19349,
@@ -209,8 +209,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "design-consultation": {
-      "skill": "design-consultation",
+    "design-system": {
+      "skill": "design-system",
       "skillMdBytes": 79222,
       "skillMdLines": 1561,
       "estTokens": 19806,
@@ -219,8 +219,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "design-html": {
-      "skill": "design-html",
+    "design-to-html": {
+      "skill": "design-to-html",
       "skillMdBytes": 66547,
       "skillMdLines": 1449,
       "estTokens": 16637,
@@ -229,8 +229,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "design-review": {
-      "skill": "design-review",
+    "design-qa": {
+      "skill": "design-qa",
       "skillMdBytes": 95654,
       "skillMdLines": 1932,
       "estTokens": 23914,
@@ -239,8 +239,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "design-shotgun": {
-      "skill": "design-shotgun",
+    "design-variants": {
+      "skill": "design-variants",
       "skillMdBytes": 62836,
       "skillMdLines": 1311,
       "estTokens": 15709,
@@ -249,8 +249,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "devex-review": {
-      "skill": "devex-review",
+    "dx-audit": {
+      "skill": "dx-audit",
       "skillMdBytes": 64413,
       "skillMdLines": 1233,
       "estTokens": 16103,
@@ -259,8 +259,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "document-generate": {
-      "skill": "document-generate",
+    "docs-generate": {
+      "skill": "docs-generate",
       "skillMdBytes": 52987,
       "skillMdLines": 1176,
       "estTokens": 13247,
@@ -269,8 +269,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "document-release": {
-      "skill": "document-release",
+    "docs-release-update": {
+      "skill": "docs-release-update",
       "skillMdBytes": 58251,
       "skillMdLines": 1235,
       "estTokens": 14563,
@@ -279,8 +279,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "freeze": {
-      "skill": "freeze",
+    "lock-edits": {
+      "skill": "lock-edits",
       "skillMdBytes": 3154,
       "skillMdLines": 92,
       "estTokens": 789,
@@ -289,8 +289,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "gstack-upgrade": {
-      "skill": "gstack-upgrade",
+    "paysec-upgrade": {
+      "skill": "paysec-upgrade",
       "skillMdBytes": 10817,
       "skillMdLines": 285,
       "estTokens": 2704,
@@ -299,8 +299,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "guard": {
-      "skill": "guard",
+    "full-guard": {
+      "skill": "full-guard",
       "skillMdBytes": 3297,
       "skillMdLines": 91,
       "estTokens": 824,
@@ -309,8 +309,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "health": {
-      "skill": "health",
+    "code-health": {
+      "skill": "code-health",
       "skillMdBytes": 47916,
       "skillMdLines": 1014,
       "estTokens": 11979,
@@ -319,8 +319,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "investigate": {
-      "skill": "investigate",
+    "debug-root-cause": {
+      "skill": "debug-root-cause",
       "skillMdBytes": 50409,
       "skillMdLines": 1012,
       "estTokens": 12602,
@@ -329,8 +329,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "ios-clean": {
-      "skill": "ios-clean",
+    "ios-remove-debug": {
+      "skill": "ios-remove-debug",
       "skillMdBytes": 41045,
       "skillMdLines": 813,
       "estTokens": 10261,
@@ -339,8 +339,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "ios-design-review": {
-      "skill": "ios-design-review",
+    "ios-design-audit": {
+      "skill": "ios-design-audit",
       "skillMdBytes": 41631,
       "skillMdLines": 815,
       "estTokens": 10408,
@@ -349,8 +349,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "ios-fix": {
-      "skill": "ios-fix",
+    "ios-auto-fix": {
+      "skill": "ios-auto-fix",
       "skillMdBytes": 40760,
       "skillMdLines": 811,
       "estTokens": 10190,
@@ -359,8 +359,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "ios-qa": {
-      "skill": "ios-qa",
+    "ios-device-qa": {
+      "skill": "ios-device-qa",
       "skillMdBytes": 47271,
       "skillMdLines": 931,
       "estTokens": 11818,
@@ -369,8 +369,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "ios-sync": {
-      "skill": "ios-sync",
+    "ios-bridge-sync": {
+      "skill": "ios-bridge-sync",
       "skillMdBytes": 40737,
       "skillMdLines": 804,
       "estTokens": 10184,
@@ -379,8 +379,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "land-and-deploy": {
-      "skill": "land-and-deploy",
+    "merge-and-deploy": {
+      "skill": "merge-and-deploy",
       "skillMdBytes": 91886,
       "skillMdLines": 1856,
       "estTokens": 22972,
@@ -389,8 +389,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "landing-report": {
-      "skill": "landing-report",
+    "merge-queue-report": {
+      "skill": "merge-queue-report",
       "skillMdBytes": 43985,
       "skillMdLines": 874,
       "estTokens": 10996,
@@ -399,8 +399,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "learn": {
-      "skill": "learn",
+    "learnings": {
+      "skill": "learnings",
       "skillMdBytes": 41722,
       "skillMdLines": 891,
       "estTokens": 10431,
@@ -409,8 +409,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "make-pdf": {
-      "skill": "make-pdf",
+    "md-to-pdf": {
+      "skill": "md-to-pdf",
       "skillMdBytes": 29450,
       "skillMdLines": 663,
       "estTokens": 7363,
@@ -419,8 +419,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "office-hours": {
-      "skill": "office-hours",
+    "idea-review": {
+      "skill": "idea-review",
       "skillMdBytes": 112842,
       "skillMdLines": 2066,
       "estTokens": 28211,
@@ -429,8 +429,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "open-gstack-browser": {
-      "skill": "open-gstack-browser",
+    "open-paysec-browser": {
+      "skill": "open-paysec-browser",
       "skillMdBytes": 46131,
       "skillMdLines": 954,
       "estTokens": 11533,
@@ -439,8 +439,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "pair-agent": {
-      "skill": "pair-agent",
+    "pair-remote-agent": {
+      "skill": "pair-remote-agent",
       "skillMdBytes": 46939,
       "skillMdLines": 1010,
       "estTokens": 11735,
@@ -449,8 +449,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "plan-ceo-review": {
-      "skill": "plan-ceo-review",
+    "plan-business-review": {
+      "skill": "plan-business-review",
       "skillMdBytes": 132488,
       "skillMdLines": 2197,
       "estTokens": 33122,
@@ -459,8 +459,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": true
     },
-    "plan-design-review": {
-      "skill": "plan-design-review",
+    "plan-ux-review": {
+      "skill": "plan-ux-review",
       "skillMdBytes": 107855,
       "skillMdLines": 1928,
       "estTokens": 26964,
@@ -469,8 +469,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": true
     },
-    "plan-devex-review": {
-      "skill": "plan-devex-review",
+    "plan-dx-review": {
+      "skill": "plan-dx-review",
       "skillMdBytes": 106167,
       "skillMdLines": 2119,
       "estTokens": 26542,
@@ -479,8 +479,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": true
     },
-    "plan-eng-review": {
-      "skill": "plan-eng-review",
+    "plan-tech-review": {
+      "skill": "plan-tech-review",
       "skillMdBytes": 103009,
       "skillMdLines": 1762,
       "estTokens": 25752,
@@ -489,8 +489,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": true
     },
-    "plan-tune": {
-      "skill": "plan-tune",
+    "tune-questions": {
+      "skill": "tune-questions",
       "skillMdBytes": 64017,
       "skillMdLines": 1357,
       "estTokens": 16004,
@@ -498,10 +498,10 @@
       "descriptionLen": 325,
       "hasGateEval": true,
       "hasPeriodicEval": false,
-      "_baseline_note": "Rebased from 51717 → 64017 in plan-tune cathedral v1.52.0.0 (T13). Cathedral added Dream cycle, Recent auto-decisions, Audit unmarked, Dream cycle review/distill sections — all load-bearing for hook substrate. See CHANGELOG.md [1.52.0.0]."
+      "_baseline_note": "Rebased from 51717 → 64017 in tune-questions cathedral v1.52.0.0 (T13). Cathedral added Dream cycle, Recent auto-decisions, Audit unmarked, Dream cycle review/distill sections — all load-bearing for hook substrate. See CHANGELOG.md [1.52.0.0]."
     },
-    "qa": {
-      "skill": "qa",
+    "qa-fix": {
+      "skill": "qa-fix",
       "skillMdBytes": 73863,
       "skillMdLines": 1622,
       "estTokens": 18466,
@@ -510,8 +510,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "qa-only": {
-      "skill": "qa-only",
+    "qa-report": {
+      "skill": "qa-report",
       "skillMdBytes": 56421,
       "skillMdLines": 1194,
       "estTokens": 14105,
@@ -520,8 +520,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "retro": {
-      "skill": "retro",
+    "weekly-retro": {
+      "skill": "weekly-retro",
       "skillMdBytes": 82889,
       "skillMdLines": 1750,
       "estTokens": 20722,
@@ -530,8 +530,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "review": {
-      "skill": "review",
+    "pr-review": {
+      "skill": "pr-review",
       "skillMdBytes": 94048,
       "skillMdLines": 1762,
       "estTokens": 23512,
@@ -540,8 +540,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "scrape": {
-      "skill": "scrape",
+    "web-scrape": {
+      "skill": "web-scrape",
       "skillMdBytes": 43641,
       "skillMdLines": 887,
       "estTokens": 10910,
@@ -550,8 +550,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "setup-browser-cookies": {
-      "skill": "setup-browser-cookies",
+    "import-browser-cookies": {
+      "skill": "import-browser-cookies",
       "skillMdBytes": 26618,
       "skillMdLines": 594,
       "estTokens": 6655,
@@ -560,8 +560,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "setup-deploy": {
-      "skill": "setup-deploy",
+    "deploy-setup": {
+      "skill": "deploy-setup",
       "skillMdBytes": 43927,
       "skillMdLines": 919,
       "estTokens": 10982,
@@ -570,8 +570,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "setup-gbrain": {
-      "skill": "setup-gbrain",
+    "brain-setup": {
+      "skill": "brain-setup",
       "skillMdBytes": 78394,
       "skillMdLines": 1704,
       "estTokens": 19599,
@@ -580,8 +580,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "ship": {
-      "skill": "ship",
+    "ship-pr": {
+      "skill": "ship-pr",
       "skillMdBytes": 166782,
       "skillMdLines": 3099,
       "estTokens": 41696,
@@ -590,8 +590,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": true
     },
-    "skillify": {
-      "skill": "skillify",
+    "save-scrape-skill": {
+      "skill": "save-scrape-skill",
       "skillMdBytes": 53534,
       "skillMdLines": 1168,
       "estTokens": 13384,
@@ -600,8 +600,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "spec": {
-      "skill": "spec",
+    "write-spec": {
+      "skill": "write-spec",
       "skillMdBytes": 102629,
       "skillMdLines": 2141,
       "estTokens": 25657,
@@ -610,8 +610,8 @@
       "hasGateEval": true,
       "hasPeriodicEval": false
     },
-    "sync-gbrain": {
-      "skill": "sync-gbrain",
+    "brain-sync": {
+      "skill": "brain-sync",
       "skillMdBytes": 50156,
       "skillMdLines": 1028,
       "estTokens": 12539,
@@ -620,8 +620,8 @@
       "hasGateEval": false,
       "hasPeriodicEval": false
     },
-    "unfreeze": {
-      "skill": "unfreeze",
+    "unlock-edits": {
+      "skill": "unlock-edits",
       "skillMdBytes": 1504,
       "skillMdLines": 49,
       "estTokens": 376,

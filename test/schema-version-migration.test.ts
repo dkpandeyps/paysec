@@ -1,7 +1,7 @@
 /**
  * Schema-version cache migration (D4 A4 / T19).
  *
- * When gstack-core@1.x.y bumps and the cached _meta.json records an older
+ * When paysec-core@1.x.y bumps and the cached _meta.json records an older
  * schema_version, the cache layer triggers a FULL rebuild for the affected
  * scope (not just delete-the-stale-file). Verifies the rebuild path is
  * invoked AND the cache files for that scope are wiped before refresh.
@@ -19,25 +19,25 @@ const SLOW_TIMEOUT = 60_000;
 import { mkdtempSync, existsSync, writeFileSync, readFileSync, rmSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { GSTACK_SCHEMA_PACK_VERSION } from '../scripts/brain-cache-spec';
+import { PAYSEC_SCHEMA_PACK_VERSION } from '../scripts/brain-cache-spec';
 
 let TMP_HOME: string;
-const ORIGINAL_HOME = process.env.GSTACK_HOME;
+const ORIGINAL_HOME = process.env.PAYSEC_HOME;
 
 beforeEach(() => {
-  TMP_HOME = mkdtempSync(join(tmpdir(), 'gstack-schema-test-'));
-  process.env.GSTACK_HOME = TMP_HOME;
-  delete require.cache[require.resolve('../bin/gstack-brain-cache')];
+  TMP_HOME = mkdtempSync(join(tmpdir(), 'paysec-schema-test-'));
+  process.env.PAYSEC_HOME = TMP_HOME;
+  delete require.cache[require.resolve('../bin/paysec-brain-cache')];
 });
 
 afterEach(() => {
-  if (ORIGINAL_HOME) process.env.GSTACK_HOME = ORIGINAL_HOME;
-  else delete process.env.GSTACK_HOME;
+  if (ORIGINAL_HOME) process.env.PAYSEC_HOME = ORIGINAL_HOME;
+  else delete process.env.PAYSEC_HOME;
   try { rmSync(TMP_HOME, { recursive: true, force: true }); } catch { /* best effort */ }
 });
 
-async function importCache(): Promise<typeof import('../bin/gstack-brain-cache')> {
-  return (await import('../bin/gstack-brain-cache')) as typeof import('../bin/gstack-brain-cache');
+async function importCache(): Promise<typeof import('../bin/paysec-brain-cache')> {
+  return (await import('../bin/paysec-brain-cache')) as typeof import('../bin/paysec-brain-cache');
 }
 
 describe('schema-version cache migration (D4 A4)', () => {
@@ -63,7 +63,7 @@ describe('schema-version cache migration (D4 A4)', () => {
     // and _meta.json shows the current schema_version.
     expect(existsSync(stalePath)).toBe(false);
     const newMeta = JSON.parse(readFileSync(join(cacheDir, '_meta.json'), 'utf-8'));
-    expect(newMeta.schema_version).toBe(GSTACK_SCHEMA_PACK_VERSION);
+    expect(newMeta.schema_version).toBe(PAYSEC_SCHEMA_PACK_VERSION);
   });
 
   test('matching schema_version + fresh TTL is warm hit (no rebuild)', { timeout: SLOW_TIMEOUT }, async () => {
@@ -73,7 +73,7 @@ describe('schema-version cache migration (D4 A4)', () => {
     const productPath = join(cacheDir, 'product.md');
     writeFileSync(productPath, '# fresh content\n');
     writeFileSync(join(cacheDir, '_meta.json'), JSON.stringify({
-      schema_version: GSTACK_SCHEMA_PACK_VERSION,
+      schema_version: PAYSEC_SCHEMA_PACK_VERSION,
       endpoint_hash: mod.detectEndpointHash(),
       last_refresh: { product: Date.now() },
       last_attempt: {},

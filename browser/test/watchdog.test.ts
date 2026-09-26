@@ -12,7 +12,7 @@ import { resolveConfig } from '../src/config';
 // The watchdog has layered behavior since v0.18.1.0 (#1025) and v0.18.2.0
 // (community wave #994 + our mode-gating follow-up):
 //
-//   1. BROWSE_PARENT_PID=0 disables the watchdog entirely (opt-in for CI + pair-agent).
+//   1. BROWSE_PARENT_PID=0 disables the watchdog entirely (opt-in for CI + pair-remote-agent).
 //   2. BROWSE_HEADED=1 disables the watchdog entirely (server-side defense for headed
 //      mode, where the user controls window lifecycle).
 //   3. Default headless mode + parent dies: server STAYS ALIVE. The original
@@ -203,7 +203,7 @@ describe('headed parent-death shutdown is suppressed on runtime promotion', () =
   test('promotion must NOT clear the interval — the tick doubles as the tunnel-orphan reaper', () => {
     const src = read('src/server.ts');
     // The original #2565 absorption cleared the ENTIRE interval on promotion.
-    // Sequence handoff → resume → /pair-agent tunnel then left an
+    // Sequence handoff → resume → /pair-remote-agent tunnel then left an
     // internet-exposed daemon that nothing reaps. The tick must stay
     // registered and re-check the suppress flag + tunnelActive every pass.
     expect(src).not.toContain('clearInterval(parentWatchdogTimer)');
@@ -220,7 +220,7 @@ describe('headed parent-death shutdown is suppressed on runtime promotion', () =
 //
 // In-process, via the same __testInternals__ seam server-factory.test.ts uses
 // for idleCheckTick. parentWatchdogTick(deadPid) simulates the 15s poll
-// discovering a dead parent; setTunnelActive simulates /pair-agent's
+// discovering a dead parent; setTunnelActive simulates /pair-remote-agent's
 // tunnel-create flow; suppressHeadedParentShutdown is exactly what the
 // handoff promotion callback invokes.
 function makeMinimalConfig(mode: 'launched' | 'headed', tmpDir: string): ServerConfig {
@@ -305,7 +305,7 @@ describe('suppressed watchdog still reaps tunnel orphans (behavioral)', () => {
     try {
       buildFetchHandler(makeMinimalConfig('headed', scratch));
       __testInternals__.suppressHeadedParentShutdown();
-      __testInternals__.setTunnelActive(true); // handoff → resume → /pair-agent tunnel
+      __testInternals__.setTunnelActive(true); // handoff → resume → /pair-remote-agent tunnel
       __testInternals__.parentWatchdogTick(DEAD_PID);
       await drainShutdown();
       // The tick is the ONLY reaper for tunnel orphans (idle timeout is

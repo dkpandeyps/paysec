@@ -2,7 +2,7 @@
  * Security module: prompt injection defense layer.
  *
  * This file contains the PURE-STRING / ML-FREE parts of the security stack.
- * Safe to import from the compiled `browse/dist/browse` binary because it
+ * Safe to import from the compiled `browser/dist/browse` binary because it
  * does not load onnxruntime-node or other native modules.
  *
  * Live architecture (see CEO plan 2026-04-19-prompt-injection-guard.md):
@@ -24,14 +24,14 @@
  *          inline L4 path is the consumer of record.
  *
  * There is no longer any cross-process session state (#2557).
- * ~/.gstack/security/session-state.json existed to carry classifier status
+ * ~/.paysec/security/session-state.json existed to carry classifier status
  * across the server.ts / sidebar-agent.ts boundary; sidebar-agent.ts went
  * away with the PTY terminal rewrite, leaving nothing to write the file and
  * a /health.security status that reported stale or empty data — a permanent
  * 'inactive', or a false-green 'protected' wherever an old state file
  * survived on disk. getStatus / SessionState / read+writeSessionState and
  * the /health field were removed together. Per-tab decision files under
- * ~/.gstack/security/decisions/ are unaffected, and the L4 sidecar reports
+ * ~/.paysec/security/decisions/ are unaffected, and the L4 sidecar reports
  * status over its own NDJSON protocol (security-sidecar-client.ts).
  */
 

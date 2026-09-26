@@ -2,7 +2,7 @@
  * Unit tests for budget-override audit logger.
  *
  * The audit trail is the only check on `EVALS_BUDGET_OVERRIDE_REASON` and
- * `GSTACK_SIZE_BUDGET_OVERRIDE_REASON` — if the logger silently drops events,
+ * `PAYSEC_SIZE_BUDGET_OVERRIDE_REASON` — if the logger silently drops events,
  * overrides become invisible and the budget gates are theater. These tests
  * pin the contract: every override produces exactly one JSONL line with
  * timestamp + scope + reason + CI provenance.
@@ -15,7 +15,7 @@ import * as os from 'os';
 import { logBudgetOverride } from './budget-override';
 
 const TMP_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'budget-override-test-'));
-process.env.GSTACK_HOME = TMP_HOME;
+process.env.PAYSEC_HOME = TMP_HOME;
 const AUDIT_PATH = path.join(TMP_HOME, 'analytics', 'spend-overrides.jsonl');
 
 describe('logBudgetOverride', () => {
@@ -105,12 +105,12 @@ describe('logBudgetOverride', () => {
   });
 
   test('survives an unwritable audit path (logs warning, does not throw)', () => {
-    // Point GSTACK_HOME at a path inside a file (illegal directory location)
-    const originalHome = process.env.GSTACK_HOME;
+    // Point PAYSEC_HOME at a path inside a file (illegal directory location)
+    const originalHome = process.env.PAYSEC_HOME;
     const bogusFile = path.join(TMP_HOME, 'not-a-dir.txt');
     fs.writeFileSync(bogusFile, 'just a file');
-    process.env.GSTACK_HOME = bogusFile;
+    process.env.PAYSEC_HOME = bogusFile;
     expect(() => logBudgetOverride({ scope: 'unwritable', reason: 'fs error path' })).not.toThrow();
-    process.env.GSTACK_HOME = originalHome;
+    process.env.PAYSEC_HOME = originalHome;
   });
 });

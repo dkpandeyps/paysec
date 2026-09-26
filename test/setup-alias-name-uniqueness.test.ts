@@ -1,12 +1,12 @@
 /**
  * Alias name uniqueness (#2511 / #2201).
  *
- * setup installs two back-compat alias dirs — `_gstack-command` (root router)
- * and `connect-chrome` (→ open-gstack-browser). Both used to symlink the
+ * setup installs two back-compat alias dirs — `_paysec-command` (root router)
+ * and `connect-chrome` (→ open-paysec-browser). Both used to symlink the
  * canonical SKILL.md verbatim, so the alias carried the canonical frontmatter
  * `name:`. Claude Code keys skills on that name and requires global
  * uniqueness: the `connect-chrome` duplicate silently shadowed
- * /open-gstack-browser (readdir-order roulette), and the `_gstack-command`
+ * /open-paysec-browser (readdir-order roulette), and the `_paysec-command`
  * duplicate could drop the ENTIRE personal-skills set.
  *
  * The fix is copy-then-rewrite: sed reads the SOURCE and writes a fresh copy
@@ -31,20 +31,24 @@ function extractFn(name: string): string {
   return SETUP_SRC.slice(start, end + 2);
 }
 
-const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-alias-install-'));
+const installDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-alias-install-'));
 
 const sourceRootSkill = fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8');
 const sourceOgbSkill = fs.readFileSync(
-  path.join(ROOT, 'open-gstack-browser', 'SKILL.md'),
+  path.join(ROOT, 'open-paysec-browser', 'SKILL.md'),
   'utf-8',
 );
+
+// Git Bash spawns processes slowly on Windows: the two install passes take ~100s
+// there vs a few seconds on macOS/Linux, so Windows gets a longer budget.
+const INSTALL_TIMEOUT_MS = process.platform === 'win32' ? 300_000 : 60_000;
 
 beforeAll(() => {
   const installOnce = [
     `link_claude_skill_dirs "${ROOT}" "${installDir}"`,
     `link_claude_root_skill_alias "${ROOT}" "${installDir}"`,
     // The connect-chrome back-compat alias, exactly as the install section does it.
-    `_install_alias_skill_md "${ROOT}/open-gstack-browser/SKILL.md" "${installDir}/connect-chrome" "connect-chrome"`,
+    `_install_alias_skill_md "${ROOT}/open-paysec-browser/SKILL.md" "${installDir}/connect-chrome" "connect-chrome"`,
   ].join('\n');
   const script = [
     'set -e',
@@ -63,11 +67,11 @@ beforeAll(() => {
     installOnce,
     installOnce,
   ].join('\n');
-  const result = spawnSync('bash', ['-c', script], { encoding: 'utf-8', timeout: 60_000 });
+  const result = spawnSync('bash', ['-c', script], { encoding: 'utf-8', timeout: INSTALL_TIMEOUT_MS });
   if (result.status !== 0) {
     throw new Error(`alias install failed: ${result.stderr}\n${result.stdout}`);
   }
-}, 30_000);
+}, INSTALL_TIMEOUT_MS);
 
 afterAll(() => {
   fs.rmSync(installDir, { recursive: true, force: true });
@@ -79,12 +83,12 @@ function frontmatterName(skillMdPath: string): string | null {
 }
 
 describe('alias installs are rewritten copies (#2511, #2201)', () => {
-  test('_gstack-command alias is NOT a symlink and carries its own name', () => {
-    const aliasDir = path.join(installDir, '_gstack-command');
+  test('_paysec-command alias is NOT a symlink and carries its own name', () => {
+    const aliasDir = path.join(installDir, '_paysec-command');
     const aliasSkill = path.join(aliasDir, 'SKILL.md');
     expect(fs.lstatSync(aliasDir).isSymbolicLink()).toBe(false);
     expect(fs.lstatSync(aliasSkill).isSymbolicLink()).toBe(false);
-    expect(frontmatterName(aliasSkill)).toBe('_gstack-command');
+    expect(frontmatterName(aliasSkill)).toBe('_paysec-command');
   });
 
   test('connect-chrome alias is NOT a symlink and carries its own name', () => {
@@ -97,26 +101,26 @@ describe('alias installs are rewritten copies (#2511, #2201)', () => {
 
   test('alias body is the canonical content — only the name: line differs', () => {
     const alias = fs.readFileSync(
-      path.join(installDir, '_gstack-command', 'SKILL.md'),
+      path.join(installDir, '_paysec-command', 'SKILL.md'),
       'utf-8',
     );
-    expect(alias.replace(/^name:.*$/m, 'name: gstack')).toBe(sourceRootSkill);
+    expect(alias.replace(/^name:.*$/m, 'name: paysec')).toBe(sourceRootSkill);
 
     const ogbAlias = fs.readFileSync(
       path.join(installDir, 'connect-chrome', 'SKILL.md'),
       'utf-8',
     );
-    expect(ogbAlias.replace(/^name:.*$/m, 'name: open-gstack-browser')).toBe(sourceOgbSkill);
+    expect(ogbAlias.replace(/^name:.*$/m, 'name: open-paysec-browser')).toBe(sourceOgbSkill);
   });
 
   test('the SOURCE files are byte-intact (E2: sed never wrote through a symlink)', () => {
     expect(fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8')).toBe(sourceRootSkill);
     expect(
-      fs.readFileSync(path.join(ROOT, 'open-gstack-browser', 'SKILL.md'), 'utf-8'),
+      fs.readFileSync(path.join(ROOT, 'open-paysec-browser', 'SKILL.md'), 'utf-8'),
     ).toBe(sourceOgbSkill);
-    expect(frontmatterName(path.join(ROOT, 'SKILL.md'))).toBe('gstack');
-    expect(frontmatterName(path.join(ROOT, 'open-gstack-browser', 'SKILL.md'))).toBe(
-      'open-gstack-browser',
+    expect(frontmatterName(path.join(ROOT, 'SKILL.md'))).toBe('paysec');
+    expect(frontmatterName(path.join(ROOT, 'open-paysec-browser', 'SKILL.md'))).toBe(
+      'open-paysec-browser',
     );
   });
 
@@ -135,9 +139,9 @@ describe('alias installs are rewritten copies (#2511, #2201)', () => {
 
   test('a legacy symlinked alias is replaced, not written through', () => {
     // Simulate a pre-fix install: alias SKILL.md is a symlink to the source.
-    const legacyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-alias-legacy-'));
+    const legacyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-alias-legacy-'));
     try {
-      const aliasDir = path.join(legacyDir, '_gstack-command');
+      const aliasDir = path.join(legacyDir, '_paysec-command');
       fs.mkdirSync(aliasDir);
       fs.symlinkSync(path.join(ROOT, 'SKILL.md'), path.join(aliasDir, 'SKILL.md'));
 
@@ -154,7 +158,7 @@ describe('alias installs are rewritten copies (#2511, #2201)', () => {
 
       const aliasSkill = path.join(aliasDir, 'SKILL.md');
       expect(fs.lstatSync(aliasSkill).isSymbolicLink()).toBe(false);
-      expect(frontmatterName(aliasSkill)).toBe('_gstack-command');
+      expect(frontmatterName(aliasSkill)).toBe('_paysec-command');
       // The source the legacy symlink pointed at is untouched.
       expect(fs.readFileSync(path.join(ROOT, 'SKILL.md'), 'utf-8')).toBe(sourceRootSkill);
     } finally {

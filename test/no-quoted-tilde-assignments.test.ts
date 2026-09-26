@@ -45,7 +45,7 @@ describe('quoted-tilde assignments (#1656/#1715)', () => {
   });
 
   test('detector self-check: the pre-fix shape is caught', () => {
-    expect(QUOTED_TILDE_ASSIGN.test('_BRAIN_SYNC_BIN="~/.claude/skills/gstack/bin/gstack-brain-sync"')).toBe(true);
-    expect(QUOTED_TILDE_ASSIGN.test('_BIN="$HOME/.claude/skills/gstack/bin/x"')).toBe(false);
+    expect(QUOTED_TILDE_ASSIGN.test('_BRAIN_SYNC_BIN="~/.claude/skills/paysec/bin/paysec-brain-sync"')).toBe(true);
+    expect(QUOTED_TILDE_ASSIGN.test('_BIN="$HOME/.claude/skills/paysec/bin/x"')).toBe(false);
   });
 });

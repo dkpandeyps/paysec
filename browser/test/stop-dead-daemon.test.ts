@@ -105,7 +105,7 @@ describe('stop --force-restart on a LIVE daemon', () => {
     // Pre-fix, stop --force-restart fell through to ensureServer(), whose
     // force-restart path killed the daemon and then STARTED a fresh one
     // (daemon + Chromium) so sendCommand('stop') could stop it again —
-    // exactly what gstack-upgrade Step 4.8 triggers on a stale-busy daemon.
+    // exactly what paysec-upgrade Step 4.8 triggers on a stale-busy daemon.
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'browse-stop-force-'));
     const stateFile = path.join(tmpDir, 'browse.json');
     // Portable long-lived child standing in for the wedged daemon process.

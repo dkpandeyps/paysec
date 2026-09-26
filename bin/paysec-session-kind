@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# gstack-session-kind — classify the current agent session so skills know whether
+# paysec-session-kind — classify the current agent session so skills know whether
 # a human can answer an interactive prompt (AskUserQuestion).
 #
-# Usage: gstack-session-kind            → prints one of: spawned | headless | interactive
+# Usage: paysec-session-kind            → prints one of: spawned | headless | interactive
 #
 # Used by the preamble (generate-preamble-bash.ts) which echoes
 #   SESSION_KIND: <value>
@@ -30,7 +30,7 @@ if [ -n "${OPENCLAW_SESSION:-}" ]; then
 fi
 
 # 2. Explicit headless override (set by the eval/E2E harness for determinism).
-if [ -n "${GSTACK_HEADLESS:-}" ]; then
+if [ -n "${PAYSEC_HEADLESS:-}" ]; then
   echo "headless"
   exit 0
 fi

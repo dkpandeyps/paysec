@@ -23,7 +23,7 @@ Playwright's `ariaSnapshot()` builds from the browser's accessibility tree. Dyna
 
 ### 1. Auto-enable cursor-interactive scan with `-i` flag
 
-**File:** `browse/src/snapshot.ts`
+**File:** `browser/src/snapshot.ts`
 
 When `-i` (interactive) is passed, automatically include the cursor-interactive scan. This means agents always see clickable non-ARIA elements when they ask for interactive elements.
 
@@ -37,7 +37,7 @@ if (opts.interactive) {
 
 ### 2. Add popover/portal priority scanning
 
-**File:** `browse/src/snapshot.ts` (inside cursor-interactive evaluate block)
+**File:** `browser/src/snapshot.ts` (inside cursor-interactive evaluate block)
 
 Before the general cursor:pointer scan, specifically scan for visible floating containers (popovers, dropdowns, menus) and include ALL their direct children as interactive:
 
@@ -55,7 +55,7 @@ For each floating container, include child elements that:
 
 ### 3. Remove the `hasRole` skip in cursor-interactive scan
 
-**File:** `browse/src/snapshot.ts`
+**File:** `browser/src/snapshot.ts`
 
 Currently: `if (hasRole) continue;` — skips any element with an ARIA role, assuming the ARIA tree already captured it.
 
@@ -67,7 +67,7 @@ Since we can't easily check the refMap from inside `page.evaluate()`, the simple
 
 ### 4. Add dropdown test fixture and tests
 
-**File:** `browse/test/fixtures/dropdown.html`
+**File:** `browser/test/fixtures/dropdown.html`
 
 HTML page with:
 - A combobox input that shows a dropdown on focus/type
@@ -75,7 +75,7 @@ HTML page with:
 - Dropdown items as `<li>` with `role="option"`
 - A React-portal-style container (`position: fixed`, high z-index)
 
-**File:** `browse/test/snapshot.test.ts`
+**File:** `browser/test/snapshot.test.ts`
 
 New test cases:
 - `snapshot -i` on dropdown page finds dropdown items via cursor scan
@@ -92,11 +92,11 @@ New test cases:
 ## Testing
 
 ```bash
-cd /data/gstack/browse && bun test snapshot
+cd /data/paysec/browse && bun test snapshot
 ```
 
 ## Files Changed
 
-1. `browse/src/snapshot.ts` — auto-enable -C with -i, popover scanning, remove hasRole skip in floating containers
-2. `browse/test/fixtures/dropdown.html` — new test fixture
-3. `browse/test/snapshot.test.ts` — new dropdown/popover test cases
+1. `browser/src/snapshot.ts` — auto-enable -C with -i, popover scanning, remove hasRole skip in floating containers
+2. `browser/test/fixtures/dropdown.html` — new test fixture
+3. `browser/test/snapshot.test.ts` — new dropdown/popover test cases

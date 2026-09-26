@@ -244,7 +244,7 @@ export function createToken(opts: CreateTokenOptions): TokenInfo {
 }
 
 /**
- * Create a one-time setup key for the /pair-agent ceremony.
+ * Create a one-time setup key for the /pair-remote-agent ceremony.
  * Setup keys expire in 5 minutes and can only be exchanged once.
  */
 export function createSetupKey(opts: Omit<CreateTokenOptions, 'clientId'> & { clientId?: string }): TokenInfo {
@@ -501,7 +501,7 @@ export function restoreRegistry(state: TokenRegistryState): void {
 // Global-only cap. Setup keys are 24 random bytes (unbruteforceable), so
 // rate limiting here is not about preventing key guessing. It caps
 // bandwidth, CPU, and log-flood damage from someone who discovered the
-// ngrok URL. A legitimate pair-agent session hits /connect once, so
+// ngrok URL. A legitimate pair-remote-agent session hits /connect once, so
 // 300/min is 60x that pattern and never hit accidentally. Per-IP tracking
 // was considered and rejected: adds a bounded Map + LRU for defense
 // already adequate at the global layer.

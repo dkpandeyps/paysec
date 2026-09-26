@@ -1,8 +1,8 @@
 /**
- * plan-eng-review plan-mode smoke (periodic, paid, real-PTY).
+ * plan-tech-review plan-mode smoke (periodic, paid, real-PTY).
  *
- * See test/skill-e2e-plan-ceo-plan-mode.test.ts for the shared assertion
- * contract. This file exercises the same contract against /plan-eng-review.
+ * See test/skill-e2e-plan-business-plan-mode.test.ts for the shared assertion
+ * contract. This file exercises the same contract against /plan-tech-review.
  */
 
 import { test, expect } from 'bun:test';
@@ -45,17 +45,17 @@ Ignore Bun's native --shard flag because we want full control.
 None planned — will add later.
 `;
 
-describeE2E('plan-eng-review plan-mode smoke (periodic)', () => {
+describeE2E('plan-tech-review plan-mode smoke (periodic)', () => {
   test('reaches a terminal outcome (asked or plan_ready) without silent writes', async () => {
     const obs = await runPlanSkillObservation({
-      skillName: 'plan-eng-review',
+      skillName: 'plan-tech-review',
       inPlanMode: true,
       timeoutMs: 300_000,
     });
 
     if (obs.outcome === 'silent_write' || obs.outcome === 'exited' || obs.outcome === 'timeout') {
       throw new Error(
-        `plan-eng-review plan-mode smoke FAILED: outcome=${obs.outcome}\n` +
+        `plan-tech-review plan-mode smoke FAILED: outcome=${obs.outcome}\n` +
           `summary: ${obs.summary}\n` +
           `elapsed: ${obs.elapsedMs}ms\n` +
           `--- evidence (last 2KB visible) ---\n${obs.evidence}`,
@@ -72,7 +72,7 @@ describeE2E('plan-eng-review plan-mode smoke (periodic)', () => {
   // — model writes findings to the plan before any AUQ render.
   test('STOP gate fires when seeded plan forces Step 0 findings', async () => {
     const obs = await runPlanSkillObservation({
-      skillName: 'plan-eng-review',
+      skillName: 'plan-tech-review',
       inPlanMode: true,
       initialPlanContent: SEED_PLAN_FORCING_FINDINGS,
       // Force the Conductor-style path: native AUQ disallowed → the model

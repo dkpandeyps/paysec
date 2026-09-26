@@ -18,7 +18,7 @@ import { resolvePdftotext, PdftotextUnavailableError } from "./pdftotext";
 import { generate } from "./orchestrator";
 
 export async function runSetup(): Promise<void> {
-  process.stderr.write("make-pdf setup — verifying install\n\n");
+  process.stderr.write("md-to-pdf setup — verifying install\n\n");
 
   // 1. Resolve browse binary
   process.stderr.write("  [1/5] Checking browse binary...");
@@ -40,8 +40,8 @@ export async function runSetup(): Promise<void> {
   } catch (err: any) {
     process.stderr.write(" FAIL\n");
     process.stderr.write(`\nChromium failed to launch: ${err.message}\n`);
-    process.stderr.write("\nTo fix: run gstack setup from the gstack repo:\n");
-    process.stderr.write("  cd ~/.claude/skills/gstack && ./setup\n");
+    process.stderr.write("\nTo fix: run paysec setup from the paysec repo:\n");
+    process.stderr.write("  cd ~/.claude/skills/paysec && ./setup\n");
     process.exit(4);
   } finally {
     if (chromiumTab !== null) {
@@ -69,7 +69,7 @@ export async function runSetup(): Promise<void> {
   // 4. Render smoke-test PDF
   process.stderr.write("  [4/5] Generating smoke-test PDF...\n");
   const fixture = [
-    "# Hello from make-pdf",
+    "# Hello from md-to-pdf",
     "",
     "This is a two-paragraph smoke test. If you can read this sentence in the PDF that just opened, the pipeline works end-to-end.",
     "",
@@ -98,7 +98,7 @@ export async function runSetup(): Promise<void> {
   // 5. Cheatsheet
   process.stderr.write("  [5/5] All checks passed.\n\n");
   process.stderr.write([
-    "make-pdf is ready. Try:",
+    "md-to-pdf is ready. Try:",
     "  $P generate letter.md                  # default memo mode",
     "  $P generate --cover --toc essay.md     # full publication",
     "  $P generate --watermark DRAFT memo.md  # diagonal watermark",

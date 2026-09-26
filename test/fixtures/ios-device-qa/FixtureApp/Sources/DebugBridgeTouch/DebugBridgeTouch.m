@@ -2,7 +2,7 @@
 //  DebugBridgeTouch.m — minimal port of KIF's in-process touch synthesis.
 //  Original code: https://github.com/kif-framework/KIF — MIT-licensed
 //  (Square, Inc. + KIF contributors). Adapted to a single-file, tap-only,
-//  iOS 18+ aware subset for the gstack/ios-qa DebugBridge.
+//  iOS 18+ aware subset for the paysec/ios-device-qa DebugBridge.
 //
 //  Uses these private UIKit selectors (DEBUG-only; never shipped to App Store):
 //    UITouch:  _setLocationInWindow:resetPrevious:, _setIsFirstTouchForView:,

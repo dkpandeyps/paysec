@@ -76,10 +76,10 @@ export async function spawnDaemonForTest(
   };
 
   // Spawn with a marker in argv so cmdline-based identity verification
-  // exercises the real CMDLINE_MARKER ("gstack-design-daemon").
+  // exercises the real CMDLINE_MARKER ("paysec-design-daemon").
   const proc = spawn(
     "bun",
-    ["run", DAEMON_SCRIPT, "--marker", "gstack-design-daemon"],
+    ["run", DAEMON_SCRIPT, "--marker", "paysec-design-daemon"],
     {
       env,
       stdio: ["ignore", "pipe", "pipe"],

@@ -1,14 +1,14 @@
 ---
-name: document-generate
+name: docs-generate
 preamble-tier: 2
 version: 1.0.0
 description: |
   Generate missing documentation from scratch for a feature, module, or entire project.
   Uses the Diataxis framework (tutorial / how-to / reference / explanation) to produce
   complete, structured documentation. Can be invoked standalone or called by
-  /document-release when it finds coverage gaps. Use when asked to "write docs",
+  /docs-release-update when it finds coverage gaps. Use when asked to "write docs",
   "generate documentation", "document this feature", "create a tutorial", or
-  "explain this module". (gstack)
+  "explain this module". (paysec)
 allowed-tools:
   - Bash
   - Read
@@ -33,13 +33,13 @@ triggers:
 
 # Document Generate: Diataxis Documentation Writer
 
-You are running the `/document-generate` workflow. Your job: produce **high-quality,
+You are running the `/docs-generate` workflow. Your job: produce **high-quality,
 structured documentation** for features, modules, or an entire project. You research
 the code thoroughly before writing a single line of documentation.
 
 This skill can be invoked two ways:
 1. **Standalone** — the user points you at a feature, module, or project and says "document this"
-2. **From /document-release** — the coverage map identified gaps; you fill them
+2. **From /docs-release-update** — the coverage map identified gaps; you fill them
 
 You follow the **Diataxis framework** — four quadrants of documentation, each serving a
 different reader need:
@@ -59,7 +59,7 @@ any documentation. This prevents the "documentation that describes half the feat
 1. Determine what to document:
    - **If invoked with a specific target** (feature, module, file, skill): scope is that target
    - **If invoked for an entire project**: scope is the full project
-   - **If called from /document-release with gaps**: scope is the specific entities from the coverage map
+   - **If called from /docs-release-update with gaps**: scope is the specific entities from the coverage map
 
 2. Use AskUserQuestion to confirm scope and ask about documentation target:
 
@@ -84,7 +84,7 @@ is directly proportional to how well you understand the code.
 1. **Map the project structure:**
 
 ```bash
-find . -type f -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./.gstack/*" -not -path "./dist/*" -not -path "./build/*" -not -path "./.next/*" | head -200
+find . -type f -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./.paysec/*" -not -path "./dist/*" -not -path "./build/*" -not -path "./.next/*" | head -200
 ```
 
 2. **Read the entry points.** Identify and read:
@@ -385,10 +385,10 @@ live-format secret in committed docs is a leak). Example configs belong in
 placeholder filter passes obvious docs examples (e.g. `AKIAIOSFODNN7EXAMPLE`):
 
 ```bash
-REDACT_VIS=$(~/.claude/skills/gstack/bin/gstack-config get redact_repo_visibility 2>/dev/null)
+REDACT_VIS=$(~/.claude/skills/paysec/bin/paysec-config get redact_repo_visibility 2>/dev/null)
 [ -z "$REDACT_VIS" ] && REDACT_VIS=$(gh repo view --json visibility -q .visibility 2>/dev/null | tr 'A-Z' 'a-z')
 git diff --cached --no-color | grep '^+' | sed 's/^+//' | \
-  ~/.claude/skills/gstack/bin/gstack-redact --repo-visibility "${REDACT_VIS:-unknown}" --json
+  ~/.claude/skills/paysec/bin/paysec-redact --repo-visibility "${REDACT_VIS:-unknown}" --json
 # exit 3 (HIGH) → unstage the offending doc, remove the secret, re-stage. Do NOT commit.
 ```
 

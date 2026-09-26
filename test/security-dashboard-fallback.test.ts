@@ -29,8 +29,8 @@ import { tmpdir } from "os";
 import { join } from "path";
 
 const ROOT = join(import.meta.dir, "..");
-const SEC_BIN = join(ROOT, "bin", "gstack-security-dashboard");
-const COMM_BIN = join(ROOT, "bin", "gstack-community-dashboard");
+const SEC_BIN = join(ROOT, "bin", "paysec-security-dashboard");
+const COMM_BIN = join(ROOT, "bin", "paysec-community-dashboard");
 // Absolute path: the jq-missing case runs with a whitelist-only PATH, so
 // "bash" itself wouldn't resolve through the child env.
 const BASH = Bun.which("bash") || "/bin/bash";
@@ -75,7 +75,7 @@ let tmp: string;
 let stubBin: string;
 
 beforeEach(() => {
-  tmp = mkdtempSync(join(tmpdir(), "gstack-dash-test-"));
+  tmp = mkdtempSync(join(tmpdir(), "paysec-dash-test-"));
   stubBin = join(tmp, "stub-bin");
   mkdirSync(stubBin, { recursive: true });
   writeFileSync(join(stubBin, "curl"), CURL_STUB);
@@ -113,16 +113,16 @@ function run(
     env: {
       ...process.env,
       PATH: pathEnv,
-      GSTACK_DIR: ROOT,
-      GSTACK_SUPABASE_URL: "https://stub.supabase.test",
-      GSTACK_SUPABASE_ANON_KEY: "stub-key",
+      PAYSEC_DIR: ROOT,
+      PAYSEC_SUPABASE_URL: "https://stub.supabase.test",
+      PAYSEC_SUPABASE_ANON_KEY: "stub-key",
       STUB_CURL_MODE: opts.mode,
       STUB_CURL_BODY: opts.body ?? "",
     },
   });
 }
 
-describe("gstack-security-dashboard — never reports fake zeros (#1947)", () => {
+describe("paysec-security-dashboard — never reports fake zeros (#1947)", () => {
   it("backend 503 → unknown, not 0 (human mode)", () => {
     const r = run(SEC_BIN, { mode: "error503" });
     expect(r.stdout).toContain("unknown — backend error (HTTP 503)");
@@ -215,7 +215,7 @@ describe("gstack-security-dashboard — never reports fake zeros (#1947)", () =>
   });
 });
 
-describe("gstack-community-dashboard — never reports fake zeros (#1947)", () => {
+describe("paysec-community-dashboard — never reports fake zeros (#1947)", () => {
   it("backend 503 → unknown, not 'Weekly active installs: 0'", () => {
     const r = run(COMM_BIN, { mode: "error503" });
     expect(r.stdout).toContain("unknown — backend error (HTTP 503)");

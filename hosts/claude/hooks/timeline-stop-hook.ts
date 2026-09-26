@@ -12,7 +12,7 @@
  *
  * FAIL-OPEN CONTRACT (F5) — a telemetry repair must never block a session:
  *   - ALWAYS exits 0, whatever happens (corrupt timeline, missing file, bad
- *     stdin, unreadable slug). Errors go to ~/.gstack/hook-errors.log,
+ *     stdin, unreadable slug). Errors go to ~/.paysec/hook-errors.log,
  *     best-effort.
  *   - Internal time budget (~2s): work is bounded up front — the timeline is
  *     skipped entirely over a size cap, only the last TAIL_WINDOW_BYTES are
@@ -69,7 +69,7 @@ function readTimelineTail(timelinePath: string, size: number): string {
 }
 
 function stateRoot(): string {
-  return process.env.GSTACK_HOME || path.join(os.homedir(), '.gstack');
+  return process.env.PAYSEC_HOME || path.join(os.homedir(), '.paysec');
 }
 
 function logHookError(msg: string): void {
@@ -105,11 +105,11 @@ function main(): void {
     // Bad/absent stdin: fall through with process.cwd() — repair is still valid.
   }
 
-  // Resolve the project slug the same way the preamble did (GSTACK_PROJECT_SLUG
+  // Resolve the project slug the same way the preamble did (PAYSEC_PROJECT_SLUG
   // override, project-root walk, remote-derived slug).
   let slug = '';
   try {
-    const r = runBin('gstack-slug', [], { cwd, encoding: 'utf8', timeout: DEADLINE_MS });
+    const r = runBin('paysec-slug', [], { cwd, encoding: 'utf8', timeout: DEADLINE_MS });
     const m = (r.stdout ?? '').toString().match(/^SLUG=([A-Za-z0-9._-]+)$/m);
     if (m) slug = m[1];
   } catch {

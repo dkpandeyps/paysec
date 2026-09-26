@@ -1,15 +1,15 @@
 ---
-name: context-restore
+name: restore-context
 preamble-tier: 2
 version: 1.0.0
 description: |
-  Restore working context saved earlier by /context-save. Loads the most recent
+  Restore working context saved earlier by /save-context. Loads the most recent
   saved state (preferring the current branch, falling back across branches) so
   you can pick up where you left off — even across Conductor workspace handoffs.
   Use when asked to "resume", "restore context", "where was I", or
-  "pick up where I left off". Pair with /context-save.
+  "pick up where I left off". Pair with /save-context.
   Formerly /checkpoint resume — renamed because Claude Code treats /checkpoint
-  as a native rewind alias in current environments. (gstack)
+  as a native rewind alias in current environments. (paysec)
 allowed-tools:
   - Bash
   - Read
@@ -26,7 +26,7 @@ triggers:
 
 {{PREAMBLE}}
 
-# /context-restore — Restore Saved Working Context
+# /restore-context — Restore Saved Working Context
 
 You are a **Staff Engineer reading a colleague's meticulous session notes** to
 pick up exactly where they left off. Your job is to load the most recent saved
@@ -40,13 +40,13 @@ this branch has none, fall back to the most recent across ALL branches.** The
 fallback is for Conductor workspace handoff — a context saved on one branch can
 be resumed from another. The current-branch preference exists because every
 worktree of a repo shares one checkpoints directory (same origin-derived slug),
-so without it `/context-restore` in one worktree could silently load a sibling
+so without it `/restore-context` in one worktree could silently load a sibling
 worktree's newer checkpoint.
 
 **Do NOT hard-filter the candidate set to the current branch** — other-branch
 checkpoints stay in the set as a fallback. They are just ordered *after* the
 current branch's own, so a current-branch save is never shadowed by a newer
-sibling-worktree save. (`/context-save list` is the flow that hard-scopes to one
+sibling-worktree save. (`/save-context list` is the flow that hard-scopes to one
 branch.)
 
 ---
@@ -55,9 +55,9 @@ branch.)
 
 Parse the user's input:
 
-- `/context-restore` → load the most recent saved context (any branch)
-- `/context-restore <title-fragment-or-number>` → load a specific saved context
-- `/context-restore list` → tell the user "Use `/context-save list` — listing
+- `/restore-context` → load the most recent saved context (any branch)
+- `/restore-context <title-fragment-or-number>` → load a specific saved context
+- `/restore-context list` → tell the user "Use `/save-context list` — listing
   lives on the save side" and exit. No mode detection here.
 
 ---
@@ -68,8 +68,8 @@ Parse the user's input:
 
 ```bash
 {{SLUG_SETUP}}
-eval "$(~/.claude/skills/gstack/bin/gstack-paths)"
-CHECKPOINT_DIR="$GSTACK_STATE_ROOT/projects/$SLUG/checkpoints"
+eval "$(~/.claude/skills/paysec/bin/paysec-paths)"
+CHECKPOINT_DIR="$PAYSEC_STATE_ROOT/projects/$SLUG/checkpoints"
 if [ ! -d "$CHECKPOINT_DIR" ]; then
   echo "NO_CHECKPOINTS"
 else
@@ -87,7 +87,7 @@ else
     # Order current-branch checkpoints first, other branches after. A git branch
     # is checked out in at most one worktree, and all worktrees of a repo share
     # one checkpoints dir (same origin-derived slug), so without this preference
-    # `/context-restore` in worktree A could load worktree B's newer checkpoint.
+    # `/restore-context` in worktree A could load worktree B's newer checkpoint.
     # Cross-branch resume (Conductor handoff) is preserved as the fallback: when
     # the current branch has no checkpoint, the full newest-first set is used.
     # CURRENT_BRANCH may be pre-set (tests); otherwise resolve it from git.
@@ -168,8 +168,8 @@ If A, summarize the first remaining work item and suggest starting there.
 
 If Step 1 printed `NO_CHECKPOINTS`, tell the user:
 
-"No saved contexts yet. Run `/context-save` first to save your current working
-state, then `/context-restore` will find it."
+"No saved contexts yet. Run `/save-context` first to save your current working
+state, then `/restore-context` will find it."
 
 ---
 
@@ -183,5 +183,5 @@ state, then `/context-restore` will find it."
 - **"Most recent" means the filename `YYYYMMDD-HHMMSS` prefix**, not
   `ls -1t` (filesystem mtime). Filenames are stable across file-system
   operations; mtime is not.
-- **This is a gstack skill, not a Claude Code built-in.** When the user types
-  `/context-restore`, invoke this skill via the Skill tool.
+- **This is a paysec skill, not a Claude Code built-in.** When the user types
+  `/restore-context`, invoke this skill via the Skill tool.

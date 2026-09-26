@@ -1,5 +1,5 @@
 /**
- * gstack-gbrain-mcp-verify — error-classification tests with a mocked curl.
+ * paysec-gbrain-mcp-verify — error-classification tests with a mocked curl.
  *
  * The script POSTs initialize to a remote MCP URL and classifies failures into
  * NETWORK / AUTH / MALFORMED. Each branch fires from a different curl shape
@@ -19,7 +19,7 @@ import * as path from 'path';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const VERIFY_BIN = path.join(ROOT, 'bin', 'gstack-gbrain-mcp-verify');
+const VERIFY_BIN = path.join(ROOT, 'bin', 'paysec-gbrain-mcp-verify');
 
 let tmpDir: string;
 let fakeBinDir: string;
@@ -91,7 +91,7 @@ function runVerify(token: string, url: string): { code: number; stdout: string; 
       PATH: `${fakeBinDir}:${process.env.PATH}`,
       GBRAIN_MCP_TOKEN: token,
       // The probe writes egress receipts — keep them in the temp home.
-      GSTACK_HOME: tmpDir,
+      PAYSEC_HOME: tmpDir,
     },
     encoding: 'utf-8',
   });
@@ -103,7 +103,7 @@ function runVerify(token: string, url: string): { code: number; stdout: string; 
 }
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-mcp-verify-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-mcp-verify-test-'));
   fakeBinDir = path.join(tmpDir, 'fake-bin');
   curlCallLog = path.join(tmpDir, 'curl-calls.log');
   fs.mkdirSync(fakeBinDir, { recursive: true });
@@ -114,7 +114,7 @@ afterEach(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
-describe('gstack-gbrain-mcp-verify', () => {
+describe('paysec-gbrain-mcp-verify', () => {
   test('SUCCESS: returns server name + version, sources_add_url_supported=false when no sources_add tool', () => {
     const initBody =
       'event: message\ndata: {"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{}},"serverInfo":{"name":"gbrain","version":"0.27.1"}},"jsonrpc":"2.0","id":1}';

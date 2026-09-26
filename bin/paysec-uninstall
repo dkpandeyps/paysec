@@ -1,34 +1,34 @@
 #!/usr/bin/env bash
-# gstack-uninstall — remove gstack skills, state, and browse daemons
+# paysec-uninstall — remove paysec skills, state, and browse daemons
 #
 # Usage:
-#   gstack-uninstall              — interactive uninstall (prompts before removing)
-#   gstack-uninstall --force      — remove everything without prompting
-#   gstack-uninstall --keep-state — remove skills but keep ~/.gstack/ data
+#   paysec-uninstall              — interactive uninstall (prompts before removing)
+#   paysec-uninstall --force      — remove everything without prompting
+#   paysec-uninstall --keep-state — remove skills but keep ~/.paysec/ data
 #
 # What gets REMOVED:
-#   ~/.claude/skills/gstack       — global Claude skill install (git clone or vendored)
+#   ~/.claude/skills/paysec       — global Claude skill install (git clone or vendored)
 #   ~/.claude/skills/{skill}      — per-skill symlinks created by setup
-#   ~/.codex/skills/gstack*       — Codex skill install + per-skill symlinks
-#   ~/.factory/skills/gstack*     — Factory Droid skill install + per-skill symlinks
-#   ~/.kiro/skills/gstack*        — Kiro skill install + per-skill symlinks
-#   ~/.cursor/skills/gstack*      — Cursor skill install + per-skill symlinks
-#   ~/.gstack/                    — global state (config, analytics, sessions, projects,
+#   ~/.codex/skills/paysec*       — Codex skill install + per-skill symlinks
+#   ~/.factory/skills/paysec*     — Factory Droid skill install + per-skill symlinks
+#   ~/.kiro/skills/paysec*        — Kiro skill install + per-skill symlinks
+#   ~/.cursor/skills/paysec*      — Cursor skill install + per-skill symlinks
+#   ~/.paysec/                    — global state (config, analytics, sessions, projects,
 #                                   repos, installation-id, browse error logs)
-#   .claude/skills/gstack*        — project-local skill install (--local installs)
-#   .gstack/                      — per-project browse state (in current git repo)
-#   .gstack-worktrees/            — per-project test worktrees (in current git repo)
-#   .agents/skills/gstack*        — Codex/Gemini sidecar (in current git repo)
-#   .cursor/skills/gstack*        — project-local Cursor skills (in current git repo)
+#   .claude/skills/paysec*        — project-local skill install (--local installs)
+#   .paysec/                      — per-project browse state (in current git repo)
+#   .paysec-worktrees/            — per-project test worktrees (in current git repo)
+#   .agents/skills/paysec*        — Codex/Gemini sidecar (in current git repo)
+#   .cursor/skills/paysec*        — project-local Cursor skills (in current git repo)
 #   Running browse daemons        — stopped via SIGTERM before cleanup
 #
 # What is NOT REMOVED:
 #   ~/Library/Caches/ms-playwright/  — Playwright Chromium (shared, may be used by other tools)
-#   ~/.gstack-dev/                   — developer eval artifacts (only present in gstack contributors)
+#   ~/.paysec-dev/                   — developer eval artifacts (only present in paysec contributors)
 #
 # Env overrides (for testing):
-#   GSTACK_DIR        — override auto-detected gstack root
-#   GSTACK_STATE_DIR  — override ~/.gstack state directory
+#   PAYSEC_DIR        — override auto-detected paysec root
+#   PAYSEC_STATE_DIR  — override ~/.paysec state directory
 #
 # NOTE: Uses set -uo pipefail (no -e) — uninstall must never abort partway.
 set -uo pipefail
@@ -38,8 +38,8 @@ if [ -z "${HOME:-}" ]; then
   exit 1
 fi
 
-GSTACK_DIR="${GSTACK_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
-STATE_DIR="${GSTACK_STATE_DIR:-$HOME/.gstack}"
+PAYSEC_DIR="${PAYSEC_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+STATE_DIR="${PAYSEC_STATE_DIR:-$HOME/.paysec}"
 _GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 
 # ─── Parse flags ─────────────────────────────────────────────
@@ -55,7 +55,7 @@ while [ $# -gt 0 ]; do
       ;;
     *)
       echo "Unknown option: $1" >&2
-      echo "Usage: gstack-uninstall [--force] [--keep-state]" >&2
+      echo "Usage: paysec-uninstall [--force] [--keep-state]" >&2
       exit 1
       ;;
   esac
@@ -63,25 +63,25 @@ done
 
 # ─── Confirmation ────────────────────────────────────────────
 if [ "$FORCE" -eq 0 ]; then
-  echo "This will remove gstack from your system:"
-  { [ -d "$HOME/.claude/skills/gstack" ] || [ -L "$HOME/.claude/skills/gstack" ]; } && echo "  ~/.claude/skills/gstack (+ per-skill symlinks)"
-  [ -d "$HOME/.codex/skills" ] && echo "  ~/.codex/skills/gstack*"
-  [ -d "$HOME/.factory/skills" ] && echo "  ~/.factory/skills/gstack*"
-  [ -d "$HOME/.kiro/skills" ] && echo "  ~/.kiro/skills/gstack*"
-  [ -d "$HOME/.cursor/skills" ] && echo "  ~/.cursor/skills/gstack*"
+  echo "This will remove paysec from your system:"
+  { [ -d "$HOME/.claude/skills/paysec" ] || [ -L "$HOME/.claude/skills/paysec" ]; } && echo "  ~/.claude/skills/paysec (+ per-skill symlinks)"
+  [ -d "$HOME/.codex/skills" ] && echo "  ~/.codex/skills/paysec*"
+  [ -d "$HOME/.factory/skills" ] && echo "  ~/.factory/skills/paysec*"
+  [ -d "$HOME/.kiro/skills" ] && echo "  ~/.kiro/skills/paysec*"
+  [ -d "$HOME/.cursor/skills" ] && echo "  ~/.cursor/skills/paysec*"
   [ "$KEEP_STATE" -eq 0 ] && [ -d "$STATE_DIR" ] && echo "  $STATE_DIR"
 
   if [ -n "$_GIT_ROOT" ]; then
-    [ -d "$_GIT_ROOT/.claude/skills/gstack" ] && echo "  $_GIT_ROOT/.claude/skills/gstack (project-local)"
-    [ -d "$_GIT_ROOT/.gstack" ] && echo "  $_GIT_ROOT/.gstack/ (browse state + reports)"
-    [ -d "$_GIT_ROOT/.gstack-worktrees" ] && echo "  $_GIT_ROOT/.gstack-worktrees/"
-    [ -d "$_GIT_ROOT/.agents/skills" ] && echo "  $_GIT_ROOT/.agents/skills/gstack*"
-    [ -d "$_GIT_ROOT/.cursor/skills" ] && echo "  $_GIT_ROOT/.cursor/skills/gstack*"
+    [ -d "$_GIT_ROOT/.claude/skills/paysec" ] && echo "  $_GIT_ROOT/.claude/skills/paysec (project-local)"
+    [ -d "$_GIT_ROOT/.paysec" ] && echo "  $_GIT_ROOT/.paysec/ (browse state + reports)"
+    [ -d "$_GIT_ROOT/.paysec-worktrees" ] && echo "  $_GIT_ROOT/.paysec-worktrees/"
+    [ -d "$_GIT_ROOT/.agents/skills" ] && echo "  $_GIT_ROOT/.agents/skills/paysec*"
+    [ -d "$_GIT_ROOT/.cursor/skills" ] && echo "  $_GIT_ROOT/.cursor/skills/paysec*"
   fi
 
   # Preview running daemons
-  if [ -n "$_GIT_ROOT" ] && [ -f "$_GIT_ROOT/.gstack/browse.json" ]; then
-    _PREVIEW_PID="$(awk -F'[:,]' '/"pid"/ { for(i=1;i<=NF;i++) if($i ~ /"pid"/) { gsub(/[^0-9]/, "", $(i+1)); print $(i+1); exit } }' "$_GIT_ROOT/.gstack/browse.json" 2>/dev/null || true)"
+  if [ -n "$_GIT_ROOT" ] && [ -f "$_GIT_ROOT/.paysec/browse.json" ]; then
+    _PREVIEW_PID="$(awk -F'[:,]' '/"pid"/ { for(i=1;i<=NF;i++) if($i ~ /"pid"/) { gsub(/[^0-9]/, "", $(i+1)); print $(i+1); exit } }' "$_GIT_ROOT/.paysec/browse.json" 2>/dev/null || true)"
     [ -n "$_PREVIEW_PID" ] && kill -0 "$_PREVIEW_PID" 2>/dev/null && echo "  browse daemon (PID $_PREVIEW_PID) will be stopped"
   fi
 
@@ -96,7 +96,7 @@ fi
 REMOVED=()
 
 # ─── Stop running browse daemons ─────────────────────────────
-# Browse servers write PID to {project}/.gstack/browse.json.
+# Browse servers write PID to {project}/.paysec/browse.json.
 # Stop any we can find before removing state directories.
 stop_browse_daemon() {
   local state_file="$1"
@@ -121,70 +121,70 @@ stop_browse_daemon() {
 }
 
 # Stop daemon in current project
-if [ -n "$_GIT_ROOT" ] && [ -f "$_GIT_ROOT/.gstack/browse.json" ]; then
-  stop_browse_daemon "$_GIT_ROOT/.gstack/browse.json"
+if [ -n "$_GIT_ROOT" ] && [ -f "$_GIT_ROOT/.paysec/browse.json" ]; then
+  stop_browse_daemon "$_GIT_ROOT/.paysec/browse.json"
 fi
 
 # Stop daemons tracked in global projects directory
 if [ -d "$STATE_DIR/projects" ]; then
   while IFS= read -r _BJ; do
     stop_browse_daemon "$_BJ"
-  done < <(find "$STATE_DIR/projects" -name browse.json -path '*/.gstack/*' 2>/dev/null || true)
+  done < <(find "$STATE_DIR/projects" -name browse.json -path '*/.paysec/*' 2>/dev/null || true)
 fi
 
 # ─── Remove global Claude skills ────────────────────────────
 CLAUDE_SKILLS="$HOME/.claude/skills"
 
 # Skill-name inventory (#2563 gate a): every name setup could have installed —
-# each source skill's directory name, its frontmatter name, their gstack-
+# each source skill's directory name, its frontmatter name, their paysec-
 # prefixed variants, and the alias dirs. Built BEFORE the install root is
 # removed. A real directory in ~/.claude/skills is only deletable when its
 # name is in this inventory AND its SKILL.md carries the generated banner.
 # The seed names below are the alias dirs setup's _install_alias_skill_md
 # creates (setup: link_claude_root_skill_alias + the connect-chrome call
 # sites) — keep in sync with setup if an alias is added or renamed there.
-_INVENTORY=" _gstack-command connect-chrome gstack-connect-chrome "
-if [ -d "$GSTACK_DIR" ]; then
-  for _SRC in "$GSTACK_DIR"/*/; do
+_INVENTORY=" _paysec-command connect-chrome paysec-connect-chrome "
+if [ -d "$PAYSEC_DIR" ]; then
+  for _SRC in "$PAYSEC_DIR"/*/; do
     [ -f "$_SRC/SKILL.md" ] || continue
     _SRC_NAME="$(basename "$_SRC")"
     _FM_NAME=$(grep -m1 '^name:' "$_SRC/SKILL.md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]' || true)
     for _N in "$_SRC_NAME" "$_FM_NAME"; do
       [ -n "$_N" ] || continue
-      case "$_INVENTORY" in *" $_N "*) ;; *) _INVENTORY="$_INVENTORY$_N gstack-$_N " ;; esac
+      case "$_INVENTORY" in *" $_N "*) ;; *) _INVENTORY="$_INVENTORY$_N paysec-$_N " ;; esac
     done
   done
 fi
 _in_skill_inventory() { case "$_INVENTORY" in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 
 _SKIPPED_DIRS=()
-if [ -d "$CLAUDE_SKILLS/gstack" ] || [ -L "$CLAUDE_SKILLS/gstack" ]; then
+if [ -d "$CLAUDE_SKILLS/paysec" ] || [ -L "$CLAUDE_SKILLS/paysec" ]; then
   # Remove per-skill entries created by setup. Three install shapes exist:
   #   1. symlink entry                      (oldest installs)
   #   2. real dir + SYMLINKED SKILL.md      (standard Unix install)
   #   3. real dir + REAL-FILE SKILL.md      (Windows copy install, #2563)
-  # Shape 3 was skipped entirely — gstack-uninstall exited 0 and reported
-  # success while leaving ~52 gstack-* directories behind on Windows.
+  # Shape 3 was skipped entirely — paysec-uninstall exited 0 and reported
+  # success while leaving ~52 paysec-* directories behind on Windows.
   for _ENTRY in "$CLAUDE_SKILLS"/*; do
     _NAME="$(basename "$_ENTRY")"
-    [ "$_NAME" = "gstack" ] && continue
+    [ "$_NAME" = "paysec" ] && continue
     if [ -L "$_ENTRY" ]; then
       _TARGET="$(readlink "$_ENTRY" 2>/dev/null || true)"
       case "$_TARGET" in
-        gstack/*|*/gstack/*) rm -f "$_ENTRY"; REMOVED+=("claude/$_NAME") ;;
+        paysec/*|*/paysec/*) rm -f "$_ENTRY"; REMOVED+=("claude/$_NAME") ;;
       esac
     elif [ -d "$_ENTRY" ] && { [ -f "$_ENTRY/SKILL.md" ] || [ -L "$_ENTRY/SKILL.md" ]; }; then
       if [ -L "$_ENTRY/SKILL.md" ]; then
         # Shape 2: provenance readable from the symlink target itself.
-        # Gate 1: the name must be in gstack's skill inventory (parity with
-        # shape 3). Gate 2: the target must contain "gstack" as an ANCHORED
-        # path segment (gstack/*|*/gstack/*, same pattern as shape 1) — a
-        # bare *gstack* substring match would wipe a user's own skill whose
-        # SKILL.md merely lives under e.g. ~/tools/gstack-fork/.
+        # Gate 1: the name must be in paysec's skill inventory (parity with
+        # shape 3). Gate 2: the target must contain "paysec" as an ANCHORED
+        # path segment (paysec/*|*/paysec/*, same pattern as shape 1) — a
+        # bare *paysec* substring match would wipe a user's own skill whose
+        # SKILL.md merely lives under e.g. ~/tools/paysec-fork/.
         _TARGET="$(readlink "$_ENTRY/SKILL.md" 2>/dev/null || true)"
         if _in_skill_inventory "$_NAME"; then
           case "$_TARGET" in
-            gstack/*|*/gstack/*) rm -rf "$_ENTRY"; REMOVED+=("claude/$_NAME") ;;
+            paysec/*|*/paysec/*) rm -rf "$_ENTRY"; REMOVED+=("claude/$_NAME") ;;
             *) _SKIPPED_DIRS+=("$_ENTRY") ;;
           esac
         else
@@ -192,22 +192,22 @@ if [ -d "$CLAUDE_SKILLS/gstack" ] || [ -L "$CLAUDE_SKILLS/gstack" ]; then
         fi
       elif _in_skill_inventory "$_NAME" && grep -q '<!-- AUTO-GENERATED from' "$_ENTRY/SKILL.md" 2>/dev/null; then
         # Shape 3: delete ONLY when BOTH gates pass (F8) — the name is in
-        # gstack's skill inventory AND the SKILL.md carries the existing
+        # paysec's skill inventory AND the SKILL.md carries the existing
         # generated banner. ENG-OV10: the banner IS the provenance marker —
         # every pre-v1.67 copy already carries it; inventing a new marker
         # would refuse to delete legitimate old installs, recreating #2563.
         rm -rf "$_ENTRY"
         REMOVED+=("claude/$_NAME")
       else
-        # A real dir we cannot prove is gstack-managed (name collision with a
+        # A real dir we cannot prove is paysec-managed (name collision with a
         # user's own skill, or a hand-written SKILL.md): NEVER delete — list.
         _SKIPPED_DIRS+=("$_ENTRY")
       fi
     fi
   done
 
-  rm -rf "$CLAUDE_SKILLS/gstack"
-  REMOVED+=("~/.claude/skills/gstack")
+  rm -rf "$CLAUDE_SKILLS/paysec"
+  REMOVED+=("~/.claude/skills/paysec")
 fi
 
 # ─── Remove project-local Claude skills (--local installs) ──
@@ -216,19 +216,19 @@ if [ -n "$_GIT_ROOT" ] && [ -d "$_GIT_ROOT/.claude/skills" ]; then
     [ -L "$_LINK" ] || continue
     _TARGET="$(readlink "$_LINK" 2>/dev/null || true)"
     case "$_TARGET" in
-      gstack/*|*/gstack/*) rm -f "$_LINK"; REMOVED+=("local claude/$(basename "$_LINK")") ;;
+      paysec/*|*/paysec/*) rm -f "$_LINK"; REMOVED+=("local claude/$(basename "$_LINK")") ;;
     esac
   done
-  if [ -d "$_GIT_ROOT/.claude/skills/gstack" ] || [ -L "$_GIT_ROOT/.claude/skills/gstack" ]; then
-    rm -rf "$_GIT_ROOT/.claude/skills/gstack"
-    REMOVED+=("$_GIT_ROOT/.claude/skills/gstack")
+  if [ -d "$_GIT_ROOT/.claude/skills/paysec" ] || [ -L "$_GIT_ROOT/.claude/skills/paysec" ]; then
+    rm -rf "$_GIT_ROOT/.claude/skills/paysec"
+    REMOVED+=("$_GIT_ROOT/.claude/skills/paysec")
   fi
 fi
 
 # ─── Remove Codex skills ────────────────────────────────────
 CODEX_SKILLS="$HOME/.codex/skills"
 if [ -d "$CODEX_SKILLS" ]; then
-  for _ITEM in "$CODEX_SKILLS"/gstack*; do
+  for _ITEM in "$CODEX_SKILLS"/paysec*; do
     [ -e "$_ITEM" ] || [ -L "$_ITEM" ] || continue
     rm -rf "$_ITEM"
     REMOVED+=("codex/$(basename "$_ITEM")")
@@ -238,7 +238,7 @@ fi
 # ─── Remove Factory Droid skills ────────────────────────────
 FACTORY_SKILLS="$HOME/.factory/skills"
 if [ -d "$FACTORY_SKILLS" ]; then
-  for _ITEM in "$FACTORY_SKILLS"/gstack*; do
+  for _ITEM in "$FACTORY_SKILLS"/paysec*; do
     [ -e "$_ITEM" ] || [ -L "$_ITEM" ] || continue
     rm -rf "$_ITEM"
     REMOVED+=("factory/$(basename "$_ITEM")")
@@ -248,7 +248,7 @@ fi
 # ─── Remove Kiro skills ─────────────────────────────────────
 KIRO_SKILLS="$HOME/.kiro/skills"
 if [ -d "$KIRO_SKILLS" ]; then
-  for _ITEM in "$KIRO_SKILLS"/gstack*; do
+  for _ITEM in "$KIRO_SKILLS"/paysec*; do
     [ -e "$_ITEM" ] || [ -L "$_ITEM" ] || continue
     rm -rf "$_ITEM"
     REMOVED+=("kiro/$(basename "$_ITEM")")
@@ -256,13 +256,13 @@ if [ -d "$KIRO_SKILLS" ]; then
 fi
 
 # ─── Remove Cursor skills ───────────────────────────────────
-# Cursor installs are rendered REAL directories, so a bare gstack* glob could
-# sweep a user's own dir that merely starts with "gstack" (e.g.
-# ~/.cursor/skills/gstack-fork-notes). Provenance gate: a real dir is only
+# Cursor installs are rendered REAL directories, so a bare paysec* glob could
+# sweep a user's own dir that merely starts with "paysec" (e.g.
+# ~/.cursor/skills/paysec-fork-notes). Provenance gate: a real dir is only
 # deleted when its SKILL.md carries the generated banner; anything else is
 # listed, never deleted. Symlinks stay ungated — removing a link never
 # destroys user content.
-_cursor_item_is_gstack_managed() {
+_cursor_item_is_paysec_managed() {
   # Symlinks and plain files are safe to remove; real dirs need the banner.
   if [ -L "$1" ] || [ ! -d "$1" ]; then return 0; fi
   grep -q '<!-- AUTO-GENERATED from' "$1/SKILL.md" 2>/dev/null
@@ -270,9 +270,9 @@ _cursor_item_is_gstack_managed() {
 
 CURSOR_SKILLS="$HOME/.cursor/skills"
 if [ -d "$CURSOR_SKILLS" ]; then
-  for _ITEM in "$CURSOR_SKILLS"/gstack*; do
+  for _ITEM in "$CURSOR_SKILLS"/paysec*; do
     [ -e "$_ITEM" ] || [ -L "$_ITEM" ] || continue
-    if _cursor_item_is_gstack_managed "$_ITEM"; then
+    if _cursor_item_is_paysec_managed "$_ITEM"; then
       rm -rf "$_ITEM"
       REMOVED+=("cursor/$(basename "$_ITEM")")
     else
@@ -283,7 +283,7 @@ fi
 
 # ─── Remove per-project .agents/ sidecar ─────────────────────
 if [ -n "$_GIT_ROOT" ] && [ -d "$_GIT_ROOT/.agents/skills" ]; then
-  for _ITEM in "$_GIT_ROOT/.agents/skills"/gstack*; do
+  for _ITEM in "$_GIT_ROOT/.agents/skills"/paysec*; do
     [ -e "$_ITEM" ] || [ -L "$_ITEM" ] || continue
     rm -rf "$_ITEM"
     REMOVED+=("agents/$(basename "$_ITEM")")
@@ -295,7 +295,7 @@ fi
 
 # ─── Remove per-project .factory/ sidecar ────────────────────
 if [ -n "$_GIT_ROOT" ] && [ -d "$_GIT_ROOT/.factory/skills" ]; then
-  for _ITEM in "$_GIT_ROOT/.factory/skills"/gstack*; do
+  for _ITEM in "$_GIT_ROOT/.factory/skills"/paysec*; do
     [ -e "$_ITEM" ] || [ -L "$_ITEM" ] || continue
     rm -rf "$_ITEM"
     REMOVED+=("factory/$(basename "$_ITEM")")
@@ -305,13 +305,13 @@ if [ -n "$_GIT_ROOT" ] && [ -d "$_GIT_ROOT/.factory/skills" ]; then
   rmdir "$_GIT_ROOT/.factory" 2>/dev/null || true
 fi
 
-# ─── Remove per-project .cursor/skills/gstack* ──────────────
+# ─── Remove per-project .cursor/skills/paysec* ──────────────
 # Never rmdir .cursor itself — Cursor IDE stores rules and other user config there.
 # Same provenance gate as the global cursor block above.
 if [ -n "$_GIT_ROOT" ] && [ -d "$_GIT_ROOT/.cursor/skills" ]; then
-  for _ITEM in "$_GIT_ROOT/.cursor/skills"/gstack*; do
+  for _ITEM in "$_GIT_ROOT/.cursor/skills"/paysec*; do
     [ -e "$_ITEM" ] || [ -L "$_ITEM" ] || continue
-    if _cursor_item_is_gstack_managed "$_ITEM"; then
+    if _cursor_item_is_paysec_managed "$_ITEM"; then
       rm -rf "$_ITEM"
       REMOVED+=("cursor/$(basename "$_ITEM")")
     else
@@ -324,27 +324,27 @@ fi
 
 # ─── Remove per-project state ───────────────────────────────
 if [ -n "$_GIT_ROOT" ]; then
-  if [ -d "$_GIT_ROOT/.gstack" ]; then
-    rm -rf "$_GIT_ROOT/.gstack"
-    REMOVED+=("$_GIT_ROOT/.gstack/")
+  if [ -d "$_GIT_ROOT/.paysec" ]; then
+    rm -rf "$_GIT_ROOT/.paysec"
+    REMOVED+=("$_GIT_ROOT/.paysec/")
   fi
-  if [ -d "$_GIT_ROOT/.gstack-worktrees" ]; then
-    rm -rf "$_GIT_ROOT/.gstack-worktrees"
-    REMOVED+=("$_GIT_ROOT/.gstack-worktrees/")
+  if [ -d "$_GIT_ROOT/.paysec-worktrees" ]; then
+    rm -rf "$_GIT_ROOT/.paysec-worktrees"
+    REMOVED+=("$_GIT_ROOT/.paysec-worktrees/")
   fi
 fi
 
 # ─── Remove SessionStart hook from Claude Code settings ─────
-SETTINGS_HOOK="$(dirname "$0")/gstack-settings-hook"
-SESSION_UPDATE="$(dirname "$0")/gstack-session-update"
+SETTINGS_HOOK="$(dirname "$0")/paysec-settings-hook"
+SESSION_UPDATE="$(dirname "$0")/paysec-session-update"
 if [ -x "$SETTINGS_HOOK" ]; then
   "$SETTINGS_HOOK" remove "$SESSION_UPDATE" 2>/dev/null && REMOVED+=("SessionStart hook") || true
-  # Cathedral T8 cleanup: also remove plan-tune PreToolUse + PostToolUse hooks.
+  # Cathedral T8 cleanup: also remove tune-questions PreToolUse + PostToolUse hooks.
   if "$SETTINGS_HOOK" remove-source --source plan-tune-cathedral 2>/dev/null | grep -q "removed [1-9]"; then
-    REMOVED+=("plan-tune cathedral hooks")
+    REMOVED+=("tune-questions cathedral hooks")
   fi
   # Timeline Stop hook (#2553).
-  if "$SETTINGS_HOOK" remove-source --source gstack-timeline-stop 2>/dev/null | grep -q "removed [1-9]"; then
+  if "$SETTINGS_HOOK" remove-source --source paysec-timeline-stop 2>/dev/null | grep -q "removed [1-9]"; then
     REMOVED+=("timeline Stop hook")
   fi
 fi
@@ -356,7 +356,7 @@ if [ "$KEEP_STATE" -eq 0 ] && [ -d "$STATE_DIR" ]; then
 fi
 
 # ─── Clean up temp files ────────────────────────────────────
-for _TMP in /tmp/gstack-latest-version /tmp/gstack-sketch-*.html /tmp/gstack-sketch.png /tmp/gstack-sync-*; do
+for _TMP in /tmp/paysec-latest-version /tmp/paysec-sketch-*.html /tmp/paysec-sketch.png /tmp/paysec-sync-*; do
   if [ -e "$_TMP" ]; then
     rm -f "$_TMP"
     REMOVED+=("$(basename "$_TMP")")
@@ -367,7 +367,7 @@ done
 # Everything any provenance gate refused to delete (Claude shapes 2/3,
 # cursor real dirs) — listed once, at the end, so nothing is silent.
 if [ ${#_SKIPPED_DIRS[@]} -gt 0 ]; then
-  echo "left in place (not provably gstack-managed — remove by hand if they are yours):" >&2
+  echo "left in place (not provably paysec-managed — remove by hand if they are yours):" >&2
   for _D in "${_SKIPPED_DIRS[@]}"; do
     echo "  $_D" >&2
   done
@@ -376,9 +376,9 @@ fi
 # ─── Summary ────────────────────────────────────────────────
 if [ ${#REMOVED[@]} -gt 0 ]; then
   echo "Removed: ${REMOVED[*]}"
-  echo "gstack uninstalled."
+  echo "paysec uninstalled."
 else
-  echo "Nothing to remove — gstack is not installed."
+  echo "Nothing to remove — paysec is not installed."
 fi
 
 exit 0

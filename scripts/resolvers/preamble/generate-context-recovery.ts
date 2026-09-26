@@ -1,21 +1,21 @@
 import type { TemplateContext } from '../types';
 
 export function generateContextRecovery(ctx: TemplateContext): string {
-  const binDir = ctx.paths.binDir; // env-var hosts already resolve to $GSTACK_BIN via types.ts
+  const binDir = ctx.paths.binDir; // env-var hosts already resolve to $PAYSEC_BIN via types.ts
 
   // Branch-form discipline (#2550/#1851): FILE-PATH positions use $BRANCH —
-  // the canonical slug form the gstack-slug eval on the first line sets
-  // (tr '/' '-' then tr -cd 'a-zA-Z0-9._-', matching what gstack-review-log
+  // the canonical slug form the paysec-slug eval on the first line sets
+  // (tr '/' '-' then tr -cd 'a-zA-Z0-9._-', matching what paysec-review-log
   // WRITES). The timeline.jsonl greps keep raw $_BRANCH because the timeline
-  // writer (preamble's gstack-timeline-log call) stores the raw branch in the
+  // writer (preamble's paysec-timeline-log call) stores the raw branch in the
   // "branch" field — slugging the reader there would break matching.
   return `## Context Recovery
 
 At session start or after compaction, recover recent project context.
 
 \`\`\`bash
-eval "$(${binDir}/gstack-slug 2>/dev/null)"
-_PROJ="\${GSTACK_HOME:-$HOME/.gstack}/projects/\${SLUG:-unknown}"
+eval "$(${binDir}/paysec-slug 2>/dev/null)"
+_PROJ="\${PAYSEC_HOME:-$HOME/.paysec}/projects/\${SLUG:-unknown}"
 if [ -d "$_PROJ" ]; then
   echo "--- RECENT ARTIFACTS ---"
   find "$_PROJ/ceo-plans" "$_PROJ/checkpoints" -type f -name "*.md" 2>/dev/null | xargs -r ls -t 2>/dev/null | head -3
@@ -31,7 +31,7 @@ if [ -d "$_PROJ" ]; then
   [ -n "$_LATEST_CP" ] && echo "LATEST_CHECKPOINT: $_LATEST_CP"
   if [ -f "$_PROJ/decisions.active.json" ]; then
     echo "--- ACTIVE DECISIONS (recent, scope-relevant) ---"
-    ${binDir}/gstack-decision-search --recent 5 2>/dev/null
+    ${binDir}/paysec-decision-search --recent 5 2>/dev/null
     echo "--- END DECISIONS ---"
   fi
   echo "--- END ARTIFACTS ---"
@@ -40,5 +40,5 @@ fi
 
 If artifacts are listed, read the newest useful one. If \`LAST_SESSION\` or \`LATEST_CHECKPOINT\` appears, give a 2-sentence welcome back summary. If \`RECENT_PATTERN\` clearly implies a next skill, suggest it once.
 
-**Cross-session decisions.** If \`ACTIVE DECISIONS\` are listed, treat them as prior settled calls with their rationale — do not silently re-litigate them; if you're about to reverse one, say so explicitly. Reach for \`${binDir}/gstack-decision-search\` whenever a question touches a past decision ("what did we decide / why / did we try"). When you or the user make a DURABLE decision (architecture, scope, tool/vendor choice, or a reversal) — NOT a turn-level or trivial choice — log it with \`${binDir}/gstack-decision-log\` (\`--supersede <id>\` for a reversal). Reliable and local; gbrain not required.`;
+**Cross-session decisions.** If \`ACTIVE DECISIONS\` are listed, treat them as prior settled calls with their rationale — do not silently re-litigate them; if you're about to reverse one, say so explicitly. Reach for \`${binDir}/paysec-decision-search\` whenever a question touches a past decision ("what did we decide / why / did we try"). When you or the user make a DURABLE decision (architecture, scope, tool/vendor choice, or a reversal) — NOT a turn-level or trivial choice — log it with \`${binDir}/paysec-decision-log\` (\`--supersede <id>\` for a reversal). Reliable and local; gbrain not required.`;
 }

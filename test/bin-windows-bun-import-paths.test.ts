@@ -10,7 +10,7 @@
  * Two layers:
  *   1. Static invariant — every bash bin with a $SCRIPT_DIR bun-import
  *      interpolation carries the cygpath guard (catches future bins).
- *   2. Behavioral — gstack-learnings-log, invoked the way Windows CI
+ *   2. Behavioral — paysec-learnings-log, invoked the way Windows CI
  *      invokes bash bins (spawnSync("bash", [path])), writes a learning
  *      and surfaces validation errors on stderr instead of swallowing
  *      them. This file is in the windows-free-tests workflow list, so the
@@ -57,27 +57,27 @@ describe("bin/ — Windows bun-import path guard (#1950)", () => {
   });
 
   it("known-affected bins carry the guard explicitly", () => {
-    for (const name of ["gstack-learnings-log", "gstack-question-log"]) {
+    for (const name of ["paysec-learnings-log", "paysec-question-log"]) {
       const content = readFileSync(join(BIN_DIR, name), "utf-8");
       expect(content).toContain("cygpath -m");
     }
   });
 });
 
-describe("gstack-learnings-log — behavioral (runs on Windows CI via git-bash)", () => {
-  function runViaBash(input: string, gstackHome: string) {
+describe("paysec-learnings-log — behavioral (runs on Windows CI via git-bash)", () => {
+  function runViaBash(input: string, paysecHome: string) {
     // spawnSync("bash", [path]) mirrors how git-bash users (and Windows CI)
     // execute the bin — Windows CreateProcess cannot parse shebangs.
-    return spawnSync("bash", [join(BIN_DIR, "gstack-learnings-log"), input], {
+    return spawnSync("bash", [join(BIN_DIR, "paysec-learnings-log"), input], {
       encoding: "utf-8",
       timeout: 20_000,
       cwd: ROOT,
-      env: { ...process.env, GSTACK_HOME: gstackHome },
+      env: { ...process.env, PAYSEC_HOME: paysecHome },
     });
   }
 
   it("writes a learning end-to-end (proves the bun import resolves on this platform)", () => {
-    const tmp = mkdtempSync(join(tmpdir(), "gstack-win-learn-"));
+    const tmp = mkdtempSync(join(tmpdir(), "paysec-win-learn-"));
     try {
       const r = runViaBash(
         JSON.stringify({
@@ -104,7 +104,7 @@ describe("gstack-learnings-log — behavioral (runs on Windows CI via git-bash)"
   });
 
   it("surfaces validation errors on stderr instead of swallowing them", () => {
-    const tmp = mkdtempSync(join(tmpdir(), "gstack-win-learn-"));
+    const tmp = mkdtempSync(join(tmpdir(), "paysec-win-learn-"));
     try {
       const r = runViaBash(
         JSON.stringify({ skill: "test", type: "not-a-type", key: "k", insight: "x", confidence: 5 }),

@@ -4,11 +4,11 @@
 #
 # Why a migration: pre-v1.67, gbrain-enabled setups ran `gen:skill-docs:user
 # --host claude` IN PLACE inside the global install checkout
-# (~/.claude/skills/gstack), rewriting ~16 TRACKED SKILL.md files. The
-# checkout stayed permanently dirty, and every /gstack-upgrade `git stash`
+# (~/.claude/skills/paysec), rewriting ~16 TRACKED SKILL.md files. The
+# checkout stayed permanently dirty, and every /paysec-upgrade `git stash`
 # saved a redundant snapshot of generated content — stashes that invite a
 # dangerous `git stash pop` of stale instruction markdown over a newer
-# version. v1.67 renders to an untracked out-dir (~/.gstack/render/claude)
+# version. v1.67 renders to an untracked out-dir (~/.paysec/render/claude)
 # instead, so this migration does the ONE-TIME cleanup of the legacy dirt:
 # `git checkout --` on the modified generated files.
 #
@@ -19,15 +19,15 @@
 # reported. setup's gbrain step re-renders the brain-aware variant into the
 # out-dir immediately after migrations run, so no capability is lost.
 #
-# Affected: global-git installs that ever ran ./setup or `gstack-config
+# Affected: global-git installs that ever ran ./setup or `paysec-config
 # gbrain-refresh` with gbrain detected, before v1.67.0.0.
 #
 # Idempotent: a clean checkout is a no-op. Non-fatal throughout.
 set -u
 
-INSTALL_DIR="${GSTACK_INSTALL_DIR:-$HOME/.claude/skills/gstack}"
+INSTALL_DIR="${PAYSEC_INSTALL_DIR:-$HOME/.claude/skills/paysec}"
 
-# Only operate on a real (non-symlink) git checkout that looks like gstack.
+# Only operate on a real (non-symlink) git checkout that looks like paysec.
 [ -d "$INSTALL_DIR" ] || exit 0
 [ -L "$INSTALL_DIR" ] && exit 0
 [ -f "$INSTALL_DIR/VERSION" ] || exit 0
@@ -64,7 +64,7 @@ EOF_DIRTY
 
 if [ "$_RESTORED" -gt 0 ]; then
   echo "  v1.67.0.0: restored $_RESTORED tracked file(s) dirtied by the legacy in-place gbrain render (#2569)."
-  echo "  Brain-aware blocks now render to ~/.gstack/render/claude — the checkout stays clean from here on."
+  echo "  Brain-aware blocks now render to ~/.paysec/render/claude — the checkout stays clean from here on."
 fi
 if [ "$_LEFT" -gt 0 ]; then
   echo "  v1.67.0.0: left $_LEFT non-render change(s) in $INSTALL_DIR untouched (not the legacy render footprint)."

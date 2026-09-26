@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Remove local dev skill symlinks. Restores global gstack as the active install.
+# Remove local dev skill symlinks. Restores global paysec as the active install.
 set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -11,26 +11,26 @@ CLAUDE_SKILLS="$REPO_ROOT/.claude/skills"
 if [ -d "$CLAUDE_SKILLS" ]; then
   for link in "$CLAUDE_SKILLS"/*/; do
     name="$(basename "$link")"
-    [ "$name" = "gstack" ] && continue
+    [ "$name" = "paysec" ] && continue
     if [ -L "${link%/}" ]; then
       rm "${link%/}"
       removed+=("claude/$name")
     fi
   done
 
-  if [ -L "$CLAUDE_SKILLS/gstack" ]; then
-    rm "$CLAUDE_SKILLS/gstack"
-    removed+=("claude/gstack")
+  if [ -L "$CLAUDE_SKILLS/paysec" ]; then
+    rm "$CLAUDE_SKILLS/paysec"
+    removed+=("claude/paysec")
   fi
 
   rmdir "$CLAUDE_SKILLS" 2>/dev/null || true
 fi
 
 # ─── Clean up the untracked brain-aware render (bin/dev-setup step 7) ──
-RENDER_DIR="$REPO_ROOT/.claude/gstack-rendered"
+RENDER_DIR="$REPO_ROOT/.claude/paysec-rendered"
 if [ -d "$RENDER_DIR" ]; then
   rm -rf "$RENDER_DIR"
-  removed+=("claude/gstack-rendered")
+  removed+=("claude/paysec-rendered")
 fi
 rmdir "$REPO_ROOT/.claude" 2>/dev/null || true
 
@@ -39,16 +39,16 @@ AGENTS_SKILLS="$REPO_ROOT/.agents/skills"
 if [ -d "$AGENTS_SKILLS" ]; then
   for link in "$AGENTS_SKILLS"/*/; do
     name="$(basename "$link")"
-    [ "$name" = "gstack" ] && continue
+    [ "$name" = "paysec" ] && continue
     if [ -L "${link%/}" ]; then
       rm "${link%/}"
       removed+=("agents/$name")
     fi
   done
 
-  if [ -L "$AGENTS_SKILLS/gstack" ]; then
-    rm "$AGENTS_SKILLS/gstack"
-    removed+=("agents/gstack")
+  if [ -L "$AGENTS_SKILLS/paysec" ]; then
+    rm "$AGENTS_SKILLS/paysec"
+    removed+=("agents/paysec")
   fi
 
   rmdir "$AGENTS_SKILLS" 2>/dev/null || true
@@ -60,4 +60,4 @@ if [ ${#removed[@]} -gt 0 ]; then
 else
   echo "No symlinks found."
 fi
-echo "Dev mode deactivated. Global gstack (~/.claude/skills/gstack) is now active."
+echo "Dev mode deactivated. Global paysec (~/.claude/skills/paysec) is now active."

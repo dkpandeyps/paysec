@@ -1,7 +1,7 @@
 /**
- * /plan-devex-review per-finding AskUserQuestion count (periodic, paid, real-PTY).
+ * /plan-dx-review per-finding AskUserQuestion count (periodic, paid, real-PTY).
  *
- * Same shape as skill-e2e-plan-ceo-finding-count: drives /plan-devex-review
+ * Same shape as skill-e2e-plan-business-finding-count: drives /plan-dx-review
  * against a 5-finding seeded plan and asserts review-phase AUQ count ∈ [N-1, N+2].
  * Plus D19: review report at bottom of produced plan file.
  *
@@ -24,7 +24,7 @@ const FLOOR = N - 1;
 const CEILING = N + 2;
 
 const PLAN_DEVEX_5_FINDINGS = [
-  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/gstack-test-plan-devex.md (use Edit/Write to that exact path).',
+  'Please review this plan thoroughly. As you go, write your plan-mode plan to /tmp/paysec-test-plan-devex.md (use Edit/Write to that exact path).',
   '',
   '# Plan: Public SDK Beta Launch',
   '',
@@ -50,9 +50,9 @@ const PLAN_DEVEX_5_FINDINGS = [
   'of solved problems.',
 ].join('\n');
 
-const PLAN_DEVEX_PATH = '/tmp/gstack-test-plan-devex.md';
+const PLAN_DEVEX_PATH = '/tmp/paysec-test-plan-devex.md';
 
-describeE2E('/plan-devex-review per-finding AskUserQuestion count (periodic)', () => {
+describeE2E('/plan-dx-review per-finding AskUserQuestion count (periodic)', () => {
   test(
     `5-finding plan emits ${FLOOR}-${CEILING} review-phase AskUserQuestions`,
     async () => {
@@ -63,8 +63,8 @@ describeE2E('/plan-devex-review per-finding AskUserQuestion count (periodic)', (
       }
 
       const obs = await runPlanSkillCounting({
-        skillName: 'plan-devex-review',
-        slashCommand: '/plan-devex-review',
+        skillName: 'plan-dx-review',
+        slashCommand: '/plan-dx-review',
         followUpPrompt: PLAN_DEVEX_5_FINDINGS,
         isLastStep0AUQ: devexStep0Boundary,
         reviewCountCeiling: CEILING + 1,
@@ -76,7 +76,7 @@ describeE2E('/plan-devex-review per-finding AskUserQuestion count (periodic)', (
       try {
         if (!['plan_ready', 'completion_summary', 'ceiling_reached'].includes(obs.outcome)) {
           throw new Error(
-            `plan-devex-review finding-count FAILED: outcome=${obs.outcome}\n` +
+            `plan-dx-review finding-count FAILED: outcome=${obs.outcome}\n` +
               `step0=${obs.step0Count} review=${obs.reviewCount} elapsed=${obs.elapsedMs}ms\n` +
               `fingerprints (last 8):\n` +
               obs.fingerprints

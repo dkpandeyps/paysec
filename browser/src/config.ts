@@ -3,7 +3,7 @@
  *
  * Resolution:
  *   1. BROWSE_STATE_FILE env → derive stateDir from parent
- *   2. git rev-parse --show-toplevel → projectDir/.gstack/
+ *   2. git rev-parse --show-toplevel → projectDir/.paysec/
  *   3. process.cwd() fallback (non-git environments)
  *
  * The CLI computes the config and passes BROWSE_STATE_FILE to the
@@ -65,10 +65,10 @@ export function resolveConfig(
   if (env.BROWSE_STATE_FILE) {
     stateFile = env.BROWSE_STATE_FILE;
     stateDir = path.dirname(stateFile);
-    projectDir = path.dirname(stateDir); // parent of .gstack/
+    projectDir = path.dirname(stateDir); // parent of .paysec/
   } else {
     projectDir = getGitRoot() || process.cwd();
-    stateDir = path.join(projectDir, '.gstack');
+    stateDir = path.join(projectDir, '.paysec');
     stateFile = path.join(stateDir, 'browse.json');
   }
 
@@ -98,7 +98,7 @@ function isIgnoredByGit(projectDir: string, relPath: string): boolean {
 }
 
 /**
- * Create the .gstack/ state directory if it doesn't exist.
+ * Create the .paysec/ state directory if it doesn't exist.
  * Throws with a clear message on permission errors.
  */
 export function ensureStateDir(config: BrowseConfig): void {
@@ -121,23 +121,23 @@ export function ensureStateDir(config: BrowseConfig): void {
   // sessionStorage tokens) and browse-network.log / browse-audit.jsonl
   // (captured request headers can carry bearer tokens). Written unconditionally,
   // synchronously, before return — the project-.gitignore dance below is now
-  // redundant safety, kept so `.gstack/` still reads as ignored in git status.
+  // redundant safety, kept so `.paysec/` still reads as ignored in git status.
   try {
     fs.writeFileSync(path.join(config.stateDir, '.gitignore'), '*\n');
   } catch {
     // Best-effort; the project-.gitignore path below is the fallback.
   }
 
-  // Ensure .gstack/ is in the project's .gitignore
-  // First, check if git already ignores .gstack/ (via global excludes, .git/info/exclude, or parent .gitignore)
-  if (isIgnoredByGit(config.projectDir, '.gstack/')) return;
+  // Ensure .paysec/ is in the project's .gitignore
+  // First, check if git already ignores .paysec/ (via global excludes, .git/info/exclude, or parent .gitignore)
+  if (isIgnoredByGit(config.projectDir, '.paysec/')) return;
 
   const gitignorePath = path.join(config.projectDir, '.gitignore');
   try {
     const content = fs.readFileSync(gitignorePath, 'utf-8');
-    if (!content.match(/^\.gstack\/?$/m)) {
+    if (!content.match(/^\.paysec\/?$/m)) {
       const separator = content.endsWith('\n') ? '' : '\n';
-      fs.appendFileSync(gitignorePath, `${separator}.gstack/\n`);
+      fs.appendFileSync(gitignorePath, `${separator}.paysec/\n`);
     }
   } catch (err: any) {
     if (err.code !== 'ENOENT') {
@@ -178,7 +178,7 @@ export function getRemoteSlug(): string {
 }
 
 /**
- * Read the binary version (git SHA) from browse/dist/.version.
+ * Read the binary version (git SHA) from browser/dist/.version.
  * Returns null if the file doesn't exist or can't be read.
  */
 export function readVersionHash(execPath: string = process.execPath): string | null {
@@ -191,19 +191,19 @@ export function readVersionHash(execPath: string = process.execPath): string | n
 }
 
 /**
- * Resolve the gstack home directory.
+ * Resolve the paysec home directory.
  *
  * Honors the existing convention used by telemetry.ts and domain-skills.ts:
- *   1. GSTACK_HOME env (explicit override)
- *   2. $HOME/.gstack (default)
+ *   1. PAYSEC_HOME env (explicit override)
+ *   2. $HOME/.paysec (default)
  */
-export function resolveGstackHome(): string {
-  return process.env.GSTACK_HOME || path.join(os.homedir(), '.gstack');
+export function resolvePaysecHome(): string {
+  return process.env.PAYSEC_HOME || path.join(os.homedir(), '.paysec');
 }
 
 /**
- * Read one key from the flat-YAML config store at <gstack home>/config.yaml
- * (the shape bin/gstack-config writes: `key: value` lines). Tolerates
+ * Read one key from the flat-YAML config store at <paysec home>/config.yaml
+ * (the shape bin/paysec-config writes: `key: value` lines). Tolerates
  * optional single/double quotes around the value and a trailing `# comment`.
  * Returns the unquoted value string, or null when the file is missing or
  * unreadable or the key is absent.
@@ -212,11 +212,11 @@ export function resolveGstackHome(): string {
  * (pair_agent) and telemetry.ts (telemetry tier) both route through it so
  * the two consent gates can never drift on parsing semantics.
  */
-export function readGstackConfigYamlKey(key: string): string | null {
+export function readPaysecConfigYamlKey(key: string): string | null {
   const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   try {
-    const yaml = fs.readFileSync(path.join(resolveGstackHome(), 'config.yaml'), 'utf-8');
-    // Last match wins: bin/gstack-config's `get` reads duplicates with
+    const yaml = fs.readFileSync(path.join(resolvePaysecHome(), 'config.yaml'), 'utf-8');
+    // Last match wins: bin/paysec-config's `get` reads duplicates with
     // `tail -1`, and both surfaces must agree on the same line.
     const all = [...yaml.matchAll(new RegExp(`^\\s*${escaped}\\s*:\\s*['"]?([^'"#\\n]*?)['"]?\\s*(?:#.*)?$`, 'gm'))];
     return all.length > 0 ? all[all.length - 1][1] : null;
@@ -226,33 +226,33 @@ export function readGstackConfigYamlKey(key: string): string | null {
 }
 
 /**
- * Is the remote pair-agent (ngrok tunnel) surface opt-in enabled?
+ * Is the remote pair-remote-agent (ngrok tunnel) surface opt-in enabled?
  *
  * Fail-closed: the tunnel exposes the local browser to the internet, so it
- * stays OFF unless the user explicitly ran `gstack-config set pair_agent on`
- * (the /pair-agent skill asks once on first use and sets it). Any read/parse
+ * stays OFF unless the user explicitly ran `paysec-config set pair_agent on`
+ * (the /pair-remote-agent skill asks once on first use and sets it). Any read/parse
  * failure (missing config, malformed JSON) also resolves OFF. The tunnel
  * egress receipts cite this gate as their consent — it must exist and gate
  * every activation point (#B6, fork port wave 2).
  *
- * Env override `GSTACK_PAIR_AGENT=on|off` wins (used by tests and as an
+ * Env override `PAYSEC_PAIR_AGENT=on|off` wins (used by tests and as an
  * emergency knob), mirroring the telemetry env-hint convention.
  */
 export function isPairAgentEnabled(): boolean {
-  const env = process.env.GSTACK_PAIR_AGENT;
+  const env = process.env.PAYSEC_PAIR_AGENT;
   if (env === 'on') return true;
   if (env === 'off') return false;
-  // Canonical store: ~/.gstack/config.yaml (flat `key: value` lines, written
-  // by bin/gstack-config — which is what the /pair-agent consent step runs).
+  // Canonical store: ~/.paysec/config.yaml (flat `key: value` lines, written
+  // by bin/paysec-config — which is what the /pair-remote-agent consent step runs).
   // The fork read config.json; porting that verbatim would have made the gate
   // silently un-enableable on main. JSON kept as a fallback shape only.
   // Anything other than exactly on/off (missing key, malformed value) falls
   // through to the JSON fallback and ultimately fails closed.
-  const yamlValue = readGstackConfigYamlKey('pair_agent');
+  const yamlValue = readPaysecConfigYamlKey('pair_agent');
   if (yamlValue === 'on') return true;
   if (yamlValue === 'off') return false;
   try {
-    const raw = fs.readFileSync(path.join(resolveGstackHome(), 'config.json'), 'utf-8');
+    const raw = fs.readFileSync(path.join(resolvePaysecHome(), 'config.json'), 'utf-8');
     return JSON.parse(raw)?.pair_agent === 'on';
   } catch {
     return false;
@@ -266,13 +266,13 @@ export function isPairAgentEnabled(): boolean {
  *   1. `explicit` arg (no production caller passes one today; kept for
  *      direct programmatic use)
  *   2. CHROMIUM_PROFILE env (used by gbrowser's gbd per-workspace)
- *   3. <resolveGstackHome()>/chromium-profile (default)
+ *   3. <resolvePaysecHome()>/chromium-profile (default)
  */
 export function resolveChromiumProfile(explicit?: string): string {
   if (explicit && explicit.length > 0) return explicit;
   const env = process.env.CHROMIUM_PROFILE;
   if (env && env.length > 0) return env;
-  return path.join(resolveGstackHome(), 'chromium-profile');
+  return path.join(resolvePaysecHome(), 'chromium-profile');
 }
 
 /**
@@ -291,7 +291,7 @@ export function resolveChromiumProfile(explicit?: string): string {
  *
  * Caller MUST ensure external coordination has already guaranteed no live
  * peer is using this profile (gbd.lock for gbrowser; single-instance CLI
- * check for gstack).
+ * check for paysec).
  */
 export function cleanSingletonLocks(userDataDir: string): void {
   if (!path.isAbsolute(userDataDir)) {

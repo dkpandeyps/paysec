@@ -14,12 +14,12 @@ let learningsFile: string;
 function runLog(input: string, opts: { expectFail?: boolean } = {}): { stdout: string; exitCode: number } {
   const execOpts: ExecSyncOptionsWithStringEncoding = {
     cwd: ROOT,
-    env: { ...process.env, GSTACK_HOME: tmpDir },
+    env: { ...process.env, PAYSEC_HOME: tmpDir },
     encoding: 'utf-8',
     timeout: 15000,
   };
   try {
-    const stdout = execSync(`${BIN}/gstack-learnings-log '${input.replace(/'/g, "'\\''")}'`, execOpts).trim();
+    const stdout = execSync(`${BIN}/paysec-learnings-log '${input.replace(/'/g, "'\\''")}'`, execOpts).trim();
     return { stdout, exitCode: 0 };
   } catch (e: any) {
     if (opts.expectFail) {
@@ -32,19 +32,19 @@ function runLog(input: string, opts: { expectFail?: boolean } = {}): { stdout: s
 function runSearch(args: string = ''): string {
   const execOpts: ExecSyncOptionsWithStringEncoding = {
     cwd: ROOT,
-    env: { ...process.env, GSTACK_HOME: tmpDir },
+    env: { ...process.env, PAYSEC_HOME: tmpDir },
     encoding: 'utf-8',
     timeout: 15000,
   };
   try {
-    return execSync(`${BIN}/gstack-learnings-search ${args}`, execOpts).trim();
+    return execSync(`${BIN}/paysec-learnings-search ${args}`, execOpts).trim();
   } catch {
     return '';
   }
 }
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-learn-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-learn-'));
   slugDir = path.join(tmpDir, 'projects');
   fs.mkdirSync(slugDir, { recursive: true });
 });
@@ -60,7 +60,7 @@ function findLearningsFile(): string | null {
   return fs.existsSync(f) ? f : null;
 }
 
-describe('gstack-learnings-log', () => {
+describe('paysec-learnings-log', () => {
   test('appends valid JSON to learnings.jsonl', () => {
     const input = '{"skill":"review","type":"pattern","key":"test-key","insight":"test insight","confidence":8,"source":"observed"}';
     const result = runLog(input);
@@ -104,7 +104,7 @@ describe('gstack-learnings-log', () => {
     // "overrides" (override + s) passes the current lib pattern AND the
     // tightened pattern from community PR #1940 — green in either order.
     const result = runLog(
-      '{"skill":"plan-eng-review","type":"architecture","key":"override-prose","insight":"prose overrides the deterministic table on key overlap","confidence":8,"source":"observed"}',
+      '{"skill":"plan-tech-review","type":"architecture","key":"override-prose","insight":"prose overrides the deterministic table on key overlap","confidence":8,"source":"observed"}',
     );
     expect(result.exitCode).toBe(0);
     expect(findLearningsFile()).not.toBeNull();
@@ -134,17 +134,17 @@ describe('gstack-learnings-log', () => {
     expect(parsed.type).toBe('investigation');
   });
 
-  // Caller contract: investigate/SKILL.md.tmpl must emit type:"investigation"
+  // Caller contract: debug-root-cause/SKILL.md.tmpl must emit type:"investigation"
   // verbatim. Guards against the template drifting to an invalid type and
   // silently breaking the log path. See codex review finding for #1423.
   test('investigate template emits type:"investigation" verbatim (caller contract)', () => {
-    const tmpl = fs.readFileSync(path.join(ROOT, 'investigate/SKILL.md.tmpl'), 'utf-8');
+    const tmpl = fs.readFileSync(path.join(ROOT, 'debug-root-cause/SKILL.md.tmpl'), 'utf-8');
     // The invocation line must include "type":"investigation" exactly.
     expect(tmpl).toContain('"type":"investigation"');
   });
 });
 
-describe('gstack-learnings-search', () => {
+describe('paysec-learnings-search', () => {
   test('returns empty and exits 0 when no learnings file exists', () => {
     const output = runSearch();
     expect(output).toBe('');
@@ -232,7 +232,7 @@ describe('gstack-learnings-search', () => {
   });
 });
 
-describe('gstack-learnings-log edge cases', () => {
+describe('paysec-learnings-log edge cases', () => {
   test('preserves existing timestamp when ts is present', () => {
     const input = '{"skill":"review","type":"pattern","key":"ts-preserve","insight":"test","confidence":5,"source":"observed","ts":"2025-06-15T10:00:00Z"}';
     runLog(input);
@@ -265,7 +265,7 @@ describe('gstack-learnings-log edge cases', () => {
   });
 });
 
-describe('gstack-learnings-search edge cases', () => {
+describe('paysec-learnings-search edge cases', () => {
   test('sorts by confidence then recency', () => {
     // Two entries: one high confidence old, one lower confidence recent
     runLog(JSON.stringify({ skill: 'review', type: 'pattern', key: 'high-conf', insight: 'high confidence entry', confidence: 9, source: 'user-stated', ts: '2026-01-01T00:00:00Z' }));

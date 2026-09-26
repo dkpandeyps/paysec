@@ -3,7 +3,7 @@
 # old in-place rebrand (#2242).
 #
 # Why a migration: pre-v1.64 launchHeaded() rewrote the Chromium .app's
-# Info.plist ("Google Chrome for Testing" → "GStack Browser") and overwrote
+# Info.plist ("Google Chrome for Testing" → "PaySec Browser") and overwrote
 # its Resources/*.icns — inside the SHARED Playwright cache. That broke the
 # codesign seal (GPU process exit_code=5; headed mode dead on macOS 26) and
 # poisoned the cache for the user's OTHER Playwright projects too. Deleting
@@ -25,7 +25,7 @@
 #
 # Affected: macOS installs that ever ran headed mode before v1.64.
 #
-# Idempotent: detection is content-based (plist contains "GStack Browser");
+# Idempotent: detection is content-based (plist contains "PaySec Browser");
 # a clean cache is a no-op, and the .done touchfile gates re-runs. After a
 # removal, .done is only written once the end state is VERIFIED (a real
 # Chromium executable exists in the cache) — a removal followed by a failed
@@ -34,8 +34,8 @@
 
 set -u
 
-GSTACK_HOME="${GSTACK_HOME:-${HOME}/.gstack}"
-MIGRATION_DIR="${GSTACK_HOME}/.migrations"
+PAYSEC_HOME="${PAYSEC_HOME:-${HOME}/.paysec}"
+MIGRATION_DIR="${PAYSEC_HOME}/.migrations"
 DONE="${MIGRATION_DIR}/v1.65.0.0.done"
 # Written when a removal happened but the verified end state (a Chromium
 # executable in the cache) wasn't reached — e.g. the re-fetch failed
@@ -64,7 +64,7 @@ if [ -d "${PW_CACHE}" ]; then
   # 1. Content-based poison scan: every Chrome-for-Testing bundle in the
   #    cache (one per pinned chromium build) whose plist carries the rebrand.
   while IFS= read -r plist; do
-    if grep -q "GStack Browser" "${plist}" 2>/dev/null; then
+    if grep -q "PaySec Browser" "${plist}" 2>/dev/null; then
       app_dir="$(dirname "$(dirname "${plist}")")"
       case "${app_dir}" in
         "${PW_CACHE}"/*.app|"${PW_CACHE}"/*/*.app|"${PW_CACHE}"/*/*/*.app)
@@ -112,7 +112,7 @@ fi
 if [ "${REMOVED}" = "1" ]; then
   # Re-fetch immediately: migrations run AFTER ./setup, so without this the
   # user finishes the upgrade with no working browser at all (headless AND
-  # headed use the same bundle). Run from the gstack install root so bunx
+  # headed use the same bundle). Run from the paysec install root so bunx
   # resolves the repo-pinned playwright version — an arbitrary migration-
   # runner cwd could resolve a different playwright and populate a revision
   # the pinned one never launches (same subshell-cd pattern as ./setup's

@@ -26,10 +26,10 @@ const REPO_ROOT = path.resolve(import.meta.dir, '..');
 /** Files that gen-skill-docs writes and that must be byte-stable across runs. */
 const STABLE_OUTPUTS = [
   'SKILL.md',
-  'ship/SKILL.md',
-  'plan-ceo-review/SKILL.md',
-  'office-hours/SKILL.md',
-  'gstack/llms.txt',
+  'ship-pr/SKILL.md',
+  'plan-business-review/SKILL.md',
+  'idea-review/SKILL.md',
+  'paysec/llms.txt',
 ];
 
 /**
@@ -40,11 +40,11 @@ const STABLE_OUTPUTS = [
  */
 const STABLE_HOST_ALL_OUTPUTS = [
   'SKILL.md',
-  'ship/SKILL.md',
-  '.agents/skills/gstack-ship/SKILL.md',
-  '.cursor/skills/gstack-ship/SKILL.md',
-  '.factory/skills/gstack-ship/SKILL.md',
-  '.gbrain/skills/gstack-ship/SKILL.md',
+  'ship-pr/SKILL.md',
+  '.agents/skills/paysec-ship-pr/SKILL.md',
+  '.cursor/skills/paysec-ship-pr/SKILL.md',
+  '.factory/skills/paysec-ship-pr/SKILL.md',
+  '.gbrain/skills/paysec-ship-pr/SKILL.md',
 ];
 
 function runGen(extraArgs: string[] = []): { exitCode: number; stderr: string } {

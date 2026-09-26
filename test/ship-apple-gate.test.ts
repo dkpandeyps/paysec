@@ -15,7 +15,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 const ROOT = join(import.meta.dir, "..");
-const SKELETON = readFileSync(join(ROOT, "ship", "SKILL.md"), "utf-8");
+const SKELETON = readFileSync(join(ROOT, "ship-pr", "SKILL.md"), "utf-8");
 
 const GATE_TEXT =
   'If on the base branch or the repo\'s default branch, **abort**: "You\'re on the base branch. Ship from a feature branch."';
@@ -41,7 +41,7 @@ describe("ship Apple gate ordering (R2)", () => {
   });
 
   test("the adapter section exists in the union with its battle-tested spine", () => {
-    const section = readFileSync(join(ROOT, "ship", "sections", "apple-release.md"), "utf-8");
+    const section = readFileSync(join(ROOT, "ship-pr", "sections", "apple-release.md"), "utf-8");
     for (const anchor of [
       "one authorization moment",
       "fastlane spaceauth",

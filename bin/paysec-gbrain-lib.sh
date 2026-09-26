@@ -1,8 +1,8 @@
-# gstack-gbrain-lib.sh — shared helpers for setup-gbrain bin scripts.
+# paysec-gbrain-lib.sh — shared helpers for brain-setup bin scripts.
 #
 # This file is NOT executable; source it:
 #
-#   . "$(dirname "$0")/gstack-gbrain-lib.sh"
+#   . "$(dirname "$0")/paysec-gbrain-lib.sh"
 #
 # Provides:
 #   read_secret_to_env <VARNAME> <prompt> [--echo-redacted <sed-expr>]
@@ -26,7 +26,7 @@
 # D10 (env-var handoff, never argv), D11 (PAT scope disclosure + SIGINT
 # restore), D16 (pooler URL paste hygiene with redacted preview).
 
-# _gstack_gbrain_validate_varname <name> — returns 0 if usable, 2 otherwise.
+# _paysec_gbrain_validate_varname <name> — returns 0 if usable, 2 otherwise.
 # `local LC_ALL=C` is load-bearing twice over:
 #   1. In many macOS shells the default locale (e.g. en_US.UTF-8) makes `case`
 #      glob brackets like `[A-Z]` match lowercase letters too. Without the
@@ -40,7 +40,7 @@
 #      and any locale-aware glob in the same shell.
 # Together they give ASCII-only bracket semantics on both macOS and Linux
 # (matching the documented `[A-Z_][A-Z0-9_]*` contract) without leaking.
-_gstack_gbrain_validate_varname() {
+_paysec_gbrain_validate_varname() {
   local name="$1"
   local LC_ALL=C
   case "$name" in
@@ -65,7 +65,7 @@ read_secret_to_env() {
     esac
   done
 
-  if ! _gstack_gbrain_validate_varname "$varname"; then
+  if ! _paysec_gbrain_validate_varname "$varname"; then
     echo "read_secret_to_env: invalid var name '$varname' (must match [A-Z_][A-Z0-9_]*)" >&2
     return 2
   fi

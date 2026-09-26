@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GStack Browser</title>
+<title>PaySec Browser</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://api.fontshare.com/v2/css?f[]=satoshi@700,900&display=swap" rel="stylesheet">
 <style>
@@ -167,7 +167,7 @@
 <body>
 
 <div class="sidebar-prompt" id="sidebar-prompt">
-  <div class="bubble">Open the sidebar to get started. Click the puzzle piece icon in the toolbar, then pin gstack browse.</div>
+  <div class="bubble">Open the sidebar to get started. Click the puzzle piece icon in the toolbar, then pin paysec browse.</div>
   <span class="arrow-right">&#x2192;</span>
 </div>
 
@@ -175,7 +175,7 @@
   <header class="hero">
     <div class="logo-row">
       <div class="logo-dot"></div>
-      <span class="logo-text">GStack Browser</span>
+      <span class="logo-text">PaySec Browser</span>
     </div>
     <p class="tagline">This browser is connected to your Claude Code session. The sidebar is your co-pilot: it can control this window, read pages, edit CSS, and pass everything back to your terminal.</p>
   </header>
@@ -187,7 +187,7 @@
     </div>
     <div class="feat">
       <div class="feat-title">Or use your main agent</div>
-      <p>Your Claude Code terminal <span class="hl">also controls this browser</span>. Run <code>/qa</code>, <code>/design-review</code>, or any skill and watch every action happen here. Two agents, one browser.</p>
+      <p>Your Claude Code terminal <span class="hl">also controls this browser</span>. Run <code>/qa-fix</code>, <code>/design-qa</code>, or any skill and watch every action happen here. Two agents, one browser.</p>
     </div>
     <div class="feat">
       <div class="feat-title">Import your cookies</div>
@@ -219,16 +219,16 @@
   </div>
 
   <footer class="footer">
-    <p><a href="https://github.com/garrytan/gstack">gstack</a> is open source. Built by <a href="https://x.com/garrytan">Garry Tan</a>.</p>
+    <p>paysec is based on <a href="https://github.com/garrytan/gstack">gstack</a> by <a href="https://x.com/garrytan">Garry Tan</a> (MIT).</p>
   </footer>
 </div>
 
 <script>
 // Hide sidebar prompt ONLY when the sidebar is actually opened.
-// The content script dispatches 'gstack-extension-ready' when it receives
+// The content script dispatches 'paysec-extension-ready' when it receives
 // a 'sidebarOpened' message from the side panel (via background.js).
 // This means the arrow stays visible until the user actually opens the sidebar.
-document.addEventListener('gstack-extension-ready', () => {
+document.addEventListener('paysec-extension-ready', () => {
   const prompt = document.getElementById('sidebar-prompt');
   if (prompt) prompt.classList.add('hidden');
 });

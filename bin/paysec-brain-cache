@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * gstack-brain-cache — three-tier cache for brain-aware planning skills.
+ * paysec-brain-cache — three-tier cache for brain-aware planning skills.
  *
  * Subcommands:
  *   get <entity-name> [--project <slug>]      — return digest content; refresh if stale
@@ -12,8 +12,8 @@
  * (Later commits add: bootstrap [T2b], list [T18], purge [T18], retention sweep [T18].)
  *
  * Cache layout:
- *   ~/.gstack/brain-cache/                     ← cross-project (user-profile only)
- *   ~/.gstack/projects/<slug>/brain-cache/     ← per-project (everything else)
+ *   ~/.paysec/brain-cache/                     ← cross-project (user-profile only)
+ *   ~/.paysec/projects/<slug>/brain-cache/     ← per-project (everything else)
  *
  * Atomic writes via .tmp + rename. Stale-but-usable fallback when brain
  * unreachable. Concurrent-refresh dedup is a follow-up commit (T15).
@@ -27,8 +27,8 @@ import { execGbrainJson, spawnGbrain } from '../lib/gbrain-exec';
 import {
   BRAIN_CACHE_ENTITIES,
   CACHE_REFRESH_LOCK_TIMEOUT_MS,
-  GSTACK_SCHEMA_PACK_NAME,
-  GSTACK_SCHEMA_PACK_VERSION,
+  PAYSEC_SCHEMA_PACK_NAME,
+  PAYSEC_SCHEMA_PACK_VERSION,
   SALIENCE_DEFAULT_ALLOWLIST,
   type BrainCacheEntity,
 } from '../scripts/brain-cache-spec';
@@ -37,7 +37,7 @@ import {
 // Paths + meta
 // ──────────────────────────────────────────────────────────────────────────
 
-const GSTACK_HOME = process.env.GSTACK_HOME || join(homedir(), '.gstack');
+const PAYSEC_HOME = process.env.PAYSEC_HOME || join(homedir(), '.paysec');
 
 interface CacheMeta {
   /** Version of the schema pack the cache was built against. Mismatch → full rebuild. */
@@ -53,12 +53,12 @@ interface CacheMeta {
 /** Returns the directory holding a given entity's cache file. */
 export function entityDir(entity: BrainCacheEntity, projectSlug: string | null): string {
   if (entity.scope === 'cross-project') {
-    return join(GSTACK_HOME, 'brain-cache');
+    return join(PAYSEC_HOME, 'brain-cache');
   }
   if (!projectSlug) {
     throw new Error(`Per-project entity needs a project slug: ${entity.file}`);
   }
-  return join(GSTACK_HOME, 'projects', projectSlug, 'brain-cache');
+  return join(PAYSEC_HOME, 'projects', projectSlug, 'brain-cache');
 }
 
 /** Returns the path to the cache file for a given entity. */
@@ -71,16 +71,16 @@ export function entityPath(entityName: string, projectSlug: string | null): stri
 /** Returns the path to the _meta.json for a given scope. */
 export function metaPath(scope: 'cross-project' | 'per-project', projectSlug: string | null): string {
   if (scope === 'cross-project') {
-    return join(GSTACK_HOME, 'brain-cache', '_meta.json');
+    return join(PAYSEC_HOME, 'brain-cache', '_meta.json');
   }
   if (!projectSlug) throw new Error('Per-project meta needs a project slug');
-  return join(GSTACK_HOME, 'projects', projectSlug, 'brain-cache', '_meta.json');
+  return join(PAYSEC_HOME, 'projects', projectSlug, 'brain-cache', '_meta.json');
 }
 
 function loadMeta(scope: 'cross-project' | 'per-project', projectSlug: string | null): CacheMeta {
   const path = metaPath(scope, projectSlug);
   if (!existsSync(path)) {
-    return { schema_version: GSTACK_SCHEMA_PACK_VERSION, endpoint_hash: detectEndpointHash(), last_refresh: {}, last_attempt: {} };
+    return { schema_version: PAYSEC_SCHEMA_PACK_VERSION, endpoint_hash: detectEndpointHash(), last_refresh: {}, last_attempt: {} };
   }
   try {
     const parsed = JSON.parse(readFileSync(path, 'utf-8')) as unknown;
@@ -89,7 +89,7 @@ function loadMeta(scope: 'cross-project' | 'per-project', projectSlug: string | 
     // consumers (isStale, cmdInvalidate, refreshEntity) dereference meta.last_refresh
     // unguarded and crash with a TypeError.
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return { schema_version: GSTACK_SCHEMA_PACK_VERSION, endpoint_hash: detectEndpointHash(), last_refresh: {}, last_attempt: {} };
+      return { schema_version: PAYSEC_SCHEMA_PACK_VERSION, endpoint_hash: detectEndpointHash(), last_refresh: {}, last_attempt: {} };
     }
     const meta = parsed as CacheMeta;
     // Normalize ONLY the dereferenced maps. Do NOT default schema_version /
@@ -102,7 +102,7 @@ function loadMeta(scope: 'cross-project' | 'per-project', projectSlug: string | 
     return meta;
   } catch {
     // Corrupt _meta — start fresh (entries will refresh on next access).
-    return { schema_version: GSTACK_SCHEMA_PACK_VERSION, endpoint_hash: detectEndpointHash(), last_refresh: {}, last_attempt: {} };
+    return { schema_version: PAYSEC_SCHEMA_PACK_VERSION, endpoint_hash: detectEndpointHash(), last_refresh: {}, last_attempt: {} };
   }
 }
 
@@ -222,7 +222,7 @@ function hasFile(entityName: string, projectSlug: string | null): boolean {
 
 /** Returns true if schema version recorded in meta differs from current pack version. */
 function schemaVersionMismatch(meta: CacheMeta): boolean {
-  return meta.schema_version !== GSTACK_SCHEMA_PACK_VERSION;
+  return meta.schema_version !== PAYSEC_SCHEMA_PACK_VERSION;
 }
 
 /** Returns true if endpoint hash recorded in meta differs from current detected endpoint. */
@@ -294,8 +294,8 @@ export function cmdGet(entityName: string, projectSlug: string | null): GetResul
  */
 function lockPath(projectSlug: string | null): string {
   const dir = projectSlug
-    ? join(GSTACK_HOME, 'projects', projectSlug, 'brain-cache')
-    : join(GSTACK_HOME, 'brain-cache');
+    ? join(PAYSEC_HOME, 'projects', projectSlug, 'brain-cache')
+    : join(PAYSEC_HOME, 'brain-cache');
   return join(dir, '.refresh.lock');
 }
 
@@ -414,7 +414,7 @@ export function refreshEntity(entityName: string, projectSlug: string | null): b
   atomicWrite(entityPath(entityName, projectSlug), final);
   meta.last_refresh[entityName] = Date.now();
   // Keep schema/endpoint identity fresh.
-  meta.schema_version = GSTACK_SCHEMA_PACK_VERSION;
+  meta.schema_version = PAYSEC_SCHEMA_PACK_VERSION;
   meta.endpoint_hash = detectEndpointHash();
   saveMeta(entity.scope, projectSlug, meta);
   return true;
@@ -448,7 +448,7 @@ function rebuildAllForScope(scope: 'cross-project' | 'per-project', projectSlug:
   }
   // Fresh meta starts here
   const fresh: CacheMeta = {
-    schema_version: GSTACK_SCHEMA_PACK_VERSION,
+    schema_version: PAYSEC_SCHEMA_PACK_VERSION,
     endpoint_hash: detectEndpointHash(),
     last_refresh: {},
     last_attempt: {},
@@ -493,11 +493,11 @@ function fetchAndCompressEntity(entityName: string, projectSlug: string | null):
     case 'goals':
       return fetchGoals(projectSlug);
     case 'developer-persona':
-      return fetchSimplePage(`gstack/developer-persona/${projectSlug}`);
+      return fetchSimplePage(`paysec/developer-persona/${projectSlug}`);
     case 'brand':
-      return fetchSimplePage(`gstack/brand/${projectSlug}`);
+      return fetchSimplePage(`paysec/brand/${projectSlug}`);
     case 'competitive-intel':
-      return fetchSimplePage(`gstack/competitive-intel/${projectSlug}`);
+      return fetchSimplePage(`paysec/competitive-intel/${projectSlug}`);
     case 'recent-decisions':
       return fetchRecentDecisions(projectSlug);
     case 'salience':
@@ -523,30 +523,30 @@ function fetchSimplePage(slug: string): string | null {
 
 function fetchUserProfile(): string | null {
   // The user-slug discovery is implemented in T16 (D4 A3). For T2a we accept
-  // env GSTACK_USER_SLUG as override, fallback to $USER for direct calls.
-  const slug = process.env.GSTACK_USER_SLUG || process.env.USER || 'unknown';
-  return fetchSimplePage(`gstack/user-profile/${slug}`);
+  // env PAYSEC_USER_SLUG as override, fallback to $USER for direct calls.
+  const slug = process.env.PAYSEC_USER_SLUG || process.env.USER || 'unknown';
+  return fetchSimplePage(`paysec/user-profile/${slug}`);
 }
 
 function fetchProduct(projectSlug: string | null): string | null {
   if (!projectSlug) return null;
-  return fetchSimplePage(`gstack/product/${projectSlug}`);
+  return fetchSimplePage(`paysec/product/${projectSlug}`);
 }
 
 /**
- * Goals are LIST queries: all gstack/goal/<project>/* pages.
+ * Goals are LIST queries: all paysec/goal/<project>/* pages.
  * Compress the top N by recency.
  */
 function fetchGoals(projectSlug: string | null): string | null {
   if (!projectSlug) return null;
   const result = execGbrainJson<{ pages?: Array<{ slug: string; title?: string; body?: string }> }>([
     'list-pages',
-    '--type', 'gstack/goal',
+    '--type', 'paysec/goal',
     '--limit', '10',
     '--json',
   ]);
   if (!result?.pages) return null;
-  const goals = result.pages.filter((p) => p.slug?.startsWith(`gstack/goal/${projectSlug}/`));
+  const goals = result.pages.filter((p) => p.slug?.startsWith(`paysec/goal/${projectSlug}/`));
   if (goals.length === 0) {
     // Empty digest is valid (just header + 'no active goals' line)
     return `# Active goals (project: ${projectSlug})\n\n_No active goals recorded yet._\n`;
@@ -556,14 +556,14 @@ function fetchGoals(projectSlug: string | null): string | null {
 }
 
 /**
- * recent-decisions: last 5 gstack/skill-run pages for this project, compressed
+ * recent-decisions: last 5 paysec/skill-run pages for this project, compressed
  * to one-line summaries.
  */
 function fetchRecentDecisions(projectSlug: string | null): string | null {
   if (!projectSlug) return null;
   const result = execGbrainJson<{ pages?: Array<{ slug: string; title?: string }> }>([
     'list-pages',
-    '--type', 'gstack/skill-run',
+    '--type', 'paysec/skill-run',
     '--limit', '5',
     '--sort', 'updated_desc',
     '--json',
@@ -591,21 +591,21 @@ function fetchRecentDecisions(projectSlug: string | null): string | null {
 }
 
 /**
- * Reads the user's salience allowlist override from gstack-config. If unset,
+ * Reads the user's salience allowlist override from paysec-config. If unset,
  * returns SALIENCE_DEFAULT_ALLOWLIST. The override is comma-separated; we
  * trim and drop empty entries.
  */
 export function getSalienceAllowlist(): ReadonlyArray<string> {
   // Short-circuit via env var for tests + headless callers.
-  const env = process.env.GSTACK_SALIENCE_ALLOWLIST;
+  const env = process.env.PAYSEC_SALIENCE_ALLOWLIST;
   if (typeof env === 'string' && env.length > 0) {
     return env.split(',').map((s) => s.trim()).filter(Boolean);
   }
-  // Shell out to gstack-config with a tight timeout. Falls back to defaults
+  // Shell out to paysec-config with a tight timeout. Falls back to defaults
   // on any failure (config script missing, command non-zero, parse error).
   try {
-    const skillRoot = join(homedir(), '.claude', 'skills', 'gstack');
-    const bin = join(skillRoot, 'bin', 'gstack-config');
+    const skillRoot = join(homedir(), '.claude', 'skills', 'paysec');
+    const bin = join(skillRoot, 'bin', 'paysec-config');
     if (!existsSync(bin)) return SALIENCE_DEFAULT_ALLOWLIST;
     const result = spawnSync(bin, ['get', 'salience_allowlist'], { timeout: 2000, encoding: 'utf-8' });
     if (result.status !== 0 || !result.stdout) return SALIENCE_DEFAULT_ALLOWLIST;
@@ -740,7 +740,7 @@ export interface BootstrapDraft {
 
 export function cmdBootstrap(projectSlug: string): BootstrapDraft {
   const draft: BootstrapDraft = {};
-  const repoRoot = process.env.GSTACK_REPO_ROOT || process.cwd();
+  const repoRoot = process.env.PAYSEC_REPO_ROOT || process.cwd();
 
   // Product synthesis: CLAUDE.md headline + README first paragraph
   let claudeMd = '';
@@ -751,18 +751,18 @@ export function cmdBootstrap(projectSlug: string): BootstrapDraft {
   const productLead = synthesizeProductLead(claudeMd, readmeMd, projectSlug);
   if (productLead) {
     draft.product = {
-      slug: `gstack/product/${projectSlug}`,
+      slug: `paysec/product/${projectSlug}`,
       title: projectSlug,
       body: productLead,
     };
   }
 
   // Goals: try learnings.jsonl + recent commit messages mentioning "goal" or "ship"
-  const learningsPath = join(GSTACK_HOME, 'projects', projectSlug, 'learnings.jsonl');
+  const learningsPath = join(PAYSEC_HOME, 'projects', projectSlug, 'learnings.jsonl');
   const goalsHints = synthesizeGoalsHints(learningsPath, repoRoot);
   if (goalsHints.length > 0) {
     draft.goals = goalsHints.slice(0, 3).map((hint, idx) => ({
-      slug: `gstack/goal/${projectSlug}/bootstrap-${idx + 1}`,
+      slug: `paysec/goal/${projectSlug}/bootstrap-${idx + 1}`,
       title: hint.title,
       body: hint.body,
     }));
@@ -793,10 +793,10 @@ function synthesizeProductLead(claudeMd: string, readmeMd: string, slug: string)
     '(fill in team composition + size)',
     '',
     '## Active goals',
-    '(populated by /office-hours over time)',
+    '(populated by /idea-review over time)',
     '',
     '## Recent decisions',
-    '(populated by /plan-ceo-review over time)',
+    '(populated by /plan-business-review over time)',
     '',
   ].join('\n');
 }
@@ -827,12 +827,12 @@ function synthesizeGoalsHints(learningsPath: string, repoRoot: string): Array<{ 
 // ──────────────────────────────────────────────────────────────────────────
 
 /**
- * Lists all gstack-owned pages currently in the brain for a project, grouped
- * by type. Powers the user's ability to audit what gstack has written.
+ * Lists all paysec-owned pages currently in the brain for a project, grouped
+ * by type. Powers the user's ability to audit what paysec has written.
  */
 export function cmdList(projectSlug: string | null): Array<{ type: string; slug: string; title?: string }> {
-  // We probe each gstack/<type>/ namespace via list-pages with a type filter.
-  const types = ['gstack/user-profile', 'gstack/product', 'gstack/goal', 'gstack/developer-persona', 'gstack/brand', 'gstack/competitive-intel', 'gstack/skill-run', 'gstack/take'];
+  // We probe each paysec/<type>/ namespace via list-pages with a type filter.
+  const types = ['paysec/user-profile', 'paysec/product', 'paysec/goal', 'paysec/developer-persona', 'paysec/brand', 'paysec/competitive-intel', 'paysec/skill-run', 'paysec/take'];
   const all: Array<{ type: string; slug: string; title?: string }> = [];
   for (const type of types) {
     const result = execGbrainJson<{ pages?: Array<{ slug: string; title?: string }> }>([
@@ -843,7 +843,7 @@ export function cmdList(projectSlug: string | null): Array<{ type: string; slug:
     ]);
     if (!result?.pages) continue;
     for (const page of result.pages) {
-      if (projectSlug && !page.slug?.includes(`/${projectSlug}`) && type !== 'gstack/user-profile') {
+      if (projectSlug && !page.slug?.includes(`/${projectSlug}`) && type !== 'paysec/user-profile') {
         continue;
       }
       all.push({ type, slug: page.slug, title: page.title });
@@ -857,12 +857,12 @@ export function cmdList(projectSlug: string | null): Array<{ type: string; slug:
 // ──────────────────────────────────────────────────────────────────────────
 
 /**
- * Delete one gstack-owned page from the brain. Caller (skill template) is
+ * Delete one paysec-owned page from the brain. Caller (skill template) is
  * responsible for the confirm prompt; this is the raw operation.
  */
 export function cmdPurge(slug: string): { deleted: boolean; error?: string } {
-  if (!slug.startsWith('gstack/')) {
-    return { deleted: false, error: 'refusing to purge non-gstack page' };
+  if (!slug.startsWith('paysec/')) {
+    return { deleted: false, error: 'refusing to purge non-paysec page' };
   }
   const result = spawnGbrain(['delete-page', slug], { timeout: 10_000 });
   if (result.status !== 0) {
@@ -906,7 +906,7 @@ function projectSlugFromFlag(flags: Record<string, string | boolean>): string | 
 }
 
 function printUsage(): void {
-  process.stderr.write(`Usage: gstack-brain-cache <subcommand>
+  process.stderr.write(`Usage: paysec-brain-cache <subcommand>
 
 Subcommands:
   get <entity-name> [--project <slug>]
@@ -915,8 +915,8 @@ Subcommands:
   digest <entity-slug>
   meta [--project <slug>]
   bootstrap --project <slug>           — emit synthesized entity drafts (JSON)
-  list [--project <slug>]              — list gstack-owned pages in brain
-  purge <slug>                         — delete a gstack-owned brain page (refuses non-gstack/ slugs)
+  list [--project <slug>]              — list paysec-owned pages in brain
+  purge <slug>                         — delete a paysec-owned brain page (refuses non-paysec/ slugs)
 `);
 }
 

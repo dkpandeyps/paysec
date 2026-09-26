@@ -1,4 +1,4 @@
-// E2E: /setup-gbrain Path 4 with a bad bearer token via Agent SDK.
+// E2E: /brain-setup Path 4 with a bad bearer token via Agent SDK.
 //
 // Drives the skill against a stub HTTP MCP server that returns 401
 // (auth-shape body). Asserts that the AUTH classifier hint shows up
@@ -16,7 +16,7 @@ import * as path from 'path';
 import * as http from 'http';
 import { runAgentSdkTest, passThroughNonAskUserQuestion, resolveClaudeBinary } from './helpers/agent-sdk-runner';
 
-// Periodic-tier (companion to skill-e2e-setup-gbrain-remote.test.ts).
+// Periodic-tier (companion to skill-e2e-brain-setup-remote.test.ts).
 // Deterministic gate coverage lives in setup-gbrain-path4-structure.test.ts.
 const describeE2E = describeE2ETier('periodic');
 
@@ -60,33 +60,33 @@ exit 0
   return callLog;
 }
 
-describeE2E('/setup-gbrain Path 4 — bad token STOPs cleanly', () => {
+describeE2E('/brain-setup Path 4 — bad token STOPs cleanly', () => {
   test('AUTH classifier fires, no MCP registration, no CLAUDE.md mutation', async () => {
     const stubServer = await startStub401();
-    const gstackHome = fs.mkdtempSync(path.join(os.tmpdir(), 'setup-gbrain-bad-'));
+    const paysecHome = fs.mkdtempSync(path.join(os.tmpdir(), 'setup-gbrain-bad-'));
     const fakeBinDir = fs.mkdtempSync(path.join(os.tmpdir(), 'setup-gbrain-bad-bin-'));
     const callLog = makeFakeClaude(fakeBinDir);
 
     const ORIGINAL_CLAUDE_MD = '# Test project\n\nSome existing content here.\n';
-    fs.writeFileSync(path.join(gstackHome, 'CLAUDE.md'), ORIGINAL_CLAUDE_MD);
+    fs.writeFileSync(path.join(paysecHome, 'CLAUDE.md'), ORIGINAL_CLAUDE_MD);
 
     const BAD_TOKEN = 'gbrain_BAD_TOKEN_67890_DELIBERATELY_INVALID';
     const askUserQuestions: Array<{ input: Record<string, unknown> }> = [];
     const binary = resolveClaudeBinary();
 
     const orig = {
-      gstackHome: process.env.GSTACK_HOME,
+      paysecHome: process.env.PAYSEC_HOME,
       pathEnv: process.env.PATH,
       mcpToken: process.env.GBRAIN_MCP_TOKEN,
     };
-    process.env.GSTACK_HOME = gstackHome;
+    process.env.PAYSEC_HOME = paysecHome;
     process.env.PATH = `${fakeBinDir}:${path.join(path.resolve(import.meta.dir, '..'), 'bin')}:${process.env.PATH ?? '/usr/bin:/bin:/opt/homebrew/bin'}`;
     process.env.GBRAIN_MCP_TOKEN = BAD_TOKEN;
 
     let modelTextOutput = '';
 
     try {
-      const skillPath = path.resolve(import.meta.dir, '..', 'setup-gbrain', 'SKILL.md');
+      const skillPath = path.resolve(import.meta.dir, '..', 'brain-setup', 'SKILL.md');
       const result = await runAgentSdkTest({
         systemPrompt: { type: 'preset', preset: 'claude_code' },
         userPrompt:
@@ -96,7 +96,7 @@ describeE2E('/setup-gbrain Path 4 — bad token STOPs cleanly', () => {
           `If verify fails (Step 4c), follow the skill's STOP rule — surface the error and stop. ` +
           `Do NOT register the MCP if verify failed. ` +
           `Do NOT modify CLAUDE.md if verify failed.`,
-        workingDirectory: gstackHome,
+        workingDirectory: paysecHome,
         maxTurns: 15,
         allowedTools: ['Read', 'Grep', 'Glob', 'Bash', 'Write', 'Edit'],
         ...(binary ? { pathToClaudeCodeExecutable: binary } : {}),
@@ -133,17 +133,17 @@ describeE2E('/setup-gbrain Path 4 — bad token STOPs cleanly', () => {
       expect(calls).not.toMatch(/mcp add.*--transport http/);
 
       // Assertion 3: CLAUDE.md is unchanged (no half-written block).
-      const finalClaudeMd = fs.readFileSync(path.join(gstackHome, 'CLAUDE.md'), 'utf-8');
+      const finalClaudeMd = fs.readFileSync(path.join(paysecHome, 'CLAUDE.md'), 'utf-8');
       expect(finalClaudeMd).toBe(ORIGINAL_CLAUDE_MD);
 
       // Assertion 4: the bad token never leaked to CLAUDE.md.
       expect(finalClaudeMd).not.toContain(BAD_TOKEN);
     } finally {
-      if (orig.gstackHome === undefined) delete process.env.GSTACK_HOME; else process.env.GSTACK_HOME = orig.gstackHome;
+      if (orig.paysecHome === undefined) delete process.env.PAYSEC_HOME; else process.env.PAYSEC_HOME = orig.paysecHome;
       if (orig.pathEnv === undefined) delete process.env.PATH; else process.env.PATH = orig.pathEnv;
       if (orig.mcpToken === undefined) delete process.env.GBRAIN_MCP_TOKEN; else process.env.GBRAIN_MCP_TOKEN = orig.mcpToken;
       await stubServer.close();
-      fs.rmSync(gstackHome, { recursive: true, force: true });
+      fs.rmSync(paysecHome, { recursive: true, force: true });
       fs.rmSync(fakeBinDir, { recursive: true, force: true });
     }
   }, 240_000);

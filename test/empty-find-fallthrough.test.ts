@@ -6,7 +6,7 @@
  * ceo-plans / checkpoints / plans yet) a random cwd .md becomes "the plan"
  * or "the latest checkpoint". `xargs -r` pins the BSD skip-on-empty
  * behavior on both GNU and BSD (same shape as the landed
- * bin/gstack-codex-session-import fix, #2482).
+ * bin/paysec-codex-session-import fix, #2482).
  *
  * Re-derived from community PR #2483 by @tranthanhnhatkhoa.
  */
@@ -54,8 +54,8 @@ describe('empty find must not fall through to cwd (#2483)', () => {
     expect(m).not.toBeNull();
     const line = m![0];
 
-    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-home-'));
-    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-cwd-'));
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-home-'));
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-cwd-'));
     try {
       // Fresh install shape: the checkpoints dir exists but is EMPTY,
       // and the cwd holds a decoy markdown file.

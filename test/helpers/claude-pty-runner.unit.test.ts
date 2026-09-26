@@ -17,7 +17,7 @@
  *    option exists in the type signature and that calling without env still
  *    works (no regression).
  *
- * The PTY test (skill-e2e-plan-ceo-plan-mode.test.ts) is the integration
+ * The PTY test (skill-e2e-plan-business-plan-mode.test.ts) is the integration
  * check; this file is the cheap deterministic guard for the harness primitives
  * those tests stand on.
  */
@@ -52,7 +52,7 @@ describe('isPermissionDialogVisible', () => {
     const sample = `
       Some preamble output
 
-      Bash command \`gstack-config get telemetry\` requires permission to run.
+      Bash command \`paysec-config get telemetry\` requires permission to run.
 
       ❯ 1. Yes
         2. Yes, and always allow
@@ -65,7 +65,7 @@ describe('isPermissionDialogVisible', () => {
     // Isolated to the "allow all edits" clause only — no overlapping
     // "Do you want to proceed?" co-trigger, so this asserts the clause works.
     const sample = `
-      Edit to ~/.gstack/config.yaml
+      Edit to ~/.paysec/config.yaml
 
       ❯ 1. Yes
         2. Yes, allow all edits during this session
@@ -77,7 +77,7 @@ describe('isPermissionDialogVisible', () => {
   test('matches the "Do you want to proceed?" file-edit confirmation by itself', () => {
     // Separate fixture so weakening this clause is detected by a dedicated test.
     const sample = `
-      Edit to ~/.gstack/config.yaml
+      Edit to ~/.paysec/config.yaml
 
       Do you want to proceed?
 
@@ -292,7 +292,7 @@ Recommendation: A when a branch diff exists, otherwise B.
     });
 
     test('stays false on AUTO_DECIDE preamble output', () => {
-      const sample = 'Auto-decided scope question → B (your preference). Change with /plan-tune.';
+      const sample = 'Auto-decided scope question → B (your preference). Change with /tune-questions.';
       expect(isScopeGateAutoSelectVisible(sample)).toBe(false);
     });
 
@@ -309,7 +309,7 @@ describe('isProseAUQVisible', () => {
 What would you like me to review? Options:
 A) Point me at an existing design doc or plan file (path).
 B) Describe new work you're planning — I'll explore the codebase.
-C) You meant /review for the diff already on this branch.
+C) You meant /pr-review for the diff already on this branch.
 D) Something else (tell me).
 Recommendation: A if you have a doc in mind, otherwise B.
 ❯
@@ -325,12 +325,12 @@ B) Second option
     expect(isProseAUQVisible(sample)).toBe(true);
   });
 
-  test('matches 3 numbered options 1. 2. 3. without ❯ 1. cursor (autoplan prose AUQ shape)', () => {
+  test('matches 3 numbered options 1. 2. 3. without ❯ 1. cursor (auto-plan-review prose AUQ shape)', () => {
     const sample = `
 What's the task? A few options:
   1. You have a plan idea in mind — describe it.
   2. You want to review an existing plan elsewhere.
-  3. You meant a different command — /plan-ceo-review etc.
+  3. You meant a different command — /plan-business-review etc.
 ❯
 `;
     expect(isProseAUQVisible(sample)).toBe(true);
@@ -401,9 +401,9 @@ This refers to (see option B) above and also to point A) earlier.
     expect(isProseAUQVisible('')).toBe(false);
   });
 
-  // Pattern 3: markdown bold-bullet options — office-hours renders its mode
+  // Pattern 3: markdown bold-bullet options — idea-review renders its mode
   // question this way under --disallowedTools, with no letter/number marker.
-  test('matches office-hours markdown bold-bullet mode question (Pattern 3)', () => {
+  test('matches idea-review markdown bold-bullet mode question (Pattern 3)', () => {
     const sample = `
 > Before we dig in — what's your goal with this?
 >
@@ -525,7 +525,7 @@ describe('classifyVisible (runtime path through the runner classifier)', () => {
 
   test('permission dialog (Bash) → returns null (skip, keep polling)', () => {
     const visible = `
-      Bash command \`gstack-update-check\` requires permission to run.
+      Bash command \`paysec-update-check\` requires permission to run.
 
       ❯ 1. Yes
         2. No
@@ -699,7 +699,7 @@ describe('parseNumberedOptions', () => {
   });
 
   test('extracts options when the cursor is INLINE with prompt header (box-layout)', () => {
-    // Real /plan-ceo-review rendering: the TTY's cursor-positioning escapes
+    // Real /plan-business-review rendering: the TTY's cursor-positioning escapes
     // collapse divider + header + prompt + cursor onto one logical line.
     // Subsequent options (2..7) still start their own lines.
     const visible = [
@@ -905,7 +905,7 @@ describe('parseQuestionPrompt', () => {
   });
 
   test('inline-cursor box-layout: extracts prompt text BEFORE ❯1. on the cursor line', () => {
-    // Real /plan-ceo-review rendering: divider + ☐ header + prompt text +
+    // Real /plan-business-review rendering: divider + ☐ header + prompt text +
     // cursor are all on one logical line because TTY cursor-positioning
     // escapes collapse the box layout under stripAnsi.
     const visible = [
@@ -977,8 +977,8 @@ describe('auqFingerprint', () => {
 });
 
 describe('COMPLETION_SUMMARY_RE', () => {
-  test('matches GSTACK REVIEW REPORT heading', () => {
-    expect(COMPLETION_SUMMARY_RE.test('## GSTACK REVIEW REPORT')).toBe(true);
+  test('matches PAYSEC REVIEW REPORT heading', () => {
+    expect(COMPLETION_SUMMARY_RE.test('## PAYSEC REVIEW REPORT')).toBe(true);
   });
 
   test('matches Completion Summary heading (ceo + eng)', () => {
@@ -1011,7 +1011,7 @@ stuff
 ## Approach
 more stuff
 
-## GSTACK REVIEW REPORT
+## PAYSEC REVIEW REPORT
 
 | col | col |
 `;
@@ -1027,13 +1027,13 @@ stuff
 `;
     const r = assertReviewReportAtBottom(content);
     expect(r.ok).toBe(false);
-    expect(r.reason).toMatch(/no GSTACK REVIEW REPORT/);
+    expect(r.reason).toMatch(/no PAYSEC REVIEW REPORT/);
   });
 
   test('fails when REVIEW REPORT exists but a ## heading follows it', () => {
     const content = `# Plan
 
-## GSTACK REVIEW REPORT
+## PAYSEC REVIEW REPORT
 
 | col | col |
 
@@ -1047,7 +1047,7 @@ oops
   });
 
   test('passes when only ### subheadings follow REVIEW REPORT (deeper nesting allowed)', () => {
-    const content = `## GSTACK REVIEW REPORT
+    const content = `## PAYSEC REVIEW REPORT
 
 ### Cross-model tension
 - F1: resolved
@@ -1058,7 +1058,7 @@ oops
   });
 
   test('fails with multiple trailing ## headings reported', () => {
-    const content = `## GSTACK REVIEW REPORT
+    const content = `## PAYSEC REVIEW REPORT
 
 ## First trailing
 

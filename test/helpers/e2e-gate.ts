@@ -7,7 +7,7 @@
  * every tier-gated test file, including files the sharded paid runner
  * (scripts/test-paid-shards.ts) spawns one-process-each — unlike
  * test/helpers/e2e-helpers.ts, whose EVALS=1 module-scope work includes a
- * ~30s `claude -p` connectivity ping, diff-based selection, and ~/.gstack
+ * ~30s `claude -p` connectivity ping, diff-based selection, and ~/.paysec
  * pre-seeding. The only import allowed here is `bun:test`.
  * test/helpers/e2e-gate.unit.test.ts enforces this with a source scan.
  *

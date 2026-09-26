@@ -1,4 +1,4 @@
-// AUTO-GENERATED from gstack/ios-qa/templates/Bridges.swift.template
+// AUTO-GENERATED from paysec/ios-device-qa/templates/Bridges.swift.template
 //
 // Real UIKit-backed implementations of the three bridges StateServer
 // declares: ScreenshotBridge (PNG capture), ElementsBridge (accessibility

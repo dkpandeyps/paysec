@@ -43,7 +43,7 @@ no shared memory, no shared event bus, no WebSocket connection.
        │                                   │                           │
        │  GET /                            │                           │
        │ ◄─────── serves board HTML ──────►│                           │
-       │    (with __GSTACK_SERVER_URL      │                           │
+       │    (with __PAYSEC_SERVER_URL      │                           │
        │     injected into <head>)         │                           │
        │                                   │                           │
        │  [user rates, picks, comments]    │                           │
@@ -135,7 +135,7 @@ feedback and click Submit again. Nothing happens because the server is gone.
 - Disables ALL inputs (buttons, radios, textareas, star ratings)
 - Hides the Regenerate bar entirely
 - Replaces the Submit button with: "Feedback received! Return to your coding agent."
-- Shows: "Want to make more changes? Run `/design-shotgun` again."
+- Shows: "Want to make more changes? Run `/design-variants` again."
 - The page becomes a read-only record of what was submitted
 
 **Implemented in:** `compare.ts:showPostSubmitState()` (line 484)
@@ -161,7 +161,7 @@ spinner spins forever.
 **Fix:** Progress polling has a hard 5-minute timeout (150 polls x 2s interval).
 After 5 minutes:
 - Spinner replaced with: "Something went wrong."
-- Shows: "Run `/design-shotgun` again in your coding agent."
+- Shows: "Run `/design-variants` again in your coding agent."
 - Polling stops. Page becomes informational.
 
 **Implemented in:** `compare.ts:startProgressPolling()` (line 511)
@@ -169,7 +169,7 @@ After 5 minutes:
 ### 4. The file:// URL Problem (THE ORIGINAL BUG)
 
 **What:** The skill template originally used `$B goto file:///path/to/board.html`.
-But `browse/src/url-validation.ts:71` blocks `file://` URLs for security. The
+But `browser/src/url-validation.ts:71` blocks `file://` URLs for security. The
 fallback `open file://...` opens the user's macOS browser, but `$B eval` polls
 Playwright's headless browser (different process, never loaded the page).
 Agent polls empty DOM forever.
@@ -290,7 +290,7 @@ proving it's writable). But a try/catch with a 500 response would be cleaner.
 2. $D serve starts Bun.serve() on random port (e.g. 54321)
 3. $D serve opens http://127.0.0.1:54321 in user's browser
 4. $D serve prints to stderr: SERVE_STARTED: port=54321 html=/path/board.html
-5. $D serve writes board HTML with injected __GSTACK_SERVER_URL
+5. $D serve writes board HTML with injected __PAYSEC_SERVER_URL
 6. User sees comparison board with 3 variants side by side
 7. User picks Option B, rates A: 3/5, B: 5/5, C: 2/5
 8. User writes "B has better spacing, go with that" in overall feedback
@@ -364,10 +364,10 @@ Same as regeneration, except:
 | `design/src/cli.ts` | CLI entry point, wires `serve` and `compare --serve` commands |
 | `design/src/commands.ts` | Command registry, defines `serve` and `compare` with their args |
 | `scripts/resolvers/design.ts` | `generateDesignShotgunLoop()` — template resolver that outputs the polling loop and reload instructions |
-| `design-shotgun/SKILL.md.tmpl` | Skill template that orchestrates the full flow: context gathering, variant generation, `{{DESIGN_SHOTGUN_LOOP}}`, feedback confirmation |
+| `design-variants/SKILL.md.tmpl` | Skill template that orchestrates the full flow: context gathering, variant generation, `{{DESIGN_SHOTGUN_LOOP}}`, feedback confirmation |
 | `design/test/serve.test.ts` | Unit tests for HTTP endpoints and state transitions |
 | `design/test/feedback-roundtrip.test.ts` | E2E test: browser click → JS fetch → HTTP POST → file on disk |
-| `browse/test/compare-board.test.ts` | DOM-level tests for the comparison board UI |
+| `browser/test/compare-board.test.ts` | DOM-level tests for the comparison board UI |
 
 ## What Could Still Go Wrong
 
@@ -408,7 +408,7 @@ Same as regeneration, except:
 | Spinner after regenerate | DOM shows loading text | `feedback-roundtrip.test.ts` |
 | Full regen → reload → submit | 2-round trip | `feedback-roundtrip.test.ts` |
 | Server starts on random port | port 0 binding | `serve.test.ts` |
-| HTML injection of server URL | __GSTACK_SERVER_URL check | `serve.test.ts` |
+| HTML injection of server URL | __PAYSEC_SERVER_URL check | `serve.test.ts` |
 | Invalid JSON rejection | 400 response | `serve.test.ts` |
 | HTML file validation | exit 1 if missing | `serve.test.ts` |
 | Timeout behavior | exit 1 after timeout | `serve.test.ts` |

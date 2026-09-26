@@ -46,10 +46,10 @@ describeIfSelected('Review skill E2E', ['review-sql-injection'], () => {
     // (CLAUDE.md: "E2E test fixtures: extract, don't copy").
     fs.writeFileSync(
       path.join(reviewDir, 'review-SKILL.md'),
-      extractSkillSections(path.join(ROOT, 'review'), REVIEW_E2E_SECTIONS),
+      extractSkillSections(path.join(ROOT, 'pr-review'), REVIEW_E2E_SECTIONS),
     );
-    fs.copyFileSync(path.join(ROOT, 'review', 'checklist.md'), path.join(reviewDir, 'review-checklist.md'));
-    fs.copyFileSync(path.join(ROOT, 'review', 'greptile-triage.md'), path.join(reviewDir, 'review-greptile-triage.md'));
+    fs.copyFileSync(path.join(ROOT, 'pr-review', 'checklist.md'), path.join(reviewDir, 'review-checklist.md'));
+    fs.copyFileSync(path.join(ROOT, 'pr-review', 'greptile-triage.md'), path.join(reviewDir, 'review-greptile-triage.md'));
   });
 
   afterAll(() => {
@@ -62,7 +62,7 @@ describeIfSelected('Review skill E2E', ['review-sql-injection'], () => {
 Read review-SKILL.md for the review workflow instructions.
 Also read review-checklist.md and apply it.
 Skip the preamble bash block, lake intro, telemetry, and contributor mode sections — go straight to the review.
-Run /review on the current diff (git diff main...HEAD).
+Run /pr-review on the current diff (git diff main...HEAD).
 Write your review findings to ${reviewDir}/review-output.md`,
       workingDirectory: reviewDir,
       maxTurns: 20,
@@ -71,8 +71,8 @@ Write your review findings to ${reviewDir}/review-output.md`,
       runId,
     });
 
-    logCost('/review', result);
-    recordE2E(evalCollector, '/review SQL injection', 'Review skill E2E', result);
+    logCost('/pr-review', result);
+    recordE2E(evalCollector, '/pr-review SQL injection', 'Review skill E2E', result);
     expect(result.exitReason).toBe('success');
 
     // Verify the review output mentions SQL injection-related findings
@@ -123,10 +123,10 @@ describeIfSelected('Review enum completeness E2E', ['review-enum-completeness'],
     // Review skill files — extracted sections, not the full 1870-line file.
     fs.writeFileSync(
       path.join(enumDir, 'review-SKILL.md'),
-      extractSkillSections(path.join(ROOT, 'review'), REVIEW_E2E_SECTIONS),
+      extractSkillSections(path.join(ROOT, 'pr-review'), REVIEW_E2E_SECTIONS),
     );
-    fs.copyFileSync(path.join(ROOT, 'review', 'checklist.md'), path.join(enumDir, 'review-checklist.md'));
-    fs.copyFileSync(path.join(ROOT, 'review', 'greptile-triage.md'), path.join(enumDir, 'review-greptile-triage.md'));
+    fs.copyFileSync(path.join(ROOT, 'pr-review', 'checklist.md'), path.join(enumDir, 'review-checklist.md'));
+    fs.copyFileSync(path.join(ROOT, 'pr-review', 'greptile-triage.md'), path.join(enumDir, 'review-greptile-triage.md'));
   });
 
   afterAll(() => {
@@ -138,7 +138,7 @@ describeIfSelected('Review enum completeness E2E', ['review-enum-completeness'],
       prompt: `You are in a git repo on branch feature/add-returned-status with changes against main.
 Read review-SKILL.md for the review workflow instructions.
 Also read review-checklist.md and apply it — pay special attention to the Enum & Value Completeness section.
-Run /review on the current diff (git diff main...HEAD).
+Run /pr-review on the current diff (git diff main...HEAD).
 Write your review findings to ${enumDir}/review-output.md
 
 The diff adds a new "returned" status to the Order model. Your job is to check if all consumers handle it.`,
@@ -149,8 +149,8 @@ The diff adds a new "returned" status to the Order model. Your job is to check i
       runId,
     });
 
-    logCost('/review enum', result);
-    recordE2E(evalCollector, '/review enum completeness', 'Review enum completeness E2E', result);
+    logCost('/pr-review enum', result);
+    recordE2E(evalCollector, '/pr-review enum completeness', 'Review enum completeness E2E', result);
     expect(result.exitReason).toBe('success');
 
     // Verify the review caught the missing enum handlers
@@ -202,11 +202,11 @@ describeIfSelected('Review design lite E2E', ['review-design-lite'], () => {
     // it is a 134-line checklist, not a generated SKILL.md).
     fs.writeFileSync(
       path.join(designDir, 'review-SKILL.md'),
-      extractSkillSections(path.join(ROOT, 'review'), REVIEW_E2E_SECTIONS),
+      extractSkillSections(path.join(ROOT, 'pr-review'), REVIEW_E2E_SECTIONS),
     );
-    fs.copyFileSync(path.join(ROOT, 'review', 'checklist.md'), path.join(designDir, 'review-checklist.md'));
-    fs.copyFileSync(path.join(ROOT, 'review', 'design-checklist.md'), path.join(designDir, 'review-design-checklist.md'));
-    fs.copyFileSync(path.join(ROOT, 'review', 'greptile-triage.md'), path.join(designDir, 'review-greptile-triage.md'));
+    fs.copyFileSync(path.join(ROOT, 'pr-review', 'checklist.md'), path.join(designDir, 'review-checklist.md'));
+    fs.copyFileSync(path.join(ROOT, 'pr-review', 'design-checklist.md'), path.join(designDir, 'review-design-checklist.md'));
+    fs.copyFileSync(path.join(ROOT, 'pr-review', 'greptile-triage.md'), path.join(designDir, 'review-greptile-triage.md'));
   });
 
   afterAll(() => {
@@ -219,7 +219,7 @@ describeIfSelected('Review design lite E2E', ['review-design-lite'], () => {
 Read review-SKILL.md for the review workflow instructions.
 Read review-checklist.md for the code review checklist.
 Read review-design-checklist.md for the design review checklist.
-Run /review on the current diff (git diff main...HEAD).
+Run /pr-review on the current diff (git diff main...HEAD).
 
 Skip the preamble bash block, lake intro, telemetry, and contributor mode sections — go straight to the review.
 
@@ -234,8 +234,8 @@ Important: The design checklist should catch issues like blacklisted fonts, smal
       runId,
     });
 
-    logCost('/review design lite', result);
-    recordE2E(evalCollector, '/review design lite', 'Review design lite E2E', result);
+    logCost('/pr-review design lite', result);
+    recordE2E(evalCollector, '/pr-review design lite', 'Review design lite E2E', result);
     expect(result.exitReason).toBe('success');
 
     // Verify the review caught at least 4 of 7 planted design issues
@@ -266,8 +266,8 @@ Important: The design checklist should catch issues like blacklisted fonts, smal
 });
 
 // Base branch detection tests for review/ship + the Review Dashboard Via
-// Attribution describe live in test/skill-e2e-review-attribution.test.ts.
-// Retro tests (retro, retro-base-branch) live in test/skill-e2e-retro.test.ts.
+// Attribution describe live in test/skill-e2e-pr-review-attribution.test.ts.
+// Retro tests (retro, retro-base-branch) live in test/skill-e2e-weekly-retro.test.ts.
 // Split so CI's per-file matrix can run them in parallel.
 
 // Module-level afterAll — finalize eval collector after all tests complete

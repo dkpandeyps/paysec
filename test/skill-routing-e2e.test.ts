@@ -62,7 +62,7 @@ if (evalsEnabled && process.env.EVALS_TIER) {
 
 /** Install SKILL.md fixtures for auto-discovery.
  *  Installs to project-level (.claude/skills/) only. Writing to the user's
- *  ~/.claude/skills/ is unsafe: it may contain symlinks from the real gstack
+ *  ~/.claude/skills/ is unsafe: it may contain symlinks from the real paysec
  *  install that point to different worktrees or dangling targets.
  *
  *  ROUTING tests only read each skill's frontmatter (name + description) to
@@ -70,11 +70,11 @@ if (evalsEnabled && process.env.EVALS_TIER) {
  *  of ~20 full 1000-1900-line files (CLAUDE.md: "extract, don't copy"). */
 function installSkills(tmpDir: string) {
   const skillDirs = [
-    '', // root gstack SKILL.md
-    'qa', 'qa-only', 'ship', 'review', 'plan-ceo-review', 'plan-eng-review',
-    'plan-design-review', 'design-review', 'design-consultation', 'retro',
-    'document-release', 'investigate', 'office-hours', 'browse', 'setup-browser-cookies',
-    'gstack-upgrade', 'humanizer',
+    '', // root paysec SKILL.md
+    'qa', 'qa-report', 'ship', 'review', 'plan-business-review', 'plan-tech-review',
+    'plan-ux-review', 'design-qa', 'design-system', 'retro',
+    'docs-release-update', 'investigate', 'idea-review', 'browse', 'import-browser-cookies',
+    'paysec-upgrade', 'humanizer',
   ];
 
   const targetBase = path.join(tmpDir, '.claude', 'skills');
@@ -83,7 +83,7 @@ function installSkills(tmpDir: string) {
     const srcPath = path.join(ROOT, skill, 'SKILL.md');
     if (!fs.existsSync(srcPath)) continue;
 
-    const skillName = skill || 'gstack';
+    const skillName = skill || 'paysec';
     const destDir = path.join(targetBase, skillName);
     fs.mkdirSync(destDir, { recursive: true });
     fs.writeFileSync(path.join(destDir, 'SKILL.md'), extractSkillHead(srcPath));
@@ -102,16 +102,16 @@ tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
 The skill has specialized workflows that produce better results than ad-hoc answers.
 
 Key routing rules:
-- Product ideas, "is this worth building", brainstorming → invoke office-hours
+- Product ideas, "is this worth building", brainstorming → invoke idea-review
 - Bugs, errors, "why is this broken", 500 errors → invoke investigate
 - Ship, deploy, push, create PR → invoke ship
 - QA, test the site, find bugs → invoke qa
 - Code review, check my diff → invoke review
-- Update docs after shipping → invoke document-release
+- Update docs after shipping → invoke docs-release-update
 - Weekly retro → invoke retro
-- Design system, brand → invoke design-consultation
-- Visual audit, design polish → invoke design-review
-- Architecture review → invoke plan-eng-review
+- Design system, brand → invoke design-system
+- Visual audit, design polish → invoke design-qa
+- Architecture review → invoke plan-tech-review
 `);
 }
 
@@ -191,7 +191,7 @@ describeE2E('Skill Routing E2E — Developer Journey', () => {
     try {
 
       const testName = 'journey-ideation';
-      const expectedSkill = 'office-hours';
+      const expectedSkill = 'idea-review';
       const result = await runSkillTest({
         prompt: "I've been thinking about building a waitlist management tool for restaurants. The existing solutions are expensive and overcomplicated. I want something simple — a tablet app where hosts can add parties, see wait times, and text customers when their table is ready. Help me think through whether this is worth building and what the key design decisions are.",
         workingDirectory: tmpDir,
@@ -241,7 +241,7 @@ describeE2E('Skill Routing E2E — Developer Journey', () => {
       spawnSync('git', ['commit', '-m', 'initial'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
 
       const testName = 'journey-plan-eng';
-      const expectedSkill = 'plan-eng-review';
+      const expectedSkill = 'plan-tech-review';
       const result = await runSkillTest({
         prompt: "I wrote up a plan for the waitlist app in plan.md. Can you take a look at the architecture and make sure I'm not missing any edge cases or failure modes before I start coding?",
         workingDirectory: tmpDir,
@@ -266,7 +266,7 @@ describeE2E('Skill Routing E2E — Developer Journey', () => {
   }, 150_000);
 
   // Removed: journey-think-bigger
-  // Tested ambiguous routing ("think bigger" → plan-ceo-review) but Claude
+  // Tested ambiguous routing ("think bigger" → plan-business-review) but Claude
   // legitimately answers directly instead of routing. Never passed reliably.
   // The other 10 journey tests cover routing with clear signals.
 
@@ -339,7 +339,7 @@ export default app;
 
       const testName = 'journey-qa';
       const expectedSkill = 'qa';
-      const alternateSkills = ['qa-only', 'browse'];
+      const alternateSkills = ['qa-report', 'browser'];
       const result = await runSkillTest({
         prompt: "I think the app is mostly working now. Can you go through the site and test everything — find any bugs and fix them?",
         workingDirectory: tmpDir,
@@ -456,7 +456,7 @@ export default app;
       run('git', ['commit', '-m', 'feat: ship waitlist feature']);
 
       const testName = 'journey-docs';
-      const expectedSkill = 'document-release';
+      const expectedSkill = 'docs-release-update';
       const result = await runSkillTest({
         prompt: "We just shipped the waitlist feature. Can you go through the README and any other docs and make sure they match what we actually built?",
         workingDirectory: tmpDir,
@@ -528,7 +528,7 @@ export default app;
     try {
 
       const testName = 'journey-design-system';
-      const expectedSkill = 'design-consultation';
+      const expectedSkill = 'design-system';
       const result = await runSkillTest({
         prompt: "Before we build the UI, I want to establish a design system — typography, colors, spacing, the whole thing. Can you put together brand guidelines for this project?",
         workingDirectory: tmpDir,
@@ -579,7 +579,7 @@ body { font-family: sans-serif; }
       run('git', ['commit', '-m', 'initial UI']);
 
       const testName = 'journey-visual-qa';
-      const expectedSkill = 'design-review';
+      const expectedSkill = 'design-qa';
       const result = await runSkillTest({
         prompt: "Something looks off on the site. The spacing between sections is inconsistent and the font sizes don't feel right. Can you audit the visual design and fix anything that doesn't look polished?",
         workingDirectory: tmpDir,
@@ -597,7 +597,7 @@ body { font-family: sans-serif; }
       recordRouting(testName, result, expectedSkill, actualSkill);
 
       expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Claude may have answered directly without invoking a skill. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
-      const validSkills = ['design-review', 'qa', 'qa-only', 'browse'];
+      const validSkills = ['design-qa', 'qa-fix', 'qa-report', 'browser'];
       expect(validSkills, `Expected one of ${validSkills.join('/')} but got ${actualSkill}`).toContain(actualSkill);
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });

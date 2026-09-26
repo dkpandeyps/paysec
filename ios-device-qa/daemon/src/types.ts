@@ -1,4 +1,4 @@
-// Shared types for the ios-qa daemon.
+// Shared types for the ios-device-qa daemon.
 
 export type Capability = 'observe' | 'interact' | 'mutate' | 'restore';
 

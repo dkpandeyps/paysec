@@ -8,7 +8,7 @@
 // Subsequent runs are content-hash-cached and finish in ~50ms.
 //
 // Invocation:
-//   swift run --package-path ios-qa/scripts/gen-accessors-tool \
+//   swift run --package-path ios-device-qa/scripts/gen-accessors-tool \
 //     gen-accessors --input <swift-source-dir> [--output <out-dir>]
 
 import PackageDescription

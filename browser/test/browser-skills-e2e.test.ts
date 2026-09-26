@@ -10,7 +10,7 @@
  * Coverage gap intentionally NOT here: $B skill run end-to-end against the
  * bundled skill goes to live news.ycombinator.com and would be flaky. The
  * spawnSkill lifecycle (env scrub, scoped token, timeout, stdout cap) is
- * already covered by browse/test/browser-skill-commands.test.ts using inline
+ * already covered by browser/test/browser-skill-commands.test.ts using inline
  * scripts.
  */
 

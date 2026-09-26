@@ -2,7 +2,7 @@
  * Detach-timeout floor — free, gate-tier tripwire.
  *
  * The eval:bg:gate / eval:bg:periodic scripts wrap the sharded paid runner in
- * bin/gstack-detach with a hard --timeout. If that number dips below the
+ * bin/paysec-detach with a hard --timeout. If that number dips below the
  * runner's worst-case wall clock — ceil(shards / jobs) × shard timeout — the
  * watchdog kills a healthy run mid-flight and the tail shards report
  * never-started: paid truncation by configuration. That nearly shipped once
@@ -35,7 +35,7 @@ function detachTimeoutSeconds(scriptName: string): number {
   const script: string | undefined = pkg.scripts?.[scriptName];
   expect(script, `package.json is missing the "${scriptName}" script`).toBeTruthy();
   const m = script!.match(/--timeout\s+(\d+)/);
-  expect(m, `"${scriptName}" has no gstack-detach --timeout flag`).toBeTruthy();
+  expect(m, `"${scriptName}" has no paysec-detach --timeout flag`).toBeTruthy();
   return parseInt(m![1], 10);
 }
 

@@ -3,7 +3,7 @@
  *
  * Spawns a real design daemon and walks the full publish → submit /
  * regenerate / reload cycle via HTTP fetch (the same calls the board JS
- * makes). Proves what design-shotgun and the rest of the design skills
+ * makes). Proves what design-variants and the rest of the design skills
  * depend on:
  *
  *   - $D compare --serve attaches to OR spawns a single shared daemon.

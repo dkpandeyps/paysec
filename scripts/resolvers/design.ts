@@ -32,10 +32,10 @@ Present Codex output under a \`CODEX (design):\` header, merged with the checkli
 
   return `## Design Review (conditional, diff-scoped)
 
-Check if the diff touches frontend files using \`gstack-diff-scope\`:
+Check if the diff touches frontend files using \`paysec-diff-scope\`:
 
 \`\`\`bash
-source <(${ctx.paths.binDir}/gstack-diff-scope <base> 2>/dev/null)
+source <(${ctx.paths.binDir}/paysec-diff-scope <base> 2>/dev/null)
 \`\`\`
 
 **If \`SCOPE_FRONTEND=false\`:** Skip design review silently. No output.
@@ -44,28 +44,28 @@ source <(${ctx.paths.binDir}/gstack-diff-scope <base> 2>/dev/null)
 
 1. **Check for DESIGN.md.** If \`DESIGN.md\` or \`design-system.md\` exists in the repo root, read it. All design findings are calibrated against it — patterns blessed in DESIGN.md are not flagged. If not found, use universal design principles.
 
-2. **Read \`.claude/skills/review/design-checklist.md\`.** If the file cannot be read, skip design review with a note: "Design checklist not found — skipping design review."
+2. **Read \`.claude/skills/pr-review/design-checklist.md\`.** If the file cannot be read, skip design review with a note: "Design checklist not found — skipping design review."
 
 3. **Read each changed frontend file** (full file, not just diff hunks). Frontend files are identified by the patterns listed in the checklist.
 
 4. **Apply the design checklist** against the changed files. For each item:
    - **[HIGH] mechanical CSS fix** (\`outline: none\`, \`!important\`, \`font-size < 16px\`): classify as AUTO-FIX
    - **[HIGH/MEDIUM] design judgment needed**: classify as ASK
-   - **[LOW] intent-based detection**: present as "Possible — verify visually or run /design-review"
+   - **[LOW] intent-based detection**: present as "Possible — verify visually or run /design-qa"
 
 5. **Include findings** in the review output under a "Design Review" header, following the output format in the checklist. Design findings merge with code review findings into the same Fix-First flow.
 
 6. **Log the result** for the Review Readiness Dashboard:
 
 \`\`\`bash
-${ctx.paths.binDir}/gstack-review-log '{"skill":"design-review-lite","timestamp":"TIMESTAMP","status":"STATUS","findings":N,"auto_fixed":M,"commit":"COMMIT"}'
+${ctx.paths.binDir}/paysec-review-log '{"skill":"design-review-lite","timestamp":"TIMESTAMP","status":"STATUS","findings":N,"auto_fixed":M,"commit":"COMMIT"}'
 \`\`\`
 
 Substitute: TIMESTAMP = ISO 8601 datetime, STATUS = "clean" if 0 findings or "issues_found", N = total findings, M = auto-fixed count, COMMIT = output of \`git rev-parse --short HEAD\`.${codexBlock}`;
 }
 
 // NOTE: design-checklist.md is a subset of this methodology for code-level detection.
-// When adding items here, also update review/design-checklist.md, and vice versa.
+// When adding items here, also update pr-review/design-checklist.md, and vice versa.
 export function generateDesignMethodology(_ctx: TemplateContext): string {
   return `## Modes
 
@@ -159,7 +159,7 @@ After the first navigation, check if the URL changed to a login-like path:
 \`\`\`bash
 $B url
 \`\`\`
-If URL contains \`/login\`, \`/signin\`, \`/auth\`, or \`/sso\`: the site requires authentication. AskUserQuestion: "This site requires authentication. Want to import cookies from your browser? Run \`/setup-browser-cookies\` first if needed."
+If URL contains \`/login\`, \`/signin\`, \`/auth\`, or \`/sso\`: the site requires authentication. AskUserQuestion: "This site requires authentication. Want to import cookies from your browser? Run \`/import-browser-cookies\` first if needed."
 
 ### Trunk Test (run on every page)
 
@@ -361,13 +361,13 @@ Compare screenshots and observations across pages for:
 
 ### Output Locations
 
-**Local:** \`.gstack/design-reports/design-audit-{domain}-{YYYY-MM-DD}.md\`
+**Local:** \`.paysec/design-reports/design-audit-{domain}-{YYYY-MM-DD}.md\`
 
 **Project-scoped:**
 \`\`\`bash
-eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)" && mkdir -p ~/.gstack/projects/$SLUG
+eval "$(~/.claude/skills/paysec/bin/paysec-slug 2>/dev/null)" && mkdir -p ~/.paysec/projects/$SLUG
 \`\`\`
-Write to: \`~/.gstack/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md\`
+Write to: \`~/.paysec/projects/{slug}/{user}-{branch}-design-audit-{datetime}.md\`
 
 **Baseline:** Write \`design-baseline.json\` for regression mode:
 \`\`\`json
@@ -481,14 +481,14 @@ Generate a single-page HTML file with these constraints:
 
 Write to a temp file:
 \`\`\`bash
-SKETCH_FILE="/tmp/gstack-sketch-$(date +%s).html"
+SKETCH_FILE="/tmp/paysec-sketch-$(date +%s).html"
 \`\`\`
 
 **Step 3: Render and capture**
 
 \`\`\`bash
 $B goto "file://$SKETCH_FILE"
-$B screenshot /tmp/gstack-sketch.png
+$B screenshot /tmp/paysec-sketch.png
 \`\`\`
 
 If \`$B\` is not available (browse binary not set up), skip the render step. Tell the
@@ -504,8 +504,8 @@ If they approve or say "good enough," proceed.
 **Step 5: Include in design doc**
 
 Reference the wireframe screenshot in the design doc's "Recommended Approach" section.
-The screenshot file at \`/tmp/gstack-sketch.png\` can be referenced by downstream skills
-(\`/plan-design-review\`, \`/design-review\`) to see what was originally envisioned.
+The screenshot file at \`/tmp/paysec-sketch.png\` can be referenced by downstream skills
+(\`/plan-ux-review\`, \`/design-qa\`) to see what was originally envisioned.
 
 **Step 6: Outside design voices** (optional)
 
@@ -546,12 +546,12 @@ export function generateDesignOutsideVoices(ctx: TemplateContext): string {
   const litmusList = OPENAI_LITMUS_CHECKS.map((item, i) => `${i + 1}. ${item}`).join('\n');
 
   // Skill-specific configuration
-  const isPlanDesignReview = ctx.skillName === 'plan-design-review';
-  const isDesignReview = ctx.skillName === 'design-review';
-  const isDesignConsultation = ctx.skillName === 'design-consultation';
+  const isPlanDesignReview = ctx.skillName === 'plan-ux-review';
+  const isDesignReview = ctx.skillName === 'design-qa';
+  const isDesignConsultation = ctx.skillName === 'design-system';
 
   // Determine opt-in behavior and reasoning effort
-  const isAutomatic = isDesignReview; // design-review runs automatically
+  const isAutomatic = isDesignReview; // design-qa runs automatically
   const reasoningEffort = isDesignConsultation ? 'medium' : 'high'; // creative vs analytical
 
   // Build skill-specific Codex prompt
@@ -678,7 +678,7 @@ Fill in each cell from the Codex and subagent outputs. CONFIRMED = both agree. D
 - "Codex and I agree on X. Codex suggested Y where I'm proposing Z — here's why..."` : `
 **Synthesis — Litmus scorecard:**
 
-Use the same scorecard format as /plan-design-review (shown above). Fill in from both outputs.
+Use the same scorecard format as /plan-ux-review (shown above). Fill in from both outputs.
 Merge findings into the triage with \`[codex]\` / \`[subagent]\` / \`[cross-model]\` tags.`;
 
   const escapedCodexPrompt = codexPrompt.replace(/`/g, '\\`').replace(/\$/g, '\\$');
@@ -721,12 +721,12 @@ ${synthesisSection}
 
 **Log the result:**
 \`\`\`bash
-${ctx.paths.binDir}/gstack-review-log '{"skill":"design-outside-voices","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","commit":"'"$(git rev-parse --short HEAD)"'"}'
+${ctx.paths.binDir}/paysec-review-log '{"skill":"design-outside-voices","timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","status":"STATUS","source":"SOURCE","commit":"'"$(git rev-parse --short HEAD)"'"}'
 \`\`\`
 Replace STATUS with "clean" or "issues_found", SOURCE with "codex+subagent", "codex-only", "subagent-only", or "unavailable".`;
 }
 
-// ─── Design Hard Rules (OpenAI framework + gstack slop blacklist) ───
+// ─── Design Hard Rules (OpenAI framework + paysec slop blacklist) ───
 export function generateDesignHardRules(_ctx: TemplateContext): string {
   const slopItems = AI_SLOP_BLACKLIST.map((item, i) => `${i + 1}. ${item}`).join('\n');
   const rejectionItems = OPENAI_HARD_REJECTIONS.map((item, i) => `${i + 1}. ${item}`).join('\n');
@@ -782,7 +782,7 @@ ${litmusItems}
 **AI Slop blacklist** (the 10 patterns that scream "AI-generated"):
 ${slopItems}
 
-Source: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4) (Mar 2026) + gstack design methodology.`;
+Source: [OpenAI "Designing Delightful Frontends with GPT-5.4"](https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4) (Mar 2026) + paysec design methodology.`;
 }
 
 export function generateDesignSetup(ctx: TemplateContext): string {
@@ -799,7 +799,7 @@ else
   echo "DESIGN_NOT_AVAILABLE"
 fi
 B=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/${ctx.paths.localSkillRoot}/browse/dist/browse" ] && B="$_ROOT/${ctx.paths.localSkillRoot}/browse/dist/browse"
+[ -n "$_ROOT" ] && [ -x "$_ROOT/${ctx.paths.localSkillRoot}/browser/dist/browse" ] && B="$_ROOT/${ctx.paths.localSkillRoot}/browser/dist/browse"
 [ -z "$B" ] && B="${toShellPath(ctx.paths.browseDir)}/browse"
 if [ -x "$B" ]; then
   echo "BROWSE_READY: $B"
@@ -825,7 +825,7 @@ Commands:
 - \`$D iterate --session /path/session.json --feedback "..." --output /path.png\` — iterate
 
 **CRITICAL PATH RULE:** All design artifacts (mockups, comparison boards, approved.json)
-MUST be saved to \`~/.gstack/projects/$SLUG/designs/\`, NEVER to \`.context/\`,
+MUST be saved to \`~/.paysec/projects/$SLUG/designs/\`, NEVER to \`.context/\`,
 \`docs/designs/\`, \`/tmp/\`, or any project-local directory. Design artifacts are USER
 data, not project files. They persist across branches, conversations, and workspaces.`;
 }
@@ -851,8 +851,8 @@ Generating visual mockups of the proposed design... (say "skip" if you don't nee
 **Step 1: Set up the design directory**
 
 \`\`\`bash
-eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
-_DESIGN_DIR="$HOME/.gstack/projects/$SLUG/designs/mockup-$(date +%Y%m%d)"
+eval "$(~/.claude/skills/paysec/bin/paysec-slug 2>/dev/null)"
+_DESIGN_DIR="$HOME/.paysec/projects/$SLUG/designs/mockup-$(date +%Y%m%d)"
 mkdir -p "$_DESIGN_DIR"
 echo "DESIGN_DIR: $_DESIGN_DIR"
 \`\`\`
@@ -1029,7 +1029,7 @@ export function generateTasteProfile(ctx: TemplateContext): string {
   return `Read the persistent taste profile if it exists:
 
 \`\`\`bash
-_TASTE_PROFILE=~/.gstack/projects/$SLUG/taste-profile.json
+_TASTE_PROFILE=~/.paysec/projects/$SLUG/taste-profile.json
 if [ -f "$_TASTE_PROFILE" ]; then
   # Schema v1: { dimensions: { fonts, colors, layouts, aesthetics }, sessions: [] }
   # Each dimension has approved[] and rejected[] entries with
@@ -1063,7 +1063,7 @@ as a one-off?"
 happens at read time, not write time, so the file only grows on change.
 
 **Schema migration:** If the file has no \`version\` field or \`version: 0\`, it's
-the legacy approved.json aggregate — \`${ctx.paths.binDir}/gstack-taste-update\`
+the legacy approved.json aggregate — \`${ctx.paths.binDir}/paysec-taste-update\`
 will migrate it to schema v1 on the next write.`;
 }
 

@@ -23,11 +23,11 @@ const ROOT = path.resolve(import.meta.dir, '..');
 const DRY_RUN = process.argv.includes('--dry-run');
 
 // ─── GBrain Detection Override ──────────────────────────────
-// When --respect-detection is passed, read ~/.gstack/gbrain-detection.json
+// When --respect-detection is passed, read ~/.paysec/gbrain-detection.json
 // and un-suppress GBRAIN_CONTEXT_LOAD + GBRAIN_SAVE_RESULTS for hosts that
 // statically suppress them (claude, codex, slate, factory, opencode,
 // openclaw, cursor, kiro). Detection state is produced by
-// bin/gstack-gbrain-detect and persisted by `gstack-config gbrain-refresh`
+// bin/paysec-gbrain-detect and persisted by `paysec-config gbrain-refresh`
 // or by ./setup.
 //
 // Default (no flag): static suppressedResolvers honored as-is. Used by
@@ -39,7 +39,7 @@ const RESPECT_DETECTION = process.argv.includes('--respect-detection');
 
 function loadGbrainOverride(): { detected: boolean } {
   if (!RESPECT_DETECTION) return { detected: false };
-  const stateDir = process.env.GSTACK_HOME || path.join(process.env.HOME || '', '.gstack');
+  const stateDir = process.env.PAYSEC_HOME || path.join(process.env.HOME || '', '.paysec');
   const detectionPath = path.join(stateDir, 'gbrain-detection.json');
   try {
     const json = JSON.parse(fs.readFileSync(detectionPath, 'utf-8')) as { gbrain_local_status?: string };
@@ -49,7 +49,7 @@ function loadGbrainOverride(): { detected: boolean } {
     // an MCP server) owns the embedded DB — gbrain is installed and healthy,
     // a legitimate holder has the lock, so a transient lock must not silently
     // strip brain blocks from every SKILL.md. All usable — same treatment as
-    // "ok", matching gstack-gbrain-detect --is-ok.
+    // "ok", matching paysec-gbrain-detect --is-ok.
     const USABLE = ['ok', 'timeout', 'thin-client', 'engine-locked'];
     return { detected: USABLE.includes(json.gbrain_local_status ?? '') };
   } catch {
@@ -143,7 +143,7 @@ const EXPLAIN_LEVEL: 'default' | 'terse' = (() => {
 // ─── Out-dir (dev workspace render isolation) ───────────────
 // --out-dir <abs-dir> redirects Claude SKILL.md + section output to a separate
 // (untracked) directory instead of writing in place, AND rewrites the literal
-// section-base path (`~/.claude/skills/gstack/<skill>/sections/`) inside the
+// section-base path (`~/.claude/skills/paysec/<skill>/sections/`) inside the
 // generated content to point at the out-dir, so section Reads resolve to the
 // rendered copy rather than the global install. Used by bin/dev-setup to render
 // the gbrain `:user` variant for a Conductor workspace without dirtying tracked
@@ -162,13 +162,13 @@ const OUT_DIR: string | null = (() => {
  * When rendering to an out-dir, repoint the literal section-base path at the
  * out-dir so section Reads resolve to the rendered copy, not the global install.
  * Surgical: ONLY paths containing `/sections/` are rewritten — bin/, browse/,
- * docs/ references keep pointing at `~/.claude/skills/gstack` (the global
+ * docs/ references keep pointing at `~/.claude/skills/paysec` (the global
  * install, which still works). No-op when --out-dir is unset.
  */
 function rewriteSectionBase(content: string): string {
   if (!OUT_DIR) return content;
   return content.replace(
-    /~\/\.claude\/skills\/gstack\/([^\s)`"'*]+\/sections\/)/g,
+    /~\/\.claude\/skills\/paysec\/([^\s)`"'*]+\/sections\/)/g,
     `${OUT_DIR}/$1`,
   );
 }
@@ -183,13 +183,13 @@ function rewriteSectionBase(content: string): string {
 // it was imported, immediately shadowed by this declaration, and stale)
 // Accepts optional frontmatter name to support directory/invocation name divergence
 function externalSkillName(skillDir: string, frontmatterName?: string): string {
-  // Root skill (skillDir === '' or '.') always maps to 'gstack' regardless of frontmatter
-  if (skillDir === '.' || skillDir === '') return 'gstack';
+  // Root skill (skillDir === '' or '.') always maps to 'paysec' regardless of frontmatter
+  if (skillDir === '.' || skillDir === '') return 'paysec';
   // Use frontmatter name when it differs from directory name (e.g., run-tests/ with name: test)
   const baseName = frontmatterName && frontmatterName !== skillDir ? frontmatterName : skillDir;
-  // Don't double-prefix: gstack-upgrade → gstack-upgrade (not gstack-gstack-upgrade)
-  if (baseName.startsWith('gstack-')) return baseName;
-  return `gstack-${baseName}`;
+  // Don't double-prefix: paysec-upgrade → paysec-upgrade (not paysec-paysec-upgrade)
+  if (baseName.startsWith('paysec-')) return baseName;
+  return `paysec-${baseName}`;
 }
 
 function extractNameAndDescription(content: string): { name: string; description: string } {
@@ -291,9 +291,9 @@ export { extractVoiceTriggers, processVoiceTriggers };
 //
 // Frontmatter `description:` blocks today pack: a one-line outcome, "Use when
 // asked to..." voice triggers, "Proactively..." routing guidance, and a
-// "(gstack)" tag. This pile is the always-loaded catalog surface — every
+// "(paysec)" tag. This pile is the always-loaded catalog surface — every
 // session pays for the full text. The catalog trim splits the description
-// into a one-line catalog entry (lead sentence + "(gstack)") that stays in
+// into a one-line catalog entry (lead sentence + "(paysec)") that stays in
 // the frontmatter, and a "## When to invoke" body section that holds the
 // routing/voice triggers prose for in-skill discovery.
 //
@@ -305,7 +305,7 @@ export interface CatalogParts {
   lead: string;            // First sentence — kept in catalog
   routingProse: string;    // "Use when asked to...", "Proactively..." paragraphs
   voiceLine: string | null; // "Voice triggers (speech-to-text aliases): ..." line if present
-  hasGstackTag: boolean;
+  hasPaysecTag: boolean;
 }
 
 export function splitCatalogDescription(description: string): CatalogParts {
@@ -314,8 +314,8 @@ export function splitCatalogDescription(description: string): CatalogParts {
   const voiceLine = voiceMatch ? voiceMatch[0] : null;
   let working = voiceLine ? description.replace(voiceLine, '').trim() : description.trim();
 
-  const hasGstackTag = /\(gstack\)/.test(working);
-  if (hasGstackTag) working = working.replace(/\(gstack\)/, '').trim();
+  const hasPaysecTag = /\(paysec\)/.test(working);
+  if (hasPaysecTag) working = working.replace(/\(paysec\)/, '').trim();
 
   // Lead = first sentence, ending at the first `.`/`!`/`?` that is followed by
   // whitespace or end-of-text. Terminator chars NOT followed by whitespace/end
@@ -331,7 +331,7 @@ export function splitCatalogDescription(description: string): CatalogParts {
   // from this position, then optionally truncate the displayed lead afterwards.
   // Truncating first then computing routing was the v1.45.0.0 bug — when the
   // first sentence exceeded 200 chars, the routing extraction would lose the
-  // entire tail of the description (design-consultation's "Use when..."
+  // entire tail of the description (design-system's "Use when..."
   // routing prose silently dropped).
   const sentenceLead = sentenceMatch ? sentenceMatch[1].trim() : collapsed.split(/\s/).slice(0, 20).join(' ');
 
@@ -371,13 +371,13 @@ export function splitCatalogDescription(description: string): CatalogParts {
     if (tail.length > 0) routingProse = tail;
   }
 
-  return { lead, routingProse, voiceLine, hasGstackTag };
+  return { lead, routingProse, voiceLine, hasPaysecTag };
 }
 
 /** Build the catalog-trimmed `description:` block. */
 export function buildTrimmedDescription(parts: CatalogParts): string {
   const lead = parts.lead.trim();
-  const suffix = parts.hasGstackTag ? ' (gstack)' : '';
+  const suffix = parts.hasPaysecTag ? ' (paysec)' : '';
   return `${lead}${suffix}`;
 }
 
@@ -420,7 +420,7 @@ export function toYamlInlineScalar(s: string): string {
 
 /**
  * Apply catalog trim to a SKILL.md body:
- *  - shorten frontmatter `description:` to lead + (gstack)
+ *  - shorten frontmatter `description:` to lead + (paysec)
  *  - insert "## When to invoke" body section AFTER the generated header
  *    (so it lands near the top of body content, where routing guidance
  *    belongs)
@@ -452,7 +452,7 @@ export function applyCatalogTrim(content: string, skillName: string): { content:
   if (descText.length < 120) return null;
 
   const parts = splitCatalogDescription(descText);
-  // If lead + (gstack) is already most of the text, no trim needed.
+  // If lead + (paysec) is already most of the text, no trim needed.
   const trimmedLen = buildTrimmedDescription(parts).length;
   if (trimmedLen >= descText.length - 20) return null;
 
@@ -671,7 +671,7 @@ function applyHostRewrites(content: string, hostConfig: HostConfig): string {
 /**
  * A second {{PREAMBLE}} in one template re-expands the entire ~12K-token
  * preamble mid-document (#2508/#2362 — a PROSE mention of the macro in
- * spec/SKILL.md.tmpl expanded it a second time, +43KB per /spec load).
+ * write-spec/SKILL.md.tmpl expanded it a second time, +43KB per /write-spec load).
  * Resolution is context-blind, so any second occurrence — code fence, prose,
  * anywhere — is a generation error, never intentional. Throw at render time
  * so the mistake cannot reach a generated SKILL.md again.
@@ -1012,7 +1012,7 @@ for (const currentHost of hostsToRun) {
       // Prompt caching further reduces the marginal cost of larger skills. This ceiling
       // exists to catch a runaway preamble or resolver that's grown by 10K+ tokens in
       // a release, not to force compression on carefully-tuned big skills (ship,
-      // plan-ceo-review, office-hours all legitimately pack 25-35K tokens of behavior).
+      // plan-business-review, idea-review all legitimately pack 25-35K tokens of behavior).
       const TOKEN_CEILING_BYTES = 160_000;
       if (content.length > TOKEN_CEILING_BYTES) {
         console.warn(`⚠️  TOKEN CEILING: ${relOutput} is ${content.length} bytes (~${tokens} tokens), exceeds ${TOKEN_CEILING_BYTES} byte ceiling (~40K tokens)`);
@@ -1055,15 +1055,15 @@ for (const currentHost of hostsToRun) {
       });
     }
 
-    // Generate the OpenClaw orchestrator-injection docs (gstack-lite / gstack-full /
-    // gstack-plan CLAUDE.md snippets). Sources live in openclaw/templates/ —
+    // Generate the OpenClaw orchestrator-injection docs (paysec-lite / paysec-full /
+    // paysec-plan CLAUDE.md snippets). Sources live in openclaw/templates/ —
     // plain markdown, no placeholder resolution — and are copied byte-for-byte
     // to openclaw/ at gen time.
     if (currentHost === 'openclaw' && !DRY_RUN) {
       const openclawDir = path.join(ROOT, 'openclaw');
       const openclawTemplatesDir = path.join(openclawDir, 'templates');
       for (const variant of ['lite', 'full', 'plan'] as const) {
-        const fileName = `gstack-${variant}-CLAUDE.md`;
+        const fileName = `paysec-${variant}-CLAUDE.md`;
         const content = fs.readFileSync(path.join(openclawTemplatesDir, fileName), 'utf-8');
         fs.writeFileSync(path.join(openclawDir, fileName), content);
         console.log(`GENERATED: openclaw/${fileName}`);
@@ -1114,17 +1114,17 @@ if (failures.length > 0 && HOST_ARG_VAL === 'all') {
 // After all hosts processed, warn if prefix patches may need re-applying
 if (!DRY_RUN) {
   try {
-    const configPath = path.join(process.env.HOME || '', '.gstack', 'config.yaml');
+    const configPath = path.join(process.env.HOME || '', '.paysec', 'config.yaml');
     if (fs.existsSync(configPath)) {
       const config = fs.readFileSync(configPath, 'utf-8');
       if (/^skill_prefix:\s*true/m.test(config)) {
-        console.log('\nNote: skill_prefix is true. Run gstack-relink to re-apply name: patches.');
+        console.log('\nNote: skill_prefix is true. Run paysec-relink to re-apply name: patches.');
       }
     }
   } catch { /* non-fatal */ }
 }
 
-// Regenerate gstack/llms.txt — single-file capability index for AI agents.
+// Regenerate paysec/llms.txt — single-file capability index for AI agents.
 // Runs after SKILL.md generation so it sees current skill descriptions and
 // browse command list. Wrapped in an IIFE so the await-import doesn't make
 // this module async (test/gen-skill-docs.test.ts uses require() to pull
@@ -1137,7 +1137,7 @@ if (!DRY_RUN) {
       if (result.warnings.length > 0) {
         for (const w of result.warnings) console.error(`[gen-llms-txt] WARN: ${w}`);
       } else {
-        console.log(`[gen-llms-txt] gstack/llms.txt: ${result.skills.length} skills, ${result.browseCommands.length} browse commands`);
+        console.log(`[gen-llms-txt] paysec/llms.txt: ${result.skills.length} skills, ${result.browseCommands.length} browse commands`);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

@@ -1,10 +1,10 @@
 /**
- * D3 helper tests — staging, atomic commit, and discard for /skillify.
+ * D3 helper tests — staging, atomic commit, and discard for /save-scrape-skill.
  *
  * These tests use synthetic tier paths and a synthetic tmp root so they
- * never touch the user's real ~/.gstack/ tree. The contract under test:
+ * never touch the user's real ~/.paysec/ tree. The contract under test:
  *
- *   stageSkill    → writes files into ~/.gstack/.tmp/skillify-<spawnId>/<name>/
+ *   stageSkill    → writes files into ~/.paysec/.tmp/skillify-<spawnId>/<name>/
  *   commitSkill   → atomic rename to <tier-root>/<name>/, refuses to clobber
  *   discardStaged → rm -rf the staged dir + per-spawn wrapper, idempotent
  *
@@ -35,12 +35,12 @@ let stagingTmpRoot: string;
 beforeEach(() => {
   tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'browser-skill-write-test-'));
   tiers = {
-    project: path.join(tmpRoot, 'project', '.gstack', 'browser-skills'),
-    global: path.join(tmpRoot, 'home', '.gstack', 'browser-skills'),
-    bundled: path.join(tmpRoot, 'gstack-install', 'browser-skills'),
+    project: path.join(tmpRoot, 'project', '.paysec', 'browser-skills'),
+    global: path.join(tmpRoot, 'home', '.paysec', 'browser-skills'),
+    bundled: path.join(tmpRoot, 'paysec-install', 'browser-skills'),
   };
-  // Synthetic tmp root keeps tests off the real ~/.gstack/.tmp/.
-  stagingTmpRoot = path.join(tmpRoot, 'home', '.gstack', '.tmp');
+  // Synthetic tmp root keeps tests off the real ~/.paysec/.tmp/.
+  stagingTmpRoot = path.join(tmpRoot, 'home', '.paysec', '.tmp');
 });
 
 afterEach(() => {
@@ -284,7 +284,7 @@ describe('discardStaged', () => {
     expect(() => discardStaged(stagedDir)).not.toThrow();
   });
 
-  it('does not nuke unrelated parents when stagedDir is not under a skillify wrapper', () => {
+  it('does not nuke unrelated parents when stagedDir is not under a save-scrape-skill wrapper', () => {
     // Synthetic: stagedDir parent is just /tmp/xxx, not skillify-<id>. discardStaged
     // should clean the leaf only and leave the parent alone (defense in depth
     // against a buggy caller passing a path outside the staging tree).

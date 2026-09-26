@@ -6,7 +6,7 @@
  * the pre-compression size. Free — pure file IO + JSON diff.
  *
  * Baseline rebased v1.44.1 → v1.47.0.0 in the AskUserQuestion split-rule
- * PR after main merged GSTACK_PLAN_MODE + /spec, pushing the v1.44.1
+ * PR after main merged PAYSEC_PLAN_MODE + /write-spec, pushing the v1.44.1
  * anchor past the 5% ratchet. Historical v1.44.1.json and v1.46.0.0.json
  * are retained in test/fixtures/ for reference.
  *
@@ -18,12 +18,12 @@
  * captured by scripts/capture-baseline.ts before any Phase A work landed.
  *
  * Override:
- * - GSTACK_SIZE_BUDGET_RATIO=<n> changes the per-skill regression ratio.
+ * - PAYSEC_SIZE_BUDGET_RATIO=<n> changes the per-skill regression ratio.
  *   Default 1.0 (no growth allowed). Set to 1.10 to permit 10% growth
  *   (e.g., during deliberate feature additions that the catalog trim
  *   doesn't offset).
- * - GSTACK_SIZE_BUDGET_OVERRIDE_REASON="text" allows a regression to
- *   pass and logs the reason to ~/.gstack/analytics/spend-overrides.jsonl
+ * - PAYSEC_SIZE_BUDGET_OVERRIDE_REASON="text" allows a regression to
+ *   pass and logs the reason to ~/.paysec/analytics/spend-overrides.jsonl
  *   for audit. Use sparingly; the next baseline should bake in the new
  *   size.
  */
@@ -41,13 +41,13 @@ const BASELINE_PATH = path.join(REPO_ROOT, 'test', 'fixtures', 'parity-baseline-
 
 // Default per-skill ratio is 1.50 (50% growth tolerance). Adjusted v1.52.0.0
 // (cathedral cap audit) from 1.05 → 1.50: a 5% ratio tripped on legitimate
-// feature additions (e.g., plan-tune cathedral T13 grew SKILL.md ×1.24
+// feature additions (e.g., tune-questions cathedral T13 grew SKILL.md ×1.24
 // adding load-bearing Dream cycle + Audit unmarked + Recent auto-decisions
 // surfaces). Real bloat is 2-3×; this catches that while not tripping on
 // normal feature scope. The always-loaded catalog cost is enforced
 // separately with a hard ceiling.
 const DEFAULT_RATIO = 1.50;
-const RATIO = Number(process.env.GSTACK_SIZE_BUDGET_RATIO) || DEFAULT_RATIO;
+const RATIO = Number(process.env.PAYSEC_SIZE_BUDGET_RATIO) || DEFAULT_RATIO;
 
 interface Regression {
   skill: string;
@@ -80,7 +80,7 @@ describe('SKILL.md size budget regression (gate, free)', () => {
 
     if (regressions.length === 0) return;
 
-    const overrideReason = process.env.GSTACK_SIZE_BUDGET_OVERRIDE_REASON?.trim();
+    const overrideReason = process.env.PAYSEC_SIZE_BUDGET_OVERRIDE_REASON?.trim();
     if (overrideReason) {
       logBudgetOverride({
         scope: 'skill-size-budget',
@@ -103,7 +103,7 @@ describe('SKILL.md size budget regression (gate, free)', () => {
     ).join('\n');
     throw new Error(
       `${regressions.length} skill(s) regressed past v1.47.0.0 baseline × ${RATIO}:\n${msg}\n` +
-      `Override: set GSTACK_SIZE_BUDGET_OVERRIDE_REASON="why this is OK" to allow and audit-log.`,
+      `Override: set PAYSEC_SIZE_BUDGET_OVERRIDE_REASON="why this is OK" to allow and audit-log.`,
     );
   });
 
@@ -118,7 +118,7 @@ describe('SKILL.md size budget regression (gate, free)', () => {
       );
       return;
     }
-    const overrideReason = process.env.GSTACK_SIZE_BUDGET_OVERRIDE_REASON?.trim();
+    const overrideReason = process.env.PAYSEC_SIZE_BUDGET_OVERRIDE_REASON?.trim();
     if (overrideReason) {
       logBudgetOverride({
         scope: 'skill-size-budget-corpus',
@@ -130,7 +130,7 @@ describe('SKILL.md size budget regression (gate, free)', () => {
     throw new Error(
       `Total corpus regressed past v1.47.0.0 baseline × ${RATIO}: ` +
       `${baseline.totalCorpusBytes} → ${current.totalCorpusBytes} bytes (×${ratio.toFixed(3)}). ` +
-      `Override: set GSTACK_SIZE_BUDGET_OVERRIDE_REASON to allow.`,
+      `Override: set PAYSEC_SIZE_BUDGET_OVERRIDE_REASON to allow.`,
     );
   });
 
@@ -141,7 +141,7 @@ describe('SKILL.md size budget regression (gate, free)', () => {
    * a tiny noise floor. A skill that was 100 KB at v1.47.0.0 and shrinks to
    * 250 bytes passes that check despite losing 99.75% of content. The
    * parity-suite content invariants cover this for 10 hand-picked skills
-   * (cso, ship, plan-ceo, etc.); the remaining 41 skills had no per-skill
+   * (security-audit, ship, plan-ceo, etc.); the remaining 41 skills had no per-skill
    * shrinkage floor.
    *
    * Floor: 80% of the v1.47.0.0 baseline. v1.46 actual shrinkage is <1% per
@@ -149,9 +149,9 @@ describe('SKILL.md size budget regression (gate, free)', () => {
    * mass deletion (e.g., a refactor that strips the body of a skill).
    *
    * v2.0.0.0 introduces the sections/ pattern for 5 heavyweights
-   * (ship, plan-ceo-review, office-hours, plan-eng-review,
-   * plan-design-review). Carved so far: ship (skeleton ~83 KB) and
-   * plan-ceo-review (skeleton ~81 KB, down from the 138 KB monolith). Those
+   * (ship, plan-business-review, idea-review, plan-tech-review,
+   * plan-ux-review). Carved so far: ship (skeleton ~83 KB) and
+   * plan-business-review (skeleton ~81 KB, down from the 138 KB monolith). Those
    * skeletons legitimately fall below the 80% body-strip floor, so each carved
    * skill is added to SECTIONS_EXTRACTED; its union is guarded instead by the
    * sectioned invariant in parity-harness.ts (minBytes on skeleton+sections).
@@ -171,16 +171,16 @@ describe('SKILL.md size budget regression (gate, free)', () => {
     // - spec: the baseline measured a template bug — prose at Phase 5 mentioned
     //   {{PREAMBLE}} literally, so the generator expanded the ENTIRE preamble a
     //   second time mid-sentence (~47 KB of duplication). Fixed by rewording the
-    //   prose; spec/SKILL.md now carries exactly one preamble (~80.9 KB, ×0.79).
-    // - scrape/diagram/open-gstack-browser/landing-report/pair-agent/skillify:
+    //   prose; write-spec/SKILL.md now carries exactly one preamble (~80.9 KB, ×0.79).
+    // - web-scrape/make-diagram/open-paysec-browser/merge-queue-report/pair-remote-agent/save-scrape-skill:
     //   the baseline measured these at the silent tier-4 default (a missing
     //   preamble-tier frontmatter fell through `?? 4`). Their tiers are now
     //   declared correctly (1-2), shedding the tier-2..4 onboarding prose they
     //   never should have carried (-271 lines each for tier 1).
     const INTENTIONAL_SHRINKS = new Set<string>([
-      'spec',
-      'scrape', 'diagram', 'open-gstack-browser',
-      'landing-report', 'pair-agent', 'skillify',
+      'write-spec',
+      'web-scrape', 'make-diagram', 'open-paysec-browser',
+      'merge-queue-report', 'pair-remote-agent', 'save-scrape-skill',
     ]);
 
     const undershoots: Array<{
@@ -201,7 +201,7 @@ describe('SKILL.md size budget regression (gate, free)', () => {
 
     if (undershoots.length === 0) return;
 
-    const overrideReason = process.env.GSTACK_SIZE_BUDGET_OVERRIDE_REASON?.trim();
+    const overrideReason = process.env.PAYSEC_SIZE_BUDGET_OVERRIDE_REASON?.trim();
     if (overrideReason) {
       logBudgetOverride({
         scope: 'skill-size-budget-floor',
@@ -223,7 +223,7 @@ describe('SKILL.md size budget regression (gate, free)', () => {
       `This usually signals accidental body strip (e.g., a resolver returning empty, a ` +
       `template losing a section). If the shrinkage is intentional (e.g., the skill moved ` +
       `to the sections/ pattern), add it to SECTIONS_EXTRACTED in this test. Override: ` +
-      `GSTACK_SIZE_BUDGET_OVERRIDE_REASON="why" allows + audit-logs.`,
+      `PAYSEC_SIZE_BUDGET_OVERRIDE_REASON="why" allows + audit-logs.`,
     );
   });
 
@@ -255,7 +255,7 @@ describe('SKILL.md size budget regression (gate, free)', () => {
       console.log(`[skill-size-budget] catalog OK: ~${catalogTokens} tokens (target ≤${v145Target}, ${trackedCount} tracked skills)`);
       return;
     }
-    const overrideReason = process.env.GSTACK_SIZE_BUDGET_OVERRIDE_REASON?.trim();
+    const overrideReason = process.env.PAYSEC_SIZE_BUDGET_OVERRIDE_REASON?.trim();
     if (overrideReason) {
       logBudgetOverride({
         scope: 'skill-size-budget-catalog',
@@ -266,7 +266,7 @@ describe('SKILL.md size budget regression (gate, free)', () => {
     }
     throw new Error(
       `Catalog token estimate regressed past v1.45 target: ${catalogTokens} tokens > ${v145Target}. ` +
-      `T4 catalog trim should keep this under control. Override: set GSTACK_SIZE_BUDGET_OVERRIDE_REASON to allow.`,
+      `T4 catalog trim should keep this under control. Override: set PAYSEC_SIZE_BUDGET_OVERRIDE_REASON to allow.`,
     );
   });
 });

@@ -58,13 +58,13 @@ const MANDATORY: Array<{ name: string; re: RegExp }> = [
  * these into a section (they fire only once the section is loaded), but they
  * must never be DROPPED. Asserted against the skeleton+sections union. */
 const PER_SKILL_RULES: Record<string, RegExp[]> = {
-  'plan-ceo-review': [/One issue = one AskUserQuestion call/i],
-  'plan-eng-review': [/One issue = one AskUserQuestion call/i],
-  'plan-design-review': [/One issue = one AskUserQuestion call/i],
-  'plan-devex-review': [/One issue = one AskUserQuestion call/i],
-  // /codex emits its recommendation as prose; the instruction MUST stay in the
+  'plan-business-review': [/One issue = one AskUserQuestion call/i],
+  'plan-tech-review': [/One issue = one AskUserQuestion call/i],
+  'plan-ux-review': [/One issue = one AskUserQuestion call/i],
+  'plan-dx-review': [/One issue = one AskUserQuestion call/i],
+  // /codex-second-opinion emits its recommendation as prose; the instruction MUST stay in the
   // always-loaded skeleton because codex has no on-demand section.
-  codex: [/Synthesis recommendation \(REQUIRED\)/i, /Recommendation\s*:\s*<action>\s*because/i],
+  'codex-second-opinion': [/Synthesis recommendation \(REQUIRED\)/i, /Recommendation\s*:\s*<action>\s*because/i],
 };
 
 /** Discover every repo-root skill dir that ships a generated SKILL.md. */
@@ -96,24 +96,24 @@ const interactive = skills.filter(s =>
  * test below fails. Derived from "fires AUQ at the user" — the plan/review/
  * advisory skills plus codex. */
 const EXPECTED_INTERACTIVE = [
-  'plan-ceo-review',
-  'plan-eng-review',
-  'plan-design-review',
-  'plan-devex-review',
-  'office-hours',
-  'ship',
-  'review',
-  'qa',
-  'qa-only',
-  'codex',
-  'autoplan',
-  'cso',
-  'investigate',
-  'retro',
-  'design-review',
-  'design-consultation',
-  'spec',
-  'land-and-deploy',
+  'plan-business-review',
+  'plan-tech-review',
+  'plan-ux-review',
+  'plan-dx-review',
+  'idea-review',
+  'ship-pr',
+  'pr-review',
+  'qa-fix',
+  'qa-report',
+  'codex-second-opinion',
+  'auto-plan-review',
+  'security-audit',
+  'debug-root-cause',
+  'weekly-retro',
+  'design-qa',
+  'design-system',
+  'write-spec',
+  'merge-and-deploy',
 ];
 
 describe('AUQ format is always-loaded (token-reduction safety net)', () => {

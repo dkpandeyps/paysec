@@ -1,4 +1,4 @@
-# GStack Browser V0 — The AI-Native Development Browser
+# PaySec Browser V0 — The AI-Native Development Browser
 
 **Date:** 2026-03-30
 **Author:** Garry Tan + Claude Code
@@ -8,7 +8,7 @@
 ## The Thesis
 
 Every other AI browser (Atlas, Dia, Comet, Chrome Auto Browse) starts with a
-consumer browser and bolts AI onto it. GStack Browser inverts this. It starts
+consumer browser and bolts AI onto it. PaySec Browser inverts this. It starts
 with Claude Code as the runtime and gives it a browser viewport.
 
 The agent is the primary citizen. The browser is the canvas. Skills are
@@ -17,17 +17,17 @@ an AI that can see and interact with the web.
 
 This is the IDE for the post-IDE era. Code lives in the terminal. The product
 lives in the browser. The AI works across both simultaneously. What Cursor did
-for text editors, GStack Browser does for the browser.
+for text editors, PaySec Browser does for the browser.
 
 ## What It Is Today (Phase 1a, shipped)
 
-A double-clickable macOS .app that wraps Playwright's Chromium with the gstack
+A double-clickable macOS .app that wraps Playwright's Chromium with the paysec
 sidebar extension baked in. You open it and Claude Code can see your screen,
 navigate pages, fill forms, take screenshots, inspect CSS, clean up overlays,
-and run any gstack skill. All without touching a terminal.
+and run any paysec skill. All without touching a terminal.
 
 ```
-GStack Browser.app (389MB, 189MB DMG)
+PaySec Browser.app (389MB, 189MB DMG)
 ├── Compiled browse binary (58MB) — CLI + HTTP server
 ├── Chrome extension (172KB) — sidebar, activity feed, inspector
 ├── Playwright's Chromium (330MB) — the actual browser
@@ -42,7 +42,7 @@ Launch → Chromium opens with sidebar → extension auto-connects to browse ser
 ### Phase 1b: Developer UX (next)
 
 **Command Palette (Cmd+K):** The signature interaction. Opens a fuzzy-filtered
-skill picker. Type "/qa" to start QA testing, "/investigate" to debug, "/ship"
+skill picker. Type "/qa-fix" to start QA testing, "/debug-root-cause" to debug, "/ship-pr"
 to create a PR. Skills are fetched from the browse server, not hardcoded. The
 palette is the entry point to everything.
 
@@ -82,7 +82,7 @@ deployments. Cross-platform compilation (linux-arm64/x64) required.
 
 ### Phase 4: Chromium Fork (trigger-gated)
 
-When the extension side panel hits hard API limits, GStack Browser ships to
+When the extension side panel hits hard API limits, PaySec Browser ships to
 external users, build infra exists, and the business justifies maintenance:
 fork Chromium. Brave's `chromium_src` override pattern, CC-powered 6-week
 rebases (2-4 hours with CC vs 1-2 weeks human). ~20-30 files modified.
@@ -136,7 +136,7 @@ in the code simultaneously.
 
 **Today:** The sidebar chat connects to Claude Code. You say "this button is
 misaligned" and the AI reads the CSS, identifies the issue, and proposes a fix.
-The `/design-review` skill takes screenshots, identifies visual issues, and
+The `/design-qa` skill takes screenshots, identifies visual issues, and
 commits fixes with before/after evidence.
 
 **Next:** Live reload loop. The AI edits CSS/HTML, the browser auto-reloads, the
@@ -186,18 +186,18 @@ and the other watches the AI fix things in real-time.
 
 ### 6. Skills as Browser Capabilities
 
-Every gstack skill becomes a browser capability.
+Every paysec skill becomes a browser capability.
 
 | Skill | Browser Capability |
 |-------|-------------------|
-| `/qa` | Test every page, find bugs, fix them, verify fixes |
-| `/design-review` | Screenshot → analyze → fix CSS → screenshot again |
-| `/investigate` | See the error in browser → trace to code → fix → verify |
-| `/benchmark` | Measure page performance → detect regressions → alert |
-| `/canary` | Monitor deployed site → screenshot periodically → alert on changes |
-| `/ship` | Run tests → review diff → create PR → verify deployment in browser |
-| `/cso` | Audit page for XSS, open redirects, clickjacking in real browser |
-| `/office-hours` | Browse competitor sites → synthesize observations → design doc |
+| `/qa-fix` | Test every page, find bugs, fix them, verify fixes |
+| `/design-qa` | Screenshot → analyze → fix CSS → screenshot again |
+| `/debug-root-cause` | See the error in browser → trace to code → fix → verify |
+| `/perf-check` | Measure page performance → detect regressions → alert |
+| `/post-deploy-monitor` | Monitor deployed site → screenshot periodically → alert on changes |
+| `/ship-pr` | Run tests → review diff → create PR → verify deployment in browser |
+| `/security-audit` | Audit page for XSS, open redirects, clickjacking in real browser |
+| `/idea-review` | Browse competitor sites → synthesize observations → design doc |
 
 The command palette (Cmd+K) is the hub. You don't need to know the skills exist.
 You type what you want, the fuzzy filter finds the right skill, and the AI runs it
@@ -214,7 +214,7 @@ Generate mockup (GPT Image API)
   → Approve direction
   → Generate production HTML/CSS
   → Preview in browser
-  → Fine-tune with /design-review
+  → Fine-tune with /design-qa
   → Ship
 ```
 
@@ -253,7 +253,7 @@ Synthetic monitoring with AI judgment. Not just "did the page return 200" but
 
 ```
 +-------------------------------------------------------+
-|                  GStack Browser                        |
+|                  PaySec Browser                        |
 |                                                        |
 |  +------------------+  +---------------------------+  |
 |  |   Chromium        |  |   Extension Side Panel    |  |
@@ -270,7 +270,7 @@ Synthetic monitoring with AI judgment. Not just "did the page return 200" but
   +---------┴-----------+    +-----------┴-----------+
   |  Browse Server      |    |  Sidebar Agent        |
   |  (HTTP + SSE)       |    |  (claude -p wrapper)  |
-  |  :34567             |    |  Runs gstack skills   |
+  |  :34567             |    |  Runs paysec skills   |
   |                     |    |  Per-tab isolation     |
   |  Commands:          |    |                       |
   |  goto, click, fill  |    |  Future: BoomLooper   |
@@ -295,9 +295,9 @@ Synthetic monitoring with AI judgment. Not just "did the page return 200" but
 | **Comet** | AI browser | Multi-agent browsing | Early, unclear dev workflow |
 | **Chrome Auto Browse** | Extension | Google's own, deep Chrome integration | Extension-only, no code editing |
 | **Cursor** | VSCode fork + AI | Best-in-class code editing | No browser viewport |
-| **GStack Browser** | CC runtime + browser viewport | See bug in browser, fix in code, verify | Currently macOS-only, no consumer features |
+| **PaySec Browser** | CC runtime + browser viewport | See bug in browser, fix in code, verify | Currently macOS-only, no consumer features |
 
-GStack Browser doesn't compete with consumer browsers. It competes with the
+PaySec Browser doesn't compete with consumer browsers. It competes with the
 workflow of switching between browser and editor. The goal is to make that switch
 invisible.
 
@@ -317,9 +317,9 @@ From DESIGN.md:
 |-----------|--------|-------|
 | .app bundle | **SHIPPED** | 389MB, launches in ~5s |
 | DMG packaging | **SHIPPED** | 189MB compressed |
-| `GSTACK_CHROMIUM_PATH` | **SHIPPED** | Custom Chromium binary support |
+| `PAYSEC_CHROMIUM_PATH` | **SHIPPED** | Custom Chromium binary support |
 | `BROWSE_EXTENSIONS_DIR` | **SHIPPED** | Extension path override |
-| Auth via `/health` | **SHIPPED** | Replaces .auth.json file approach, auto-refreshes on server restart |
+| Auth via `/code-health` | **SHIPPED** | Replaces .auth.json file approach, auto-refreshes on server restart |
 | Build script | **SHIPPED** | `scripts/build-app.sh` |
 | Model routing | **SHIPPED** | Sonnet for actions, Opus for analysis (`pickSidebarModel`) |
 | Debug logging | **SHIPPED** | 40+ silent catches → prefixed console logging across 4 files |
@@ -350,7 +350,7 @@ Manual skill invocation       Autonomous QA loops            Skill marketplace
                               Real-time collaboration         Enterprise features
 ```
 
-The 12-month ideal: you open GStack Browser, it detects your project, starts
+The 12-month ideal: you open PaySec Browser, it detects your project, starts
 your dev server, runs your test suite, and reports what's broken. You say "fix
 it" and the AI fixes every bug, verifies each fix visually, and creates a PR.
 You review the PR in the same browser, approve it, and the AI deploys it and
@@ -363,11 +363,11 @@ with a browser bolted on.
 
 This plan went through 4 reviews:
 
-1. **CEO Review** (`/plan-ceo-review`, SELECTIVE EXPANSION) — 9 scope proposals,
+1. **CEO Review** (`/plan-business-review`, SELECTIVE EXPANSION) — 9 scope proposals,
    3 accepted (Cmd+K, Cmd+Shift+S, status bar), 5 deferred, 1 skipped
-2. **Design Review** (`/plan-design-review`) — scored 5/10 → 8/10, 9 design
+2. **Design Review** (`/plan-ux-review`) — scored 5/10 → 8/10, 9 design
    decisions added, 2 approved mockups generated
-3. **Eng Review** (`/plan-eng-review`) — 4 issues found, 0 critical gaps,
+3. **Eng Review** (`/plan-tech-review`) — 4 issues found, 0 critical gaps,
    test plan produced
 4. **Codex Review** (outside voice) — 9 findings, 3 critical gaps caught
    (server bundling, auth file location, project binding). All resolved.

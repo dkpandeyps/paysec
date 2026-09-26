@@ -7,7 +7,7 @@ export function generateAskUserFormat(_ctx: TemplateContext): string {
 
 "AskUserQuestion" can resolve to two tools at runtime: the **host MCP variant** (e.g. \`mcp__conductor__AskUserQuestion\` — appears in your tool list when the host registers it) or the **native** Claude Code tool.
 
-**Conductor rule (read before the MCP rule):** if \`CONDUCTOR_SESSION: true\` was echoed by the preamble, do NOT call AskUserQuestion at all — neither native nor any \`mcp__*__AskUserQuestion\` variant. Render EVERY decision brief as the **prose form** below and STOP. This is proactive, not a reaction to a failure: Conductor disables native AUQ and its MCP variant is flaky (it returns \`[Tool result missing due to internal error]\`), so prose is the reliable path. **Auto-decide preferences still apply first:** if a \`[plan-tune auto-decide] <id> → <option>\` result has already surfaced for a question, proceed with that option (no prose). Because in Conductor you go straight to prose without ever calling the tool, this auto-decide-first ordering is enforced HERE, not only by the PreToolUse hook. When you render a Conductor prose brief, also capture it with \`bin/gstack-question-log\` (the PostToolUse capture hook never fires on a prose path, so \`/plan-tune\` history/learning depends on this call).
+**Conductor rule (read before the MCP rule):** if \`CONDUCTOR_SESSION: true\` was echoed by the preamble, do NOT call AskUserQuestion at all — neither native nor any \`mcp__*__AskUserQuestion\` variant. Render EVERY decision brief as the **prose form** below and STOP. This is proactive, not a reaction to a failure: Conductor disables native AUQ and its MCP variant is flaky (it returns \`[Tool result missing due to internal error]\`), so prose is the reliable path. **Auto-decide preferences still apply first:** if a \`[tune-questions auto-decide] <id> → <option>\` result has already surfaced for a question, proceed with that option (no prose). Because in Conductor you go straight to prose without ever calling the tool, this auto-decide-first ordering is enforced HERE, not only by the PreToolUse hook. When you render a Conductor prose brief, also capture it with \`bin/paysec-question-log\` (the PostToolUse capture hook never fires on a prose path, so \`/tune-questions\` history/learning depends on this call).
 
 **Rule (non-Conductor):** if any \`mcp__*__AskUserQuestion\` variant is in your tool list, prefer it. Hosts may disable native AUQ via \`--disallowedTools AskUserQuestion\` (Conductor does, by default) and route through their MCP variant; calling native there silently fails. Same questions/options shape; same decision-brief format applies.
 
@@ -17,7 +17,7 @@ If AskUserQuestion is unavailable (no variant in your tool list) OR a call to it
 
 Tell three outcomes apart:
 
-1. **Auto-decide denial (NOT a failure).** The result contains \`[plan-tune auto-decide] <id> → <option>\` — the preference hook working as designed. Proceed with that option. Do NOT retry, do NOT fall back to prose.
+1. **Auto-decide denial (NOT a failure).** The result contains \`[tune-questions auto-decide] <id> → <option>\` — the preference hook working as designed. Proceed with that option. Do NOT retry, do NOT fall back to prose.
 2. **Genuine failure** — no variant in your tool list, OR the variant is present but the call returns an error / missing result (MCP transport error, empty result, host bug — e.g. Conductor's MCP AskUserQuestion is flaky and returns \`[Tool result missing due to internal error]\`).
    - If it was present and **errored** (not absent), retry the SAME call **once** — but only if no answer could have surfaced (a missing-result error can arrive after the user already saw the question; retrying would double-prompt, so if it may have reached them, treat as pending, don't retry).
    - Then branch on \`SESSION_KIND\` (echoed by the preamble; empty/absent ⇒ \`interactive\`):
@@ -68,7 +68,7 @@ Pros / cons: use ✅ and ❌. Minimum 2 pros and 1 con per option when the choic
 
 Neutral posture: \`Recommendation: <default> — this is a taste call, no strong preference either way\`; \`(recommended)\` STAYS on the default option for AUTO_DECIDE.
 
-Effort both-scales: when an option involves effort, label both human-team and CC+gstack time, e.g. \`(human: ~2 days / CC: ~15 min)\`. Makes AI compression visible at decision time.
+Effort both-scales: when an option involves effort, label both human-team and CC+paysec time, e.g. \`(human: ~2 days / CC: ~15 min)\`. Makes AI compression visible at decision time.
 
 Net line closes the tradeoff. Per-skill instructions may add stricter rules.
 
@@ -95,11 +95,11 @@ For N>6, fire a \`D<N>.0\` meta-AskUserQuestion first (proceed / narrow / batch)
 
 question_ids for split chains: \`<skill>-split-<option-slug>\` (kebab-case ASCII,
 ≤64 chars, \`-2\`/\`-3\` suffix on collision). The runtime checker
-(\`bin/gstack-question-preference\`) refuses \`never-ask\` on any \`*-split-*\` id,
+(\`bin/paysec-question-preference\`) refuses \`never-ask\` on any \`*-split-*\` id,
 so split chains are never AUTO_DECIDE-eligible — the user's option set is sacred.
 
 **Full rule + worked examples + Hold/dependency semantics:** see
-\`docs/askuserquestion-split.md\` in the gstack repo. Read on demand when N>4.
+\`docs/askuserquestion-split.md\` in the paysec repo. Read on demand when N>4.
 
 **Non-ASCII characters — write directly, never \\u-escape.** When any string
 field contains Chinese (繁體/簡體), Japanese, Korean, or other non-ASCII text,

@@ -18,23 +18,23 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), 'parity-sectioned-'));
 afterAll(() => { try { fs.rmSync(root, { recursive: true, force: true }); } catch { /* noop */ } });
 
 // Carved "ship": a small skeleton + two sections holding the relocated prose.
-fs.mkdirSync(path.join(root, 'ship', 'sections'), { recursive: true });
-fs.writeFileSync(path.join(root, 'ship', 'SKILL.md'),
+fs.mkdirSync(path.join(root, 'ship-pr', 'sections'), { recursive: true });
+fs.writeFileSync(path.join(root, 'ship-pr', 'SKILL.md'),
   '## Preamble\nskeleton body, decision tree, VERSION bump step calls the CLI.\n## When to invoke\n');
-fs.writeFileSync(path.join(root, 'ship', 'sections', 'changelog.md'), '# Changelog\nWrite the CHANGELOG entry here.\n');
-fs.writeFileSync(path.join(root, 'ship', 'sections', 'review-army.md'), '# Review\nDispatch the pre-landing review army.\n');
+fs.writeFileSync(path.join(root, 'ship-pr', 'sections', 'changelog.md'), '# Changelog\nWrite the CHANGELOG entry here.\n');
+fs.writeFileSync(path.join(root, 'ship-pr', 'sections', 'review-army.md'), '# Review\nDispatch the pre-landing review army.\n');
 
 // A monolith control skill.
 fs.mkdirSync(path.join(root, 'mono'), { recursive: true });
 fs.writeFileSync(path.join(root, 'mono', 'SKILL.md'), '## Preamble\nVERSION CHANGELOG review all inline here.\n');
 
-const skeletonBytes = Buffer.byteLength(fs.readFileSync(path.join(root, 'ship', 'SKILL.md'), 'utf-8'), 'utf-8');
-const unionBytes = readSkillForParity(root, 'ship', true).unionBytes;
+const skeletonBytes = Buffer.byteLength(fs.readFileSync(path.join(root, 'ship-pr', 'SKILL.md'), 'utf-8'), 'utf-8');
+const unionBytes = readSkillForParity(root, 'ship-pr', true).unionBytes;
 const baseline: SkillBaselineEntry = { skillMdBytes: unionBytes } as SkillBaselineEntry;
 
 describe('readSkillForParity', () => {
   test('unions skeleton + sections for carved skills', () => {
-    const r = readSkillForParity(root, 'ship', true);
+    const r = readSkillForParity(root, 'ship-pr', true);
     expect(r.text).toContain('CHANGELOG');       // from changelog.md
     expect(r.text).toContain('review army');      // from review-army.md
     expect(r.skeletonBytes).toBe(skeletonBytes);
@@ -49,7 +49,7 @@ describe('readSkillForParity', () => {
 describe('checkSkillParity (sectioned)', () => {
   test('finds phrases that moved into sections (union content check)', () => {
     const inv: ParityInvariant = {
-      skill: 'ship', sectioned: true,
+      skill: 'ship-pr', sectioned: true,
       mustContain: ['VERSION', 'CHANGELOG', 'review army'],
       mustHaveHeadings: ['## Preamble', '## When to invoke'],
     };
@@ -58,7 +58,7 @@ describe('checkSkillParity (sectioned)', () => {
   });
 
   test('maxSkeletonBytes catches a skeleton that did not shrink', () => {
-    const inv: ParityInvariant = { skill: 'ship', sectioned: true, maxSkeletonBytes: 10 };
+    const inv: ParityInvariant = { skill: 'ship-pr', sectioned: true, maxSkeletonBytes: 10 };
     const res = checkSkillParity(inv, { skillMdBytes: skeletonBytes } as SkillBaselineEntry, baseline, root);
     expect(res.passed).toBe(false);
     expect(res.failures.join()).toContain('maxSkeletonBytes');
@@ -68,20 +68,20 @@ describe('checkSkillParity (sectioned)', () => {
     // A floor between skeletonBytes and unionBytes must PASS for sectioned skills,
     // because the union (total behavior) is what must not shrink.
     const floor = Math.floor((skeletonBytes + unionBytes) / 2);
-    const inv: ParityInvariant = { skill: 'ship', sectioned: true, minBytes: floor };
+    const inv: ParityInvariant = { skill: 'ship-pr', sectioned: true, minBytes: floor };
     const res = checkSkillParity(inv, { skillMdBytes: skeletonBytes } as SkillBaselineEntry, baseline, root);
     expect(res.passed).toBe(true);
   });
 
   test('flags a phrase that truly went missing', () => {
-    const inv: ParityInvariant = { skill: 'ship', sectioned: true, mustContain: ['this-phrase-is-not-anywhere'] };
+    const inv: ParityInvariant = { skill: 'ship-pr', sectioned: true, mustContain: ['this-phrase-is-not-anywhere'] };
     const res = checkSkillParity(inv, { skillMdBytes: skeletonBytes } as SkillBaselineEntry, baseline, root);
     expect(res.passed).toBe(false);
     expect(res.failures.join()).toContain('missing required phrase');
   });
 
   test('maxSizeRatio uses union bytes vs baseline (carve preserves ~total size)', () => {
-    const inv: ParityInvariant = { skill: 'ship', sectioned: true, maxSizeRatio: 1.05 };
+    const inv: ParityInvariant = { skill: 'ship-pr', sectioned: true, maxSizeRatio: 1.05 };
     const res = checkSkillParity(inv, { skillMdBytes: skeletonBytes } as SkillBaselineEntry, baseline, root);
     expect(res.passed).toBe(true); // union == baseline here → ratio 1.0
   });

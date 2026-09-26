@@ -1,5 +1,5 @@
-// AUTO-GENERATED from gstack/ios-qa/templates/StateServer.swift.template
-// Regenerate with: /ios-sync
+// AUTO-GENERATED from paysec/ios-device-qa/templates/StateServer.swift.template
+// Regenerate with: /ios-bridge-sync
 //
 // StateServer — HTTP server embedded in the iOS app under test. Loopback-only.
 // All tailnet ingress is the responsibility of the Mac-side daemon.
@@ -25,7 +25,7 @@ public final class StateServer {
 
     // MARK: Configuration
 
-    private let logger = Logger(subsystem: "gstack.ios-qa", category: "StateServer")
+    private let logger = Logger(subsystem: "paysec.ios-device-qa", category: "StateServer")
     private let port: UInt16
     private let bootTokenPath: String
 
@@ -88,7 +88,7 @@ public final class StateServer {
     private init(port: UInt16 = 9999) {
         self.port = port
         self.bootToken = UUID().uuidString
-        self.bootTokenPath = NSTemporaryDirectory() + "gstack-ios-qa.token"
+        self.bootTokenPath = NSTemporaryDirectory() + "paysec-ios-device-qa.token"
     }
 
     public func start() {
@@ -102,7 +102,7 @@ public final class StateServer {
         //    os_log line that used to carry it had no consumer and handed a
         //    live credential to anything reading the unified log during the
         //    launch window. Port/build stay for diagnostics.
-        logger.notice("gstack-ios-qa-bootstrap port=\(self.port, privacy: .public) build=\(self.appBuildId, privacy: .public)")
+        logger.notice("paysec-ios-qa-bootstrap port=\(self.port, privacy: .public) build=\(self.appBuildId, privacy: .public)")
 
         // 3. Bind both IPv6 and IPv4 loopback. CoreDevice tunnel uses IPv6;
         //    local tooling may use IPv4. Never bind 0.0.0.0 or ::.

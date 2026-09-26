@@ -1,5 +1,5 @@
 /**
- * gstack-gbrain-detect — gbrain_mcp_mode + gstack_artifacts_remote tests.
+ * paysec-gbrain-detect — gbrain_mcp_mode + paysec_artifacts_remote tests.
  *
  * The script has a 3-tier fallback chain for resolving gbrain_mcp_mode:
  *   1. `claude mcp get gbrain --json` (preferred — public CLI surface)
@@ -18,7 +18,7 @@ import * as path from 'path';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const DETECT_BIN = path.join(ROOT, 'bin', 'gstack-gbrain-detect');
+const DETECT_BIN = path.join(ROOT, 'bin', 'paysec-gbrain-detect');
 
 let tmpHome: string;
 let fakeBinDir: string;
@@ -62,7 +62,7 @@ function runDetect(extraEnv: Record<string, string> = {}): { code: number; json:
       // for any sibling scripts and standard paths for jq/etc.
       PATH: `${fakeBinDir}:${path.join(ROOT, 'bin')}:${realPath}`,
       HOME: tmpHome,
-      GSTACK_HOME: path.join(tmpHome, '.gstack'),
+      PAYSEC_HOME: path.join(tmpHome, '.paysec'),
       ...extraEnv,
     },
     encoding: 'utf-8',
@@ -272,46 +272,46 @@ describe('gbrain_mcp_mode — no info anywhere', () => {
   });
 });
 
-describe('gstack_artifacts_remote', () => {
-  test('reads ~/.gstack-artifacts-remote.txt when present', () => {
+describe('paysec_artifacts_remote', () => {
+  test('reads ~/.paysec-artifacts-remote.txt when present', () => {
     fs.writeFileSync(
-      path.join(tmpHome, '.gstack-artifacts-remote.txt'),
+      path.join(tmpHome, '.paysec-artifacts-remote.txt'),
       'https://github.com/garrytan/gstack-artifacts-garrytan\n'
     );
-    expect(runDetect().json.gstack_artifacts_remote).toBe(
+    expect(runDetect().json.paysec_artifacts_remote).toBe(
       'https://github.com/garrytan/gstack-artifacts-garrytan'
     );
   });
 
-  test('migration-window fallback: reads ~/.gstack-brain-remote.txt if artifacts file is missing', () => {
+  test('migration-window fallback: reads ~/.paysec-brain-remote.txt if artifacts file is missing', () => {
     fs.writeFileSync(
-      path.join(tmpHome, '.gstack-brain-remote.txt'),
+      path.join(tmpHome, '.paysec-brain-remote.txt'),
       'git@github.com:garrytan/gstack-brain-garrytan.git\n'
     );
-    expect(runDetect().json.gstack_artifacts_remote).toBe(
+    expect(runDetect().json.paysec_artifacts_remote).toBe(
       'git@github.com:garrytan/gstack-brain-garrytan.git'
     );
   });
 
   test('artifacts file wins over brain file when both exist', () => {
     fs.writeFileSync(
-      path.join(tmpHome, '.gstack-artifacts-remote.txt'),
+      path.join(tmpHome, '.paysec-artifacts-remote.txt'),
       'https://github.com/x/new\n'
     );
     fs.writeFileSync(
-      path.join(tmpHome, '.gstack-brain-remote.txt'),
+      path.join(tmpHome, '.paysec-brain-remote.txt'),
       'https://github.com/x/old\n'
     );
-    expect(runDetect().json.gstack_artifacts_remote).toBe('https://github.com/x/new');
+    expect(runDetect().json.paysec_artifacts_remote).toBe('https://github.com/x/new');
   });
 
   test('empty when neither file exists', () => {
-    expect(runDetect().json.gstack_artifacts_remote).toBe('');
+    expect(runDetect().json.paysec_artifacts_remote).toBe('');
   });
 });
 
 describe('schema regression', () => {
-  test('output JSON has all expected keys (sync-gbrain compat)', () => {
+  test('output JSON has all expected keys (brain-sync compat)', () => {
     const r = runDetect();
     expect(r.code).toBe(0);
     const keys = Object.keys(r.json).sort();
@@ -323,13 +323,13 @@ describe('schema regression', () => {
       'gbrain_mcp_mode',
       'gbrain_on_path',
       // PR #1591 added gbrain_pooler_mode for PgBouncer transaction-mode
-      // detection. Keep alphabetized; downstream sync-gbrain ignores unknown
+      // detection. Keep alphabetized; downstream brain-sync ignores unknown
       // keys so adding here is forward-compat.
       'gbrain_pooler_mode',
       'gbrain_version',
-      'gstack_artifacts_remote',
-      'gstack_brain_git',
-      'gstack_brain_sync_mode',
+      'paysec_artifacts_remote',
+      'paysec_brain_git',
+      'paysec_brain_sync_mode',
     ]);
   });
 });

@@ -1,12 +1,12 @@
 #!/usr/bin/env bun
 /**
- * gstack-redact-prepush — git pre-push hook that scans the diff being pushed for
+ * paysec-redact-prepush — git pre-push hook that scans the diff being pushed for
  * HIGH-severity credentials and blocks the push on a hit.
  *
  * THIS IS A GUARDRAIL, NOT ENFORCEMENT. `git push --no-verify` bypasses it, as
- * does `GSTACK_REDACT_PREPUSH=skip`. It catches accidental credential pushes,
+ * does `PAYSEC_REDACT_PREPUSH=skip`. It catches accidental credential pushes,
  * the most common real-world leak. It does NOT scan history, binary/LFS/submodule
- * files, or non-added lines. History scanning is /cso's job.
+ * files, or non-added lines. History scanning is /security-audit's job.
  *
  * Git pre-push interface: refs are read from STDIN, one per line:
  *   <local ref> <local sha> <remote ref> <remote sha>
@@ -20,10 +20,10 @@
  * Behavior:
  *   - HIGH finding in added lines → print + exit 1 (block), for public AND private.
  *   - MEDIUM → warn (non-blocking). LOW/WARN → silent.
- *   - GSTACK_REDACT_PREPUSH=skip → log + exit 0 (escape valve).
+ *   - PAYSEC_REDACT_PREPUSH=skip → log + exit 0 (escape valve).
  *
- * Installed/uninstalled via `gstack-redact install-prepush-hook` (see the
- * gstack-redact CLI), which chains any pre-existing hook.
+ * Installed/uninstalled via `paysec-redact install-prepush-hook` (see the
+ * paysec-redact CLI), which chains any pre-existing hook.
  */
 import { spawnSync } from "child_process";
 import * as fs from "fs";
@@ -347,7 +347,7 @@ function scanAddedLines(added: string, opts: Parameters<typeof scan>[1]): Findin
 
 function logSkip(reason: string): void {
   try {
-    const home = process.env.GSTACK_HOME || path.join(os.homedir(), ".gstack");
+    const home = process.env.PAYSEC_HOME || path.join(os.homedir(), ".paysec");
     const dir = path.join(home, "security");
     fs.mkdirSync(dir, { recursive: true });
     fs.appendFileSync(
@@ -360,9 +360,9 @@ function logSkip(reason: string): void {
 }
 
 function main() {
-  if ((process.env.GSTACK_REDACT_PREPUSH || "").toLowerCase() === "skip") {
-    logSkip(process.env.GSTACK_REDACT_PREPUSH_REASON || "env-skip");
-    process.stderr.write("gstack-redact-prepush: skipped via GSTACK_REDACT_PREPUSH=skip\n");
+  if ((process.env.PAYSEC_REDACT_PREPUSH || "").toLowerCase() === "skip") {
+    logSkip(process.env.PAYSEC_REDACT_PREPUSH_REASON || "env-skip");
+    process.stderr.write("paysec-redact-prepush: skipped via PAYSEC_REDACT_PREPUSH=skip\n");
     process.exit(0);
   }
 
@@ -385,10 +385,10 @@ function main() {
     const shaShaped = (s: string | undefined) => !!s && /^[0-9a-f]{40,64}$/i.test(s);
     if (fields.length !== 4 || !shaShaped(localSha) || !shaShaped(remoteSha)) {
       process.stderr.write(
-        "\n⛔ gstack-redact-prepush BLOCKED the push — could not parse a pre-push ref line, " +
+        "\n⛔ paysec-redact-prepush BLOCKED the push — could not parse a pre-push ref line, " +
           "so its content cannot be scanned.\n" +
           `  line: ${JSON.stringify(fields.join(" "))}\n` +
-          "Bypass if you're sure: GSTACK_REDACT_PREPUSH=skip git push   (or git push --no-verify)\n",
+          "Bypass if you're sure: PAYSEC_REDACT_PREPUSH=skip git push   (or git push --no-verify)\n",
       );
       process.exit(1);
     }
@@ -401,10 +401,10 @@ function main() {
       // scan it, and unscanned-but-allowed is the failure mode this hook
       // exists to prevent.
       process.stderr.write(
-        "\n⛔ gstack-redact-prepush BLOCKED the push — could not compute the pushed diff, " +
+        "\n⛔ paysec-redact-prepush BLOCKED the push — could not compute the pushed diff, " +
           "so it cannot be scanned for credentials.\n" +
           `  (${err instanceof Error ? err.message.split("\n")[0] : String(err)})\n` +
-          "Bypass if you're sure: GSTACK_REDACT_PREPUSH=skip git push   (or git push --no-verify)\n",
+          "Bypass if you're sure: PAYSEC_REDACT_PREPUSH=skip git push   (or git push --no-verify)\n",
       );
       process.exit(1);
     }
@@ -421,7 +421,7 @@ function main() {
 
   if (mediumCount > 0) {
     process.stderr.write(
-      `gstack-redact-prepush: ${mediumCount} MEDIUM finding(s) in pushed diff (PII/internal). ` +
+      `paysec-redact-prepush: ${mediumCount} MEDIUM finding(s) in pushed diff (PII/internal). ` +
         "Not blocking. Review before this becomes public.\n",
     );
   }
@@ -443,7 +443,7 @@ function main() {
 
     if (secrets.length > 0) {
       process.stderr.write(
-        "\n⛔ gstack-redact-prepush BLOCKED the push — credential(s) in the pushed diff:\n\n",
+        "\n⛔ paysec-redact-prepush BLOCKED the push — credential(s) in the pushed diff:\n\n",
       );
       for (const f of secrets) {
         process.stderr.write(`  HIGH  ${f.id}  ${f.preview}\n`);
@@ -455,7 +455,7 @@ function main() {
 
     if (unscanned.length > 0) {
       process.stderr.write(
-        "\n⛔ gstack-redact-prepush BLOCKED the push — the diff could NOT be scanned.\n" +
+        "\n⛔ paysec-redact-prepush BLOCKED the push — the diff could NOT be scanned.\n" +
           "   No credential was found; none was looked for. Blocking fail-closed.\n\n",
       );
       for (const f of unscanned) {
@@ -470,7 +470,7 @@ function main() {
     }
 
     process.stderr.write(
-      "This is a guardrail: `git push --no-verify` or `GSTACK_REDACT_PREPUSH=skip git push` bypass it.\n",
+      "This is a guardrail: `git push --no-verify` or `PAYSEC_REDACT_PREPUSH=skip git push` bypass it.\n",
     );
     process.exit(1);
   }

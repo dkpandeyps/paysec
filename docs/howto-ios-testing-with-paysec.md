@@ -1,6 +1,6 @@
-# How to test iOS apps with GStack iOS
+# How to test iOS apps with PaySec iOS
 
-This is the end-to-end walkthrough for the iOS QA capability that ships with gstack: install the canonical Swift templates into your app, connect a real iPhone over USB, and drive it from any agent (Claude Code locally, or any HTTP-capable agent over Tailscale). No simulators, no XCTest harness, no WebDriverAgent.
+This is the end-to-end walkthrough for the iOS QA capability that ships with paysec: install the canonical Swift templates into your app, connect a real iPhone over USB, and drive it from any agent (Claude Code locally, or any HTTP-capable agent over Tailscale). No simulators, no XCTest harness, no WebDriverAgent.
 
 Everything below has been verified end-to-end on a real iPhone 17 Pro Max running iOS 26.5. The same flow works on any iOS 16+ device.
 
@@ -9,7 +9,7 @@ Everything below has been verified end-to-end on a real iPhone 17 Pro Max runnin
 - macOS with Xcode 16.0+ installed (`xcrun devicectl --version` must succeed). Xcode 16 ships the CoreDevice tunnel `devicectl` uses to reach the device over USB.
 - A real iPhone running iOS 16 or later. Unlocked, paired with your Mac, with **Developer Mode** enabled in Settings → Privacy & Security.
 - An Apple developer team — the free personal team works fine for live-device debug deploys. You'll need the team ID (e.g. `623FYQ2M88`), not the certificate ID. Find it in Xcode → Settings → Accounts → your Apple ID → team list. The setup signs the app for your device on first deploy via `-allowProvisioningUpdates -allowProvisioningDeviceRegistration`.
-- gstack installed (`./setup` complete; `gstack-ios-qa-regen` and `gstack-ios-qa-daemon` must be on PATH).
+- paysec installed (`./setup` complete; `paysec-ios-qa-regen` and `paysec-ios-qa-daemon` must be on PATH).
 - Bun runtime on PATH (`bun --version`). The Mac-side daemon is a bun process.
 
 For the optional remote-agent (Tailscale) mode, you'll additionally need Tailscale installed on the Mac with `/var/run/tailscale.sock` readable.
@@ -18,7 +18,7 @@ For the optional remote-agent (Tailscale) mode, you'll additionally need Tailsca
 
 ```
 ┌─────────────────┐   tailnet (opt)    ┌──────────────────────┐   USB CoreDevice    ┌─────────────────────┐
-│ Remote agent    │ ─────────────────▶ │ gstack-ios-qa-daemon │ ──────────────────▶ │ iOS app StateServer │
+│ Remote agent    │ ─────────────────▶ │ paysec-ios-qa-daemon │ ──────────────────▶ │ iOS app StateServer │
 │ (Claude, GPT,   │  bearer + session  │  (Mac, bun/TS)       │  IPv6 ULA tunnel    │  (loopback only)    │
 │  OpenClaw, ...) │                    │                      │                     │                     │
 └─────────────────┘                    └──────────────────────┘                     └─────────────────────┘
@@ -26,16 +26,16 @@ For the optional remote-agent (Tailscale) mode, you'll additionally need Tailsca
 
 - iOS app embeds a `StateServer` (`DebugBridge` SPM library, `#if DEBUG` only) listening on `::1` + `127.0.0.1` port 9999. Bearer-token gated. Boot token rotates within ~5 seconds of daemon spawn so anything scraping `os_log` past then sees a dead credential.
 - Mac daemon brokers traffic over the CoreDevice IPv6 tunnel that `xcrun devicectl` opens automatically when a paired device is connected.
-- In Tailscale mode, the daemon exposes a separate listener bound to your tailnet IP, with capability tiers (observe / interact / mutate / restore) enforced per session token. Tokens are minted explicitly by the Mac owner via `gstack-ios-qa-mint`; remote callers never auto-allowlist.
+- In Tailscale mode, the daemon exposes a separate listener bound to your tailnet IP, with capability tiers (observe / interact / mutate / restore) enforced per session token. Tokens are minted explicitly by the Mac owner via `paysec-ios-qa-mint`; remote callers never auto-allowlist.
 
 The iOS `StateServer` is loopback-only **always**, even in remote mode. Identity validation happens Mac-side because the iPhone has no way to validate a Tailscale identity.
 
 ## Step 1: Generate the DebugBridge package
 
-Run `/ios-qa` from the app root, or invoke the same deterministic regenerator directly:
+Run `/ios-device-qa` from the app root, or invoke the same deterministic regenerator directly:
 
 ```bash
-gstack-ios-qa-regen \
+paysec-ios-qa-regen \
   --app-source "$PWD/Sources/YourApp" \
   --bridge-dir "$PWD/DebugBridge"
 ```
@@ -43,7 +43,7 @@ gstack-ios-qa-regen \
 The command copies an explicit allowlist of canonical templates into the local
 `DebugBridge/` Swift package, generates
 `DebugBridgeGenerated/StateAccessor.swift`, and writes the installed version to
-`DebugBridgeGenerated/.gstack-version`. It excludes generated output from its
+`DebugBridgeGenerated/.paysec-version`. It excludes generated output from its
 own schema hash, so rerunning it with unchanged source is a fast, byte-stable
 cache hit. It also removes the explicit legacy generated-file set from older
 flat harness layouts so stale bridge sources cannot shadow the package.
@@ -110,27 +110,27 @@ If the phone is locked you'll get `FBSOpenApplicationServiceErrorDomain error 1 
 
 Two options.
 
-**Option A — let the skill spawn it.** Run `/ios-qa` in Claude Code from anywhere; the skill spawns the daemon on demand, bootstraps the tunnel, rotates the boot token, and exposes the device through the proxy. Cleanest path for local-USB use.
+**Option A — let the skill spawn it.** Run `/ios-device-qa` in Claude Code from anywhere; the skill spawns the daemon on demand, bootstraps the tunnel, rotates the boot token, and exposes the device through the proxy. Cleanest path for local-USB use.
 
 **Option B — start it yourself.** Run:
 
 ```
-gstack-ios-qa-daemon
+paysec-ios-qa-daemon
 ```
 
 The daemon prints `READY: port=<n> pid=<pid>` once both loopback listeners are bound. The default port is 9099. Spawners can read that line with a ~5 second timeout to confirm readiness; you can also point `curl` at the printed port.
 
-Either way the daemon takes an exclusive flock on `~/.gstack/ios-qa-daemon.pid` — running it twice from two Claude Code sessions is safe; the second invocation discovers the running daemon's port and joins.
+Either way the daemon takes an exclusive flock on `~/.paysec/ios-qa-daemon.pid` — running it twice from two Claude Code sessions is safe; the second invocation discovers the running daemon's port and joins.
 
 Set these env vars to target a specific device or bundle:
 
 ```
-GSTACK_IOS_TARGET_UDID=248C3A58-B843-5BDB-8F5D-89ADB7D7BF6A
-GSTACK_IOS_TARGET_BUNDLE_ID=com.yourorg.yourapp
-GSTACK_IOS_DAEMON_PORT=9099       # loopback listener port; default 9099
+PAYSEC_IOS_TARGET_UDID=248C3A58-B843-5BDB-8F5D-89ADB7D7BF6A
+PAYSEC_IOS_TARGET_BUNDLE_ID=com.yourorg.yourapp
+PAYSEC_IOS_DAEMON_PORT=9099       # loopback listener port; default 9099
 ```
 
-If `GSTACK_IOS_TARGET_UDID` is unset, the daemon picks the best paired,
+If `PAYSEC_IOS_TARGET_UDID` is unset, the daemon picks the best paired,
 available iPhone.
 Automatic selection is restricted to available iPhones and prefers a wired
 phone. The daemon keeps a healthy rotated tunnel, then invalidates and
@@ -192,7 +192,7 @@ the complete input first, and only then are assignments applied on MainActor.
 To let an agent on another machine drive the device, run the daemon with `--tailnet`:
 
 ```
-gstack-ios-qa-daemon --tailnet
+paysec-ios-qa-daemon --tailnet
 ```
 
 The daemon probes `/var/run/tailscale.sock` first; if the socket is missing or unreadable, it refuses to open the tailnet listener at all (loopback still runs). Remote mode never half-starts.
@@ -200,18 +200,18 @@ The daemon probes `/var/run/tailscale.sock` first; if the socket is missing or u
 Then mint a session token for the identity that should be able to connect:
 
 ```
-gstack-ios-qa-mint grant --remote 'alice@example.com' --capability interact
-gstack-ios-qa-mint grant --remote 'tag:ci' --capability mutate --ttl 86400 --note 'nightly'
-gstack-ios-qa-mint list
+paysec-ios-qa-mint grant --remote 'alice@example.com' --capability interact
+paysec-ios-qa-mint grant --remote 'tag:ci' --capability mutate --ttl 86400 --note 'nightly'
+paysec-ios-qa-mint list
 ```
 
-Capability tiers are nested: `observe` (read endpoints only) ⊂ `interact` (taps, swipes, type) ⊂ `mutate` (`POST /state/*`) ⊂ `restore` (`POST /state/restore`). Pick the smallest tier that does the job. The allowlist file is at `~/.gstack/ios-qa-allowlist.json` (mode 0600) — the daemon reads it on every `/auth/mint` request, so changes take effect immediately without restarting.
+Capability tiers are nested: `observe` (read endpoints only) ⊂ `interact` (taps, swipes, type) ⊂ `mutate` (`POST /state/*`) ⊂ `restore` (`POST /state/restore`). Pick the smallest tier that does the job. The allowlist file is at `~/.paysec/ios-qa-allowlist.json` (mode 0600) — the daemon reads it on every `/auth/mint` request, so changes take effect immediately without restarting.
 
-The remote agent then hits `POST /auth/mint` against the daemon's tailnet listener. The daemon canonicalizes the caller's identity via tailscaled's WhoIs endpoint, checks the allowlist, and returns a short-lived session token (1 hour default, 24 hour cap). Every authenticated mutating request lands in `~/.gstack/security/ios-qa-audit.jsonl`; rejected requests land in `~/.gstack/security/attempts.jsonl`.
+The remote agent then hits `POST /auth/mint` against the daemon's tailnet listener. The daemon canonicalizes the caller's identity via tailscaled's WhoIs endpoint, checks the allowlist, and returns a short-lived session token (1 hour default, 24 hour cap). Every authenticated mutating request lands in `~/.paysec/security/ios-qa-audit.jsonl`; rejected requests land in `~/.paysec/security/attempts.jsonl`.
 
 ## Step 6: Ship a release build
 
-Before you ship to TestFlight or the App Store, run `/ios-clean`. It removes the `DebugBridge` SPM dependency and strips the `#if DEBUG` wiring from your `@main` App. The structural guard in `Package.swift` (`condition: .when(configuration: .debug)`) means a Release build wouldn't link the bridge even if you forgot to clean up, but `/ios-clean` gives you a tidy diff to review and ship.
+Before you ship to TestFlight or the App Store, run `/ios-remove-debug`. It removes the `DebugBridge` SPM dependency and strips the `#if DEBUG` wiring from your `@main` App. The structural guard in `Package.swift` (`condition: .when(configuration: .debug)`) means a Release build wouldn't link the bridge even if you forgot to clean up, but `/ios-remove-debug` gives you a tidy diff to review and ship.
 
 ## Common failures
 
@@ -221,14 +221,14 @@ Before you ship to TestFlight or the App Store, run `/ios-clean`. It removes the
 | Install succeeds, `process launch` fails with `Locked` | The phone is locked. Unlock and retry. |
 | First install on a paired device fails with no clear error | The phone needs to Trust the Mac. Open Settings → General → VPN & Device Management on the phone and confirm. |
 | `Developer Mode` toggle missing from Settings → Privacy | Connect the device to Xcode → Window → Devices and Simulators once, or try any `devicectl device install` against it. iOS will surface the toggle after the first attempt. |
-| `xcrun devicectl device copy from` returns ERROR 7000 | The source path is wrong — boot token lives at `tmp/gstack-ios-qa.token` inside the app's data container (NSTemporaryDirectory), not at the path's root. |
+| `xcrun devicectl device copy from` returns ERROR 7000 | The source path is wrong — boot token lives at `tmp/paysec-ios-device-qa.token` inside the app's data container (NSTemporaryDirectory), not at the path's root. |
 | `/healthz` returns 200 but `/tap` returns ok:true with no UI change | The phone is paired but the StateServer port may have changed across launches. Re-resolve the CoreDevice IPv6 (`dscacheutil -q host -a name '<DeviceName>.coredevice.local'`). |
-| `403 identity_not_allowed` from `/auth/mint` | The remote caller's identity isn't on the Mac's allowlist. Run `gstack-ios-qa-mint grant --remote <identity> --capability interact` on the Mac. |
+| `403 identity_not_allowed` from `/auth/mint` | The remote caller's identity isn't on the Mac's allowlist. Run `paysec-ios-qa-mint grant --remote <identity> --capability interact` on the Mac. |
 | Daemon won't open the tailnet listener | Tailscale isn't installed, or `/var/run/tailscale.sock` is unreadable. Fix Tailscale, then restart the daemon. Loopback still runs in the meantime. |
 | SwiftUI Button tap returns `ok:true` but the action never fires | You're on iOS 17 or older where `_UIHitTestContext` doesn't exist. The DebugBridgeTouch implementation falls back to plain `hitTest:` which doesn't resolve into SwiftUI's gesture container. Update to iOS 18+ on the device, or tap a UIKit control instead. |
 
 ## What this gets you
 
-You can write an agent loop in any language that speaks HTTP. Take a screenshot, ask a model what to do, send a tap. Capture state snapshots before and after to record deterministic fixtures for `/ios-fix` regression tests. Add a colleague to the allowlist and they drive your iPhone from their laptop over Tailscale without ever touching the hardware. Plug the same daemon into CI by minting a `tag:ci` session token with mutate-tier capability and a 24-hour TTL.
+You can write an agent loop in any language that speaks HTTP. Take a screenshot, ask a model what to do, send a tap. Capture state snapshots before and after to record deterministic fixtures for `/ios-auto-fix` regression tests. Add a colleague to the allowlist and they drive your iPhone from their laptop over Tailscale without ever touching the hardware. Plug the same daemon into CI by minting a `tag:ci` session token with mutate-tier capability and a 24-hour TTL.
 
-The whole stack is a Mac you already own, an iPhone you already own, a free Apple developer account, and gstack. No paid testing service. No simulator drift. The thing the user sees is what the agent drives.
+The whole stack is a Mac you already own, an iPhone you already own, a free Apple developer account, and paysec. No paid testing service. No simulator drift. The thing the user sees is what the agent drives.

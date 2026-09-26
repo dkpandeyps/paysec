@@ -29,15 +29,15 @@ afterEach(() => {
 
 describe('session-runner observability', () => {
   test('1: sanitizeTestName strips slashes and leading dashes', () => {
-    expect(sanitizeTestName('/plan-ceo-review')).toBe('plan-ceo-review');
+    expect(sanitizeTestName('/plan-business-review')).toBe('plan-business-review');
     expect(sanitizeTestName('browse-basic')).toBe('browse-basic');
     expect(sanitizeTestName('/qa/deep/test')).toBe('qa-deep-test');
     expect(sanitizeTestName('///leading')).toBe('leading');
   });
 
-  test('2: heartbeat file path uses ~/.gstack-dev/e2e-live.json', () => {
+  test('2: heartbeat file path uses ~/.paysec-dev/e2e-live.json', () => {
     // Just verify the constant is correct — actual write is tested by E2E
-    const expected = path.join(os.homedir(), '.gstack-dev', 'e2e-live.json');
+    const expected = path.join(os.homedir(), '.paysec-dev', 'e2e-live.json');
     // Import the module and check HEARTBEAT_PATH exists in the file
     const sessionRunnerSrc = fs.readFileSync(
       path.resolve(__dirname, 'session-runner.ts'), 'utf-8'
@@ -203,7 +203,7 @@ describe('eval-watch dashboard', () => {
     const heartbeat: HeartbeatData = {
       runId: '20260314-143022',
       startedAt: '2026-03-14T14:30:22Z',
-      currentTest: 'plan-ceo-review',
+      currentTest: 'plan-business-review',
       status: 'running',
       turn: 4,
       toolCount: 3,
@@ -215,7 +215,7 @@ describe('eval-watch dashboard', () => {
     const partial: PartialData = {
       tests: [
         { name: 'browse basic', passed: true, cost_usd: 0.07, duration_ms: 24000, turns_used: 6 },
-        { name: '/review', passed: true, cost_usd: 0.17, duration_ms: 63000, turns_used: 13 },
+        { name: '/pr-review', passed: true, cost_usd: 0.17, duration_ms: 63000, turns_used: 13 },
       ],
       total_cost_usd: 0.24,
       _partial: true,
@@ -228,12 +228,12 @@ describe('eval-watch dashboard', () => {
 
     // Should show completed tests
     expect(output).toContain('browse basic');
-    expect(output).toContain('/review');
+    expect(output).toContain('/pr-review');
     expect(output).toContain('$0.07');
     expect(output).toContain('$0.17');
 
     // Should show current test
-    expect(output).toContain('plan-ceo-review');
+    expect(output).toContain('plan-business-review');
     expect(output).toContain('turn 4');
     expect(output).toContain('Write(review-output.md)');
 
@@ -247,7 +247,7 @@ describe('eval-watch dashboard', () => {
     const heartbeat: HeartbeatData = {
       runId: '20260314-143022',
       startedAt: '2026-03-14T14:30:22Z',
-      currentTest: 'plan-ceo-review',
+      currentTest: 'plan-business-review',
       status: 'running',
       turn: 4,
       toolCount: 3,

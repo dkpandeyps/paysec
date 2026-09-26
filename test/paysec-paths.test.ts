@@ -3,12 +3,12 @@ import { spawnSync } from 'child_process';
 import * as path from 'path';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const BIN = path.join(ROOT, 'bin', 'gstack-paths');
+const BIN = path.join(ROOT, 'bin', 'paysec-paths');
 
 // Invoke via `bash` rather than executing the shebang-script directly.
 // On Windows, spawnSync(scriptPath, ...) goes through CreateProcess, which
 // doesn't parse `#!/usr/bin/env bash`. Production usage always sources the
-// helper from inside a bash block (`eval "$(~/.claude/skills/gstack/bin/gstack-paths)"`)
+// helper from inside a bash block (`eval "$(~/.claude/skills/paysec/bin/paysec-paths)"`)
 // so bash is always the executor — this matches that contract.
 //
 // USERPROFILE: '' is a Windows-specific override. Git Bash auto-populates
@@ -21,7 +21,7 @@ function run(env: Record<string, string | undefined>): Record<string, string> {
     encoding: 'utf-8',
   });
   if (result.status !== 0) {
-    throw new Error(`gstack-paths failed (status ${result.status}): ${result.stderr}`);
+    throw new Error(`paysec-paths failed (status ${result.status}): ${result.stderr}`);
   }
   const out: Record<string, string> = {};
   for (const line of result.stdout.split('\n')) {
@@ -31,43 +31,43 @@ function run(env: Record<string, string | undefined>): Record<string, string> {
   return out;
 }
 
-describe('gstack-paths', () => {
-  test('GSTACK_HOME wins over CLAUDE_PLUGIN_DATA and HOME', () => {
+describe('paysec-paths', () => {
+  test('PAYSEC_HOME wins over CLAUDE_PLUGIN_DATA and HOME', () => {
     const got = run({
-      GSTACK_HOME: '/tmp/explicit-state',
+      PAYSEC_HOME: '/tmp/explicit-state',
       CLAUDE_PLUGIN_DATA: '/tmp/plugin-data',
       HOME: '/tmp/home',
     });
-    expect(got.GSTACK_STATE_ROOT).toBe('/tmp/explicit-state');
+    expect(got.PAYSEC_STATE_ROOT).toBe('/tmp/explicit-state');
   });
 
-  test('CLAUDE_PLUGIN_DATA ignored when CLAUDE_PLUGIN_ROOT is absent or non-gstack', () => {
+  test('CLAUDE_PLUGIN_DATA ignored when CLAUDE_PLUGIN_ROOT is absent or non-paysec', () => {
     // Without CLAUDE_PLUGIN_ROOT, falls through to HOME path.
     const noRoot = run({ CLAUDE_PLUGIN_DATA: '/tmp/plugin-data', HOME: '/tmp/home' });
-    expect(noRoot.GSTACK_STATE_ROOT).toBe('/tmp/home/.gstack');
+    expect(noRoot.PAYSEC_STATE_ROOT).toBe('/tmp/home/.paysec');
 
-    // With a CLAUDE_PLUGIN_ROOT that doesn't contain "gstack" (e.g. the codex plugin),
+    // With a CLAUDE_PLUGIN_ROOT that doesn't contain "paysec" (e.g. the codex plugin),
     // still falls through to HOME path — this is the cross-plugin contamination scenario.
     const wrongRoot = run({
       CLAUDE_PLUGIN_DATA: '/tmp/codex-data',
       CLAUDE_PLUGIN_ROOT: '/tmp/openai-codex',
       HOME: '/tmp/home',
     });
-    expect(wrongRoot.GSTACK_STATE_ROOT).toBe('/tmp/home/.gstack');
+    expect(wrongRoot.PAYSEC_STATE_ROOT).toBe('/tmp/home/.paysec');
   });
 
-  test('CLAUDE_PLUGIN_DATA respected when CLAUDE_PLUGIN_ROOT identifies gstack', () => {
+  test('CLAUDE_PLUGIN_DATA respected when CLAUDE_PLUGIN_ROOT identifies paysec', () => {
     const got = run({
-      CLAUDE_PLUGIN_DATA: '/tmp/gstack-plugin-data',
-      CLAUDE_PLUGIN_ROOT: '/tmp/gstack-garrytan',
+      CLAUDE_PLUGIN_DATA: '/tmp/paysec-plugin-data',
+      CLAUDE_PLUGIN_ROOT: '/tmp/paysec-garrytan',
       HOME: '/tmp/home',
     });
-    expect(got.GSTACK_STATE_ROOT).toBe('/tmp/gstack-plugin-data');
+    expect(got.PAYSEC_STATE_ROOT).toBe('/tmp/paysec-plugin-data');
   });
 
-  test('HOME-derived state root when GSTACK_HOME and CLAUDE_PLUGIN_DATA unset', () => {
+  test('HOME-derived state root when PAYSEC_HOME and CLAUDE_PLUGIN_DATA unset', () => {
     const got = run({ HOME: '/tmp/myhome' });
-    expect(got.GSTACK_STATE_ROOT).toBe('/tmp/myhome/.gstack');
+    expect(got.PAYSEC_STATE_ROOT).toBe('/tmp/myhome/.paysec');
   });
 
   test('CWD fallback when HOME also unset (container env)', () => {
@@ -78,11 +78,11 @@ describe('gstack-paths', () => {
     // script's CWD fallback IS correct — exercised on Linux/Mac CI.
     if (process.platform === 'win32') return;
     const got = run({ HOME: '' });
-    expect(got.GSTACK_STATE_ROOT).toBe('.gstack');
+    expect(got.PAYSEC_STATE_ROOT).toBe('.paysec');
   });
 
-  test('PLAN_ROOT chain: GSTACK_PLAN_DIR > CLAUDE_PLANS_DIR > HOME > CWD', () => {
-    expect(run({ GSTACK_PLAN_DIR: '/tmp/explicit', HOME: '/h' }).PLAN_ROOT).toBe('/tmp/explicit');
+  test('PLAN_ROOT chain: PAYSEC_PLAN_DIR > CLAUDE_PLANS_DIR > HOME > CWD', () => {
+    expect(run({ PAYSEC_PLAN_DIR: '/tmp/explicit', HOME: '/h' }).PLAN_ROOT).toBe('/tmp/explicit');
     expect(run({ CLAUDE_PLANS_DIR: '/tmp/claude', HOME: '/h' }).PLAN_ROOT).toBe('/tmp/claude');
     expect(run({ HOME: '/tmp/myhome' }).PLAN_ROOT).toBe('/tmp/myhome/.claude/plans');
     // CWD fallback only verifiable on POSIX — Git Bash auto-populates HOME.
@@ -91,20 +91,20 @@ describe('gstack-paths', () => {
     }
   });
 
-  test('TMP_ROOT chain: TMPDIR > TMP > .gstack/tmp', () => {
+  test('TMP_ROOT chain: TMPDIR > TMP > .paysec/tmp', () => {
     expect(run({ TMPDIR: '/tmp/x', HOME: '/h' }).TMP_ROOT).toBe('/tmp/x');
     expect(run({ TMP: '/tmp/y', HOME: '/h' }).TMP_ROOT).toBe('/tmp/y');
-    expect(run({ HOME: '' }).TMP_ROOT).toBe('.gstack/tmp');
+    expect(run({ HOME: '' }).TMP_ROOT).toBe('.paysec/tmp');
   });
 
   test('emits all three exports on every invocation', () => {
     const got = run({ HOME: '/tmp/h' });
-    expect(got).toHaveProperty('GSTACK_STATE_ROOT');
+    expect(got).toHaveProperty('PAYSEC_STATE_ROOT');
     expect(got).toHaveProperty('PLAN_ROOT');
     expect(got).toHaveProperty('TMP_ROOT');
   });
 
-  // Regression: values must survive `eval "$(gstack-paths)"`, which is the
+  // Regression: values must survive `eval "$(paysec-paths)"`, which is the
   // documented calling convention. A bare `echo` emits an unquoted RHS, so eval
   // re-parses it: backslashes become escapes and spaces become word separators.
   // On Windows $TMP is always a backslash path, so every skill that then runs
@@ -149,7 +149,7 @@ describe('gstack-paths', () => {
 
   test('eval round-trip preserves quotes, and leaves plain paths alone (#2374)', () => {
     expect(evalRoundTrip({ TMPDIR: "/tmp/o'brien", HOME: '/h' }, 'TMP_ROOT')).toBe("/tmp/o'brien");
-    expect(evalRoundTrip({ GSTACK_HOME: '/tmp/state root' }, 'GSTACK_STATE_ROOT')).toBe(
+    expect(evalRoundTrip({ PAYSEC_HOME: '/tmp/state root' }, 'PAYSEC_STATE_ROOT')).toBe(
       '/tmp/state root',
     );
     expect(evalRoundTrip({ HOME: '/tmp/myhome' }, 'PLAN_ROOT')).toBe('/tmp/myhome/.claude/plans');

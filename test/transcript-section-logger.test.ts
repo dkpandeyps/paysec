@@ -26,9 +26,9 @@ describe('extractSectionReads', () => {
   test('picks up section reads via the /sections/<file>.md segment', () => {
     const result = {
       toolCalls: [
-        read('/Users/x/.claude/skills/gstack-ship/sections/version-bump.md'),
-        read('ship/sections/changelog.md'),
-        read('/abs/.factory/skills/gstack-ship/sections/review-army.md'),
+        read('/Users/x/.claude/skills/paysec-ship-pr/sections/version-bump.md'),
+        read('ship-pr/sections/changelog.md'),
+        read('/abs/.factory/skills/paysec-ship-pr/sections/review-army.md'),
       ],
     };
     expect(extractSectionReads(result)).toEqual(['version-bump.md', 'changelog.md', 'review-army.md']);
@@ -37,9 +37,9 @@ describe('extractSectionReads', () => {
   test('ignores non-section reads and non-Read tools', () => {
     const result = {
       toolCalls: [
-        read('ship/SKILL.md'),
+        read('ship-pr/SKILL.md'),
         read('/some/sections-like/notsections/x.md'),
-        bash('cat ship/sections/version-bump.md'), // bash, not a Read
+        bash('cat ship-pr/sections/version-bump.md'), // bash, not a Read
       ],
     };
     expect(extractSectionReads(result)).toEqual([]);
@@ -48,9 +48,9 @@ describe('extractSectionReads', () => {
   test('dedupes and preserves first-read order', () => {
     const result = {
       toolCalls: [
-        read('ship/sections/tests.md'),
-        read('ship/sections/version-bump.md'),
-        read('ship/sections/tests.md'),
+        read('ship-pr/sections/tests.md'),
+        read('ship-pr/sections/version-bump.md'),
+        read('ship-pr/sections/tests.md'),
       ],
     };
     expect(extractSectionReads(result)).toEqual(['tests.md', 'version-bump.md']);
@@ -63,7 +63,7 @@ describe('extractShipActions', () => {
       toolCalls: [
         bash('git merge origin/main'),
         bash('bun test'),
-        bash('gstack-version-bump --bump minor'),
+        bash('paysec-version-bump --bump minor'),
         { tool: 'Edit', input: { file_path: 'CHANGELOG.md' }, output: '' },
         bash('git commit -m "v1.2.0.0 feat"'),
         bash('git push origin HEAD'),

@@ -4,14 +4,14 @@ const opencode = defineHost({
   name: 'opencode',
   displayName: 'OpenCode',
 
-  globalRoot: '.config/opencode/skills/gstack',  // XDG config dir, not ~/.opencode
+  globalRoot: '.config/opencode/skills/paysec',  // XDG config dir, not ~/.opencode
 
   // OpenCode links a wider runtime asset set than the shared default
   // (design binary, review specialists, qa templates/references, DX hall of fame).
   runtimeRoot: {
-    globalSymlinks: ['bin', 'browse/dist', 'browse/bin', 'design/dist', 'gstack-upgrade', 'ETHOS.md', 'review/specialists', 'qa/templates', 'qa/references', 'plan-devex-review/dx-hall-of-fame.md'],
+    globalSymlinks: ['bin', 'browser/dist', 'browser/bin', 'design/dist', 'paysec-upgrade', 'ETHOS.md', 'pr-review/specialists', 'qa-fix/templates', 'qa-fix/references', 'plan-dx-review/dx-hall-of-fame.md'],
     globalFiles: {
-      'review': ['checklist.md', 'design-checklist.md', 'greptile-triage.md', 'TODOS-format.md'],
+      'pr-review': ['checklist.md', 'design-checklist.md', 'greptile-triage.md', 'TODOS-format.md'],
     },
   },
 });

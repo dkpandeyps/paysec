@@ -1,4 +1,4 @@
-// gstack-ios-qa-daemon entrypoint.
+// paysec-ios-qa-daemon entrypoint.
 //
 // Two listeners:
 //   - Loopback (127.0.0.1 + ::1): full command surface for the spawning agent.
@@ -145,7 +145,7 @@ export async function startDaemon(opts: DaemonOptions): Promise<RunningDaemon | 
         whoIsImpl: opts.whoIsImpl ?? ((addr) => whoIs(addr, opts.tailnetSocketPath)),
       });
     });
-    const tailnetBindAddr = process.env.GSTACK_IOS_TAILNET_BIND ?? '127.0.0.1';
+    const tailnetBindAddr = process.env.PAYSEC_IOS_TAILNET_BIND ?? '127.0.0.1';
     // For tailnet port: actualPort + 1 if specified, else port 0 (OS-assigned).
     const requestedTailnetPort = requestedPort === 0 ? 0 : actualPort + 1;
     await listenAsync(tailnetServer, requestedTailnetPort, tailnetBindAddr);
@@ -560,12 +560,12 @@ async function handleTailnet(ctx: TailnetCtx): Promise<void> {
 
 // CLI entry — runs when this file is executed directly, not when imported.
 if (import.meta.main) {
-  const port = parseInt(process.env.GSTACK_IOS_DAEMON_PORT ?? '9099', 10);
+  const port = parseInt(process.env.PAYSEC_IOS_DAEMON_PORT ?? '9099', 10);
   const tailnet = process.argv.includes('--tailnet');
-  const targetUDID = process.env.GSTACK_IOS_TARGET_UDID;
-  const bundleId = process.env.GSTACK_IOS_TARGET_BUNDLE_ID ?? 'com.gstack.iosqa.fixture';
+  const targetUDID = process.env.PAYSEC_IOS_TARGET_UDID;
+  const bundleId = process.env.PAYSEC_IOS_TARGET_BUNDLE_ID ?? 'com.paysec.iosqa.fixture';
 
-  // Default tunnelProvider: when GSTACK_IOS_TARGET_UDID (or a default with
+  // Default tunnelProvider: when PAYSEC_IOS_TARGET_UDID (or a default with
   // any connected paired device) is set, bootstrap a real CoreDevice tunnel.
   // Otherwise return null (proxy will return 503 device_not_connected).
   //

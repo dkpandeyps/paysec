@@ -147,7 +147,7 @@ export const COMMAND_DESCRIPTIONS: Record<string, { category: string; descriptio
   // Tabs
   'tabs':    { category: 'Tabs', description: 'List open tabs' },
   'tab':     { category: 'Tabs', description: 'Switch to tab', usage: 'tab <id>' },
-  'newtab':  { category: 'Tabs', description: 'Open new tab. With --json, returns {"tabId":N,"url":...} for programmatic use (make-pdf).', usage: 'newtab [url] [--json]' },
+  'newtab':  { category: 'Tabs', description: 'Open new tab. With --json, returns {"tabId":N,"url":...} for programmatic use (md-to-pdf).', usage: 'newtab [url] [--json]' },
   'closetab':{ category: 'Tabs', description: 'Close tab', usage: 'closetab [id]' },
   'tab-each':{ category: 'Tabs', description: 'Run a command on every open tab. Returns JSON with per-tab results.', usage: 'tab-each <command> [args...]' },
   // Server
@@ -183,8 +183,8 @@ export const COMMAND_DESCRIPTIONS: Record<string, { category: string; descriptio
   'domain-skill': { category: 'Meta', description: 'Per-site notes the agent writes for itself. Host is derived from the active tab. Lifecycle: `save` adds a quarantined note → after N=3 successful uses without the prompt-injection classifier flagging it, the note auto-promotes to "active" → `promote-to-global` lifts it to the global tier (machine-wide, all projects). The classifier flag is set automatically by the L4 prompt-injection scan; agents do not set it manually. Use `list` / `show` to inspect, `edit` to revise, `rollback` to demote, `rm` to tombstone.', usage: 'domain-skill save|list|show|edit|promote-to-global|rollback|rm <host?>' },
   // Browser-skills (hand-written or generated Playwright scripts the runtime spawns)
   'skill':        { category: 'Meta', description: 'Run a browser-skill: deterministic Playwright script that drives the daemon over loopback HTTP. 3-tier lookup (project > global > bundled). Spawned scripts get a per-spawn scoped token (read+write only) — never the daemon root token.', usage: 'skill list|show|run|test|rm <name?> [--arg k=v]... [--timeout=Ns]' },
-  // CDP escape hatch (deny-default; see browse/src/cdp-allowlist.ts)
-  'cdp':          { category: 'Inspection', description: 'Raw Chrome DevTools Protocol method dispatch. Deny-default: only methods enumerated in `browse/src/cdp-allowlist.ts` (CDP_ALLOWLIST const) are reachable; any other method 403s. Each allowlist entry declares scope (tab vs browser) and output (trusted vs untrusted) — untrusted methods (data-exfil-shaped, e.g. Network.getResponseBody) get UNTRUSTED-envelope wrapped output. To discover allowed methods: read `browse/src/cdp-allowlist.ts`. Example: `$B cdp Page.getLayoutMetrics`.', usage: 'cdp <Domain.method> [json-params]' },
+  // CDP escape hatch (deny-default; see browser/src/cdp-allowlist.ts)
+  'cdp':          { category: 'Inspection', description: 'Raw Chrome DevTools Protocol method dispatch. Deny-default: only methods enumerated in `browser/src/cdp-allowlist.ts` (CDP_ALLOWLIST const) are reachable; any other method 403s. Each allowlist entry declares scope (tab vs browser) and output (trusted vs untrusted) — untrusted methods (data-exfil-shaped, e.g. Network.getResponseBody) get UNTRUSTED-envelope wrapped output. To discover allowed methods: read `browser/src/cdp-allowlist.ts`. Example: `$B cdp Page.getLayoutMetrics`.', usage: 'cdp <Domain.method> [json-params]' },
 };
 
 // Load-time validation: descriptions must cover exactly the command sets
@@ -289,7 +289,7 @@ export function buildUnknownCommandError(
   }
 
   if (newInVersion[command]) {
-    msg += ` This command was added in browse v${newInVersion[command]}. Upgrade: cd ~/.claude/skills/gstack && git pull && bun run build.`;
+    msg += ` This command was added in browse v${newInVersion[command]}. Upgrade: cd ~/.claude/skills/paysec && git pull && bun run build.`;
   }
 
   return msg;

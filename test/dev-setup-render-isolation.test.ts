@@ -11,31 +11,31 @@ const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf-8');
 describe('dev-setup: worktree stays canonical', () => {
   const devSetup = read('bin/dev-setup');
 
-  test('passes GSTACK_SKIP_GBRAIN_REGEN inline on the nested setup call', () => {
-    expect(devSetup).toContain('GSTACK_SKIP_GBRAIN_REGEN=1 "$GSTACK_LINK/setup"');
+  test('passes PAYSEC_SKIP_GBRAIN_REGEN inline on the nested setup call', () => {
+    expect(devSetup).toContain('PAYSEC_SKIP_GBRAIN_REGEN=1 "$PAYSEC_LINK/setup"');
   });
 
-  test('never exports GSTACK_SKIP_GBRAIN_REGEN (would leak into other setup paths)', () => {
-    expect(devSetup).not.toMatch(/export\s+GSTACK_SKIP_GBRAIN_REGEN/);
+  test('never exports PAYSEC_SKIP_GBRAIN_REGEN (would leak into other setup paths)', () => {
+    expect(devSetup).not.toMatch(/export\s+PAYSEC_SKIP_GBRAIN_REGEN/);
   });
 
   test('renders the :user variant into an out-dir, not in place', () => {
     expect(devSetup).toContain('--out-dir');
-    expect(devSetup).toContain('.claude/gstack-rendered');
+    expect(devSetup).toContain('.claude/paysec-rendered');
   });
 
-  test('gates the render on gstack-gbrain-detect --is-ok', () => {
+  test('gates the render on paysec-gbrain-detect --is-ok', () => {
     expect(devSetup).toContain('--is-ok');
   });
 });
 
-describe('setup: honors GSTACK_SKIP_GBRAIN_REGEN', () => {
+describe('setup: honors PAYSEC_SKIP_GBRAIN_REGEN', () => {
   const setup = read('setup');
 
   test('skips the in-place :user regen when the guard is set', () => {
-    expect(setup).toContain('${GSTACK_SKIP_GBRAIN_REGEN:-}');
+    expect(setup).toContain('${PAYSEC_SKIP_GBRAIN_REGEN:-}');
     // The guard must wrap the in-place render, not the detection persist.
-    const idx = setup.indexOf('GSTACK_SKIP_GBRAIN_REGEN');
+    const idx = setup.indexOf('PAYSEC_SKIP_GBRAIN_REGEN');
     const after = setup.slice(idx, idx + 600);
     expect(after).toContain('leaving tracked SKILL.md canonical');
   });
@@ -64,15 +64,15 @@ describe('gen-skill-docs: section rewrite is gated on --out-dir', () => {
 describe('dev-teardown: removes the untracked render', () => {
   const teardown = read('bin/dev-teardown');
 
-  test('rm -rf the gstack-rendered dir', () => {
-    expect(teardown).toContain('gstack-rendered');
+  test('rm -rf the paysec-rendered dir', () => {
+    expect(teardown).toContain('paysec-rendered');
     expect(teardown).toMatch(/rm -rf .*RENDER_DIR/);
   });
 });
 
 describe('.gitignore: render dir is declared untracked', () => {
-  test('.claude/gstack-rendered/ is ignored', () => {
-    expect(read('.gitignore')).toContain('.claude/gstack-rendered/');
+  test('.claude/paysec-rendered/ is ignored', () => {
+    expect(read('.gitignore')).toContain('.claude/paysec-rendered/');
   });
 });
 
@@ -80,7 +80,7 @@ describe('dev-skill: refreshes the render on template change', () => {
   const devSkill = read('scripts/dev-skill.ts');
 
   test('re-renders the :user variant into the workspace render dir', () => {
-    expect(devSkill).toContain('gstack-rendered');
+    expect(devSkill).toContain('paysec-rendered');
     expect(devSkill).toContain('--out-dir');
     expect(devSkill).toContain('--respect-detection');
   });

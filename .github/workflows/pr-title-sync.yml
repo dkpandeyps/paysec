@@ -7,7 +7,7 @@ name: PR Title Sync
 #
 # WHY this is SAFE (pull_request_target is the most dangerous trigger):
 #   - We check out the BASE repo (no `ref:`), so the only code we execute is
-#     trusted base-repo infra (bin/gstack-pr-title-rewrite.sh). We NEVER check
+#     trusted base-repo infra (bin/paysec-pr-title-rewrite.sh). We NEVER check
 #     out or run PR-head/fork code.
 #   - Every attacker-controlled PR field (title, head repo, head sha) arrives via
 #     `env:` and is referenced as a shell-quoted "$VAR". We NEVER inline a
@@ -54,7 +54,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          chmod +x ./bin/gstack-pr-title-rewrite.sh
+          chmod +x ./bin/paysec-pr-title-rewrite.sh
 
           if [ "$HEAD_REPO" = "$BASE_REPO" ]; then IS_FORK=0; else IS_FORK=1; fi
 
@@ -81,7 +81,7 @@ jobs:
           # The helper rejects a malformed VERSION (exit 2). Same policy: loud for
           # same-repo, soft for forks. Never echo the raw (attacker-controlled)
           # title — Actions still parses ::workflow-command:: from stdout.
-          if ! NEW_TITLE=$(./bin/gstack-pr-title-rewrite.sh "$VERSION" "$OLD_TITLE"); then
+          if ! NEW_TITLE=$(./bin/paysec-pr-title-rewrite.sh "$VERSION" "$OLD_TITLE"); then
             if [ "$IS_FORK" = "0" ]; then
               echo "::error::Could not compute title for VERSION '$VERSION' on PR #$PR_NUM."
               exit 1

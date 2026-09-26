@@ -3,14 +3,14 @@
  * paid, SDK capture.
  *
  * The keystone empirical proof behind the token-reduction work: carving
- * /plan-ceo-review into an 80KB skeleton + on-demand section did NOT degrade the
+ * /plan-business-review into an 80KB skeleton + on-demand section did NOT degrade the
  * AskUserQuestion it shows the user. Layer 0 (auq-format-always-loaded.test.ts)
  * proves the format SPEC is present in both skeletons deterministically; this
  * proves the model still GENERATES an equal-quality question with the smaller
  * context.
  *
  * Method — identical prompt, two SKILL.md versions, compare:
- *   - CARVED  : this branch's plan-ceo-review/SKILL.md (80KB skeleton) + sections.
+ *   - CARVED  : this branch's plan-business-review/SKILL.md (80KB skeleton) + sections.
  *   - VERBOSE : the pre-carve monolith (137KB) read from git (ab66193e^).
  * Both are driven to Step 0F mode selection via the SDK $OUT_FILE capture path
  * (clean text, no TTY mangling). We score the 7 decision-brief format elements
@@ -59,7 +59,7 @@ async function grade(label: string, dir: string) {
 
 describeE2E('AUQ no-degradation: verbose vs carved (periodic)', () => {
   test(
-    'carved plan-ceo-review AUQ is not worse than verbose on the same prompt',
+    'carved plan-business-review AUQ is not worse than verbose on the same prompt',
     async () => {
       const carved = carvedSkill();
       const carvedDir = setupPlanCeoDir({
@@ -99,7 +99,7 @@ describeE2E('AUQ no-degradation: verbose vs carved (periodic)', () => {
       const substanceRegressed = c.substance < v.substance - 1; // 1-pt judge tolerance
       if (formatRegressed || substanceRegressed) {
         throw new Error(
-          `AUQ DEGRADATION carving plan-ceo-review:\n${summary}` +
+          `AUQ DEGRADATION carving plan-business-review:\n${summary}` +
             (formatRegressed ? `\n  -> carved dropped: [${c.fmt.missing.join(',')}]` : '') +
             (substanceRegressed ? `\n  -> carved substance regressed >1 pt` : '') +
             `\n--- carved AUQ ---\n${c.text}\n--- verbose AUQ ---\n${v.text}`,

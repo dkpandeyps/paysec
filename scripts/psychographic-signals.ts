@@ -1,7 +1,7 @@
 /**
  * Psychographic Signal Map — hand-crafted {question_id, user_choice} → {dimension, delta}.
  *
- * Consumed in v1 ONLY to compute inferred dimension values for /plan-tune
+ * Consumed in v1 ONLY to compute inferred dimension values for /tune-questions
  * inspection output. No skill behavior adapts to these signals in v1.
  *
  * When v2 wires 5 skills to consume the profile, this map is the source of
@@ -70,24 +70,24 @@ export interface DimensionDelta {
  *
  * Indexed by signal_key (declared in question-registry entries), not
  * question_id directly. This lets multiple questions share a semantic
- * pattern (e.g., scope-appetite signal comes from both plan-ceo-review
- * expansion proposals AND office-hours approach selection).
+ * pattern (e.g., scope-appetite signal comes from both plan-business-review
+ * expansion proposals AND idea-review approach selection).
  */
 export const SIGNAL_MAP: Record<string, Record<string, DimensionDelta[]>> = {
   // -----------------------------------------------------------------------
   // scope-appetite — how much the user likes to expand scope
   // -----------------------------------------------------------------------
   'scope-appetite': {
-    // plan-ceo-review mode choice
+    // plan-business-review mode choice
     expand: [{ dim: 'scope_appetite', delta: +0.06 }],
     selective: [{ dim: 'scope_appetite', delta: +0.03 }],
     hold: [{ dim: 'scope_appetite', delta: -0.01 }],
     reduce: [{ dim: 'scope_appetite', delta: -0.06 }],
-    // plan-ceo-review expansion proposal accepted/deferred/skipped
+    // plan-business-review expansion proposal accepted/deferred/skipped
     accept: [{ dim: 'scope_appetite', delta: +0.04 }],
     defer: [{ dim: 'scope_appetite', delta: -0.01 }],
     skip: [{ dim: 'scope_appetite', delta: -0.03 }],
-    // office-hours approach choice
+    // idea-review approach choice
     minimal: [{ dim: 'scope_appetite', delta: -0.04 }],
     ideal: [{ dim: 'scope_appetite', delta: +0.05 }],
     creative: [{ dim: 'scope_appetite', delta: +0.02 }],
@@ -190,7 +190,7 @@ export const SIGNAL_MAP: Record<string, Record<string, DimensionDelta[]>> = {
   // -----------------------------------------------------------------------
   // decision-autonomy — does the user trust the agent to apply decisions
   // without checking back? (Cathedral T7: was the missing signal for the
-  // 'autonomy' dimension; added so /plan-tune annotations can render
+  // 'autonomy' dimension; added so /tune-questions annotations can render
   // 'consult me' vs 'delegate' guidance on merge/rollback questions.)
   // -----------------------------------------------------------------------
   'decision-autonomy': {
@@ -205,7 +205,7 @@ export const SIGNAL_MAP: Record<string, Record<string, DimensionDelta[]>> = {
   },
 
   // -----------------------------------------------------------------------
-  // session-mode — office-hours goal selection
+  // session-mode — idea-review goal selection
   // -----------------------------------------------------------------------
   'session-mode': {
     startup: [

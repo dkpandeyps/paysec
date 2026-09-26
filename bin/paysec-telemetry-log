@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
-# gstack-telemetry-log — append a telemetry event to local JSONL
+# paysec-telemetry-log — append a telemetry event to local JSONL
 #
 # Data flow:
 #   preamble (start) ──▶ .pending marker
-#   preamble (epilogue) ──▶ gstack-telemetry-log ──▶ skill-usage.jsonl
-#                                                 └──▶ gstack-telemetry-sync (bg)
+#   preamble (epilogue) ──▶ paysec-telemetry-log ──▶ skill-usage.jsonl
+#                                                 └──▶ paysec-telemetry-sync (bg)
 #
 # Usage:
-#   gstack-telemetry-log --skill qa --duration 142 --outcome success \
+#   paysec-telemetry-log --skill qa --duration 142 --outcome success \
 #     --used-browse true --session-id "12345-1710756600"
 #
 # Env overrides (for testing):
-#   GSTACK_STATE_DIR  — override ~/.gstack state directory
-#   GSTACK_DIR        — override auto-detected gstack root
+#   PAYSEC_STATE_DIR  — override ~/.paysec state directory
+#   PAYSEC_DIR        — override auto-detected paysec root
 #
 # NOTE: Uses set -uo pipefail (no -e) — telemetry must never exit non-zero
 set -uo pipefail
 
-GSTACK_DIR="${GSTACK_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
-SCRIPT_DIR="$GSTACK_DIR/bin"
+PAYSEC_DIR="${PAYSEC_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+SCRIPT_DIR="$PAYSEC_DIR/bin"
 # Windows git-bash (#1950): pwd yields a POSIX path (/c/Users/...), which Bun
 # on Windows cannot resolve as an ES module specifier in bun -e imports.
 case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*) command -v cygpath >/dev/null 2>&1 && SCRIPT_DIR="$(cygpath -m "$SCRIPT_DIR")" ;;
 esac
-STATE_DIR="${GSTACK_STATE_DIR:-$HOME/.gstack}"
+STATE_DIR="${PAYSEC_STATE_DIR:-$HOME/.paysec}"
 ANALYTICS_DIR="$STATE_DIR/analytics"
 JSONL_FILE="$ANALYTICS_DIR/skill-usage.jsonl"
 PENDING_DIR="$ANALYTICS_DIR"  # .pending-* files live here
-CONFIG_CMD="$GSTACK_DIR/bin/gstack-config"
-VERSION_FILE="$GSTACK_DIR/VERSION"
+CONFIG_CMD="$PAYSEC_DIR/bin/paysec-config"
+VERSION_FILE="$PAYSEC_DIR/VERSION"
 
 # ─── Parse flags ─────────────────────────────────────────────
 SKILL=""
@@ -61,7 +61,7 @@ while [ $# -gt 0 ]; do
     --failed-step)   FAILED_STEP="$2"; shift 2 ;;
     --event-type)    EVENT_TYPE="$2"; shift 2 ;;
     --source)        SOURCE="$2"; shift 2 ;;
-    # Security event fields — emitted by browse/src/security.ts logAttempt()
+    # Security event fields — emitted by browser/src/security.ts logAttempt()
     --url-domain)    SEC_URL_DOMAIN="$2"; shift 2 ;;
     --payload-hash)  SEC_PAYLOAD_HASH="$2"; shift 2 ;;
     --confidence)    SEC_CONFIDENCE="$2"; shift 2 ;;
@@ -72,7 +72,7 @@ while [ $# -gt 0 ]; do
 done
 
 # Source: flag > env > default 'live'
-SOURCE="${SOURCE:-${GSTACK_TELEMETRY_SOURCE:-live}}"
+SOURCE="${SOURCE:-${PAYSEC_TELEMETRY_SOURCE:-live}}"
 
 # ─── Read telemetry tier ─────────────────────────────────────
 TIER="$("$CONFIG_CMD" get telemetry 2>/dev/null || true)"
@@ -107,13 +107,13 @@ for PFILE in "$PENDING_DIR"/.pending-*; do
     P_SKILL="$(echo "$PENDING_DATA" | grep -o '"skill":"[^"]*"' | head -1 | awk -F'"' '{print $4}')"
     P_TS="$(echo "$PENDING_DATA" | grep -o '"ts":"[^"]*"' | head -1 | awk -F'"' '{print $4}')"
     P_SID="$(echo "$PENDING_DATA" | grep -o '"session_id":"[^"]*"' | head -1 | awk -F'"' '{print $4}')"
-    P_VER="$(echo "$PENDING_DATA" | grep -o '"gstack_version":"[^"]*"' | head -1 | awk -F'"' '{print $4}')"
+    P_VER="$(echo "$PENDING_DATA" | grep -o '"paysec_version":"[^"]*"' | head -1 | awk -F'"' '{print $4}')"
     P_OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
     P_ARCH="$(uname -m)"
 
     # Write the stale event as outcome: unknown
     mkdir -p "$ANALYTICS_DIR"
-    printf '{"v":1,"ts":"%s","event_type":"skill_run","skill":"%s","session_id":"%s","gstack_version":"%s","os":"%s","arch":"%s","duration_s":null,"outcome":"unknown","error_class":null,"used_browse":false,"sessions":1}\n' \
+    printf '{"v":1,"ts":"%s","event_type":"skill_run","skill":"%s","session_id":"%s","paysec_version":"%s","os":"%s","arch":"%s","duration_s":null,"outcome":"unknown","error_class":null,"used_browse":false,"sessions":1}\n' \
       "$P_TS" "$P_SKILL" "$P_SID" "$P_VER" "$P_OS" "$P_ARCH" >> "$JSONL_FILE" 2>/dev/null || true
   fi
 done
@@ -123,7 +123,7 @@ done
 
 # ─── Collect metadata ────────────────────────────────────────
 TS="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%S 2>/dev/null || echo "")"
-GSTACK_VERSION="$(cat "$VERSION_FILE" 2>/dev/null | tr -d '[:space:]' || echo "unknown")"
+PAYSEC_VERSION="$(cat "$VERSION_FILE" 2>/dev/null | tr -d '[:space:]' || echo "unknown")"
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
 SESSIONS="1"
@@ -137,7 +137,7 @@ fi
 # can't be guessed or correlated by someone who knows your machine identity.
 INSTALL_ID=""
 if [ "$TIER" = "community" ]; then
-  ID_FILE="$HOME/.gstack/installation-id"
+  ID_FILE="$HOME/.paysec/installation-id"
   if [ -f "$ID_FILE" ]; then
     INSTALL_ID="$(cat "$ID_FILE" 2>/dev/null)"
   fi
@@ -258,8 +258,8 @@ SEC_LAYER_FIELD="null"
 SEC_VERDICT_FIELD="null"
 [ -n "$SEC_VERDICT" ] && SEC_VERDICT_FIELD="\"$SEC_VERDICT\""
 
-printf '{"v":1,"ts":"%s","event_type":"%s","skill":"%s","session_id":"%s","gstack_version":"%s","os":"%s","arch":"%s","duration_s":%s,"outcome":"%s","error_class":%s,"error_message":%s,"failed_step":%s,"used_browse":%s,"sessions":%s,"installation_id":%s,"source":"%s","security_url_domain":%s,"security_payload_hash":%s,"security_confidence":%s,"security_layer":%s,"security_verdict":%s,"_repo_slug":"%s","_branch":"%s"}\n' \
-  "$TS" "$EVENT_TYPE" "$SKILL" "$SESSION_ID" "$GSTACK_VERSION" "$OS" "$ARCH" \
+printf '{"v":1,"ts":"%s","event_type":"%s","skill":"%s","session_id":"%s","paysec_version":"%s","os":"%s","arch":"%s","duration_s":%s,"outcome":"%s","error_class":%s,"error_message":%s,"failed_step":%s,"used_browse":%s,"sessions":%s,"installation_id":%s,"source":"%s","security_url_domain":%s,"security_payload_hash":%s,"security_confidence":%s,"security_layer":%s,"security_verdict":%s,"_repo_slug":"%s","_branch":"%s"}\n' \
+  "$TS" "$EVENT_TYPE" "$SKILL" "$SESSION_ID" "$PAYSEC_VERSION" "$OS" "$ARCH" \
   "$DUR_FIELD" "$OUTCOME" "$ERR_FIELD" "$ERR_MSG_FIELD" "$STEP_FIELD" \
   "$BROWSE_BOOL" "${SESSIONS:-1}" \
   "$INSTALL_FIELD" "$SOURCE" \
@@ -267,7 +267,7 @@ printf '{"v":1,"ts":"%s","event_type":"%s","skill":"%s","session_id":"%s","gstac
   "$REPO_SLUG" "$BRANCH" >> "$JSONL_FILE" 2>/dev/null || true
 
 # ─── Trigger sync if tier is not off ─────────────────────────
-SYNC_CMD="$GSTACK_DIR/bin/gstack-telemetry-sync"
+SYNC_CMD="$PAYSEC_DIR/bin/paysec-telemetry-sync"
 if [ -x "$SYNC_CMD" ]; then
   "$SYNC_CMD" 2>/dev/null &
 fi

@@ -1,44 +1,44 @@
 #!/usr/bin/env bash
-# gstack-brain-sync — drain queue, commit allowlisted paths, push to remote.
+# paysec-brain-sync — drain queue, commit allowlisted paths, push to remote.
 #
 # Usage:
-#   gstack-brain-sync --once           drain queue, commit, push (default)
-#   gstack-brain-sync --status         print sync health as JSON
-#   gstack-brain-sync --skip-file <p>  add <p> to ~/.gstack/.brain-skip.txt
-#   gstack-brain-sync --drop-queue --yes   clear queue without committing
-#   gstack-brain-sync --discover-new   scan allowlist dirs, enqueue changed files
+#   paysec-brain-sync --once           drain queue, commit, push (default)
+#   paysec-brain-sync --status         print sync health as JSON
+#   paysec-brain-sync --skip-file <p>  add <p> to ~/.paysec/.brain-skip.txt
+#   paysec-brain-sync --drop-queue --yes   clear queue without committing
+#   paysec-brain-sync --discover-new   scan allowlist dirs, enqueue changed files
 #
 # Invoked by the preamble at skill START and END boundaries. No persistent
 # daemon. Typical run <1s when queue empty; ~200-800ms with network push.
 #
-# Singleton enforcement: flock on ~/.gstack/.brain-sync.lock. Concurrent
+# Singleton enforcement: flock on ~/.paysec/.brain-sync.lock. Concurrent
 # invocations queue and serialize.
 #
 # Env:
-#   GSTACK_HOME — override ~/.gstack (aligns with writers).
+#   PAYSEC_HOME — override ~/.paysec (aligns with writers).
 
 set -uo pipefail
 
-GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
-QUEUE="$GSTACK_HOME/.brain-queue.jsonl"
-ALLOWLIST="$GSTACK_HOME/.brain-allowlist"
-PRIVACY_MAP="$GSTACK_HOME/.brain-privacy-map.json"
-SKIP_FILE="$GSTACK_HOME/.brain-skip.txt"
-STATUS_FILE="$GSTACK_HOME/.brain-sync-status.json"
-LAST_PUSH_FILE="$GSTACK_HOME/.brain-last-push"
-LOCK_FILE="$GSTACK_HOME/.brain-sync.lock"
-DISCOVER_CURSOR="$GSTACK_HOME/.brain-discover-cursor"
+PAYSEC_HOME="${PAYSEC_HOME:-$HOME/.paysec}"
+QUEUE="$PAYSEC_HOME/.brain-queue.jsonl"
+ALLOWLIST="$PAYSEC_HOME/.brain-allowlist"
+PRIVACY_MAP="$PAYSEC_HOME/.brain-privacy-map.json"
+SKIP_FILE="$PAYSEC_HOME/.brain-skip.txt"
+STATUS_FILE="$PAYSEC_HOME/.brain-sync-status.json"
+LAST_PUSH_FILE="$PAYSEC_HOME/.brain-last-push"
+LOCK_FILE="$PAYSEC_HOME/.brain-sync.lock"
+DISCOVER_CURSOR="$PAYSEC_HOME/.brain-discover-cursor"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONFIG_BIN="$SCRIPT_DIR/gstack-config"
+CONFIG_BIN="$SCRIPT_DIR/paysec-config"
 
 # Egress receipt helpers (_receipted_git): receipt-before-send, fail-closed.
-. "$SCRIPT_DIR/gstack-egress-lib.sh"
+. "$SCRIPT_DIR/paysec-egress-lib.sh"
 
 # origin host for receipt records (github.com etc).
 remote_host() {
   local url host
-  url=$(git -C "$GSTACK_HOME" remote get-url origin 2>/dev/null || echo "")
+  url=$(git -C "$PAYSEC_HOME" remote get-url origin 2>/dev/null || echo "")
   host="${url#*://}"; host="${host#*@}"; host="${host%%[/:]*}"
   echo "${host:-unknown}"
 }
@@ -46,7 +46,7 @@ remote_host() {
 # Remote-specific hint for auth errors (branch on origin URL).
 remote_auth_hint() {
   local url
-  url=$(git -C "$GSTACK_HOME" remote get-url origin 2>/dev/null || echo "")
+  url=$(git -C "$PAYSEC_HOME" remote get-url origin 2>/dev/null || echo "")
   case "$url" in
     *github.com*|*@github.*) echo "run: gh auth status (and gh auth refresh if needed)" ;;
     *gitlab*) echo "run: glab auth status" ;;
@@ -77,7 +77,7 @@ PYEOF
 
 # Read config; return 0 if sync active, 1 otherwise.
 sync_active() {
-  if [ ! -d "$GSTACK_HOME/.git" ]; then
+  if [ ! -d "$PAYSEC_HOME/.git" ]; then
     return 1
   fi
   local mode
@@ -135,10 +135,10 @@ sys.exit(0)
 compute_paths_to_stage() {
   local mode="$1"
   local class_file="${2:-}"
-  python3 - "$GSTACK_HOME" "$QUEUE" "$ALLOWLIST" "$PRIVACY_MAP" "$SKIP_FILE" "$mode" "$class_file" <<'PYEOF'
+  python3 - "$PAYSEC_HOME" "$QUEUE" "$ALLOWLIST" "$PRIVACY_MAP" "$SKIP_FILE" "$mode" "$class_file" <<'PYEOF'
 import sys, json, os, fnmatch, glob
 
-gstack_home, queue, allowlist_path, privacy_path, skip_path, mode, class_file = sys.argv[1:8]
+paysec_home, queue, allowlist_path, privacy_path, skip_path, mode, class_file = sys.argv[1:8]
 
 def load_lines(path):
     try:
@@ -211,7 +211,7 @@ for p in sorted(queue_paths):
     if p in skip_lines:
         classified["dropped"]["skipped"].append(p)
         continue
-    # Must be under GSTACK_HOME root. Reject absolute + reject ../ escape.
+    # Must be under PAYSEC_HOME root. Reject absolute + reject ../ escape.
     if p.startswith("/") or ".." in p.split("/"):
         classified["dropped"]["invalid"].append(p)
         continue
@@ -227,7 +227,7 @@ for p in sorted(queue_paths):
         classified["retained"].append(p)
         continue
     # Must exist on disk — can't stage what isn't there.
-    if not os.path.exists(os.path.join(gstack_home, p)):
+    if not os.path.exists(os.path.join(paysec_home, p)):
         classified["dropped"]["missing"].append(p)
         continue
     final.append(p)
@@ -254,7 +254,7 @@ rewrite_queue() {
   # Fail-open by design (a failed rewrite self-corrects next run: re-stage →
   # nothing-to-commit), but say so — a silent failure here would let the
   # subsequent "ok/idle" status claim a drain that did not happen.
-  python3 - "$QUEUE" "$paths_file" "$class_file" "$GSTACK_HOME/.brain-sync-drops.json" <<'PYEOF' || echo "BRAIN_SYNC: warning: queue rewrite failed — entries retained; next run re-drains" >&2
+  python3 - "$QUEUE" "$paths_file" "$class_file" "$PAYSEC_HOME/.brain-sync-drops.json" <<'PYEOF' || echo "BRAIN_SYNC: warning: queue rewrite failed — entries retained; next run re-drains" >&2
 import json, os, sys, time
 queue, paths_file, class_file, drops_file = sys.argv[1:5]
 
@@ -396,30 +396,30 @@ subcmd_once() {
   #
   # Author-scoped — EXCLUSIVELY: `git push origin HEAD` publishes every
   # unpushed commit, so the retry fires only when ALL unpushed commits are
-  # gstack-brain-sync's own. One interleaved user commit disables the
+  # paysec-brain-sync's own. One interleaved user commit disables the
   # auto-retry entirely (adversarial review: an existential check would
-  # silently auto-publish a user's manual ~/.gstack commit the moment a bot
+  # silently auto-publish a user's manual ~/.paysec commit the moment a bot
   # commit sat in front of it). User commits ride along when a REAL drain
   # pushes, as before — the detector never publishes work it didn't create.
   local det_branch det_unpushed det_total det_now det_last
-  det_branch=$(git -C "$GSTACK_HOME" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+  det_branch=$(git -C "$PAYSEC_HOME" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
   # Detached HEAD reads as the literal "HEAD" — origin/HEAD usually resolves,
   # so without this exclusion the detector would retry a doomed push forever.
   [ "$det_branch" = "HEAD" ] && det_branch=""
-  if [ -n "$det_branch" ] && git -C "$GSTACK_HOME" rev-parse --verify --quiet "origin/$det_branch" >/dev/null 2>&1; then
-    det_unpushed=$(git -C "$GSTACK_HOME" rev-list --count --author="gstack-brain-sync" "origin/$det_branch..HEAD" 2>/dev/null || echo 0)
-    det_total=$(git -C "$GSTACK_HOME" rev-list --count "origin/$det_branch..HEAD" 2>/dev/null || echo 0)
+  if [ -n "$det_branch" ] && git -C "$PAYSEC_HOME" rev-parse --verify --quiet "origin/$det_branch" >/dev/null 2>&1; then
+    det_unpushed=$(git -C "$PAYSEC_HOME" rev-list --count --author="paysec-brain-sync" "origin/$det_branch..HEAD" 2>/dev/null || echo 0)
+    det_total=$(git -C "$PAYSEC_HOME" rev-list --count "origin/$det_branch..HEAD" 2>/dev/null || echo 0)
     case "$det_unpushed" in ''|*[!0-9]*) det_unpushed=0 ;; esac
     case "$det_total" in ''|*[!0-9]*) det_total=0 ;; esac
     det_now=$(date +%s)
-    det_last=$(cat "$GSTACK_HOME/.brain-last-push-attempt" 2>/dev/null || echo 0)
+    det_last=$(cat "$PAYSEC_HOME/.brain-last-push-attempt" 2>/dev/null || echo 0)
     case "$det_last" in ''|*[!0-9]*) det_last=0 ;; esac
     if [ "$det_unpushed" -gt 0 ] && [ "$det_unpushed" -eq "$det_total" ] && [ $(( det_now - det_last )) -ge 600 ]; then
-      echo "$det_now" > "$GSTACK_HOME/.brain-last-push-attempt" 2>/dev/null || true
+      echo "$det_now" > "$PAYSEC_HOME/.brain-last-push-attempt" 2>/dev/null || true
       local det_host
       det_host=$(remote_host)
-      if GSTACK_HOME="$GSTACK_HOME" _receipted_git closed brain-sync "$det_host" curated-memory-git-push "artifacts_sync_mode!=off" \
-          bash -c 'GIT_TERMINAL_PROMPT=0 git -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=30 -C "$1" push origin HEAD 2>/dev/null' _ "$GSTACK_HOME"; then
+      if PAYSEC_HOME="$PAYSEC_HOME" _receipted_git closed brain-sync "$det_host" curated-memory-git-push "artifacts_sync_mode!=off" \
+          bash -c 'GIT_TERMINAL_PROMPT=0 git -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=30 -C "$1" push origin HEAD 2>/dev/null' _ "$PAYSEC_HOME"; then
         date -u +%Y-%m-%dT%H:%M:%SZ > "$LAST_PUSH_FILE"
       fi
     fi
@@ -458,17 +458,17 @@ subcmd_once() {
     p="${p%$'\r'}"   # Windows: compute_paths_to_stage's python print() emits CRLF;
                      # a trailing CR makes the pathspec match nothing (silent no-stage).
     [ -z "$p" ] && continue
-    git -C "$GSTACK_HOME" add -f -- "$p" 2>/dev/null || true
+    git -C "$PAYSEC_HOME" add -f -- "$p" 2>/dev/null || true
   done < "$paths_file"
 
   # Secret-scan staged diff.
   local scan_out
-  scan_out=$(git -C "$GSTACK_HOME" diff --cached 2>/dev/null | secret_scan_stdin || true)
+  scan_out=$(git -C "$PAYSEC_HOME" diff --cached 2>/dev/null | secret_scan_stdin || true)
   if [ -n "$scan_out" ]; then
     # Hit — unstage, preserve queue, write loud status.
-    git -C "$GSTACK_HOME" reset HEAD -- . >/dev/null 2>&1 || true
+    git -C "$PAYSEC_HOME" reset HEAD -- . >/dev/null 2>&1 || true
     local hint
-    hint="secret pattern detected ($scan_out). Remediation: review the staged file, then run: gstack-brain-sync --skip-file <path> OR edit the content."
+    hint="secret pattern detected ($scan_out). Remediation: review the staged file, then run: paysec-brain-sync --skip-file <path> OR edit the content."
     write_status "blocked" "$hint"
     echo "BRAIN_SYNC: blocked: $scan_out" >&2
     exit 0
@@ -481,11 +481,11 @@ subcmd_once() {
   # (sha256:null). Fail-closed.
   local push_host receipt_err
   push_host=$(remote_host)
-  if ! receipt_err=$(GSTACK_HOME="$GSTACK_HOME" "$SCRIPT_DIR/gstack-egress-receipt" write \
+  if ! receipt_err=$(PAYSEC_HOME="$PAYSEC_HOME" "$SCRIPT_DIR/paysec-egress-receipt" write \
       --sink brain-sync --host "$push_host" --class curated-memory-git-push \
       --no-payload --consent "artifacts_sync_mode!=off" 2>&1 >/dev/null); then
     write_status "push_failed" "EGRESS_RECEIPT_FAILED: receipt not writable; push refused (queue preserved)"
-    _gstack_egress_refusal "brain-sync push" "$(printf '%s' "$receipt_err" | head -c 300)"
+    _paysec_egress_refusal "brain-sync push" "$(printf '%s' "$receipt_err" | head -c 300)"
     exit 1
   fi
 
@@ -494,7 +494,7 @@ subcmd_once() {
   n=$(wc -l < "$paths_file" | tr -d ' ')
   ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   local msg="sync: $n file(s) | $ts"
-  git -C "$GSTACK_HOME" -c user.email="gstack@localhost" -c user.name="gstack-brain-sync" \
+  git -C "$PAYSEC_HOME" -c user.email="paysec@localhost" -c user.name="paysec-brain-sync" \
     commit -q -m "$msg" 2>/dev/null || {
       # Nothing to commit (e.g. all files already committed). The drained
       # paths leave the queue; retained + concurrent entries survive (#2549).
@@ -505,7 +505,7 @@ subcmd_once() {
 
   # Push. On reject, fetch + merge (merge driver handles JSONL) + retry once.
   local push_err
-  push_err=$(git -C "$GSTACK_HOME" push origin HEAD 2>&1 >/dev/null) || {
+  push_err=$(git -C "$PAYSEC_HOME" push origin HEAD 2>&1 >/dev/null) || {
     # Check if this is an auth error first — no point retrying.
     if echo "$push_err" | grep -qiE "auth|permission|403|401|forbidden"; then
       local hint
@@ -522,13 +522,13 @@ subcmd_once() {
     # Try a fetch-and-merge + retry. The fetch and the retry push are their
     # own attempted-egress ops, each receipted fail-closed (a refusal falls
     # through to the push_failed path below).
-    if GSTACK_HOME="$GSTACK_HOME" _receipted_git closed brain-sync "$push_host" curated-memory-git-fetch "artifacts_sync_mode!=off" \
-        bash -c 'git -C "$1" fetch origin 2>/dev/null' _ "$GSTACK_HOME"; then
+    if PAYSEC_HOME="$PAYSEC_HOME" _receipted_git closed brain-sync "$push_host" curated-memory-git-fetch "artifacts_sync_mode!=off" \
+        bash -c 'git -C "$1" fetch origin 2>/dev/null' _ "$PAYSEC_HOME"; then
       local branch
-      branch=$(git -C "$GSTACK_HOME" rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)
-      if git -C "$GSTACK_HOME" merge --no-edit "origin/$branch" >/dev/null 2>&1; then
-        if GSTACK_HOME="$GSTACK_HOME" _receipted_git closed brain-sync "$push_host" curated-memory-git-push "artifacts_sync_mode!=off" \
-            bash -c 'git -C "$1" push origin HEAD 2>/dev/null' _ "$GSTACK_HOME"; then
+      branch=$(git -C "$PAYSEC_HOME" rev-parse --abbrev-ref HEAD 2>/dev/null || echo main)
+      if git -C "$PAYSEC_HOME" merge --no-edit "origin/$branch" >/dev/null 2>&1; then
+        if PAYSEC_HOME="$PAYSEC_HOME" _receipted_git closed brain-sync "$push_host" curated-memory-git-push "artifacts_sync_mode!=off" \
+            bash -c 'git -C "$1" push origin HEAD 2>/dev/null' _ "$PAYSEC_HOME"; then
           rewrite_queue "$paths_file" "$class_file"
           date -u +%Y-%m-%dT%H:%M:%SZ > "$LAST_PUSH_FILE"
           write_status "ok" "pushed $n file(s) after rebase"
@@ -568,10 +568,10 @@ subcmd_status() {
 subcmd_skip_file() {
   local path="${1:-}"
   if [ -z "$path" ]; then
-    echo "Usage: gstack-brain-sync --skip-file <path>" >&2
+    echo "Usage: paysec-brain-sync --skip-file <path>" >&2
     exit 1
   fi
-  mkdir -p "$GSTACK_HOME"
+  mkdir -p "$PAYSEC_HOME"
   # Avoid duplicate entries.
   if [ -f "$SKIP_FILE" ] && grep -Fxq "$path" "$SKIP_FILE"; then
     echo "already in skip list: $path"
@@ -603,13 +603,13 @@ subcmd_discover_new() {
     exit 0
   fi
   # Walk allowlist globs; enqueue any file where mtime+size differs from cursor.
-  python3 - "$GSTACK_HOME" "$ALLOWLIST" "$DISCOVER_CURSOR" <<'PYEOF' 2>/dev/null || true
+  python3 - "$PAYSEC_HOME" "$ALLOWLIST" "$DISCOVER_CURSOR" <<'PYEOF' 2>/dev/null || true
 import sys, os, json, fnmatch
 from datetime import datetime, timezone
 
-gstack_home, allowlist_path, cursor_path = sys.argv[1:4]
-queue_path = os.path.join(gstack_home, ".brain-queue.jsonl")
-skip_path = os.path.join(gstack_home, ".brain-skip.txt")
+paysec_home, allowlist_path, cursor_path = sys.argv[1:4]
+queue_path = os.path.join(paysec_home, ".brain-queue.jsonl")
+skip_path = os.path.join(paysec_home, ".brain-skip.txt")
 
 def load_lines(path):
     try:
@@ -640,8 +640,8 @@ cursor = load_cursor(cursor_path)
 new_cursor = dict(cursor)
 to_enqueue = []
 
-# Walk all files under gstack_home, match against allowlist.
-for root, dirs, files in os.walk(gstack_home):
+# Walk all files under paysec_home, match against allowlist.
+for root, dirs, files in os.walk(paysec_home):
     # Skip .git and .brain-* state files.
     if ".git" in root.split(os.sep):
         continue
@@ -651,7 +651,7 @@ for root, dirs, files in os.walk(gstack_home):
         # separators on Windows, which never match the forward-slash allowlist
         # globs (e.g. "projects/*/learnings.jsonl"), so discovery silently
         # enqueued nothing under projects/ on Windows. Normalize to "/".
-        rel = os.path.relpath(full, gstack_home).replace(os.sep, "/")
+        rel = os.path.relpath(full, paysec_home).replace(os.sep, "/")
         if rel.startswith(".brain-"):
             continue
         if not any(fnmatch.fnmatchcase(rel, pat) for pat in allowlist):
@@ -667,7 +667,7 @@ for root, dirs, files in os.walk(gstack_home):
             to_enqueue.append((rel, key))
 
 # Append to the queue directly. The previous implementation shelled out to
-# gstack-brain-enqueue once per file, but Windows Python cannot exec a
+# paysec-brain-enqueue once per file, but Windows Python cannot exec a
 # bash-shebang script (the spawn fails with a fork error), so discovery
 # enqueued nothing on Windows even after the path-match fix above.
 # Writing the queue line here is platform-agnostic; the drain step
@@ -676,7 +676,7 @@ if to_enqueue:
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     try:
         # One atomic append per record (O_APPEND, each line < PIPE_BUF), matching
-        # gstack-brain-enqueue's concurrency contract so a writer-shim append
+        # paysec-brain-enqueue's concurrency contract so a writer-shim append
         # running in parallel can't interleave mid-record. Buffered text writes
         # don't guarantee that. Compact separators match the shim's JSON shape.
         fd = os.open(queue_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
@@ -712,7 +712,7 @@ case "${1:-}" in
     ;;
   *)
     echo "Unknown subcommand: $1" >&2
-    echo "Run: gstack-brain-sync --help" >&2
+    echo "Run: paysec-brain-sync --help" >&2
     exit 1
     ;;
 esac

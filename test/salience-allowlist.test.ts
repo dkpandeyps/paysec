@@ -11,26 +11,26 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { SALIENCE_DEFAULT_ALLOWLIST } from '../scripts/brain-cache-spec';
 
-const ORIGINAL_ENV = process.env.GSTACK_SALIENCE_ALLOWLIST;
+const ORIGINAL_ENV = process.env.PAYSEC_SALIENCE_ALLOWLIST;
 
 beforeEach(() => {
-  delete require.cache[require.resolve('../bin/gstack-brain-cache')];
+  delete require.cache[require.resolve('../bin/paysec-brain-cache')];
 });
 
 afterEach(() => {
-  if (ORIGINAL_ENV) process.env.GSTACK_SALIENCE_ALLOWLIST = ORIGINAL_ENV;
-  else delete process.env.GSTACK_SALIENCE_ALLOWLIST;
+  if (ORIGINAL_ENV) process.env.PAYSEC_SALIENCE_ALLOWLIST = ORIGINAL_ENV;
+  else delete process.env.PAYSEC_SALIENCE_ALLOWLIST;
 });
 
-async function importCache(): Promise<typeof import('../bin/gstack-brain-cache')> {
-  return (await import('../bin/gstack-brain-cache')) as typeof import('../bin/gstack-brain-cache');
+async function importCache(): Promise<typeof import('../bin/paysec-brain-cache')> {
+  return (await import('../bin/paysec-brain-cache')) as typeof import('../bin/paysec-brain-cache');
 }
 
 describe('salience allowlist gate', () => {
-  test('default allowlist permits projects/ + gstack/ + concepts/', async () => {
+  test('default allowlist permits projects/ + paysec/ + concepts/', async () => {
     const mod = await importCache();
     expect(mod.isSalienceSlugAllowed('projects/myrepo', SALIENCE_DEFAULT_ALLOWLIST)).toBe(true);
-    expect(mod.isSalienceSlugAllowed('gstack/product/helsinki', SALIENCE_DEFAULT_ALLOWLIST)).toBe(true);
+    expect(mod.isSalienceSlugAllowed('paysec/product/helsinki', SALIENCE_DEFAULT_ALLOWLIST)).toBe(true);
     expect(mod.isSalienceSlugAllowed('concepts/some-idea', SALIENCE_DEFAULT_ALLOWLIST)).toBe(true);
   });
 
@@ -54,32 +54,32 @@ describe('salience allowlist gate', () => {
   });
 
   test('getSalienceAllowlist returns default when env unset and config silent', async () => {
-    delete process.env.GSTACK_SALIENCE_ALLOWLIST;
+    delete process.env.PAYSEC_SALIENCE_ALLOWLIST;
     const mod = await importCache();
     const list = mod.getSalienceAllowlist();
     expect(Array.isArray(list)).toBe(true);
     expect(list.length).toBeGreaterThan(0);
     // Should at minimum contain the curated defaults
     expect(list).toContain('projects/');
-    expect(list).toContain('gstack/');
+    expect(list).toContain('paysec/');
   });
 
-  test('GSTACK_SALIENCE_ALLOWLIST env override is honored', async () => {
-    process.env.GSTACK_SALIENCE_ALLOWLIST = 'custom-a/,custom-b/,custom-c/';
+  test('PAYSEC_SALIENCE_ALLOWLIST env override is honored', async () => {
+    process.env.PAYSEC_SALIENCE_ALLOWLIST = 'custom-a/,custom-b/,custom-c/';
     const mod = await importCache();
     const list = mod.getSalienceAllowlist();
     expect(list).toEqual(['custom-a/', 'custom-b/', 'custom-c/']);
   });
 
-  test('GSTACK_SALIENCE_ALLOWLIST with whitespace is trimmed', async () => {
-    process.env.GSTACK_SALIENCE_ALLOWLIST = ' projects/ , gstack/ , concepts/ ';
+  test('PAYSEC_SALIENCE_ALLOWLIST with whitespace is trimmed', async () => {
+    process.env.PAYSEC_SALIENCE_ALLOWLIST = ' projects/ , paysec/ , concepts/ ';
     const mod = await importCache();
     const list = mod.getSalienceAllowlist();
-    expect(list).toEqual(['projects/', 'gstack/', 'concepts/']);
+    expect(list).toEqual(['projects/', 'paysec/', 'concepts/']);
   });
 
   test('empty env value falls through to default (not empty list)', async () => {
-    process.env.GSTACK_SALIENCE_ALLOWLIST = '';
+    process.env.PAYSEC_SALIENCE_ALLOWLIST = '';
     const mod = await importCache();
     const list = mod.getSalienceAllowlist();
     expect(list.length).toBeGreaterThan(0);

@@ -35,7 +35,7 @@ import { type LayerSignal } from './security';
  *
  * The HuggingFace repo stores model.onnx at the root, but @huggingface/transformers
  * v4 expects it under an `onnx/` subdirectory. We stage the files into the expected
- * layout at ~/.gstack/models/testsavant-small/ on first use.
+ * layout at ~/.paysec/models/testsavant-small/ on first use.
  *
  * Files (fetched from HF on first use, cached for lifetime of install):
  *   config.json
@@ -45,7 +45,7 @@ import { type LayerSignal } from './security';
  *   vocab.txt
  *   onnx/model.onnx  (~112MB)
  */
-const MODELS_DIR = path.join(os.homedir(), '.gstack', 'models');
+const MODELS_DIR = path.join(os.homedir(), '.paysec', 'models');
 const TESTSAVANT_DIR = path.join(MODELS_DIR, 'testsavant-small');
 const TESTSAVANT_HF_URL = 'https://huggingface.co/testsavantai/prompt-injection-defender-small-v0-onnx/resolve/main';
 const TESTSAVANT_FILES = [
@@ -146,9 +146,9 @@ async function ensureTestsavantStaged(onProgress?: (msg: string) => void): Promi
 let loadPromise: Promise<void> | null = null;
 
 export function loadTestsavant(onProgress?: (msg: string) => void): Promise<void> {
-  if (process.env.GSTACK_SECURITY_OFF === '1') {
+  if (process.env.PAYSEC_SECURITY_OFF === '1') {
     testsavantState = 'failed';
-    testsavantLoadError = 'GSTACK_SECURITY_OFF=1 — ML classifier kill switch engaged';
+    testsavantLoadError = 'PAYSEC_SECURITY_OFF=1 — ML classifier kill switch engaged';
     return Promise.resolve();
   }
   if (testsavantState === 'loaded') return Promise.resolve();

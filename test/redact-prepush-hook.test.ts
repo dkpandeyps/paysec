@@ -4,7 +4,7 @@
  * MEDIUM warns (non-blocking), correct remote..local diff direction, new-branch
  * zero-SHA handling, branch-delete skip, escape valve, and hook chaining.
  *
- * We invoke bin/gstack-redact-prepush directly with the git pre-push stdin
+ * We invoke bin/paysec-redact-prepush directly with the git pre-push stdin
  * protocol rather than going through `git push`, which keeps the test fast and
  * deterministic while exercising the exact code path git would.
  */
@@ -14,8 +14,8 @@ import * as os from "os";
 import * as path from "path";
 import { spawnSync } from "child_process";
 
-const PREPUSH = path.resolve(import.meta.dir, "..", "bin", "gstack-redact-prepush");
-const REDACT = path.resolve(import.meta.dir, "..", "bin", "gstack-redact");
+const PREPUSH = path.resolve(import.meta.dir, "..", "bin", "paysec-redact-prepush");
+const REDACT = path.resolve(import.meta.dir, "..", "bin", "paysec-redact");
 
 let repo: string;
 
@@ -49,7 +49,7 @@ function runHook(
  * shadow a real binary with a stub.
  *
  * Two portability details, both of which a hardcoded `PATH: "dir:" + ...`
- * gets wrong (mirrors `prependPath` in test/gstack-brain-context-load.test.ts):
+ * gets wrong (mirrors `prependPath` in test/paysec-brain-context-load.test.ts):
  *   - The separator is `;` on Windows, not `:`. Using the literal produces one
  *     unparseable entry, so the stub is never found and the REAL binary runs —
  *     a test that silently passes through rather than failing loudly.
@@ -142,7 +142,7 @@ describe("fail closed on unscannable diffs (#1946)", () => {
     );
     expect(code).toBe(1);
     expect(stderr).toContain("could not compute the pushed diff");
-    expect(stderr).toContain("GSTACK_REDACT_PREPUSH=skip");
+    expect(stderr).toContain("PAYSEC_REDACT_PREPUSH=skip");
   });
 
   test("an empty-but-successful diff still passes (no-op push)", () => {
@@ -197,7 +197,7 @@ describe("fail closed on unscannable diffs (#1946)", () => {
         );
         expect(code).toBe(1);
         expect(stderr).toContain("could not compute the pushed diff");
-        expect(stderr).toContain("GSTACK_REDACT_PREPUSH=skip");
+        expect(stderr).toContain("PAYSEC_REDACT_PREPUSH=skip");
       } finally {
         fs.rmSync(stubDir, { recursive: true, force: true });
       }
@@ -216,7 +216,7 @@ describe("install UX surfaces (#1946 / eng review D3+D10)", () => {
   });
 
   test("ship template owns per-repo install: silent-install path + one-time offer marker", () => {
-    const tmpl = fs.readFileSync(path.join(ROOT, "ship", "SKILL.md.tmpl"), "utf8");
+    const tmpl = fs.readFileSync(path.join(ROOT, "ship-pr", "SKILL.md.tmpl"), "utf8");
     expect(tmpl).toContain("install-prepush-hook");
     expect(tmpl).toContain(".redact-prepush-prompted");
     expect(tmpl).toContain("redact_prepush_hook");
@@ -243,24 +243,24 @@ describe("install UX surfaces (#1946 / eng review D3+D10)", () => {
       // The timeout branch must not write the key (a silent decline would
       // permanently suppress the ask without the user ever seeing it). The
       // branch's hint TEXT mentions the command; the executable invocation is
-      // the quoted "$GSTACK_CONFIG" form.
+      // the quoted "$PAYSEC_CONFIG" form.
       const timeoutBranch = block.slice(block.indexOf("*)"), block.indexOf("esac"));
-      expect(timeoutBranch).not.toContain('"$GSTACK_CONFIG" set redact_prepush_hook');
+      expect(timeoutBranch).not.toContain('"$PAYSEC_CONFIG" set redact_prepush_hook');
     });
 
     test("non-interactive setup keeps the hint-only posture (no prompt, no key write)", () => {
-      const home = fs.mkdtempSync(path.join(os.tmpdir(), "gstack-consent-"));
+      const home = fs.mkdtempSync(path.join(os.tmpdir(), "paysec-consent-"));
       try {
         const script = [
           "QUIET=0",
           'log() { echo "$@"; }',
-          `GSTACK_CONFIG="${path.join(ROOT, "bin", "gstack-config")}"`,
+          `PAYSEC_CONFIG="${path.join(ROOT, "bin", "paysec-config")}"`,
           block,
         ].join("\n");
         const r = spawnSync("bash", ["-c", script], {
           encoding: "utf8",
           stdio: ["ignore", "pipe", "pipe"], // stdin not a TTY
-          env: { ...process.env, GSTACK_HOME: home },
+          env: { ...process.env, PAYSEC_HOME: home },
           timeout: 15_000,
         });
         expect(r.status).toBe(0);
@@ -275,19 +275,19 @@ describe("install UX surfaces (#1946 / eng review D3+D10)", () => {
     });
 
     test("a recorded answer is never re-asked (key present → silent)", () => {
-      const home = fs.mkdtempSync(path.join(os.tmpdir(), "gstack-consent-set-"));
+      const home = fs.mkdtempSync(path.join(os.tmpdir(), "paysec-consent-set-"));
       try {
         fs.writeFileSync(path.join(home, "config.yaml"), "redact_prepush_hook: false\n");
         const script = [
           "QUIET=0",
           'log() { echo "$@"; }',
-          `GSTACK_CONFIG="${path.join(ROOT, "bin", "gstack-config")}"`,
+          `PAYSEC_CONFIG="${path.join(ROOT, "bin", "paysec-config")}"`,
           block,
         ].join("\n");
         const r = spawnSync("bash", ["-c", script], {
           encoding: "utf8",
           stdio: ["ignore", "pipe", "pipe"],
-          env: { ...process.env, GSTACK_HOME: home },
+          env: { ...process.env, PAYSEC_HOME: home },
           timeout: 15_000,
         });
         expect(r.status).toBe(0);
@@ -300,13 +300,13 @@ describe("install UX surfaces (#1946 / eng review D3+D10)", () => {
 });
 
 describe("escape valve", () => {
-  test("GSTACK_REDACT_PREPUSH=skip bypasses + logs", () => {
+  test("PAYSEC_REDACT_PREPUSH=skip bypasses + logs", () => {
     const base = git(["rev-parse", "HEAD"]);
     const head = commit("config.txt", "key " + FAKE_AWS_KEY + "\n", "add key");
     const home = fs.mkdtempSync(path.join(os.tmpdir(), "ghome-"));
     const { code } = runHook(`refs/heads/main ${head} refs/heads/main ${base}\n`, {
-      GSTACK_REDACT_PREPUSH: "skip",
-      GSTACK_HOME: home,
+      PAYSEC_REDACT_PREPUSH: "skip",
+      PAYSEC_HOME: home,
     });
     expect(code).toBe(0);
     const log = fs.readFileSync(path.join(home, "security", "prepush-skip.jsonl"), "utf8");
@@ -325,7 +325,7 @@ describe("install / chaining", () => {
     const r = spawnSync("bun", [REDACT, "install-prepush-hook"], { cwd: repo, encoding: "utf8" });
     expect(r.status).toBe(0);
     const installed = fs.readFileSync(existing, "utf8");
-    expect(installed).toContain("gstack-redact pre-push (managed)");
+    expect(installed).toContain("paysec-redact pre-push (managed)");
     expect(fs.existsSync(path.join(hookDir, "pre-push.local"))).toBe(true);
     expect(fs.readFileSync(path.join(hookDir, "pre-push.local"), "utf8")).toContain("echo mine");
   });
@@ -351,7 +351,7 @@ describe("install / chaining", () => {
       cwd: repo,
       input: Buffer.from(line),
       encoding: "utf8",
-      env: { ...process.env, GSTACK_REDACT_PREPUSH: "skip" },
+      env: { ...process.env, PAYSEC_REDACT_PREPUSH: "skip" },
     });
     expect(r.status).toBe(0);
     expect(fs.existsSync(seen)).toBe(true);
@@ -373,7 +373,7 @@ describe("install / chaining", () => {
       cwd: repo,
       input: Buffer.from(`refs/heads/main ${"b".repeat(40)} refs/heads/main ${ZERO}\n`),
       encoding: "utf8",
-      env: { ...process.env, GSTACK_REDACT_PREPUSH: "skip" },
+      env: { ...process.env, PAYSEC_REDACT_PREPUSH: "skip" },
     });
     expect(r.status).toBe(1);
   });

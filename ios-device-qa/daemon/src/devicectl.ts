@@ -291,7 +291,7 @@ export function launchApp(
 
 /**
  * Copy a file out of an app's data container. Used to scrape the boot token
- * from `tmp/gstack-ios-qa.token` after the StateServer starts.
+ * from `tmp/paysec-ios-device-qa.token` after the StateServer starts.
  */
 export function copyFileFromAppContainer(opts: {
   udid: string;
@@ -300,7 +300,7 @@ export function copyFileFromAppContainer(opts: {
   spawn?: SpawnImpl;
 }): string | null {
   const spawn = opts.spawn ?? defaultSpawn;
-  const dir = mkdtempSync(join(tmpdir(), 'gstack-ios-copy-'));
+  const dir = mkdtempSync(join(tmpdir(), 'paysec-ios-copy-'));
   const dest = join(dir, 'fetched');
   try {
     const r = spawn('xcrun', [

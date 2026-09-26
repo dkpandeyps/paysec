@@ -1,4 +1,4 @@
-// Pure-function tests for bin/gstack-next-version.
+// Pure-function tests for bin/paysec-next-version.
 // Covers the version arithmetic and slot-picking logic. Subprocess paths
 // (gh/glab/git) are covered by the integration test at the bottom (skipped
 // when the relevant CLI isn't available).
@@ -19,7 +19,7 @@ import {
   markActiveSiblings,
   resolveVersionPath,
   fetchGitClaimed,
-} from "../bin/gstack-next-version";
+} from "../bin/paysec-next-version";
 
 describe("parseVersion", () => {
   test("accepts 4-digit semver", () => {
@@ -35,7 +35,7 @@ describe("parseVersion", () => {
   test("accepts 3-digit semver, padding the micro slot (#2501)", () => {
     // 3-digit repos (a package.json holding plain semver) used to fail parsing
     // outright, which exited this CLI 2 on EVERY run — and since this CLI is
-    // the queue-collision check, /ship then fell back to naive local
+    // the queue-collision check, /ship-pr then fell back to naive local
     // arithmetic and duplicate version slots shipped silently. The pad keeps
     // comparison uniform; versionWidth narrows output back.
     expect(parseVersion("0.99.2")).toEqual([0, 99, 2, 0]);
@@ -62,7 +62,7 @@ describe("3-digit repos keep their width (#2501)", () => {
   });
 
   test("micro is carried out as patch when there is no micro component", () => {
-    // /ship auto-picks MICRO by default. Erroring would make it unusable in
+    // /ship-pr auto-picks MICRO by default. Erroring would make it unusable in
     // every 3-digit repo; a no-op would be worse — it would write back the
     // version it started with and claim a slot already taken.
     expect(bumpVersion([0, 99, 2, 0], "micro", 3)).toEqual([0, 99, 3, 0]);
@@ -217,19 +217,19 @@ describe("resolveVersionPath (monorepo VERSION-path support)", () => {
   test("CLI flag wins over everything", () => {
     const dir = mkdtempSync(join(tmpdir(), "nextver-"));
     try {
-      mkdirSync(join(dir, ".gstack"));
-      writeFileSync(join(dir, ".gstack", "version-path"), "config/VERSION\n");
+      mkdirSync(join(dir, ".paysec"));
+      writeFileSync(join(dir, ".paysec", "version-path"), "config/VERSION\n");
       expect(resolveVersionPath("flag/path/VERSION", dir)).toBe("flag/path/VERSION");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  test(".gstack/version-path config is picked up", () => {
+  test(".paysec/version-path config is picked up", () => {
     const dir = mkdtempSync(join(tmpdir(), "nextver-"));
     try {
-      mkdirSync(join(dir, ".gstack"));
-      writeFileSync(join(dir, ".gstack", "version-path"), "Tinas Second Brain/health-tracker/VERSION\n");
+      mkdirSync(join(dir, ".paysec"));
+      writeFileSync(join(dir, ".paysec", "version-path"), "Tinas Second Brain/health-tracker/VERSION\n");
       expect(resolveVersionPath(undefined, dir)).toBe("Tinas Second Brain/health-tracker/VERSION");
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -239,8 +239,8 @@ describe("resolveVersionPath (monorepo VERSION-path support)", () => {
   test("trims whitespace and ignores blank lines after the first", () => {
     const dir = mkdtempSync(join(tmpdir(), "nextver-"));
     try {
-      mkdirSync(join(dir, ".gstack"));
-      writeFileSync(join(dir, ".gstack", "version-path"), "  apps/web/VERSION  \n\n# comment-ish line\n");
+      mkdirSync(join(dir, ".paysec"));
+      writeFileSync(join(dir, ".paysec", "version-path"), "  apps/web/VERSION  \n\n# comment-ish line\n");
       expect(resolveVersionPath(undefined, dir)).toBe("apps/web/VERSION");
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -250,8 +250,8 @@ describe("resolveVersionPath (monorepo VERSION-path support)", () => {
   test("empty config file falls back to default VERSION", () => {
     const dir = mkdtempSync(join(tmpdir(), "nextver-"));
     try {
-      mkdirSync(join(dir, ".gstack"));
-      writeFileSync(join(dir, ".gstack", "version-path"), "\n");
+      mkdirSync(join(dir, ".paysec"));
+      writeFileSync(join(dir, ".paysec", "version-path"), "\n");
       expect(resolveVersionPath(undefined, dir)).toBe("VERSION");
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -271,8 +271,8 @@ describe("resolveVersionPath (monorepo VERSION-path support)", () => {
     // Defensive: "" should NOT win over config — only a non-empty CLI arg should.
     const dir = mkdtempSync(join(tmpdir(), "nextver-"));
     try {
-      mkdirSync(join(dir, ".gstack"));
-      writeFileSync(join(dir, ".gstack", "version-path"), "subproj/VERSION\n");
+      mkdirSync(join(dir, ".paysec"));
+      writeFileSync(join(dir, ".paysec", "version-path"), "subproj/VERSION\n");
       expect(resolveVersionPath("", dir)).toBe("subproj/VERSION");
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -287,7 +287,7 @@ describe("resolveVersionPath (monorepo VERSION-path support)", () => {
 // carries a distinct VERSION and readBaseVersion does
 // `git show origin/<detected-base>:VERSION`.
 describe("default-base detection (no --base)", () => {
-  const SCRIPT = join(import.meta.dir, "..", "bin", "gstack-next-version");
+  const SCRIPT = join(import.meta.dir, "..", "bin", "paysec-next-version");
   // Point git at a nonexistent global/system config so operator settings
   // (init.defaultBranch, commit.gpgsign, hooks, ...) can't leak into fixtures.
   const noCfg = join(mkdtempSync(join(tmpdir(), "nextver-gitcfg-")), "empty");
@@ -380,11 +380,11 @@ describe("default-base detection (no --base)", () => {
 
 // Integration smoke — only runs if gh is available and authenticated. Confirms
 // the CLI executes end-to-end against real APIs without crashing.
-describe("offline output contract (what /ship branches on, #2545)", () => {
-  // /ship's Step 12 reads `.fallback` to decide whether the pick is
+describe("offline output contract (what /ship-pr branches on, #2545)", () => {
+  // /ship-pr's Step 12 reads `.fallback` to decide whether the pick is
   // trustworthy when the PR queue is unreachable. That field is therefore
   // load-bearing prose-to-code coupling: if it silently stopped being emitted,
-  // /ship would read undefined, treat the run as fully online, and lose the
+  // /ship-pr would read undefined, treat the run as fully online, and lose the
   // "verify no sibling holds it" prompt. Asserted end-to-end with a stub `gh`
   // that always fails, which is what an expired token or an offline laptop
   // looks like from here.
@@ -392,7 +392,7 @@ describe("offline output contract (what /ship branches on, #2545)", () => {
     const stubDir = mkdtempSync(join(tmpdir(), "nextver-stubgh-"));
     writeFileSync(join(stubDir, "gh"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
     const proc = Bun.spawnSync(
-      ["bun", "run", "./bin/gstack-next-version", "--base", "main",
+      ["bun", "run", "./bin/paysec-next-version", "--base", "main",
        "--bump", "patch", "--current-version", "1.0.0.0", "--workspace-root", "null"],
       { env: { ...process.env, PATH: `${stubDir}:${process.env.PATH}` } },
     );
@@ -407,7 +407,7 @@ describe("offline output contract (what /ship branches on, #2545)", () => {
 
   test("online runs leave fallback null", async () => {
     const proc = Bun.spawnSync(
-      ["bun", "run", "./bin/gstack-next-version", "--base", "main",
+      ["bun", "run", "./bin/paysec-next-version", "--base", "main",
        "--bump", "patch", "--current-version", "1.0.0.0", "--workspace-root", "null"],
     );
     const out = JSON.parse(new TextDecoder().decode(proc.stdout));
@@ -418,7 +418,7 @@ describe("offline output contract (what /ship branches on, #2545)", () => {
 
 describe("fetchGitClaimed (offline allocation — the anti-duplicate fallback, #2545)", () => {
   // Why this exists: when `gh pr list` failed, the util returned
-  // `offline:true` with an EMPTY claim set and /ship's instruction was
+  // `offline:true` with an EMPTY claim set and /ship-pr's instruction was
   // "fall back to local BUMP_LEVEL arithmetic". Local arithmetic cannot see a
   // sibling's claim, so it re-allocated a version an open PR already held.
   // That produced two commits reading v0.1.57.0 on a downstream repo's main
@@ -550,7 +550,7 @@ describe("integration (smoke)", () => {
     const proc = Bun.spawnSync([
       "bun",
       "run",
-      "./bin/gstack-next-version",
+      "./bin/paysec-next-version",
       "--base",
       "main",
       "--bump",
@@ -578,7 +578,7 @@ describe("integration (smoke)", () => {
     const proc = Bun.spawnSync([
       "bun",
       "run",
-      "./bin/gstack-next-version",
+      "./bin/paysec-next-version",
       "--base",
       "main",
       "--bump",

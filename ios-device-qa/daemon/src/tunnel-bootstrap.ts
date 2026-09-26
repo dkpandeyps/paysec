@@ -138,12 +138,12 @@ function relaunchApp(
 
 /**
  * Bootstrap a real CoreDevice tunnel to an iOS app's StateServer. Used by
- * the daemon's default tunnelProvider when GSTACK_IOS_TARGET_UDID is set
+ * the daemon's default tunnelProvider when PAYSEC_IOS_TARGET_UDID is set
  * (or when the user wants real-device control instead of a stub).
  */
 export async function bootstrapTunnel(opts: BootstrapOptions): Promise<BootstrapResult> {
   const port = opts.port ?? 9999;
-  const tokenPath = opts.bootTokenPath ?? 'tmp/gstack-ios-qa.token';
+  const tokenPath = opts.bootTokenPath ?? 'tmp/paysec-ios-device-qa.token';
   const startupTimeoutMs = opts.startupTimeoutMs ?? 5_000;
   const spawn = opts.spawnImpl;
   const resolve = opts.resolveImpl;

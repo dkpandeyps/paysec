@@ -34,20 +34,20 @@ describe('generateBrainPreflight', () => {
       const out = generateBrainPreflight(buildCtx(skill));
       expect(out.length).toBeGreaterThan(0);
       expect(out).toContain('## Brain Context');
-      expect(out).toContain('gstack-brain-cache get');
+      expect(out).toContain('paysec-brain-cache get');
     }
   });
 
   test('emits empty string for non-preflight skills (no behavior)', () => {
-    const nonPlanning = ['ship', 'qa', 'investigate', 'retro', 'design-review'];
+    const nonPlanning = ['ship-pr', 'qa-fix', 'debug-root-cause', 'weekly-retro', 'design-qa'];
     for (const skill of nonPlanning) {
       expect(generateBrainPreflight(buildCtx(skill))).toBe('');
     }
   });
 
-  test('includes per-skill subset entities (office-hours loads 5 digests)', () => {
-    const out = generateBrainPreflight(buildCtx('office-hours'));
-    // office-hours loads: product, goals, user-profile, recent-decisions, salience
+  test('includes per-skill subset entities (idea-review loads 5 digests)', () => {
+    const out = generateBrainPreflight(buildCtx('idea-review'));
+    // idea-review loads: product, goals, user-profile, recent-decisions, salience
     expect(out).toContain('product');
     expect(out).toContain('goals');
     expect(out).toContain('user-profile');
@@ -55,49 +55,49 @@ describe('generateBrainPreflight', () => {
     expect(out).toContain('salience');
   });
 
-  test('plan-eng-review loads minimal subset (2 digests)', () => {
-    const out = generateBrainPreflight(buildCtx('plan-eng-review'));
+  test('plan-tech-review loads minimal subset (2 digests)', () => {
+    const out = generateBrainPreflight(buildCtx('plan-tech-review'));
     expect(out).toContain('product');
     expect(out).toContain('recent-decisions');
     // Should NOT load brand or developer-persona
-    expect(out).not.toContain('gstack-brain-cache get brand');
-    expect(out).not.toContain('gstack-brain-cache get developer-persona');
+    expect(out).not.toContain('paysec-brain-cache get brand');
+    expect(out).not.toContain('paysec-brain-cache get developer-persona');
   });
 
   test('mentions D9 salience privacy in the prose (transparency)', () => {
-    const out = generateBrainPreflight(buildCtx('office-hours'));
+    const out = generateBrainPreflight(buildCtx('idea-review'));
     expect(out.toLowerCase()).toContain('privacy');
     expect(out.toLowerCase()).toContain('allowlist');
   });
 
   test('user-profile is loaded WITHOUT --project flag (cross-project)', () => {
-    const out = generateBrainPreflight(buildCtx('office-hours'));
+    const out = generateBrainPreflight(buildCtx('idea-review'));
     const userProfileLine = out.split('\n').find((l) => l.includes('user-profile')) || '';
     // user-profile is cross-project; the get call should NOT have --project
     // (the only --project mentions on that line are inside the comment, not in the get call)
-    const getLine = out.split('\n').find((l) => l.includes('gstack-brain-cache get user-profile')) || '';
+    const getLine = out.split('\n').find((l) => l.includes('paysec-brain-cache get user-profile')) || '';
     expect(getLine).not.toContain('--project');
   });
 
   test('per-project entities are loaded WITH --project "$SLUG"', () => {
-    const out = generateBrainPreflight(buildCtx('plan-eng-review'));
+    const out = generateBrainPreflight(buildCtx('plan-tech-review'));
     expect(out).toContain('--project "$SLUG"');
   });
 });
 
 describe('generateBrainCacheRefresh', () => {
   test('emits refresh hook for preflight skills', () => {
-    const out = generateBrainCacheRefresh(buildCtx('plan-ceo-review'));
+    const out = generateBrainCacheRefresh(buildCtx('plan-business-review'));
     expect(out).toContain('Background Refresh');
-    expect(out).toContain('gstack-brain-cache refresh');
+    expect(out).toContain('paysec-brain-cache refresh');
   });
 
   test('empty for non-preflight skills', () => {
-    expect(generateBrainCacheRefresh(buildCtx('ship'))).toBe('');
+    expect(generateBrainCacheRefresh(buildCtx('ship-pr'))).toBe('');
   });
 
   test('uses background backgrounding (does not block user)', () => {
-    const out = generateBrainCacheRefresh(buildCtx('plan-ceo-review'));
+    const out = generateBrainCacheRefresh(buildCtx('plan-business-review'));
     // Background refresh fires the cache refresh in a detached process
     expect(out).toContain('&');
   });
@@ -114,36 +114,36 @@ describe('generateBrainWriteBack', () => {
   });
 
   test('empty for non-preflight skills', () => {
-    expect(generateBrainWriteBack(buildCtx('ship'))).toBe('');
+    expect(generateBrainWriteBack(buildCtx('ship-pr'))).toBe('');
   });
 
   test('includes per-skill calibration weight (E5)', () => {
-    const ceo = generateBrainWriteBack(buildCtx('plan-ceo-review'));
-    expect(ceo).toContain('weight: 0.8'); // SKILL_CALIBRATION_WEIGHTS['plan-ceo-review'] = 0.8
+    const ceo = generateBrainWriteBack(buildCtx('plan-business-review'));
+    expect(ceo).toContain('weight: 0.8'); // SKILL_CALIBRATION_WEIGHTS['plan-business-review'] = 0.8
 
-    const office = generateBrainWriteBack(buildCtx('office-hours'));
+    const office = generateBrainWriteBack(buildCtx('idea-review'));
     expect(office).toContain('weight: 0.9'); // strongest calibration weight
 
-    const design = generateBrainWriteBack(buildCtx('plan-design-review'));
+    const design = generateBrainWriteBack(buildCtx('plan-ux-review'));
     expect(design).toContain('weight: 0.5'); // weakest (design predictions are noisy)
   });
 
   test('mentions personal trust policy gate (D11 codex tension)', () => {
-    const out = generateBrainWriteBack(buildCtx('plan-ceo-review'));
+    const out = generateBrainWriteBack(buildCtx('plan-business-review'));
     expect(out.toLowerCase()).toContain('personal');
     expect(out).toContain('brain_trust_policy');
   });
 
   test('mentions fallback path when takes_add MCP op unavailable (upstream T8)', () => {
-    const out = generateBrainWriteBack(buildCtx('plan-ceo-review'));
+    const out = generateBrainWriteBack(buildCtx('plan-business-review'));
     expect(out).toContain('put_page');
     expect(out).toContain('takes');
   });
 
   test('emits invalidation bash for affected cache digests', () => {
-    const out = generateBrainWriteBack(buildCtx('plan-ceo-review'));
-    // plan-ceo-review invalidates: product, goals, competitive-intel
-    expect(out).toContain('gstack-brain-cache invalidate');
+    const out = generateBrainWriteBack(buildCtx('plan-business-review'));
+    // plan-business-review invalidates: product, goals, competitive-intel
+    expect(out).toContain('paysec-brain-cache invalidate');
   });
 });
 

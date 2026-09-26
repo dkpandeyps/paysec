@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# gstack-distill-apply — apply a single distillation proposal after user Y.
+# paysec-distill-apply — apply a single distillation proposal after user Y.
 #
 # Plan-tune cathedral T11. Reads distillation-proposals.json, applies the
 # Nth proposal to the right surface:
 #
-#   preference     → gstack-question-preference --write
-#   declared-nudge → atomic update to ~/.gstack/developer-profile.json declared
-#   memory-nugget  → append to ~/.gstack/free-text-memory.json (local fallback)
+#   preference     → paysec-question-preference --write
+#   declared-nudge → atomic update to ~/.paysec/developer-profile.json declared
+#   memory-nugget  → append to ~/.paysec/free-text-memory.json (local fallback)
 #
 # Always confirm before calling this from the skill — the bin assumes the user
-# already approved (Codex #15 trust boundary). The skill template (/plan-tune
+# already approved (Codex #15 trust boundary). The skill template (/tune-questions
 # distill review section) handles the confirm UX.
 #
 # gbrain integration: when gbrain is configured, the skill template ALSO
@@ -19,18 +19,18 @@
 # write so it's the durable source-of-truth even on machines without gbrain.
 #
 # Usage:
-#   gstack-distill-apply --proposal <N>                # apply Nth proposal
-#   gstack-distill-apply --proposal <N> --gbrain-published true
-#   gstack-distill-apply --list                        # show pending proposals
+#   paysec-distill-apply --proposal <N>                # apply Nth proposal
+#   paysec-distill-apply --proposal <N> --gbrain-published true
+#   paysec-distill-apply --list                        # show pending proposals
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-GSTACK_HOME="${GSTACK_STATE_ROOT:-${GSTACK_HOME:-$HOME/.gstack}}"
-eval "$("$SCRIPT_DIR/gstack-slug" 2>/dev/null || true)"
+PAYSEC_HOME="${PAYSEC_STATE_ROOT:-${PAYSEC_HOME:-$HOME/.paysec}}"
+eval "$("$SCRIPT_DIR/paysec-slug" 2>/dev/null || true)"
 SLUG="${SLUG:-unknown}"
-PROJECT_DIR="$GSTACK_HOME/projects/$SLUG"
+PROJECT_DIR="$PAYSEC_HOME/projects/$SLUG"
 PROPOSAL_FILE="$PROJECT_DIR/distillation-proposals.json"
-MEMORY_FILE="$GSTACK_HOME/free-text-memory.json"
-PROFILE_FILE="$GSTACK_HOME/developer-profile.json"
+MEMORY_FILE="$PAYSEC_HOME/free-text-memory.json"
+PROFILE_FILE="$PAYSEC_HOME/developer-profile.json"
 
 ACTION="apply"
 PROPOSAL_IDX=""
@@ -50,7 +50,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ ! -f "$PROPOSAL_FILE" ]; then
-  echo "NO_PROPOSALS: $PROPOSAL_FILE missing — run gstack-distill-free-text first"
+  echo "NO_PROPOSALS: $PROPOSAL_FILE missing — run paysec-distill-free-text first"
   exit 0
 fi
 
@@ -96,7 +96,7 @@ PROPOSAL_IDX="$PROPOSAL_IDX" \
 PROPOSAL_FILE_PATH="$PROPOSAL_FILE" \
 MEMORY_FILE_PATH="$MEMORY_FILE" \
 PROFILE_FILE_PATH="$PROFILE_FILE" \
-PREF_BIN="$SCRIPT_DIR/gstack-question-preference" \
+PREF_BIN="$SCRIPT_DIR/paysec-question-preference" \
 GBRAIN_PUBLISHED="$GBRAIN_PUBLISHED" \
 bun -e '
   const fs = require("fs");
@@ -133,16 +133,16 @@ bun -e '
     console.log("APPLIED: memory-nugget appended to " + memPath);
   }
 
-  // Preference: route through gstack-question-preference for the user-origin
-  // gate + event audit trail. source=plan-tune is the allowed value since
-  // the user opt-in came from inside /plan-tune.
+  // Preference: route through paysec-question-preference for the user-origin
+  // gate + event audit trail. source=tune-questions is the allowed value since
+  // the user opt-in came from inside /tune-questions.
   if (pr.kind === "preference") {
     const res = spawnSync(process.env.PREF_BIN, [
       "--write",
       JSON.stringify({
         question_id: pr.question_id,
         preference: pr.preference,
-        source: "plan-tune",
+        source: "tune-questions",
         free_text: (pr.source_quotes || []).join(" | ").slice(0, 300),
       }),
     ], { encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"], timeout: 5000 });
@@ -172,7 +172,7 @@ bun -e '
     console.log("APPLIED: declared." + pr.dimension + " " + cur + " → " + profile.declared[pr.dimension]);
   }
 
-  // Mark the proposal as applied so /plan-tune list shows it consumed.
+  // Mark the proposal as applied so /tune-questions list shows it consumed.
   pr.applied_at = stamp;
   pr.gbrain_published = process.env.GBRAIN_PUBLISHED === "true";
   const tmp = process.env.PROPOSAL_FILE_PATH + ".tmp";

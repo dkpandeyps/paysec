@@ -6,8 +6,8 @@
  * control, a model migration, an air-gapped proxy alias) had to patch source.
  * One resolution point, env-overridable:
  *
- *   GSTACK_EVAL_MODEL_<KIND>  (e.g. GSTACK_EVAL_MODEL_WARMUP) — per-kind
- *   GSTACK_EVAL_MODEL                                        — global
+ *   PAYSEC_EVAL_MODEL_<KIND>  (e.g. PAYSEC_EVAL_MODEL_WARMUP) — per-kind
+ *   PAYSEC_EVAL_MODEL                                        — global
  *   explicit argument                                        — caller wins
  *   per-kind default                                         — last resort
  *
@@ -24,7 +24,7 @@ const DEFAULTS = {
   // D1a (2026-08 test-infra review): capture runs default to Sonnet, matching
   // session-runner — the old Opus default was an inconsistency between
   // runners, not a choice; tests needing Opus pass it explicitly or set
-  // GSTACK_EVAL_MODEL_CAPTURE.
+  // PAYSEC_EVAL_MODEL_CAPTURE.
   capture: "claude-sonnet-4-6",
   warmup: "claude-haiku-4-5",
   distill: "claude-haiku-4-5-20251001",
@@ -38,9 +38,9 @@ export function resolveEvalModel(
   env: NodeJS.ProcessEnv = process.env,
 ): string {
   if (explicit) return explicit;
-  const perKind = env[`GSTACK_EVAL_MODEL_${kind.toUpperCase()}`];
+  const perKind = env[`PAYSEC_EVAL_MODEL_${kind.toUpperCase()}`];
   if (perKind) return perKind;
-  if (env.GSTACK_EVAL_MODEL) return env.GSTACK_EVAL_MODEL;
+  if (env.PAYSEC_EVAL_MODEL) return env.PAYSEC_EVAL_MODEL;
   const fallback = DEFAULTS[kind];
   if (!fallback) throw new Error(`resolveEvalModel: unknown kind "${kind}"`);
   return fallback;

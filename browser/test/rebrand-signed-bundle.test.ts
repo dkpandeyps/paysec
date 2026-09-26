@@ -3,7 +3,7 @@
  * bundle.
  *
  * The old launchHeaded() "rebrand" ran a global
- * `.replace(/Google Chrome for Testing/g, 'GStack Browser')` over the
+ * `.replace(/Google Chrome for Testing/g, 'PaySec Browser')` over the
  * bundle's Info.plist — which renamed CFBundleExecutable to a binary that
  * doesn't exist — and overwrote Resources/*.icns. Both writes broke the
  * codesign seal: GPU process exit_code=5, headed mode dead on macOS 26

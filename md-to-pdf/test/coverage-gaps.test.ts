@@ -117,7 +117,7 @@ describe("rasterizeDiagramFigures (mock tab)", () => {
     const warnings: string[] = [];
     const srcFigure = figure.replace(
       '<figure class="diagram"',
-      `<figure class="diagram" data-gstack-source="${Buffer.from("graph LR\n  A --> B").toString("base64")}"`,
+      `<figure class="diagram" data-paysec-source="${Buffer.from("graph LR\n  A --> B").toString("base64")}"`,
     );
     const out = rasterizeDiagramFigures(srcFigure, tab, 6.5, (m) => warnings.push(m));
     expect(out).toContain("could not be rasterized");
@@ -190,8 +190,8 @@ describe("pure-function stragglers", () => {
   });
 
   test("substituteSlots bare-token fallback (token not <p>-wrapped)", () => {
-    const slots = new Map([["gstack-diagram-slot-x-1", "<figure>D</figure>"]]);
-    const out = substituteSlots("<li>gstack-diagram-slot-x-1</li>", slots);
+    const slots = new Map([["paysec-diagram-slot-x-1", "<figure>D</figure>"]]);
+    const out = substituteSlots("<li>paysec-diagram-slot-x-1</li>", slots);
     expect(out).toBe("<li><figure>D</figure></li>");
   });
 
@@ -199,7 +199,7 @@ describe("pure-function stragglers", () => {
     const tmp = path.join(os.tmpdir(), `bundle-override-${process.pid}.html`);
     fs.writeFileSync(tmp, "<!doctype html>");
     try {
-      expect(resolveBundlePath({ GSTACK_DIAGRAM_BUNDLE: tmp } as NodeJS.ProcessEnv)).toBe(tmp);
+      expect(resolveBundlePath({ PAYSEC_DIAGRAM_BUNDLE: tmp } as NodeJS.ProcessEnv)).toBe(tmp);
     } finally {
       fs.unlinkSync(tmp);
     }
@@ -208,7 +208,7 @@ describe("pure-function stragglers", () => {
   // this checkout (the repo-relative candidate always exists), and a vacuous
   // if-guarded assertion was worse than none. The env-override test above is
   // the honest coverage; the error path is exercised manually via
-  // GSTACK_DIAGRAM_BUNDLE pointing at a missing file outside a repo.
+  // PAYSEC_DIAGRAM_BUNDLE pointing at a missing file outside a repo.
 
   test("screenCss is media-scoped and readable-width", () => {
     const css = screenCss();

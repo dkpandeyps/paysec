@@ -1,5 +1,5 @@
 /**
- * AskUserQuestion format regression test for /plan-ceo-review and /plan-eng-review.
+ * AskUserQuestion format regression test for /plan-business-review and /plan-tech-review.
  *
  * Context: a user on Opus 4.7 reported the RECOMMENDATION line and the
  * `Completeness: N/10` per-option score stopped appearing on AskUserQuestion
@@ -78,7 +78,7 @@ We're building a new user dashboard that shows recent activity, notifications, a
 - Cache: Redis for dashboard aggregates
 `;
 
-function setupPlanDir(tmpPrefix: string, skillName: 'plan-ceo-review' | 'plan-eng-review'): string {
+function setupPlanDir(tmpPrefix: string, skillName: 'plan-business-review' | 'plan-tech-review'): string {
   const planDir = fs.mkdtempSync(path.join(os.tmpdir(), tmpPrefix));
   const run = (cmd: string, args: string[]) =>
     spawnSync(cmd, args, { cwd: planDir, stdio: 'pipe', timeout: 5000 });
@@ -106,14 +106,14 @@ function captureInstruction(outFile: string): string {
   return `Write the verbatim text of every AskUserQuestion you would have made to ${outFile} (one question per session, full text including options and recommendation line). Do NOT call any tool to ask the user. Do NOT paraphrase — include the exact prose you would have shown. This is a format-capture test, not an interactive session.`;
 }
 
-// --- Case 1: plan-ceo-review mode selection (kind-differentiated) ---
+// --- Case 1: plan-business-review mode selection (kind-differentiated) ---
 
 describeIfSelected('Plan Format — CEO Mode Selection', ['plan-ceo-review-format-mode'], () => {
   let planDir: string;
   let outFile: string;
 
   beforeAll(() => {
-    planDir = setupPlanDir('skill-e2e-plan-format-ceo-mode-', 'plan-ceo-review');
+    planDir = setupPlanDir('skill-e2e-plan-format-ceo-mode-', 'plan-business-review');
     outFile = path.join(planDir, 'ask-capture.md');
   });
 
@@ -123,7 +123,7 @@ describeIfSelected('Plan Format — CEO Mode Selection', ['plan-ceo-review-forma
 
   testConcurrentIfSelected('plan-ceo-review-format-mode', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-ceo-review/SKILL.md for the review workflow.
+      prompt: `Read plan-business-review/SKILL.md for the review workflow.
 
 Read plan.md — that's the plan to review. This is a standalone plan document, not a codebase — skip any codebase exploration or system audit steps.
 
@@ -140,7 +140,7 @@ After writing the file, stop. Do not continue the review.`,
       model: 'claude-opus-4-7',
     });
 
-    logCost('/plan-ceo-review format (mode)', result);
+    logCost('/plan-business-review format (mode)', result);
     expect(['success', 'error_max_turns']).toContain(result.exitReason);
 
     expect(fs.existsSync(outFile)).toBe(true);
@@ -163,14 +163,14 @@ After writing the file, stop. Do not continue the review.`,
   }, 300_000);
 });
 
-// --- Case 2: plan-ceo-review approach menu (coverage-differentiated) ---
+// --- Case 2: plan-business-review approach menu (coverage-differentiated) ---
 
 describeIfSelected('Plan Format — CEO Approach Menu', ['plan-ceo-review-format-approach'], () => {
   let planDir: string;
   let outFile: string;
 
   beforeAll(() => {
-    planDir = setupPlanDir('skill-e2e-plan-format-ceo-approach-', 'plan-ceo-review');
+    planDir = setupPlanDir('skill-e2e-plan-format-ceo-approach-', 'plan-business-review');
     outFile = path.join(planDir, 'ask-capture.md');
   });
 
@@ -180,7 +180,7 @@ describeIfSelected('Plan Format — CEO Approach Menu', ['plan-ceo-review-format
 
   testConcurrentIfSelected('plan-ceo-review-format-approach', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-ceo-review/SKILL.md for the review workflow.
+      prompt: `Read plan-business-review/SKILL.md for the review workflow.
 
 Read plan.md — that's the plan to review. This is a standalone plan document, not a codebase — skip any codebase exploration or system audit steps.
 
@@ -197,7 +197,7 @@ After writing the file, stop. Do not continue the review.`,
       model: 'claude-opus-4-7',
     });
 
-    logCost('/plan-ceo-review format (approach)', result);
+    logCost('/plan-business-review format (approach)', result);
     expect(['success', 'error_max_turns']).toContain(result.exitReason);
 
     expect(fs.existsSync(outFile)).toBe(true);
@@ -219,14 +219,14 @@ After writing the file, stop. Do not continue the review.`,
   }, 300_000);
 });
 
-// --- Case 3: plan-eng-review coverage-differentiated per-issue AskUserQuestion ---
+// --- Case 3: plan-tech-review coverage-differentiated per-issue AskUserQuestion ---
 
 describeIfSelected('Plan Format — Eng Coverage Issue', ['plan-eng-review-format-coverage'], () => {
   let planDir: string;
   let outFile: string;
 
   beforeAll(() => {
-    planDir = setupPlanDir('skill-e2e-plan-format-eng-cov-', 'plan-eng-review');
+    planDir = setupPlanDir('skill-e2e-plan-format-eng-cov-', 'plan-tech-review');
     outFile = path.join(planDir, 'ask-capture.md');
   });
 
@@ -236,7 +236,7 @@ describeIfSelected('Plan Format — Eng Coverage Issue', ['plan-eng-review-forma
 
   testConcurrentIfSelected('plan-eng-review-format-coverage', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-eng-review/SKILL.md for the review workflow.
+      prompt: `Read plan-tech-review/SKILL.md for the review workflow.
 
 Read plan.md — that's the plan to review. This is a standalone plan document, not a codebase — skip any codebase exploration steps.
 
@@ -256,7 +256,7 @@ After writing the file with that ONE question, stop. Do not continue the review.
       model: 'claude-opus-4-7',
     });
 
-    logCost('/plan-eng-review format (coverage)', result);
+    logCost('/plan-tech-review format (coverage)', result);
     expect(['success', 'error_max_turns']).toContain(result.exitReason);
 
     expect(fs.existsSync(outFile)).toBe(true);
@@ -278,14 +278,14 @@ After writing the file with that ONE question, stop. Do not continue the review.
   }, 300_000);
 });
 
-// --- Case 4: plan-eng-review kind-differentiated per-issue AskUserQuestion ---
+// --- Case 4: plan-tech-review kind-differentiated per-issue AskUserQuestion ---
 
 describeIfSelected('Plan Format — Eng Kind Issue', ['plan-eng-review-format-kind'], () => {
   let planDir: string;
   let outFile: string;
 
   beforeAll(() => {
-    planDir = setupPlanDir('skill-e2e-plan-format-eng-kind-', 'plan-eng-review');
+    planDir = setupPlanDir('skill-e2e-plan-format-eng-kind-', 'plan-tech-review');
     outFile = path.join(planDir, 'ask-capture.md');
   });
 
@@ -295,7 +295,7 @@ describeIfSelected('Plan Format — Eng Kind Issue', ['plan-eng-review-format-ki
 
   testConcurrentIfSelected('plan-eng-review-format-kind', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-eng-review/SKILL.md for the review workflow.
+      prompt: `Read plan-tech-review/SKILL.md for the review workflow.
 
 Read plan.md — that's the plan to review. This is a standalone plan document, not a codebase — skip any codebase exploration steps.
 
@@ -312,7 +312,7 @@ After writing the file with that ONE question, stop. Do not continue the review.
       model: 'claude-opus-4-7',
     });
 
-    logCost('/plan-eng-review format (kind)', result);
+    logCost('/plan-tech-review format (kind)', result);
     expect(['success', 'error_max_turns']).toContain(result.exitReason);
 
     expect(fs.existsSync(outFile)).toBe(true);

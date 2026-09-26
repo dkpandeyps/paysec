@@ -30,14 +30,14 @@ function setupRepo(prefix: string): { dir: string; run: (cmd: string, args: stri
 function copyReviewFiles(dir: string) {
   fs.writeFileSync(
     path.join(dir, 'review-SKILL.md'),
-    extractSkillSections(path.join(ROOT, 'review'), REVIEW_ARMY_E2E_SECTIONS),
+    extractSkillSections(path.join(ROOT, 'pr-review'), REVIEW_ARMY_E2E_SECTIONS),
   );
-  fs.copyFileSync(path.join(ROOT, 'review', 'checklist.md'), path.join(dir, 'review-checklist.md'));
-  fs.copyFileSync(path.join(ROOT, 'review', 'greptile-triage.md'), path.join(dir, 'review-greptile-triage.md'));
+  fs.copyFileSync(path.join(ROOT, 'pr-review', 'checklist.md'), path.join(dir, 'review-checklist.md'));
+  fs.copyFileSync(path.join(ROOT, 'pr-review', 'greptile-triage.md'), path.join(dir, 'review-greptile-triage.md'));
   // Copy specialist checklists
   const specDir = path.join(dir, 'review-specialists');
   fs.mkdirSync(specDir, { recursive: true });
-  const specialistsRoot = path.join(ROOT, 'review', 'specialists');
+  const specialistsRoot = path.join(ROOT, 'pr-review', 'specialists');
   for (const f of fs.readdirSync(specialistsRoot)) {
     fs.copyFileSync(path.join(specialistsRoot, f), path.join(specDir, f));
   }
@@ -80,7 +80,7 @@ The specialist checklists are in review-specialists/ (testing.md, security.md, p
 
 Skip the preamble, lake intro, telemetry sections.
 Run Step 4 (Critical pass) then Step 4.5 (Review Army — Specialist Dispatch).
-The base branch is main. Run gstack-diff-scope style analysis on the changed files.
+The base branch is main. Run paysec-diff-scope style analysis on the changed files.
 Since db/migrate/ files changed, the Data Migration specialist should activate.
 
 For the specialist dispatch, instead of launching subagents, just read review-specialists/data-migration.md
@@ -94,8 +94,8 @@ Write your findings to ${dir}/review-output.md`,
       runId,
     });
 
-    logCost('/review army migration', result);
-    recordE2E(evalCollector, '/review army migration safety', 'Review Army', result);
+    logCost('/pr-review army migration', result);
+    recordE2E(evalCollector, '/pr-review army migration safety', 'Review Army', result);
     expect(result.exitReason).toBe('success');
 
     // Verify migration issues were caught
@@ -159,8 +159,8 @@ Write your findings to ${dir}/review-output.md`,
       runId,
     });
 
-    logCost('/review army n+1', result);
-    recordE2E(evalCollector, '/review army N+1 detection', 'Review Army', result);
+    logCost('/pr-review army n+1', result);
+    recordE2E(evalCollector, '/pr-review army N+1 detection', 'Review Army', result);
     expect(result.exitReason).toBe('success');
 
     const outputPath = path.join(dir, 'review-output.md');
@@ -261,8 +261,8 @@ Write your completion audit to ${dir}/review-output.md`,
       runId,
     });
 
-    logCost('/review army delivery', result);
-    recordE2E(evalCollector, '/review army delivery audit', 'Review Army', result);
+    logCost('/pr-review army delivery', result);
+    recordE2E(evalCollector, '/pr-review army delivery audit', 'Review Army', result);
     expect(result.exitReason).toBe('success');
 
     const outputPath = path.join(dir, 'review-output.md');
@@ -336,8 +336,8 @@ Include the line: "PR Quality Score: X/10" where X is the computed score.`,
       runId,
     });
 
-    logCost('/review army quality', result);
-    recordE2E(evalCollector, '/review army quality score', 'Review Army', result);
+    logCost('/pr-review army quality', result);
+    recordE2E(evalCollector, '/pr-review army quality score', 'Review Army', result);
     expect(result.exitReason).toBe('success');
 
     const outputPath = path.join(dir, 'review-output.md');
@@ -401,8 +401,8 @@ Write ONLY JSON findings (no preamble) to ${dir}/findings.json`,
       runId,
     });
 
-    logCost('/review army json', result);
-    recordE2E(evalCollector, '/review army JSON findings', 'Review Army', result);
+    logCost('/pr-review army json', result);
+    recordE2E(evalCollector, '/pr-review army JSON findings', 'Review Army', result);
     expect(result.exitReason).toBe('success');
 
     const findingsPath = path.join(dir, 'findings.json');
@@ -479,8 +479,8 @@ Start the file with "RED TEAM REVIEW" on the first line.`,
       runId,
     });
 
-    logCost('/review army red-team', result);
-    recordE2E(evalCollector, '/review army red team', 'Review Army', result);
+    logCost('/pr-review army red-team', result);
+    recordE2E(evalCollector, '/pr-review army red team', 'Review Army', result);
     expect(result.exitReason).toBe('success');
 
     const outputPath = path.join(dir, 'review-output.md');
@@ -546,8 +546,8 @@ Write findings to ${dir}/review-output.md`,
       runId,
     });
 
-    logCost('/review army consensus', result);
-    recordE2E(evalCollector, '/review army consensus', 'Review Army', result);
+    logCost('/pr-review army consensus', result);
+    recordE2E(evalCollector, '/pr-review army consensus', 'Review Army', result);
     expect(result.exitReason).toBe('success');
 
     const outputPath = path.join(dir, 'review-output.md');

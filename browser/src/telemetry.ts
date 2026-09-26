@@ -1,10 +1,10 @@
 /**
- * Lightweight telemetry — DX D9 from /plan-devex-review.
+ * Lightweight telemetry — DX D9 from /plan-dx-review.
  *
- * Piggybacks on ~/.gstack/analytics/skill-usage.jsonl pattern (existing
- * gstack telemetry). Hostname + aggregate counters only; no body content,
+ * Piggybacks on ~/.paysec/analytics/skill-usage.jsonl pattern (existing
+ * paysec telemetry). Hostname + aggregate counters only; no body content,
  * no agent text, no command args. Respects the user's telemetry tier
- * setting (off | anonymous | community) via gstack-config.
+ * setting (off | anonymous | community) via paysec-config.
  *
  * Fire-and-forget: never blocks the calling path. Errors swallowed.
  *
@@ -21,14 +21,14 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { readGstackConfigYamlKey } from './config';
+import { readPaysecConfigYamlKey } from './config';
 
-function gstackHome(): string {
-  return process.env.GSTACK_HOME || path.join(os.homedir(), '.gstack');
+function paysecHome(): string {
+  return process.env.PAYSEC_HOME || path.join(os.homedir(), '.paysec');
 }
 
 function analyticsDir(): string {
-  return path.join(gstackHome(), 'analytics');
+  return path.join(paysecHome(), 'analytics');
 }
 
 function telemetryFile(): string {
@@ -47,22 +47,22 @@ let telemetryDisabled: boolean | null = null;
 /**
  * Is telemetry disabled for this process? Telemetry is OPT-IN: the consent
  * prompt writes a granted tier ('community' | 'anonymous') to
- * ~/.gstack/config.yaml, and only a granted tier enables emission. Tiers,
+ * ~/.paysec/config.yaml, and only a granted tier enables emission. Tiers,
  * checked in order:
  *
- *   1. Env hint GSTACK_TELEMETRY_OFF=1 (set by preambles and test
+ *   1. Env hint PAYSEC_TELEMETRY_OFF=1 (set by preambles and test
  *      harnesses): always disabled, even over a granted config tier.
  *   2. Persistent tier via the shared flat-YAML helper in config.ts (same
- *      parser as the pair-agent gate, so the two consent gates never drift):
+ *      parser as the pair-remote-agent gate, so the two consent gates never drift):
  *      explicit `telemetry: off` disables; 'community'/'anonymous' enable.
  *   3. Default: DISABLED. An absent key, absent file, or unrecognized value
- *      means consent was never granted — matching bin/gstack-config's
+ *      means consent was never granted — matching bin/paysec-config's
  *      DEFAULTS table, which reports 'off' for an unset telemetry key.
- *      Anything else would be a split-brain where `gstack-config get
+ *      Anything else would be a split-brain where `paysec-config get
  *      telemetry` tells the user 'off' while a direct-$B daemon emits.
- *      One escape hatch: GSTACK_TELEMETRY_OFF=0 is a harness-side consent
+ *      One escape hatch: PAYSEC_TELEMETRY_OFF=0 is a harness-side consent
  *      assertion that flips this DEFAULT only (test harnesses exercising the
- *      write path against a scratch GSTACK_HOME) — it never overrides an
+ *      write path against a scratch PAYSEC_HOME) — it never overrides an
  *      explicit `telemetry: off` the user wrote.
  *
  * Exported so tests can pin the consent gate directly; the cached verdict
@@ -71,12 +71,12 @@ let telemetryDisabled: boolean | null = null;
 export function isTelemetryDisabled(): boolean {
   if (telemetryDisabled !== null) return telemetryDisabled;
   // Env kill switch (set by preamble or test harnesses): beats everything.
-  if (process.env.GSTACK_TELEMETRY_OFF === '1') {
+  if (process.env.PAYSEC_TELEMETRY_OFF === '1') {
     telemetryDisabled = true;
     return true;
   }
   // Persistent tier: an explicit user-written value always wins next.
-  const tier = readGstackConfigYamlKey('telemetry');
+  const tier = readPaysecConfigYamlKey('telemetry');
   if (tier === 'off') {
     telemetryDisabled = true;
     return true;
@@ -87,7 +87,7 @@ export function isTelemetryDisabled(): boolean {
   }
   // No granted consent on record (absent key/file, unrecognized value):
   // disabled — unless the harness asserted consent via the env seam.
-  telemetryDisabled = process.env.GSTACK_TELEMETRY_OFF !== '0';
+  telemetryDisabled = process.env.PAYSEC_TELEMETRY_OFF !== '0';
   return telemetryDisabled;
 }
 

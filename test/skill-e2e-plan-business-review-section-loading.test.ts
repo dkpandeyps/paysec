@@ -1,5 +1,5 @@
 /**
- * /plan-ceo-review section-loading E2E (periodic, paid, SDK capture) — v2 plan
+ * /plan-business-review section-loading E2E (periodic, paid, SDK capture) — v2 plan
  * Phase B carve backstop. The per-PR guard is the free static test
  * skill-ceo-section-ordering.test.ts; THIS is the behavioral proof that a real
  * agent actually Reads the carved section instead of working from memory.
@@ -35,7 +35,7 @@ import {
 const describeE2E = describeE2ETier('periodic');
 const runId = `plan-ceo-section-loading-${process.env.EVALS_RUN_ID ?? 'local'}`;
 
-// Sections every plan-ceo-review run must consult after Step 0.
+// Sections every plan-business-review run must consult after Step 0.
 const REQUIRED_SECTIONS = ['review-sections.md'];
 
 const PLAN_MD = [
@@ -54,26 +54,26 @@ const PLAN_MD = [
   '',
 ].join('\n');
 
-describeE2E('/plan-ceo-review section-loading E2E (periodic, SDK capture)', () => {
+describeE2E('/plan-business-review section-loading E2E (periodic, SDK capture)', () => {
   test(
     'a real review Reads the carved section before producing the report',
     async () => {
-      const { skillMd, sectionsFrom } = skillFromWorktree('plan-ceo-review');
+      const { skillMd, sectionsFrom } = skillFromWorktree('plan-business-review');
       const planDir = setupSkillDir({
-        skillName: 'plan-ceo-review',
+        skillName: 'plan-business-review',
         skillMd,
         sectionsFrom,
         fixtures: { 'PLAN.md': PLAN_MD },
-        tmpPrefix: 'gstack-ceo-secload-',
+        tmpPrefix: 'paysec-ceo-secload-',
       });
 
       const { readSections, reportProduced, output } = await captureSectionReads({
         planDir,
-        skillName: 'plan-ceo-review',
+        skillName: 'plan-business-review',
         scenario:
           'Review the plan in PLAN.md. Hold the current scope (HOLD SCOPE mode) — do not challenge or expand scope. Run the full CEO review and produce the review report.',
         requiredSections: REQUIRED_SECTIONS,
-        reportMarker: /GSTACK REVIEW REPORT|COMPLETION SUMMARY|review/i,
+        reportMarker: /PAYSEC REVIEW REPORT|COMPLETION SUMMARY|review/i,
         testName: 'plan-ceo-section-loading',
         runId,
       });

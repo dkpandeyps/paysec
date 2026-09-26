@@ -1,5 +1,5 @@
 /**
- * gstack-redact-prepush — the REBASED FORCE-PUSH shape (#2573).
+ * paysec-redact-prepush — the REBASED FORCE-PUSH shape (#2573).
  *
  * After `git rebase origin/main`, the remote tip of the feature branch still
  * exists locally (it is the pre-rebase tip) but is no longer an ancestor of
@@ -32,7 +32,7 @@ import * as os from "os";
 import * as path from "path";
 import { spawnSync } from "child_process";
 
-const PREPUSH = path.resolve(import.meta.dir, "..", "bin", "gstack-redact-prepush");
+const PREPUSH = path.resolve(import.meta.dir, "..", "bin", "paysec-redact-prepush");
 
 let repo: string;
 let remote: string;

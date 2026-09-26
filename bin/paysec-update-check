@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gstack-update-check — periodic version check for all skills.
+# paysec-update-check — periodic version check for all skills.
 #
 # Output (one line, or nothing):
 #   JUST_UPGRADED <old> <new>       — marker found from recent upgrade
@@ -7,10 +7,10 @@
 #   (nothing)                       — up to date, snoozed, disabled, or check skipped
 #
 # Env overrides (for testing):
-#   GSTACK_DIR          — override auto-detected gstack root
-#   GSTACK_REMOTE_URL   — override remote VERSION URL (branch-pinned fallback)
-#   GSTACK_REMOTE_REPO  — override remote git URL for ls-remote SHA resolution
-#   GSTACK_STATE_DIR    — override ~/.gstack state directory
+#   PAYSEC_DIR          — override auto-detected paysec root
+#   PAYSEC_REMOTE_URL   — override remote VERSION URL (branch-pinned fallback)
+#   PAYSEC_REMOTE_REPO  — override remote git URL for ls-remote SHA resolution
+#   PAYSEC_STATE_DIR    — override ~/.paysec state directory
 set -euo pipefail
 
 # A crash must not read as "up to date" (#1974). With set -e, any unguarded
@@ -19,14 +19,14 @@ set -euo pipefail
 # a 45-release silent-staleness incident). -E propagates the trap into
 # functions/subshells; exit 0 keeps callers' `|| true` from eating the line.
 set -E
-trap 'rc=$?; echo "CHECK_FAILED gstack-update-check crashed (line $LINENO, rc=$rc) — update status UNKNOWN, not up-to-date"; exit 0' ERR
+trap 'rc=$?; echo "CHECK_FAILED paysec-update-check crashed (line $LINENO, rc=$rc) — update status UNKNOWN, not up-to-date"; exit 0' ERR
 
-GSTACK_DIR="${GSTACK_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
-STATE_DIR="${GSTACK_STATE_DIR:-$HOME/.gstack}"
+PAYSEC_DIR="${PAYSEC_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+STATE_DIR="${PAYSEC_STATE_DIR:-$HOME/.paysec}"
 
 # Egress receipt helpers (_receipted_curl / _receipted_git). Update checks
 # are fail-OPEN: a receipt hiccup warns but never blocks the version check.
-. "$GSTACK_DIR/bin/gstack-egress-lib.sh"
+. "$PAYSEC_DIR/bin/paysec-egress-lib.sh"
 
 # _receipted_version_fetch <url>
 #   Receipted bodyless GET for a VERSION file (fail-open). Local reads
@@ -38,7 +38,7 @@ _receipted_version_fetch() {
   host="${url#*://}"; host="${host%%/*}"
   case "$scheme" in
     http|https|git|ssh|ftp|ftps)
-      GSTACK_HOME="$STATE_DIR" _receipted_curl open update-check "$host" version-fetch "update_check!=false" --no-payload \
+      PAYSEC_HOME="$STATE_DIR" _receipted_curl open update-check "$host" version-fetch "update_check!=false" --no-payload \
         curl -sf --max-time 5 "$url" || true
       ;;
     *)
@@ -49,30 +49,33 @@ _receipted_version_fetch() {
 CACHE_FILE="$STATE_DIR/last-update-check"
 MARKER_FILE="$STATE_DIR/just-upgraded-from"
 SNOOZE_FILE="$STATE_DIR/update-snoozed"
-VERSION_FILE="$GSTACK_DIR/VERSION"
-REMOTE_URL="${GSTACK_REMOTE_URL:-https://raw.githubusercontent.com/garrytan/gstack/main/VERSION}"
-REMOTE_REPO="${GSTACK_REMOTE_REPO:-https://github.com/garrytan/gstack.git}"
+VERSION_FILE="$PAYSEC_DIR/VERSION"
+# paysec: no default upstream. Set PAYSEC_REMOTE_URL (raw VERSION file of your
+# paysec fork) and PAYSEC_REMOTE_REPO to enable update checks.
+REMOTE_URL="${PAYSEC_REMOTE_URL:-}"
+REMOTE_REPO="${PAYSEC_REMOTE_REPO:-}"
+[ -z "$REMOTE_URL" ] && exit 0
 
-# ─── Force flag (busts cache + snooze for standalone /gstack-upgrade) ──
+# ─── Force flag (busts cache + snooze for standalone /paysec-upgrade) ──
 if [ "${1:-}" = "--force" ]; then
   rm -f "$CACHE_FILE"
   rm -f "$SNOOZE_FILE"
 fi
 
 # ─── Step 0: Check if updates are disabled ────────────────────
-_UC=$("$GSTACK_DIR/bin/gstack-config" get update_check 2>/dev/null || true)
+_UC=$("$PAYSEC_DIR/bin/paysec-config" get update_check 2>/dev/null || true)
 if [ "$_UC" = "false" ]; then
   exit 0
 fi
 
 # ─── Migration: fix stale Codex descriptions (one-time) ───────
-# Existing installs may have .agents/skills/gstack/SKILL.md with oversized
+# Existing installs may have .agents/skills/paysec/SKILL.md with oversized
 # descriptions (>1024 chars) that Codex rejects. We can't regenerate from
 # the runtime root (no bun/scripts), so delete oversized files — the next
-# ./setup or /gstack-upgrade will regenerate them properly.
+# ./setup or /paysec-upgrade will regenerate them properly.
 # Marker file ensures this runs at most once per install.
 if [ ! -f "$STATE_DIR/.codex-desc-healed" ]; then
-  for _AGENTS_SKILL in "$GSTACK_DIR"/.agents/skills/*/SKILL.md; do
+  for _AGENTS_SKILL in "$PAYSEC_DIR"/.agents/skills/*/SKILL.md; do
     [ -f "$_AGENTS_SKILL" ] || continue
     _DESC=$(awk '/^---$/{n++;next}n==1&&/^description:/{d=1;sub(/^description:\s*/,"");if(length>0)print;next}d&&/^  /{sub(/^  /,"");print;next}d{d=0}' "$_AGENTS_SKILL" | wc -c | tr -d ' ')
     if [ "${_DESC:-0}" -gt 1024 ]; then
@@ -194,22 +197,22 @@ mkdir -p "$STATE_DIR"
 # Fire Supabase install ping in background (parallel, non-blocking)
 # This logs an update check event for community health metrics via edge function.
 # If Supabase is not configured or telemetry is off, this is a no-op.
-if [ -z "${GSTACK_SUPABASE_URL:-}" ] && [ -f "$GSTACK_DIR/supabase/config.sh" ]; then
-  . "$GSTACK_DIR/supabase/config.sh"
+if [ -z "${PAYSEC_SUPABASE_URL:-}" ] && [ -f "$PAYSEC_DIR/supabase/config.sh" ]; then
+  . "$PAYSEC_DIR/supabase/config.sh"
 fi
-_SUPA_URL="${GSTACK_SUPABASE_URL:-}"
-_SUPA_KEY="${GSTACK_SUPABASE_ANON_KEY:-}"
+_SUPA_URL="${PAYSEC_SUPABASE_URL:-}"
+_SUPA_KEY="${PAYSEC_SUPABASE_ANON_KEY:-}"
 # Respect telemetry opt-out — don't ping Supabase if user set telemetry: off
-_TEL_TIER="$("$GSTACK_DIR/bin/gstack-config" get telemetry 2>/dev/null || true)"
+_TEL_TIER="$("$PAYSEC_DIR/bin/paysec-config" get telemetry 2>/dev/null || true)"
 if [ -n "$_SUPA_URL" ] && [ -n "$_SUPA_KEY" ] && [ "${_TEL_TIER:-off}" != "off" ]; then
   _OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
   # Receipted (fail-open) and fully backgrounded: the receipt write happens
   # inside the background subshell, so it can never block this script's exit.
-  _PING_FILE="$(mktemp "${TMPDIR:-/tmp}/gstack-update-ping-XXXXXX" 2>/dev/null)" || _PING_FILE=""
+  _PING_FILE="$(mktemp "${TMPDIR:-/tmp}/paysec-update-ping-XXXXXX" 2>/dev/null)" || _PING_FILE=""
   if [ -n "$_PING_FILE" ]; then
     printf '{"version":"%s","os":"%s"}' "$LOCAL" "$_OS" > "$_PING_FILE"
     _SUPA_HOST="${_SUPA_URL#*://}"; _SUPA_HOST="${_SUPA_HOST%%/*}"
-    GSTACK_HOME="$STATE_DIR" _receipted_curl open update-check "$_SUPA_HOST" update-check-ping "telemetry=$_TEL_TIER" "$_PING_FILE" \
+    PAYSEC_HOME="$STATE_DIR" _receipted_curl open update-check "$_SUPA_HOST" update-check-ping "telemetry=$_TEL_TIER" "$_PING_FILE" \
       curl -sf --max-time 5 \
       -X POST "${_SUPA_URL}/functions/v1/update-check" \
       -H "Content-Type: application/json" \
@@ -221,29 +224,29 @@ fi
 # Resolve VERSION via a SHA-pinned raw URL. GitHub's branch-raw CDN
 # (raw.githubusercontent.com/<owner>/<repo>/<branch>/...) can serve stale
 # content for several minutes after a push, which previously caused
-# /gstack-upgrade to silently report "up to date" right after a release
+# /paysec-upgrade to silently report "up to date" right after a release
 # landed. git ls-remote always returns the live HEAD; SHA-pinned raw URLs
 # are immediately consistent.
 #
-# An explicit GSTACK_REMOTE_URL override (tests, mirrors) skips this path
+# An explicit PAYSEC_REMOTE_URL override (tests, mirrors) skips this path
 # so the override is honored verbatim.
 REMOTE=""
-if [ -z "${GSTACK_REMOTE_URL:-}" ]; then
+if [ -z "${PAYSEC_REMOTE_URL:-}" ]; then
   # Disable credential prompts and apply a 5-second low-speed timeout so a
   # flaky network or captive portal can't hang every skill preamble.
   _REPO_HOST="${REMOTE_REPO#*://}"; _REPO_HOST="${_REPO_HOST#*@}"; _REPO_HOST="${_REPO_HOST%%[/:]*}"
-  _LSR_LINE="$(GSTACK_HOME="$STATE_DIR" _receipted_git open update-check "${_REPO_HOST:-unknown}" version-ls-remote "update_check!=false" \
+  _LSR_LINE="$(PAYSEC_HOME="$STATE_DIR" _receipted_git open update-check "${_REPO_HOST:-unknown}" version-ls-remote "update_check!=false" \
     bash -c 'GIT_TERMINAL_PROMPT=0 GIT_HTTP_LOW_SPEED_LIMIT=1000 GIT_HTTP_LOW_SPEED_TIME=5 \
       git ls-remote "$1" refs/heads/main 2>/dev/null' _ "$REMOTE_REPO" || true)"
   _REMOTE_SHA="$(echo "$_LSR_LINE" | awk '{print $1}')"
   if echo "$_REMOTE_SHA" | grep -qE '^[0-9a-f]{40}$'; then
-    _SHA_URL="https://raw.githubusercontent.com/garrytan/gstack/${_REMOTE_SHA}/VERSION"
+    _SHA_URL="${REMOTE_URL%/*/VERSION}/${_REMOTE_SHA}/VERSION"
     REMOTE="$(_receipted_version_fetch "$_SHA_URL")"
   fi
 fi
 
 # Fallback: branch-pinned URL when ls-remote is unavailable (no git, no
-# network, mirror without refs/heads/main) or when GSTACK_REMOTE_URL was
+# network, mirror without refs/heads/main) or when PAYSEC_REMOTE_URL was
 # explicitly overridden.
 if [ -z "$REMOTE" ]; then
   REMOTE="$(_receipted_version_fetch "$REMOTE_URL")"
@@ -279,7 +282,7 @@ if check_snooze "$REMOTE"; then
 fi
 
 # Log upgrade_prompted event (only on slow-path fetch, not cached replays)
-TEL_CMD="$GSTACK_DIR/bin/gstack-telemetry-log"
+TEL_CMD="$PAYSEC_DIR/bin/paysec-telemetry-log"
 if [ -x "$TEL_CMD" ]; then
   "$TEL_CMD" --event-type upgrade_prompted --skill "" --duration 0 \
     --outcome success --session-id "update-$$-$(date +%s)" 2>/dev/null &

@@ -1,12 +1,12 @@
 #!/usr/bin/env bun
 /**
- * PreToolUse hook for AskUserQuestion (Claude Code, plan-tune cathedral T6).
+ * PreToolUse hook for AskUserQuestion (Claude Code, tune-questions cathedral T6).
  *
  * Enforces never-ask / always-ask / ask-only-for-one-way preferences
  * deterministically — no agent compliance required.
  *
  * Decision tree (per question in tool_input.questions):
- *   1. Extract question_id via marker (<gstack-qid:foo-bar>). If no marker,
+ *   1. Extract question_id via marker (<paysec-qid:foo-bar>). If no marker,
  *      enforcement is skipped for this question (D18 — hash IDs are
  *      observed-only, never used as preference keys).
  *   2. Look up door_type from scripts/question-registry.ts (default two-way).
@@ -37,7 +37,7 @@
  *   - Refuse to auto-decide if ambiguous (multiple labels OR no parseable
  *     recommendation): pass through instead of silent-wrong.
  *
- * Always exits 0. Hook errors land in ~/.gstack/hook-errors.log.
+ * Always exits 0. Hook errors land in ~/.paysec/hook-errors.log.
  * See docs/spikes/claude-code-hook-mutation.md for the protocol contract.
  */
 import * as fs from 'fs';
@@ -62,14 +62,14 @@ interface HookStdin {
   cwd?: string;
 }
 
-const MARKER_RE = /<gstack-qid:([a-z0-9-]{1,64})>/i;
+const MARKER_RE = /<paysec-qid:([a-z0-9-]{1,64})>/i;
 const RECOMMENDED_LABEL_RE = /\(recommended\)\s*$/i;
 
 function stateRoot(): string {
   return (
-    process.env.GSTACK_STATE_ROOT ||
-    process.env.GSTACK_HOME ||
-    path.join(os.homedir(), '.gstack')
+    process.env.PAYSEC_STATE_ROOT ||
+    process.env.PAYSEC_HOME ||
+    path.join(os.homedir(), '.paysec')
   );
 }
 
@@ -105,7 +105,7 @@ function passThrough(additionalContext?: string): void {
   // interactive session nothing resumes the paused call, so every
   // AskUserQuestion died with "Tool result missing due to internal error".
   // additionalContext-only hookSpecificOutput is the documented shape for
-  // injecting context (plan-tune memory nuggets) without a decision.
+  // injecting context (tune-questions memory nuggets) without a decision.
   if (additionalContext) {
     process.stdout.write(
       JSON.stringify({
@@ -175,7 +175,7 @@ interface MemoryNugget {
 
 /**
  * Read per-session cache first, fall back to canonical local file. Cache
- * invalidates by being missing — gstack-distill-apply doesn't touch the
+ * invalidates by being missing — paysec-distill-apply doesn't touch the
  * cache because the canonical file is always the source-of-truth on read
  * miss. Sub-1ms cache reads (D13 perf).
  */
@@ -297,7 +297,7 @@ function extractRecommended(
 }
 
 function slugFromCwd(cwd: string | undefined): string {
-  // Mirror gstack-slug's basename fallback. The full slug resolver shells out
+  // Mirror paysec-slug's basename fallback. The full slug resolver shells out
   // to git, which is too expensive on a hot hook path; the basename is close
   // enough for preference lookup (preferences are keyed by question_id, slug
   // is just the directory bucket).
@@ -319,7 +319,7 @@ function markAutoDecided(sessionId: string | undefined, toolUseId: string | unde
 
 /**
  * Log an auto-decided event directly from PreToolUse, since `deny` prevents
- * the tool from running and PostToolUse never fires. Without this, /plan-tune
+ * the tool from running and PostToolUse never fires. Without this, /tune-questions
  * Recent auto-decisions would be blind to enforcement hits.
  */
 function logAutoDecided(
@@ -343,11 +343,11 @@ function logAutoDecided(
       session_id: sessionId?.slice(0, 64),
       tool_use_id: toolUseId?.slice(0, 128),
     };
-    runBin('gstack-question-log', [JSON.stringify(payload)], {
+    runBin('paysec-question-log', [JSON.stringify(payload)], {
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'pipe'],
       timeout: 3000,
-      // cwd of the originating tool call so gstack-slug resolves to the
+      // cwd of the originating tool call so paysec-slug resolves to the
       // project the user is actually in, not the hook script's location.
       cwd: cwd && fs.existsSync(cwd) ? cwd : undefined,
     });
@@ -410,7 +410,7 @@ async function main(): Promise<void> {
     }
   }
   const memoryContext = contextNuggets.length
-    ? '[plan-tune memory] Past answers suggest: ' + contextNuggets.join(' | ')
+    ? '[tune-questions memory] Past answers suggest: ' + contextNuggets.join(' | ')
     : undefined;
 
   // Determine whether EVERY question is eligible for never-ask auto-decide.
@@ -460,7 +460,7 @@ async function main(): Promise<void> {
     markAutoDecided(stdin.session_id, stdin.tool_use_id);
 
     // Log each auto-decided question now, since deny prevents PostToolUse from
-    // firing. /plan-tune Recent auto-decisions reads source=auto-decided events.
+    // firing. /tune-questions Recent auto-decisions reads source=auto-decided events.
     for (let i = 0; i < autoDecisions.length; i++) {
       const d = autoDecisions[i];
       const q = questions[i];
@@ -471,7 +471,7 @@ async function main(): Promise<void> {
 
     const reasonLines = autoDecisions.map(
       (d) =>
-        `[plan-tune auto-decide] ${d.id} → ${d.recommended} (your never-ask preference). Proceed with that option without re-prompting. Change with /plan-tune.`,
+        `[tune-questions auto-decide] ${d.id} → ${d.recommended} (your never-ask preference). Proceed with that option without re-prompting. Change with /tune-questions.`,
     );
     deny(reasonLines.join('\n'));
     return;
@@ -490,7 +490,7 @@ async function main(): Promise<void> {
       'PROSE decision brief now: a D<N> label, an ELI10 of the issue, a Recommendation line, then one ' +
       'paragraph per choice carrying its `(recommended)` marker and `Completeness: X/10`; tell the user ' +
       'to reply with a letter, then STOP. For a one-way/destructive confirmation, require an explicit ' +
-      'typed confirmation and do NOT proceed on a vague reply. Capture the decision with gstack-question-log ' +
+      'typed confirmation and do NOT proceed on a vague reply. Capture the decision with paysec-question-log ' +
       '(PostToolUse will not fire on a prose path).' +
       (memoryContext ? `\n${memoryContext}` : '');
     deny(conductorReason);

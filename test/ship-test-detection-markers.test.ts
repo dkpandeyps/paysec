@@ -1,9 +1,9 @@
 /**
- * Regression: /ship Step 4 test-framework detection was blind to Django.
+ * Regression: /ship-pr Step 4 test-framework detection was blind to Django.
  *
  * A real Django project (manage.py + <app>/tests.py, green `python manage.py
  * test`, no pytest.ini and no tests/ directory) read as "no test framework",
- * so /ship bootstrapped pytest on top of a working suite. Same blindness hit
+ * so /ship-pr bootstrapped pytest on top of a working suite. Same blindness hit
  * any config-less-but-tested project (Go *_test.go, in-source Rust #[test],
  * package.json with only a test script).
  *
@@ -63,7 +63,7 @@ function detect(files: Record<string, string>): string {
 const testFileCount = (out: string): number =>
   Number(/^TESTFILES:(\d+)$/m.exec(out)?.[1] ?? -1);
 
-describe('/ship Step 4 detection is multi-ecosystem', () => {
+describe('/ship-pr Step 4 detection is multi-ecosystem', () => {
   test('Django project reports manage.py and its existing tests', () => {
     const out = detect({
       'manage.py': '#!/usr/bin/env python\n',

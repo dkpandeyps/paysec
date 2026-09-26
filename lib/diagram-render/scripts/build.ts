@@ -49,8 +49,8 @@ const head = `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
-<base href="https://gstack-render.localhost/">
-<title>gstack diagram-render</title>
+<base href="https://paysec-render.localhost/">
+<title>paysec diagram-render</title>
 <style>
   body { font-family: Helvetica, "Liberation Sans", Arial, sans-serif; margin: 0; }
 </style>
@@ -86,7 +86,7 @@ const srcSha256 = createHash("sha256")
   .update(await Bun.file(import.meta.path).text())
   .digest("hex");
 const info = {
-  name: "gstack-diagram-render",
+  name: "paysec-diagram-render",
   sha256,
   srcSha256,
   bytes: Buffer.byteLength(html),

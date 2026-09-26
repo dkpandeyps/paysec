@@ -62,7 +62,7 @@ describe('sidepanel-terminal: forceRestart via /pty-restart (v1.44+)', () => {
 
   test('6. currentSessionId is exposed on window for sidepanel.js pagehide', () => {
     const src = fs.readFileSync(TERMINAL_JS, 'utf-8');
-    expect(src).toContain('window.gstackPtySession = currentSessionId');
+    expect(src).toContain('window.paysecPtySession = currentSessionId');
   });
 });
 
@@ -79,8 +79,8 @@ describe('sidepanel: pagehide → sendBeacon /pty-dispose (v1.44+)', () => {
     // sendBeacon can't set custom headers — server route accepts body-auth.
     // Both fields must be in the payload or the server rejects.
     expect(src).toMatch(/JSON\.stringify\(\{\s*sessionId,\s*authToken\s*\}\)/);
-    expect(src).toContain('window.gstackPtySession');
-    expect(src).toContain('window.gstackAuthToken');
+    expect(src).toContain('window.paysecPtySession');
+    expect(src).toContain('window.paysecAuthToken');
   });
 
   test('9. pagehide handler is best-effort (try/catch swallows failures)', () => {

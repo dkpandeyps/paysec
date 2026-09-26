@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gstack-session-update — auto-update gstack on session start (team mode)
+# paysec-session-update — auto-update paysec on session start (team mode)
 #
 # Called by Claude Code SessionStart hook. Must be fast, silent, non-fatal.
 # The entire update runs in background (forked). The hook itself exits
@@ -9,12 +9,12 @@
 
 set +e
 
-GSTACK_DIR="${GSTACK_DIR:-$HOME/.claude/skills/gstack}"
-STATE_DIR="${GSTACK_STATE_DIR:-$HOME/.gstack}"
+PAYSEC_DIR="${PAYSEC_DIR:-$HOME/.claude/skills/paysec}"
+STATE_DIR="${PAYSEC_STATE_DIR:-$HOME/.paysec}"
 
 # Egress receipt helpers (_receipted_git): fail-open — an update pull must
 # never block a session over a receipt hiccup.
-. "$(cd "$(dirname "$0")" && pwd)/gstack-egress-lib.sh"
+. "$(cd "$(dirname "$0")" && pwd)/paysec-egress-lib.sh"
 THROTTLE_FILE="$STATE_DIR/.last-session-update"
 LOCK_DIR="$STATE_DIR/.setup-lock"
 LOG_FILE="$STATE_DIR/analytics/session-update.log"
@@ -25,13 +25,13 @@ log_entry() {
   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $1" >> "$LOG_FILE" 2>/dev/null || true
 }
 
-# ── Guard: gstack must be a git repo ──
-if [ ! -d "$GSTACK_DIR/.git" ]; then
+# ── Guard: paysec must be a git repo ──
+if [ ! -d "$PAYSEC_DIR/.git" ]; then
   exit 0
 fi
 
 # ── Guard: team mode must be enabled ──
-AUTO=$("$GSTACK_DIR/bin/gstack-config" get auto_upgrade 2>/dev/null || true)
+AUTO=$("$PAYSEC_DIR/bin/paysec-config" get auto_upgrade 2>/dev/null || true)
 if [ "$AUTO" != "true" ]; then
   exit 0
 fi
@@ -79,20 +79,20 @@ fi
   trap 'rm -rf "$LOCK_DIR" 2>/dev/null' EXIT
 
   # ── Pull latest ──
-  OLD_HEAD=$(git -C "$GSTACK_DIR" rev-parse HEAD 2>/dev/null)
-  UPDATE_URL=$(git -C "$GSTACK_DIR" remote get-url origin 2>/dev/null || echo "")
+  OLD_HEAD=$(git -C "$PAYSEC_DIR" rev-parse HEAD 2>/dev/null)
+  UPDATE_URL=$(git -C "$PAYSEC_DIR" remote get-url origin 2>/dev/null || echo "")
   UPDATE_HOST="${UPDATE_URL#*://}"; UPDATE_HOST="${UPDATE_HOST#*@}"; UPDATE_HOST="${UPDATE_HOST%%[/:]*}"
   # --autostash: locally-patched TRACKED files are the NORM on installs, not
   # the exception — skill-prefix mode rewrites frontmatter names and
-  # `gstack-config gbrain-refresh` renders brain blocks into SKILL.md. A bare
+  # `paysec-config gbrain-refresh` renders brain blocks into SKILL.md. A bare
   # --ff-only refuses over those edits, so auto-upgrade wedged permanently
   # (observed: 308 consecutive PULL_FAILED with the reason discarded, #2566).
   # Capture stderr: the log must carry WHY a pull failed, never just the code.
-  PULL_ERR_FILE=$(mktemp "${TMPDIR:-/tmp}/gstack-session-pull-XXXXXX" 2>/dev/null || echo "")
-  GSTACK_HOME="$STATE_DIR" _receipted_git open session-update "${UPDATE_HOST:-unknown}" gstack-self-update-pull "auto_upgrade=true" \
-    bash -c 'git -C "$1" pull --ff-only --autostash -q 2>"${2:-/dev/null}"' _ "$GSTACK_DIR" "$PULL_ERR_FILE"
+  PULL_ERR_FILE=$(mktemp "${TMPDIR:-/tmp}/paysec-session-pull-XXXXXX" 2>/dev/null || echo "")
+  PAYSEC_HOME="$STATE_DIR" _receipted_git open session-update "${UPDATE_HOST:-unknown}" paysec-self-update-pull "auto_upgrade=true" \
+    bash -c 'git -C "$1" pull --ff-only --autostash -q 2>"${2:-/dev/null}"' _ "$PAYSEC_DIR" "$PULL_ERR_FILE"
   PULL_EXIT=$?
-  NEW_HEAD=$(git -C "$GSTACK_DIR" rev-parse HEAD 2>/dev/null)
+  NEW_HEAD=$(git -C "$PAYSEC_DIR" rev-parse HEAD 2>/dev/null)
 
   # Record check time regardless of outcome
   date +%s > "$THROTTLE_FILE" 2>/dev/null
@@ -105,12 +105,12 @@ fi
     # recover to a clean upstream tree and re-render them below rather than
     # leaving conflict markers in a live install.
     if grep -qi "autostash" "$PULL_ERR_FILE" 2>/dev/null; then
-      git -C "$GSTACK_DIR" checkout -q -- . 2>/dev/null
-      git -C "$GSTACK_DIR" stash drop -q 2>/dev/null
+      git -C "$PAYSEC_DIR" checkout -q -- . 2>/dev/null
+      git -C "$PAYSEC_DIR" stash drop -q 2>/dev/null
       log_entry "AUTOSTASH_CONFLICT_RECOVERED tree_reset=1"
-      _PREFIX_CFG=$("$GSTACK_DIR/bin/gstack-config" get skill_prefix 2>/dev/null || echo false)
-      "$GSTACK_DIR/bin/gstack-patch-names" "$GSTACK_DIR" "$_PREFIX_CFG" >/dev/null 2>&1 || true
-      "$GSTACK_DIR/bin/gstack-config" gbrain-refresh >/dev/null 2>&1 || true
+      _PREFIX_CFG=$("$PAYSEC_DIR/bin/paysec-config" get skill_prefix 2>/dev/null || echo false)
+      "$PAYSEC_DIR/bin/paysec-patch-names" "$PAYSEC_DIR" "$_PREFIX_CFG" >/dev/null 2>&1 || true
+      "$PAYSEC_DIR/bin/paysec-config" gbrain-refresh >/dev/null 2>&1 || true
     fi
     rm -f "$PULL_ERR_FILE" 2>/dev/null
     exit 0
@@ -119,9 +119,9 @@ fi
   # Re-render local patches over the fresh tree (both tools are idempotent
   # no-ops when the feature is unconfigured); the autostash pop usually
   # preserves them, but a clean re-render costs nothing and self-heals.
-  _PREFIX_CFG=$("$GSTACK_DIR/bin/gstack-config" get skill_prefix 2>/dev/null || echo false)
-  "$GSTACK_DIR/bin/gstack-patch-names" "$GSTACK_DIR" "$_PREFIX_CFG" >/dev/null 2>&1 || true
-  "$GSTACK_DIR/bin/gstack-config" gbrain-refresh >/dev/null 2>&1 || true
+  _PREFIX_CFG=$("$PAYSEC_DIR/bin/paysec-config" get skill_prefix 2>/dev/null || echo false)
+  "$PAYSEC_DIR/bin/paysec-patch-names" "$PAYSEC_DIR" "$_PREFIX_CFG" >/dev/null 2>&1 || true
+  "$PAYSEC_DIR/bin/paysec-config" gbrain-refresh >/dev/null 2>&1 || true
 
   # ── If HEAD moved, run setup -q ──
   if [ "$OLD_HEAD" != "$NEW_HEAD" ]; then
@@ -129,7 +129,7 @@ fi
 
     # bun must be available for setup
     if command -v bun >/dev/null 2>&1; then
-      ( cd "$GSTACK_DIR" && ./setup -q ) >/dev/null 2>&1 || {
+      ( cd "$PAYSEC_DIR" && ./setup -q ) >/dev/null 2>&1 || {
         log_entry "SETUP_FAILED"
       }
     else
@@ -137,12 +137,12 @@ fi
     fi
 
     # Write marker so next skill preamble shows "just upgraded"
-    OLD_VER=$(git -C "$GSTACK_DIR" show "$OLD_HEAD:VERSION" 2>/dev/null || echo "unknown")
+    OLD_VER=$(git -C "$PAYSEC_DIR" show "$OLD_HEAD:VERSION" 2>/dev/null || echo "unknown")
     echo "$OLD_VER" > "$STATE_DIR/just-upgraded-from" 2>/dev/null
     rm -f "$STATE_DIR/last-update-check" 2>/dev/null
     rm -f "$STATE_DIR/update-snoozed" 2>/dev/null
 
-    log_entry "UPDATED from=$OLD_VER to=$(cat "$GSTACK_DIR/VERSION" 2>/dev/null || echo unknown)"
+    log_entry "UPDATED from=$OLD_VER to=$(cat "$PAYSEC_DIR/VERSION" 2>/dev/null || echo unknown)"
   else
     log_entry "UP_TO_DATE head=$OLD_HEAD"
   fi

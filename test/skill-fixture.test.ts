@@ -157,20 +157,20 @@ describe('error polarity', () => {
 // failure instead of a paid E2E setup throw.
 
 describe('real-skill pins: section lists used by E2E fixtures', () => {
-  test('REVIEW_E2E_SECTIONS extracts from review/SKILL.md', () => {
-    const out = extractSkillSections(path.join(ROOT, 'review'), REVIEW_E2E_SECTIONS);
+  test('REVIEW_E2E_SECTIONS extracts from pr-review/SKILL.md', () => {
+    const out = extractSkillSections(path.join(ROOT, 'pr-review'), REVIEW_E2E_SECTIONS);
     expect(out).toContain('## Step 4: Critical pass (core review)');
     expect(out).toContain('## Important Rules');
     // Drops the shared preamble and the untested workflow tail.
     expect(out).not.toContain('## Telemetry (run last)');
     expect(out).not.toContain('## Step 5: Fix-First Review');
     // Meaningfully smaller than the source.
-    const full = fs.readFileSync(path.join(ROOT, 'review', 'SKILL.md'), 'utf-8');
+    const full = fs.readFileSync(path.join(ROOT, 'pr-review', 'SKILL.md'), 'utf-8');
     expect(out.length).toBeLessThan(full.length * 0.5);
   });
 
-  test('REVIEW_ARMY_E2E_SECTIONS extracts from review/SKILL.md', () => {
-    const out = extractSkillSections(path.join(ROOT, 'review'), REVIEW_ARMY_E2E_SECTIONS);
+  test('REVIEW_ARMY_E2E_SECTIONS extracts from pr-review/SKILL.md', () => {
+    const out = extractSkillSections(path.join(ROOT, 'pr-review'), REVIEW_ARMY_E2E_SECTIONS);
     // The army tests reference the Plan Completion Audit (inside Step 1.5)
     // and the Step 4.5 merge machinery (quality score, JSON schema, consensus).
     expect(out).toContain('PLAN COMPLETION AUDIT');
@@ -180,8 +180,8 @@ describe('real-skill pins: section lists used by E2E fixtures', () => {
     expect(out).not.toContain('## Telemetry (run last)');
   });
 
-  test('RETRO_E2E_SECTIONS extracts from retro/SKILL.md', () => {
-    const out = extractSkillSections(path.join(ROOT, 'retro'), RETRO_E2E_SECTIONS);
+  test('RETRO_E2E_SECTIONS extracts from weekly-retro/SKILL.md', () => {
+    const out = extractSkillSections(path.join(ROOT, 'weekly-retro'), RETRO_E2E_SECTIONS);
     // Steps 0.5-14 live under Prior Learnings / Capture Learnings.
     expect(out).toContain('### Step 1: Gather Raw Data');
     expect(out).toContain('### Step 14: Write the Narrative');
@@ -191,7 +191,7 @@ describe('real-skill pins: section lists used by E2E fixtures', () => {
   });
 
   test('CODEX_REVIEW_E2E_SECTIONS extracts from the Codex host variant when present', () => {
-    const codexReview = path.join(ROOT, '.agents', 'skills', 'gstack-review');
+    const codexReview = path.join(ROOT, '.agents', 'skills', 'paysec-pr-review');
     if (!fs.existsSync(path.join(codexReview, 'SKILL.md'))) return; // gitignored artifact, absent in fresh checkouts
     const out = extractSkillSections(codexReview, CODEX_REVIEW_E2E_SECTIONS);
     expect(out).toContain('## Step 4: Critical pass (core review)');
@@ -200,11 +200,11 @@ describe('real-skill pins: section lists used by E2E fixtures', () => {
 });
 
 describe('real-skill pins: body/head extraction used by E2E fixtures', () => {
-  // scrape/skillify/context-*: skill-e2e-skillify + skill-e2e-context-skills.
-  // review/plan-eng-review/ship: skill-e2e-coverage-audit + skill-e2e-triage.
+  // scrape/save-scrape-skill/context-*: skill-e2e-save-scrape-skill + skill-e2e-context-skills.
+  // review/plan-tech-review/ship: skill-e2e-coverage-audit + skill-e2e-triage.
   const BODY_EXTRACTED_SKILLS = [
-    'scrape', 'skillify', 'context-save', 'context-restore',
-    'review', 'plan-eng-review', 'ship',
+    'web-scrape', 'save-scrape-skill', 'save-context', 'restore-context',
+    'pr-review', 'plan-tech-review', 'ship-pr',
   ];
 
   for (const skill of BODY_EXTRACTED_SKILLS) {
@@ -218,19 +218,19 @@ describe('real-skill pins: body/head extraction used by E2E fixtures', () => {
     });
   }
 
-  test('body extraction keeps the sections the skillify/context E2E tests assert on', () => {
-    expect(extractSkillBody(path.join(ROOT, 'skillify'))).toContain('## Step 1 — Provenance guard (D1)');
-    expect(extractSkillBody(path.join(ROOT, 'scrape'))).toContain('## Step 4 — Prototype phase');
-    expect(extractSkillBody(path.join(ROOT, 'context-save'))).toContain('## List flow');
-    expect(extractSkillBody(path.join(ROOT, 'context-restore'))).toContain('## If no saved contexts exist');
+  test('body extraction keeps the sections the save-scrape-skill/context E2E tests assert on', () => {
+    expect(extractSkillBody(path.join(ROOT, 'save-scrape-skill'))).toContain('## Step 1 — Provenance guard (D1)');
+    expect(extractSkillBody(path.join(ROOT, 'web-scrape'))).toContain('## Step 4 — Prototype phase');
+    expect(extractSkillBody(path.join(ROOT, 'save-context'))).toContain('## List flow');
+    expect(extractSkillBody(path.join(ROOT, 'restore-context'))).toContain('## If no saved contexts exist');
   });
 
   // The union of skills installed by the routing + opus-47 discovery fixtures.
   const HEAD_EXTRACTED_SKILLS = [
-    '', 'qa', 'qa-only', 'ship', 'review', 'plan-ceo-review', 'plan-eng-review',
-    'plan-design-review', 'design-review', 'design-consultation', 'retro',
-    'document-release', 'investigate', 'office-hours', 'browse',
-    'setup-browser-cookies', 'gstack-upgrade', 'humanizer',
+    '', 'qa', 'qa-report', 'ship', 'review', 'plan-business-review', 'plan-tech-review',
+    'plan-ux-review', 'design-qa', 'design-system', 'retro',
+    'docs-release-update', 'investigate', 'idea-review', 'browse',
+    'import-browser-cookies', 'paysec-upgrade', 'humanizer',
   ];
 
   test('extractSkillHead works for every discovery-fixture skill', () => {

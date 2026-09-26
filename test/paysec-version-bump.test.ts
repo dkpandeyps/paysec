@@ -1,8 +1,8 @@
 /**
- * Tests for the gstack-version-bump CLI (v2 plan T9 hybrid extraction). Covers
+ * Tests for the paysec-version-bump CLI (v2 plan T9 hybrid extraction). Covers
  * the idempotency classifier (pure) + the write/repair mutations (temp fs).
  * The classifier is the one that prevents re-bumping an already-shipped branch —
- * the worst /ship footgun — so it gets exhaustive state coverage.
+ * the worst /ship-pr footgun — so it gets exhaustive state coverage.
  */
 
 import { describe, test, expect, afterAll } from 'bun:test';
@@ -10,9 +10,9 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
-import { classifyState, VERSION_RE } from '../bin/gstack-version-bump';
+import { classifyState, VERSION_RE } from '../bin/paysec-version-bump';
 
-const BIN = path.join(import.meta.dir, '..', 'bin', 'gstack-version-bump');
+const BIN = path.join(import.meta.dir, '..', 'bin', 'paysec-version-bump');
 
 describe('classifyState (idempotency)', () => {
   test('FRESH when VERSION matches base and pkg agrees', () => {
@@ -41,7 +41,7 @@ describe('VERSION_RE', () => {
   });
   test('accepts 3-digit semver too (#2501)', () => {
     // A repo whose pinned version source is a package.json holds plain
-    // 3-digit semver. Rejecting it meant /ship could not write a version in
+    // 3-digit semver. Rejecting it meant /ship-pr could not write a version in
     // such a repo at all.
     expect(VERSION_RE.test('1.2.3')).toBe(true);
     expect(VERSION_RE.test('0.99.2')).toBe(true);
@@ -227,13 +227,13 @@ describe('classify (idempotency over a real git base)', () => {
 
 /**
  * A repo whose single source of truth is a package.json at a non-root path,
- * holding plain 3-digit semver — the shape gstack's native VERSION-file
+ * holding plain 3-digit semver — the shape paysec's native VERSION-file
  * assumption failed closed on (#2501). Before this, classify reported
  * {state: FRESH, baseVersion: "0.0.0.0", pkgExists: false} no matter what the
  * repo's real version was: it looked for a root VERSION file and a root
  * package.json, found neither, and reported a pristine repo at version zero.
  *
- * These cases pass --version-path explicitly; the .gstack/version-path pin
+ * These cases pass --version-path explicitly; the .paysec/version-path pin
  * flows through the same reader once classify/write/repair resolve the pin's
  * repo-relative form (#2462, covered in its own suite below the pin fix).
  */
@@ -297,7 +297,7 @@ describe('package.json as the version source (monorepo, 3-digit, #2501)', () => 
 });
 
 /**
- * #2462: cmdClassify's current-version read resolved the .gstack/version-path
+ * #2462: cmdClassify's current-version read resolved the .paysec/version-path
  * pin, but versionRel — the repo-relative path fed to `git show
  * origin/<base>:<path>` — came from the CLI flag alone. In a pinned repo with
  * no --version-path flag, base and current therefore read DIFFERENT files:
@@ -305,12 +305,12 @@ describe('package.json as the version source (monorepo, 3-digit, #2501)', () => 
  * base always read 0.0.0.0 and every branch looked FRESH). The pin's
  * repo-relative form now drives all three subcommands.
  */
-describe('.gstack/version-path pin, no --version-path flag (#2462)', () => {
+describe('.paysec/version-path pin, no --version-path flag (#2462)', () => {
   const mkPinned = (pinRel: string): string => {
     const d = fs.mkdtempSync(path.join(os.tmpdir(), 'vbump-pin-'));
     fs.mkdirSync(path.dirname(path.join(d, pinRel)), { recursive: true });
-    fs.mkdirSync(path.join(d, '.gstack'), { recursive: true });
-    fs.writeFileSync(path.join(d, '.gstack', 'version-path'), pinRel + '\n');
+    fs.mkdirSync(path.join(d, '.paysec'), { recursive: true });
+    fs.writeFileSync(path.join(d, '.paysec', 'version-path'), pinRel + '\n');
     return d;
   };
 
@@ -404,8 +404,8 @@ describe('subdirectory manifest (no root package.json, #2531)', () => {
   const mk = (): string => {
     const d = fs.mkdtempSync(path.join(os.tmpdir(), 'vbump-subdir-'));
     fs.mkdirSync(path.join(d, 'web'));
-    fs.mkdirSync(path.join(d, '.gstack'));
-    fs.writeFileSync(path.join(d, '.gstack', 'package-json-path'), 'web/package.json\n');
+    fs.mkdirSync(path.join(d, '.paysec'));
+    fs.writeFileSync(path.join(d, '.paysec', 'package-json-path'), 'web/package.json\n');
     fs.writeFileSync(path.join(d, 'VERSION'), '0.1.0.0\n');
     return d;
   };
@@ -479,7 +479,7 @@ describe('npm-valid drift contract (decision 11)', () => {
 
   test('the pre-v1.67 1:1 four-digit mirror is grandfathered as in-sync', () => {
     // Existing installs still carry package.json 1.66.0.0 next to VERSION
-    // 1.66.0.0. Flagging that as DRIFT_UNEXPECTED would hard-stop /ship on
+    // 1.66.0.0. Flagging that as DRIFT_UNEXPECTED would hard-stop /ship-pr on
     // every repo on upgrade day; the next write migrates the manifest to the
     // translated form instead.
     expect(classifyState('1.66.0.0', '1.65.0.0', true, '1.66.0.0', '1.66.0')).toBe('ALREADY_BUMPED');
@@ -493,7 +493,7 @@ describe('npm-valid drift contract (decision 11)', () => {
 });
 
 describe('path containment: pins and flags cannot escape the repo', () => {
-  // .gstack/version-path and .gstack/package-json-path are repo-controlled
+  // .paysec/version-path and .paysec/package-json-path are repo-controlled
   // content. A cloned repo pinning '../../victim.json' — or an in-repo
   // symlink pointing outside — must never turn a bump into an arbitrary
   // file overwrite outside the repository.
@@ -513,23 +513,23 @@ describe('path containment: pins and flags cannot escape the repo', () => {
 
   function resetRepo() {
     fs.rmSync(dir, { recursive: true, force: true });
-    fs.mkdirSync(path.join(dir, '.gstack'), { recursive: true });
+    fs.mkdirSync(path.join(dir, '.paysec'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'VERSION'), '1.0.0.0\n');
     fs.writeFileSync(victim, JSON.stringify({ version: '9.9.9' }, null, 2) + '\n');
   }
 
-  test('a ../ escape in .gstack/version-path fails exit 2 and writes nothing', () => {
+  test('a ../ escape in .paysec/version-path fails exit 2 and writes nothing', () => {
     resetRepo();
-    fs.writeFileSync(path.join(dir, '.gstack', 'version-path'), '../victim.json\n');
+    fs.writeFileSync(path.join(dir, '.paysec', 'version-path'), '../victim.json\n');
     const r = runFail(['write', '--version', '1.1.0.0']);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain('outside the repository');
     expect(JSON.parse(fs.readFileSync(victim, 'utf-8')).version).toBe('9.9.9');
   });
 
-  test('an absolute path in .gstack/package-json-path fails exit 2', () => {
+  test('an absolute path in .paysec/package-json-path fails exit 2', () => {
     resetRepo();
-    fs.writeFileSync(path.join(dir, '.gstack', 'package-json-path'), victim + '\n');
+    fs.writeFileSync(path.join(dir, '.paysec', 'package-json-path'), victim + '\n');
     const r = runFail(['write', '--version', '1.1.0.0']);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain('outside the repository');
@@ -540,7 +540,7 @@ describe('path containment: pins and flags cannot escape the repo', () => {
     if (process.platform === 'win32') return; // symlink creation needs privileges there
     resetRepo();
     fs.symlinkSync(victim, path.join(dir, 'link.json'));
-    fs.writeFileSync(path.join(dir, '.gstack', 'version-path'), 'link.json\n');
+    fs.writeFileSync(path.join(dir, '.paysec', 'version-path'), 'link.json\n');
     const r = runFail(['write', '--version', '1.1.0.0']);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain('outside the repository');
@@ -549,7 +549,7 @@ describe('path containment: pins and flags cannot escape the repo', () => {
 
   test('classify refuses the same escapes (no read outside the repo)', () => {
     resetRepo();
-    fs.writeFileSync(path.join(dir, '.gstack', 'version-path'), '../victim.json\n');
+    fs.writeFileSync(path.join(dir, '.paysec', 'version-path'), '../victim.json\n');
     const r = runFail(['classify', '--base', 'main']);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain('outside the repository');
@@ -571,7 +571,7 @@ describe('path containment: pins and flags cannot escape the repo', () => {
     resetRepo();
     fs.mkdirSync(path.join(dir, 'frontend'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'frontend', 'package.json'), JSON.stringify({ name: 'x', version: '1.0.0' }, null, 2) + '\n');
-    fs.writeFileSync(path.join(dir, '.gstack', 'version-path'), 'frontend/package.json\n');
+    fs.writeFileSync(path.join(dir, '.paysec', 'version-path'), 'frontend/package.json\n');
     const out = execFileSync('bun', [BIN, 'write', '--version', '1.1.0'], { cwd: dir }).toString();
     expect(JSON.parse(out).wrote).toBe('1.1.0');
     expect(JSON.parse(fs.readFileSync(path.join(dir, 'frontend', 'package.json'), 'utf-8')).version).toBe('1.1.0');

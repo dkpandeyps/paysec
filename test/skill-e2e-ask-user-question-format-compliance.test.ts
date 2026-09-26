@@ -1,7 +1,7 @@
 /**
  * AskUserQuestion format-compliance gate (gate, paid, SDK capture).
  *
- * Asserts: /plan-ceo-review's first AskUserQuestion (Step 0F mode selection) is a
+ * Asserts: /plan-business-review's first AskUserQuestion (Step 0F mode selection) is a
  * compliant decision brief — all 7 mandated format elements present, with a
  * substantive recommendation.
  *
@@ -38,7 +38,7 @@ const runId = `auq-format-gate-${process.env.EVALS_RUN_ID ?? 'local'}`;
 
 describeE2E('AskUserQuestion format compliance (gate)', () => {
   test(
-    "/plan-ceo-review's first AskUserQuestion is a compliant decision brief (7/7 + substance)",
+    "/plan-business-review's first AskUserQuestion is a compliant decision brief (7/7 + substance)",
     async () => {
       const carved = carvedSkill();
       const dir = setupPlanCeoDir({

@@ -37,7 +37,7 @@ describe('Server auth security', () => {
   // the exact extension Origin and a loopback Host.
   test('POST /extension-token gates on pinned Origin and loopback Host', () => {
     const tokenBlock = sliceBetween(SERVER_SRC, "url.pathname === '/extension-token'", "url.pathname === '/health'");
-    expect(tokenBlock).toContain('GSTACK_EXTENSION_ID');
+    expect(tokenBlock).toContain('PAYSEC_EXTENSION_ID');
     expect(tokenBlock).toContain('token: authToken');
     // Host is parsed to a hostname (arrives as '127.0.0.1:34567'), never
     // compared literally against the raw header.
@@ -182,7 +182,7 @@ describe('Server auth security', () => {
   // any write command from any non-root token, which 403'd local skill
   // spawns trying to drive the user's natural (unowned) tabs. The bundled
   // hackernews-frontpage skill failed identically. The fix narrows the
-  // gate to `tabPolicy === 'own-only'` so pair-agent tunnel tokens stay
+  // gate to `tabPolicy === 'own-only'` so pair-remote-agent tunnel tokens stay
   // strict while local shared-policy tokens (skill spawns) get unblocked.
   test('tab gate predicate is own-only-scoped, not write-scoped', () => {
     const handleBlock = sliceBetween(SERVER_SRC, "async function handleCommand", "Block mutation commands while watching");
@@ -358,10 +358,10 @@ describe('Server auth security', () => {
     }
   });
 
-  // Regression: pair-agent server died 15s after CLI exited because the server
-  // monitored the connect subprocess PID. pair-agent must set BROWSE_PARENT_PID=0
+  // Regression: pair-remote-agent server died 15s after CLI exited because the server
+  // monitored the connect subprocess PID. pair-remote-agent must set BROWSE_PARENT_PID=0
   // to disable self-termination.
-  test('pair-agent disables parent PID monitoring via BROWSE_PARENT_PID=0', () => {
+  test('pair-remote-agent disables parent PID monitoring via BROWSE_PARENT_PID=0', () => {
     const pairBlock = sliceBetween(CLI_SRC, 'Ensure headed mode', 'handlePairAgent');
     // The connect subprocess env must override BROWSE_PARENT_PID
     expect(pairBlock).toContain("BROWSE_PARENT_PID");
@@ -380,7 +380,7 @@ describe('Server auth security', () => {
   // Regression: newtab returned 403 for scoped tokens because the tab ownership
   // check ran before the newtab handler, checking the active tab (owned by root).
   test('newtab is excluded from tab ownership check', () => {
-    const ownershipBlock = sliceBetween(SERVER_SRC, 'Tab ownership check (own-only tokens / pair-agent isolation)', 'newtab with ownership for scoped tokens');
+    const ownershipBlock = sliceBetween(SERVER_SRC, 'Tab ownership check (own-only tokens / pair-remote-agent isolation)', 'newtab with ownership for scoped tokens');
     // The ownership check condition must exclude newtab
     expect(ownershipBlock).toContain("command !== 'newtab'");
   });

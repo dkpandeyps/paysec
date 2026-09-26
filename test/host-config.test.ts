@@ -112,8 +112,8 @@ describe('validateHostConfig', () => {
       name: 'test-host',
       displayName: 'Test Host',
       cliCommand: 'testcli',
-      globalRoot: '.test/skills/gstack',
-      localSkillRoot: '.test/skills/gstack',
+      globalRoot: '.test/skills/paysec',
+      localSkillRoot: '.test/skills/paysec',
       hostSubdir: '.test',
       usesEnvVars: true,
       frontmatter: { mode: 'allowlist', keepFields: ['name', 'description'] },
@@ -197,8 +197,8 @@ describe('validateHostConfig', () => {
 
   test('paths with $ and ~ are valid', () => {
     const c = makeValid();
-    c.globalRoot = '$HOME/.test/skills/gstack';
-    c.localSkillRoot = '~/.test/skills/gstack';
+    c.globalRoot = '$HOME/.test/skills/paysec';
+    c.localSkillRoot = '~/.test/skills/paysec';
     expect(validateHostConfig(c)).toEqual([]);
   });
 
@@ -243,19 +243,19 @@ describe('validateAllConfigs', () => {
   });
 
   test('duplicate hostSubdir detected', () => {
-    const dup = { ...codex, name: 'dup-host', hostSubdir: '.claude', globalRoot: '.dup/skills/gstack' } as HostConfig;
+    const dup = { ...codex, name: 'dup-host', hostSubdir: '.claude', globalRoot: '.dup/skills/paysec' } as HostConfig;
     const errors = validateAllConfigs([claude, dup]);
     expect(errors.some(e => e.includes('Duplicate hostSubdir'))).toBe(true);
   });
 
   test('duplicate globalRoot detected', () => {
-    const dup = { ...codex, name: 'dup-host', hostSubdir: '.dup', globalRoot: '.claude/skills/gstack' } as HostConfig;
+    const dup = { ...codex, name: 'dup-host', hostSubdir: '.dup', globalRoot: '.claude/skills/paysec' } as HostConfig;
     const errors = validateAllConfigs([claude, dup]);
     expect(errors.some(e => e.includes('Duplicate globalRoot'))).toBe(true);
   });
 
   test('unknown suppressedResolvers entry surfaces with host-name prefix', () => {
-    const bad = { ...codex, name: 'bad-host', hostSubdir: '.bad', globalRoot: '.bad/skills/gstack', suppressedResolvers: ['BOGUS_RESOLVER'] } as HostConfig;
+    const bad = { ...codex, name: 'bad-host', hostSubdir: '.bad', globalRoot: '.bad/skills/paysec', suppressedResolvers: ['BOGUS_RESOLVER'] } as HostConfig;
     const errors = validateAllConfigs([bad], RESOLVER_NAMES);
     expect(errors.some(e => e.startsWith('[bad-host]') && e.includes('BOGUS_RESOLVER'))).toBe(true);
   });
@@ -271,24 +271,24 @@ describe('validateAllConfigs', () => {
 
 describe('HOST_PATHS derivation from configs', () => {
   test('Claude uses literal home paths (no env vars)', () => {
-    expect(HOST_PATHS.claude.skillRoot).toBe('~/.claude/skills/gstack');
-    expect(HOST_PATHS.claude.binDir).toBe('~/.claude/skills/gstack/bin');
-    expect(HOST_PATHS.claude.browseDir).toBe('~/.claude/skills/gstack/browse/dist');
-    expect(HOST_PATHS.claude.designDir).toBe('~/.claude/skills/gstack/design/dist');
+    expect(HOST_PATHS.claude.skillRoot).toBe('~/.claude/skills/paysec');
+    expect(HOST_PATHS.claude.binDir).toBe('~/.claude/skills/paysec/bin');
+    expect(HOST_PATHS.claude.browseDir).toBe('~/.claude/skills/paysec/browser/dist');
+    expect(HOST_PATHS.claude.designDir).toBe('~/.claude/skills/paysec/design/dist');
   });
 
-  test('Codex uses $GSTACK_ROOT env vars', () => {
-    expect(HOST_PATHS.codex.skillRoot).toBe('$GSTACK_ROOT');
-    expect(HOST_PATHS.codex.binDir).toBe('$GSTACK_BIN');
-    expect(HOST_PATHS.codex.browseDir).toBe('$GSTACK_BROWSE');
-    expect(HOST_PATHS.codex.designDir).toBe('$GSTACK_DESIGN');
+  test('Codex uses $PAYSEC_ROOT env vars', () => {
+    expect(HOST_PATHS.codex.skillRoot).toBe('$PAYSEC_ROOT');
+    expect(HOST_PATHS.codex.binDir).toBe('$PAYSEC_BIN');
+    expect(HOST_PATHS.codex.browseDir).toBe('$PAYSEC_BROWSE');
+    expect(HOST_PATHS.codex.designDir).toBe('$PAYSEC_DESIGN');
   });
 
   test('every host with usesEnvVars=true gets env var paths', () => {
     for (const config of ALL_HOST_CONFIGS) {
       if (config.usesEnvVars) {
-        expect(HOST_PATHS[config.name].skillRoot).toBe('$GSTACK_ROOT');
-        expect(HOST_PATHS[config.name].binDir).toBe('$GSTACK_BIN');
+        expect(HOST_PATHS[config.name].skillRoot).toBe('$PAYSEC_ROOT');
+        expect(HOST_PATHS[config.name].binDir).toBe('$PAYSEC_BIN');
       }
     }
   });
@@ -341,7 +341,7 @@ describe('host-config-export.ts CLI', () => {
   test('get returns string field', () => {
     const { stdout, exitCode } = run('get', 'codex', 'globalRoot');
     expect(exitCode).toBe(0);
-    expect(stdout).toBe('.codex/skills/gstack');
+    expect(stdout).toBe('.codex/skills/paysec');
   });
 
   test('get returns boolean as 1/0', () => {
@@ -378,7 +378,7 @@ describe('host-config-export.ts CLI', () => {
     const lines = stdout.split('\n');
     expect(lines).toContain('bin');
     expect(lines).toContain('ETHOS.md');
-    expect(lines).toContain('review/checklist.md');
+    expect(lines).toContain('pr-review/checklist.md');
   });
 
   test('opencode symlinks returns nested runtime assets', () => {
@@ -386,14 +386,14 @@ describe('host-config-export.ts CLI', () => {
     expect(exitCode).toBe(0);
     const lines = stdout.split('\n');
     expect(lines).toContain('bin');
-    expect(lines).toContain('browse/dist');
-    expect(lines).toContain('browse/bin');
-    expect(lines).toContain('review/design-checklist.md');
-    expect(lines).toContain('review/greptile-triage.md');
-    expect(lines).toContain('review/specialists');
-    expect(lines).toContain('qa/templates');
-    expect(lines).toContain('qa/references');
-    expect(lines).toContain('plan-devex-review/dx-hall-of-fame.md');
+    expect(lines).toContain('browser/dist');
+    expect(lines).toContain('browser/bin');
+    expect(lines).toContain('pr-review/design-checklist.md');
+    expect(lines).toContain('pr-review/greptile-triage.md');
+    expect(lines).toContain('pr-review/specialists');
+    expect(lines).toContain('qa-fix/templates');
+    expect(lines).toContain('qa-fix/references');
+    expect(lines).toContain('plan-dx-review/dx-hall-of-fame.md');
   });
 
   test('symlinks with missing host exits 1', () => {
@@ -431,8 +431,8 @@ describe('golden-file regression', () => {
   // job; freshness enforcement lives in gen-skill-docs.test.ts).
   beforeAll(() => {
     const hostArtifacts: Array<[string, string]> = [
-      ['codex', path.join(ROOT, '.agents', 'skills', 'gstack-ship', 'SKILL.md')],
-      ['factory', path.join(ROOT, '.factory', 'skills', 'gstack-ship', 'SKILL.md')],
+      ['codex', path.join(ROOT, '.agents', 'skills', 'paysec-ship-pr', 'SKILL.md')],
+      ['factory', path.join(ROOT, '.factory', 'skills', 'paysec-ship-pr', 'SKILL.md')],
     ];
     for (const [host, artifact] of hostArtifacts) {
       if (fs.existsSync(artifact)) continue;
@@ -450,19 +450,19 @@ describe('golden-file regression', () => {
 
   test('Claude ship skill matches golden baseline', () => {
     const golden = fs.readFileSync(path.join(GOLDEN_DIR, 'claude-ship-SKILL.md'), 'utf-8');
-    const current = fs.readFileSync(path.join(ROOT, 'ship', 'SKILL.md'), 'utf-8');
+    const current = fs.readFileSync(path.join(ROOT, 'ship-pr', 'SKILL.md'), 'utf-8');
     expect(current).toBe(golden);
   });
 
   test('Codex ship skill matches golden baseline', () => {
     const golden = fs.readFileSync(path.join(GOLDEN_DIR, 'codex-ship-SKILL.md'), 'utf-8');
-    const current = fs.readFileSync(path.join(ROOT, '.agents', 'skills', 'gstack-ship', 'SKILL.md'), 'utf-8');
+    const current = fs.readFileSync(path.join(ROOT, '.agents', 'skills', 'paysec-ship-pr', 'SKILL.md'), 'utf-8');
     expect(current).toBe(golden);
   });
 
   test('Factory ship skill matches golden baseline', () => {
     const golden = fs.readFileSync(path.join(GOLDEN_DIR, 'factory-ship-SKILL.md'), 'utf-8');
-    const current = fs.readFileSync(path.join(ROOT, '.factory', 'skills', 'gstack-ship', 'SKILL.md'), 'utf-8');
+    const current = fs.readFileSync(path.join(ROOT, '.factory', 'skills', 'paysec-ship-pr', 'SKILL.md'), 'utf-8');
     expect(current).toBe(golden);
   });
 });

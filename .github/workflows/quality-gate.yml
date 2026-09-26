@@ -2,7 +2,7 @@
 #
 # Three generic hygiene checks the repo previously had nowhere in CI:
 #   1. Credential scan of the PR diff's ADDED lines through our own
-#      bin/gstack-redact (HIGH fails the check; MEDIUM is an advisory count —
+#      bin/paysec-redact (HIGH fails the check; MEDIUM is an advisory count —
 #      there is no human in CI to confirm, so it never fails here).
 #   2. bun audit at critical severity.
 #   3. ShellCheck (errors only) on the setup/build shell boundary.
@@ -53,7 +53,7 @@ jobs:
           git diff --unified=0 --no-color "$BASE_SHA" "$HEAD_SHA" -- \
             . \
             ':(exclude)test/fixtures/**' \
-            ':(exclude)browse/test/fixtures/**' \
+            ':(exclude)browser/test/fixtures/**' \
             ':(exclude)docs/evals/**' \
             ':(exclude)test/helpers/security-bench*' \
             | node .github/scripts/gate-secret-scan.mjs
@@ -74,4 +74,4 @@ jobs:
           scripts/build.sh
           scripts/build-app.sh
           scripts/write-version-files.sh
-          browse/scripts/build-node-server.sh
+          browser/scripts/build-node-server.sh

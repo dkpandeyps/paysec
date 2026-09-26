@@ -14,7 +14,7 @@
  * This static check reads the workflow files directly and fails CI if a
  * push+pull_request workflow ever ships again without `cancel-in-progress`.
  * Mirrors the static-grep invariant tests in this dir
- * (pr-title-sync-workflow-safety) and browse/test (terminal-agent-pid-identity).
+ * (pr-title-sync-workflow-safety) and browser/test (terminal-agent-pid-identity).
  */
 import { describe, test, expect } from 'bun:test';
 import * as fs from 'node:fs';

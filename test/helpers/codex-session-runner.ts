@@ -32,7 +32,7 @@ export interface CodexResult {
   stderr: string;           // Stderr output (skill loading errors, auth failures)
 }
 
-// --- JSONL parser (ported from Python in codex/SKILL.md.tmpl) ---
+// --- JSONL parser (ported from Python in codex-second-opinion/SKILL.md.tmpl) ---
 
 export interface ParsedCodexJSONL {
   output: string;
@@ -171,7 +171,7 @@ export async function runCodexSkill(opts: {
   } = opts;
 
   const startTime = Date.now();
-  const name = skillName || path.basename(skillDir) || 'gstack';
+  const name = skillName || path.basename(skillDir) || 'paysec';
 
   // Check if codex binary exists
   const whichResult = Bun.spawnSync(['which', 'codex']);

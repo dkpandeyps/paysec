@@ -2,19 +2,19 @@
 # Migration: v1.1.3.0 — Remove stale /checkpoint skill installs
 #
 # Claude Code ships /checkpoint as a native alias for /rewind, which was
-# shadowing the gstack checkpoint skill. The skill has been split into
-# /context-save + /context-restore. This migration removes the old on-disk
+# shadowing the paysec checkpoint skill. The skill has been split into
+# /save-context + /restore-context. This migration removes the old on-disk
 # install so Claude Code's native /checkpoint is no longer shadowed.
 #
 # Ownership guard: the script only removes the install IF it owns it —
 # i.e., the directory or its SKILL.md is a symlink resolving inside
-# ~/.claude/skills/gstack/. A user's own /checkpoint skill (regular file,
+# ~/.claude/skills/paysec/. A user's own /checkpoint skill (regular file,
 # or symlink pointing elsewhere) is preserved.
 #
 # Three supported install shapes to handle:
-#   1. ~/.claude/skills/checkpoint is a directory symlink into gstack.
+#   1. ~/.claude/skills/checkpoint is a directory symlink into paysec.
 #   2. ~/.claude/skills/checkpoint is a regular directory whose ONLY file
-#      is a SKILL.md symlink into gstack (gstack's prefix-install shape).
+#      is a SKILL.md symlink into paysec (paysec's prefix-install shape).
 #   3. Anything else → leave alone, print notice.
 #
 # Idempotent: missing paths are no-ops.
@@ -31,8 +31,8 @@ fi
 
 SKILLS_DIR="${HOME}/.claude/skills"
 OLD_TOPLEVEL="${SKILLS_DIR}/checkpoint"
-OLD_NAMESPACED="${SKILLS_DIR}/gstack/checkpoint"
-GSTACK_ROOT_REAL=""
+OLD_NAMESPACED="${SKILLS_DIR}/paysec/checkpoint"
+PAYSEC_ROOT_REAL=""
 
 # Helper: canonical-path a target (symlink-safe). Prints the resolved path, or
 # empty on failure (broken symlink, ENOENT, ELOOP). Both realpath AND the python3
@@ -50,10 +50,10 @@ resolve_real() {
   printf '%s' "$out"
 }
 
-# Resolve the canonical path of the gstack skills root. If gstack isn't
+# Resolve the canonical path of the paysec skills root. If paysec isn't
 # installed here, there's nothing to migrate.
-if [ -d "${SKILLS_DIR}/gstack" ]; then
-  GSTACK_ROOT_REAL=$(resolve_real "${SKILLS_DIR}/gstack")
+if [ -d "${SKILLS_DIR}/paysec" ]; then
+  PAYSEC_ROOT_REAL=$(resolve_real "${SKILLS_DIR}/paysec")
 fi
 
 # Helper: does $1 (canonical path) live inside $2 (canonical path)?
@@ -73,65 +73,65 @@ removed_any=0
 if [ -L "$OLD_TOPLEVEL" ]; then
   # Directory symlink (or file symlink). Canonicalize and check ownership.
   target_real=$(resolve_real "$OLD_TOPLEVEL")
-  if [ -n "$GSTACK_ROOT_REAL" ] && path_inside "$target_real" "$GSTACK_ROOT_REAL"; then
+  if [ -n "$PAYSEC_ROOT_REAL" ] && path_inside "$target_real" "$PAYSEC_ROOT_REAL"; then
     rm -- "$OLD_TOPLEVEL"
     echo "  [v1.1.3.0] Removed stale /checkpoint symlink (was shadowing Claude Code's /rewind alias)."
     removed_any=1
   else
-    echo "  [v1.1.3.0] Leaving $OLD_TOPLEVEL alone — symlink target is outside gstack (or unresolvable)."
+    echo "  [v1.1.3.0] Leaving $OLD_TOPLEVEL alone — symlink target is outside paysec (or unresolvable)."
   fi
 elif [ -d "$OLD_TOPLEVEL" ]; then
   # Regular directory. Only remove if it contains exactly one file named
-  # SKILL.md that's a symlink into gstack (gstack's prefix-install shape).
+  # SKILL.md that's a symlink into paysec (paysec's prefix-install shape).
   # Use find to count real files, ignoring .DS_Store (macOS sidecars).
   file_count=$(find "$OLD_TOPLEVEL" -maxdepth 1 -type f -not -name '.DS_Store' -not -name '._*' 2>/dev/null | wc -l | tr -d ' ')
   symlink_count=$(find "$OLD_TOPLEVEL" -maxdepth 1 -type l 2>/dev/null | wc -l | tr -d ' ')
   if [ "$file_count" = "0" ] && [ "$symlink_count" = "1" ] && [ -L "$OLD_TOPLEVEL/SKILL.md" ]; then
     target_real=$(resolve_real "$OLD_TOPLEVEL/SKILL.md")
-    if [ -n "$GSTACK_ROOT_REAL" ] && path_inside "$target_real" "$GSTACK_ROOT_REAL"; then
+    if [ -n "$PAYSEC_ROOT_REAL" ] && path_inside "$target_real" "$PAYSEC_ROOT_REAL"; then
       # Strip macOS sidecars first (not user content), then remove the dir.
       find "$OLD_TOPLEVEL" -maxdepth 1 \( -name '.DS_Store' -o -name '._*' \) -type f -delete 2>/dev/null || true
       rm -r -- "$OLD_TOPLEVEL"
-      echo "  [v1.1.3.0] Removed stale /checkpoint install directory (gstack prefix-mode)."
+      echo "  [v1.1.3.0] Removed stale /checkpoint install directory (paysec prefix-mode)."
       removed_any=1
     else
-      echo "  [v1.1.3.0] Leaving $OLD_TOPLEVEL alone — SKILL.md symlink target is outside gstack."
+      echo "  [v1.1.3.0] Leaving $OLD_TOPLEVEL alone — SKILL.md symlink target is outside paysec."
     fi
   else
-    echo "  [v1.1.3.0] Leaving $OLD_TOPLEVEL alone — not a gstack-owned install (has custom content)."
+    echo "  [v1.1.3.0] Leaving $OLD_TOPLEVEL alone — not a paysec-owned install (has custom content)."
   fi
 fi
 # Missing → no-op (idempotency).
 
-# --- Shape 2: ~/.claude/skills/gstack/checkpoint/
+# --- Shape 2: ~/.claude/skills/paysec/checkpoint/
 # Ownership guard applies here too: only remove if this path resolves inside the
-# gstack skills root. If a user replaced the directory with a symlink pointing
+# paysec skills root. If a user replaced the directory with a symlink pointing
 # elsewhere (e.g., at their own fork), respect it.
 if [ -L "$OLD_NAMESPACED" ]; then
   target_real=$(resolve_real "$OLD_NAMESPACED")
-  if [ -n "$GSTACK_ROOT_REAL" ] && path_inside "$target_real" "$GSTACK_ROOT_REAL"; then
+  if [ -n "$PAYSEC_ROOT_REAL" ] && path_inside "$target_real" "$PAYSEC_ROOT_REAL"; then
     rm -- "$OLD_NAMESPACED"
-    echo "  [v1.1.3.0] Removed stale ~/.claude/skills/gstack/checkpoint symlink."
+    echo "  [v1.1.3.0] Removed stale ~/.claude/skills/paysec/checkpoint symlink."
     removed_any=1
   else
-    echo "  [v1.1.3.0] Leaving $OLD_NAMESPACED alone — symlink target is outside gstack."
+    echo "  [v1.1.3.0] Leaving $OLD_NAMESPACED alone — symlink target is outside paysec."
   fi
 elif [ -d "$OLD_NAMESPACED" ]; then
-  # Regular directory. This is the gstack-prefix install location. Check that
-  # it resolves to a path inside the gstack root (it should, unless someone
+  # Regular directory. This is the paysec-prefix install location. Check that
+  # it resolves to a path inside the paysec root (it should, unless someone
   # hand-edited the tree).
   target_real=$(resolve_real "$OLD_NAMESPACED")
-  if [ -n "$GSTACK_ROOT_REAL" ] && path_inside "$target_real" "$GSTACK_ROOT_REAL"; then
+  if [ -n "$PAYSEC_ROOT_REAL" ] && path_inside "$target_real" "$PAYSEC_ROOT_REAL"; then
     rm -rf -- "$OLD_NAMESPACED"
-    echo "  [v1.1.3.0] Removed stale ~/.claude/skills/gstack/checkpoint/ (replaced by context-save + context-restore)."
+    echo "  [v1.1.3.0] Removed stale ~/.claude/skills/paysec/checkpoint/ (replaced by save-context + restore-context)."
     removed_any=1
   else
-    echo "  [v1.1.3.0] Leaving $OLD_NAMESPACED alone — resolves outside gstack."
+    echo "  [v1.1.3.0] Leaving $OLD_NAMESPACED alone — resolves outside paysec."
   fi
 fi
 
 if [ "$removed_any" = "1" ]; then
-  echo "  [v1.1.3.0] /checkpoint is now Claude Code's native /rewind alias. Use /context-save to save state and /context-restore to resume."
+  echo "  [v1.1.3.0] /checkpoint is now Claude Code's native /rewind alias. Use /save-context to save state and /restore-context to resume."
 fi
 
 exit 0

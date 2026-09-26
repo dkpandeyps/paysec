@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
- * Compare two eval runs from the project eval dir (~/.gstack/projects/<slug>/evals;
- * legacy fallback ~/.gstack-dev/evals)
+ * Compare two eval runs from the project eval dir (~/.paysec/projects/<slug>/evals;
+ * legacy fallback ~/.paysec-dev/evals)
  *
  * Usage:
  *   bun run eval:compare                    # compare two most recent of same tier

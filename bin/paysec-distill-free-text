@@ -1,34 +1,34 @@
 #!/usr/bin/env bash
-# gstack-distill-free-text — Layer 8 "dream cycle" batch distiller.
+# paysec-distill-free-text — Layer 8 "dream cycle" batch distiller.
 #
 # Reads auq-other free-text events from this project's question-log.jsonl,
 # sends them to Claude via the Anthropic SDK, and writes structured proposals
-# the user can review via /plan-tune distill. Proposals require explicit
+# the user can review via /tune-questions distill. Proposals require explicit
 # user Y before applying — never autonomous (Codex #15 trust boundary).
 #
 # Usage:
-#   gstack-distill-free-text                       # sync, prompts at end
-#   gstack-distill-free-text --background          # spawn detached; results
-#                                                  # surface on next /plan-tune
-#   gstack-distill-free-text --dry-run             # show prompt, no API call
-#   gstack-distill-free-text --status              # show last-run stats
+#   paysec-distill-free-text                       # sync, prompts at end
+#   paysec-distill-free-text --background          # spawn detached; results
+#                                                  # surface on next /tune-questions
+#   paysec-distill-free-text --dry-run             # show prompt, no API call
+#   paysec-distill-free-text --status              # show last-run stats
 #
 # No rate cap — the natural rate of free-text events (rare; user has to type
 # "Other" then content) bounds this loop already. Each Haiku call is ~$0.01,
 # so even a runaway at one-per-minute would be ~$14/day worst case. The
-# cumulative cost log at $GSTACK_STATE_ROOT/distill-cost.jsonl gives full
+# cumulative cost log at $PAYSEC_STATE_ROOT/distill-cost.jsonl gives full
 # auditability via --status when you want it.
 # Per D6: Anthropic SDK direct call, fail-loud on missing ANTHROPIC_API_KEY.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-GSTACK_HOME="${GSTACK_STATE_ROOT:-${GSTACK_HOME:-$HOME/.gstack}}"
-eval "$("$SCRIPT_DIR/gstack-slug" 2>/dev/null || true)"
+PAYSEC_HOME="${PAYSEC_STATE_ROOT:-${PAYSEC_HOME:-$HOME/.paysec}}"
+eval "$("$SCRIPT_DIR/paysec-slug" 2>/dev/null || true)"
 SLUG="${SLUG:-unknown}"
-PROJECT_DIR="$GSTACK_HOME/projects/$SLUG"
+PROJECT_DIR="$PAYSEC_HOME/projects/$SLUG"
 LOG_FILE="$PROJECT_DIR/question-log.jsonl"
 PROPOSAL_FILE="$PROJECT_DIR/distillation-proposals.json"
-COST_LOG="$GSTACK_HOME/distill-cost.jsonl"
+COST_LOG="$PAYSEC_HOME/distill-cost.jsonl"
 mkdir -p "$PROJECT_DIR"
 
 MODE="sync"
@@ -120,10 +120,10 @@ fi
 DISTILL_PROMPT_FILE=$(mktemp)
 trap 'rm -f "$DISTILL_PROMPT_FILE"' EXIT
 cat > "$DISTILL_PROMPT_FILE" <<'PROMPT'
-You are gstack dream-cycle distiller. Below are free-text responses the
-user typed into AskUserQuestion prompts (option "Other") across recent gstack
+You are paysec dream-cycle distiller. Below are free-text responses the
+user typed into AskUserQuestion prompts (option "Other") across recent paysec
 sessions. For each response, extract structured signal that should update the
-user plan-tune profile or preferences.
+user tune-questions profile or preferences.
 
 Return strict JSON with this shape:
 {
@@ -168,7 +168,7 @@ fi
 
 if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
   cat <<EOF >&2
-gstack-distill-free-text: ANTHROPIC_API_KEY not set.
+paysec-distill-free-text: ANTHROPIC_API_KEY not set.
 
 Dream-cycle distillation needs an API key for the SDK call. Set
 ANTHROPIC_API_KEY in your environment, or run with --dry-run to see
@@ -199,8 +199,8 @@ RESULT=$(EVENTS_JSON="$EVENTS_JSON" DISTILL_PROMPT="$DISTILL_PROMPT" \
 
   // Host-neutral model resolution (mirrors lib/eval-model.ts — this inline
   // bun -e script cannot import repo-relative libs from an arbitrary cwd).
-  const distillModel = process.env.GSTACK_EVAL_MODEL_DISTILL
-    || process.env.GSTACK_EVAL_MODEL
+  const distillModel = process.env.PAYSEC_EVAL_MODEL_DISTILL
+    || process.env.PAYSEC_EVAL_MODEL
     || "claude-haiku-4-5-20251001";
   const resp = await client.messages.create({
     model: distillModel,

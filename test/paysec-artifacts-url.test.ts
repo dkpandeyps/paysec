@@ -1,5 +1,5 @@
 /**
- * gstack-artifacts-url — URL canonicalization helper.
+ * paysec-artifacts-url — URL canonicalization helper.
  *
  * Centralizes HTTPS↔SSH conversion so callers don't each string-mangle. Per
  * codex Finding #10: store one canonical form (HTTPS) and derive all others.
@@ -10,7 +10,7 @@ import * as path from 'path';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const URL_BIN = path.join(ROOT, 'bin', 'gstack-artifacts-url');
+const URL_BIN = path.join(ROOT, 'bin', 'paysec-artifacts-url');
 
 function run(args: string[]): { code: number; stdout: string; stderr: string } {
   const r = spawnSync(URL_BIN, args, { encoding: 'utf-8' });
@@ -21,7 +21,7 @@ function run(args: string[]): { code: number; stdout: string; stderr: string } {
   };
 }
 
-describe('gstack-artifacts-url', () => {
+describe('paysec-artifacts-url', () => {
   test('--to ssh from canonical https', () => {
     const r = run(['--to', 'ssh', 'https://github.com/garrytan/gstack-artifacts-garrytan']);
     expect(r.code).toBe(0);
@@ -44,8 +44,8 @@ describe('gstack-artifacts-url', () => {
   });
 
   test('--to https from ssh:// scheme (gitlab self-hosted style)', () => {
-    const r = run(['--to', 'https', 'ssh://git@gitlab.example.org/team/gstack-artifacts-team.git']);
-    expect(r.stdout).toBe('https://gitlab.example.org/team/gstack-artifacts-team');
+    const r = run(['--to', 'https', 'ssh://git@gitlab.example.org/team/paysec-artifacts-team.git']);
+    expect(r.stdout).toBe('https://gitlab.example.org/team/paysec-artifacts-team');
   });
 
   test('--host extracts hostname from any form', () => {
@@ -57,8 +57,8 @@ describe('gstack-artifacts-url', () => {
   test('--owner-repo extracts the path segment', () => {
     expect(run(['--owner-repo', 'https://github.com/garrytan/gstack-artifacts-garrytan']).stdout)
       .toBe('garrytan/gstack-artifacts-garrytan');
-    expect(run(['--owner-repo', 'git@github.com:team/gstack-artifacts-team.git']).stdout)
-      .toBe('team/gstack-artifacts-team');
+    expect(run(['--owner-repo', 'git@github.com:team/paysec-artifacts-team.git']).stdout)
+      .toBe('team/paysec-artifacts-team');
   });
 
   test('rejects unrecognized URL form with exit 3', () => {

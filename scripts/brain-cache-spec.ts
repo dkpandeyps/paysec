@@ -2,17 +2,17 @@
  * Brain cache spec — single source of truth for the brain-aware planning skills
  * cache layer. Imported by:
  *   - scripts/resolvers/gbrain.ts (renders per-skill subset into SKILL.md.tmpl)
- *   - bin/gstack-brain-cache (drives TTL + write-back invalidation)
+ *   - bin/paysec-brain-cache (drives TTL + write-back invalidation)
  *   - test/brain-cache-spec.test.ts (asserts internal consistency)
  *   - test/skill-preflight-budget.test.ts (enforces per-skill token budget)
- *   - test/autoplan-preflight-budget.test.ts (enforces autoplan total budget)
+ *   - test/autoplan-preflight-budget.test.ts (enforces auto-plan-review total budget)
  *
  * Drift between docs and runtime is impossible by construction: the same
  * const drives both the rendered table in SKILL.md and the cache CLI behavior.
  */
 
 export interface BrainCacheEntity {
-  /** Filename inside ~/.gstack/{,projects/<slug>/}brain-cache/ */
+  /** Filename inside ~/.paysec/{,projects/<slug>/}brain-cache/ */
   file: string;
   /** Time-to-live in milliseconds before cache is considered stale and triggers cold refresh. */
   ttl_ms: number;
@@ -22,8 +22,8 @@ export interface BrainCacheEntity {
    * Which write-paths invalidate this digest. When a writer runs, it consults
    * this list to know which cache files to bust. Special values:
    *   - 'calibration-write' — any Phase 2 takes_add call
-   *   - 'skill-run-write'   — any skill that writes a gstack/skill-run page
-   * Otherwise these are skill names like '/plan-ceo-review'.
+   *   - 'skill-run-write'   — any skill that writes a paysec/skill-run page
+   * Otherwise these are skill names like '/plan-business-review'.
    */
   invalidated_by: ReadonlyArray<string>;
   /** Hard byte budget for the digest. Compressor drops oldest items if exceeded. */
@@ -32,10 +32,10 @@ export interface BrainCacheEntity {
 
 /**
  * The seven cached entities mirror the seven typed page kinds in
- * `gstack-core` schema pack v1.0.0 (Phase 0):
+ * `paysec-core` schema pack v1.0.0 (Phase 0):
  *   user-profile, product, goal, developer-persona, brand, competitive-intel, skill-run
  * Plus two derived digests:
- *   recent-decisions (top 5 gstack/skill-run pages)
+ *   recent-decisions (top 5 paysec/skill-run pages)
  *   salience (mcp__gbrain__get_recent_salience output)
  */
 export const BRAIN_CACHE_ENTITIES: Record<string, BrainCacheEntity> = {
@@ -43,42 +43,42 @@ export const BRAIN_CACHE_ENTITIES: Record<string, BrainCacheEntity> = {
     file: 'user-profile.md',
     ttl_ms: 7 * 86_400_000, // 7 days
     scope: 'cross-project',
-    invalidated_by: ['/retro', '/plan-tune', 'calibration-write'],
+    invalidated_by: ['/weekly-retro', '/tune-questions', 'calibration-write'],
     budget_bytes: 2048,
   },
   product: {
     file: 'product.md',
     ttl_ms: 1 * 86_400_000, // 1 day
     scope: 'per-project',
-    invalidated_by: ['/office-hours', '/plan-ceo-review'],
+    invalidated_by: ['/idea-review', '/plan-business-review'],
     budget_bytes: 1024,
   },
   goals: {
     file: 'goals.md',
     ttl_ms: 12 * 3_600_000, // 12 hours
     scope: 'per-project',
-    invalidated_by: ['/office-hours', '/plan-ceo-review'],
+    invalidated_by: ['/idea-review', '/plan-business-review'],
     budget_bytes: 512,
   },
   'developer-persona': {
     file: 'developer-persona.md',
     ttl_ms: 7 * 86_400_000,
     scope: 'per-project',
-    invalidated_by: ['/plan-devex-review', '/devex-review'],
+    invalidated_by: ['/plan-dx-review', '/dx-audit'],
     budget_bytes: 1024,
   },
   brand: {
     file: 'brand.md',
     ttl_ms: 7 * 86_400_000,
     scope: 'per-project',
-    invalidated_by: ['/design-consultation', '/plan-design-review'],
+    invalidated_by: ['/design-system', '/plan-ux-review'],
     budget_bytes: 1024,
   },
   'competitive-intel': {
     file: 'competitive-intel.md',
     ttl_ms: 1 * 86_400_000,
     scope: 'per-project',
-    invalidated_by: ['/plan-ceo-review', '/office-hours'],
+    invalidated_by: ['/plan-business-review', '/idea-review'],
     budget_bytes: 1024,
   },
   'recent-decisions': {
@@ -103,28 +103,28 @@ export const BRAIN_CACHE_ENTITIES: Record<string, BrainCacheEntity> = {
  * Order matters for narrative coherence in the injected ## Brain Context block.
  *
  * Hard token budget per skill (validated by test/skill-preflight-budget.test.ts):
- *   - CEO/office-hours: 5 KB (richest context need)
+ *   - CEO/idea-review: 5 KB (richest context need)
  *   - eng/design/devex: 2 KB
  */
 export const SKILL_DIGEST_SUBSETS: Record<string, ReadonlyArray<string>> = {
-  'office-hours': ['product', 'goals', 'user-profile', 'recent-decisions', 'salience'],
-  'plan-ceo-review': ['product', 'goals', 'recent-decisions', 'user-profile'],
-  'plan-eng-review': ['product', 'recent-decisions'],
-  'plan-design-review': ['product', 'brand', 'recent-decisions'],
-  'plan-devex-review': ['product', 'developer-persona', 'recent-decisions', 'competitive-intel'],
+  'idea-review': ['product', 'goals', 'user-profile', 'recent-decisions', 'salience'],
+  'plan-business-review': ['product', 'goals', 'recent-decisions', 'user-profile'],
+  'plan-tech-review': ['product', 'recent-decisions'],
+  'plan-ux-review': ['product', 'brand', 'recent-decisions'],
+  'plan-dx-review': ['product', 'developer-persona', 'recent-decisions', 'competitive-intel'],
 };
 
 /** Per-skill total digest budget (sum of loaded digests must not exceed). */
 export const SKILL_PREFLIGHT_BUDGET_BYTES: Record<string, number> = {
-  'office-hours': 5120,
-  'plan-ceo-review': 5120,
-  'plan-eng-review': 2048,
-  'plan-design-review': 2048,
-  'plan-devex-review': 2048,
+  'idea-review': 5120,
+  'plan-business-review': 5120,
+  'plan-tech-review': 2048,
+  'plan-ux-review': 2048,
+  'plan-dx-review': 2048,
 };
 
 /**
- * Total budget across an autoplan run (4 sequential planning skills). Validated by
+ * Total budget across an auto-plan-review run (4 sequential planning skills). Validated by
  * test/autoplan-preflight-budget.test.ts. If a future autoplan-extended adds skills,
  * this cap forces an explicit budget revisit.
  */
@@ -134,12 +134,12 @@ export const AUTOPLAN_PREFLIGHT_BUDGET_BYTES = 25_600;
  * D9 salience privacy: default allowlist of slug prefixes that are safe to surface
  * in planning prompts. Anything outside (personal/, family/, therapy/, etc.)
  * gets stripped at digest write time. User can extend via
- * `gstack-config set salience_allowlist '<comma-separated-prefixes>'`.
+ * `paysec-config set salience_allowlist '<comma-separated-prefixes>'`.
  */
 export const SALIENCE_DEFAULT_ALLOWLIST: ReadonlyArray<string> = [
   'projects/',
   'concepts/',
-  'gstack/',
+  'paysec/',
 ];
 
 /**
@@ -149,11 +149,11 @@ export const SALIENCE_DEFAULT_ALLOWLIST: ReadonlyArray<string> = [
  * on resolution.
  */
 export const SKILL_CALIBRATION_WEIGHTS: Record<string, number> = {
-  'plan-ceo-review': 0.8,
-  'plan-eng-review': 0.7,
-  'plan-design-review': 0.5,
-  'plan-devex-review': 0.6,
-  'office-hours': 0.9,
+  'plan-business-review': 0.8,
+  'plan-tech-review': 0.7,
+  'plan-ux-review': 0.5,
+  'plan-dx-review': 0.6,
+  'idea-review': 0.9,
 };
 
 /**
@@ -163,7 +163,7 @@ export const SKILL_CALIBRATION_WEIGHTS: Record<string, number> = {
 export const CACHE_REFRESH_LOCK_TIMEOUT_MS = 5 * 60_000;
 
 /**
- * Retention policy: gstack/skill-run pages auto-archive after this many days.
+ * Retention policy: paysec/skill-run pages auto-archive after this many days.
  * Calibration takes (kind=bet) NEVER archive (long-term scorecard needs them).
  */
 export const SKILL_RUN_RETENTION_DAYS = 90;
@@ -173,8 +173,8 @@ export const SKILL_RUN_RETENTION_DAYS = 90;
  * On mismatch with the version recorded in _meta.json, the cache layer
  * triggers a FULL rebuild for the affected project.
  */
-export const GSTACK_SCHEMA_PACK_NAME = 'gstack-core';
-export const GSTACK_SCHEMA_PACK_VERSION = '1.0.0';
+export const PAYSEC_SCHEMA_PACK_NAME = 'paysec-core';
+export const PAYSEC_SCHEMA_PACK_VERSION = '1.0.0';
 
 /**
  * Trust policy values. Drives auto-push of artifacts, calibration write-back
@@ -198,7 +198,7 @@ export const TRANSPORT_DEFAULT_POLICY: Record<string, BrainTrustPolicy | 'infer'
 
 /**
  * User-slug fallback chain (D4 A3 defensive default). Resolved once per endpoint
- * and persisted via `gstack-config set user_slug_at_<endpoint-hash> <slug>`.
+ * and persisted via `paysec-config set user_slug_at_<endpoint-hash> <slug>`.
  * Stable across sessions.
  */
 export const USER_SLUG_RESOLUTION_ORDER = [

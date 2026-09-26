@@ -5,23 +5,23 @@
 # Why a migration: v1.58 makes the PreToolUse question-preference-hook also
 # deny the flaky Conductor AskUserQuestion and redirect to a prose decision
 # brief. But setup's hook-install block skips silently in non-interactive
-# (conductor/CI) setups, and existing users who previously declined plan-tune
+# (conductor/CI) setups, and existing users who previously declined tune-questions
 # hooks would never pick up the new Conductor backstop. This re-registers the
 # hook for Conductor users so layer 3 actually deploys.
 #
-# Affected: users who run gstack inside Conductor and don't already have the
+# Affected: users who run paysec inside Conductor and don't already have the
 # PreToolUse hook installed.
 #
 # Scope guard: only acts inside a Conductor session (CONDUCTOR_* present) and
 # never overrides an explicit `plan_tune_hooks` opt-out.
 #
-# Idempotent: gstack-settings-hook dedupes by (event, matcher, source), and a
+# Idempotent: paysec-settings-hook dedupes by (event, matcher, source), and a
 # .done touchfile gates re-runs.
 
 set -u
 
-GSTACK_HOME="${HOME}/.gstack"
-MIGRATION_DIR="${GSTACK_HOME}/.migrations"
+PAYSEC_HOME="${HOME}/.paysec"
+MIGRATION_DIR="${PAYSEC_HOME}/.migrations"
 DONE="${MIGRATION_DIR}/v1.58.0.0.done"
 mkdir -p "${MIGRATION_DIR}" 2>/dev/null || true
 [ -f "${DONE}" ] && exit 0
@@ -33,9 +33,9 @@ if [ -z "${CONDUCTOR_WORKSPACE_PATH:-}" ] && [ -z "${CONDUCTOR_PORT:-}" ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-SETTINGS_HOOK="${SCRIPT_DIR}/bin/gstack-settings-hook"
+SETTINGS_HOOK="${SCRIPT_DIR}/bin/paysec-settings-hook"
 PREF_HOOK="${SCRIPT_DIR}/hosts/claude/hooks/question-preference-hook"
-CONFIG_BIN="${SCRIPT_DIR}/bin/gstack-config"
+CONFIG_BIN="${SCRIPT_DIR}/bin/paysec-config"
 
 # Respect an explicit opt-out — don't force a hook on a user who said no.
 _PT=$("${CONFIG_BIN}" get plan_tune_hooks 2>/dev/null || echo "")

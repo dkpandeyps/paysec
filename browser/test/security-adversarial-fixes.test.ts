@@ -1,5 +1,5 @@
 /**
- * Regression tests for the 4 adversarial findings fixed during /ship:
+ * Regression tests for the 4 adversarial findings fixed during /ship-pr:
  *
  * 1. Canary stream-chunk split bypass — rolling-buffer detection across
  *    consecutive text_delta / input_json_delta events.
@@ -90,12 +90,12 @@ describe('snapshot in PAGE_CONTENT_COMMANDS', () => {
 // coverage — the combiner still accepts those signals even though no live
 // layer produces them.
 
-describe('GSTACK_SECURITY_OFF kill switch', () => {
+describe('PAYSEC_SECURITY_OFF kill switch', () => {
   test('loadTestsavant honors env var early', () => {
     const src = fs.readFileSync(
-      path.join(REPO_ROOT, 'browse', 'src', 'security-classifier.ts'),
+      path.join(REPO_ROOT, 'browser', 'src', 'security-classifier.ts'),
       'utf-8',
     );
-    expect(src).toContain("process.env.GSTACK_SECURITY_OFF === '1'");
+    expect(src).toContain("process.env.PAYSEC_SECURITY_OFF === '1'");
   });
 });

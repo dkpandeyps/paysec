@@ -1,9 +1,9 @@
 /**
- * gstack-codex-session-import — backfill question-log from Codex JSONL.
+ * paysec-codex-session-import — backfill question-log from Codex JSONL.
  *
  * Plan-tune cathedral T9. Verifies the structured-file parser (D5) handles
  * the two-tier recovery strategy from docs/spikes/codex-session-format.md:
- *   - Marker-first: <gstack-qid:foo-bar> → source=codex-import-marker.
+ *   - Marker-first: <paysec-qid:foo-bar> → source=codex-import-marker.
  *   - Pattern fallback: D-numbered brief → source=codex-import-pattern,
  *     hash-only question_id.
  */
@@ -15,14 +15,14 @@ import * as os from 'os';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const BIN = path.join(ROOT, 'bin', 'gstack-codex-session-import');
+const BIN = path.join(ROOT, 'bin', 'paysec-codex-session-import');
 
 let stateRoot: string;
 let fixtureCwd: string;
 let cwdSlug: string;
 
 beforeEach(() => {
-  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-cdximp-'));
+  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-cdximp-'));
   cwdSlug = 'codex-fixture-slug';
   fixtureCwd = path.join(stateRoot, cwdSlug);
   fs.mkdirSync(fixtureCwd, { recursive: true });
@@ -65,9 +65,9 @@ function runImport(sessionPath: string): { stdout: string; stderr: string; statu
   for (const [k, v] of Object.entries(process.env)) {
     if (v !== undefined) env[k] = v;
   }
-  env.GSTACK_STATE_ROOT = stateRoot;
-  env.GSTACK_QUESTION_LOG_NO_DERIVE = '1';
-  delete env.GSTACK_HOME;
+  env.PAYSEC_STATE_ROOT = stateRoot;
+  env.PAYSEC_QUESTION_LOG_NO_DERIVE = '1';
+  delete env.PAYSEC_HOME;
   const res = spawnSync(BIN, [sessionPath], { env, encoding: 'utf-8', cwd: ROOT });
   return {
     stdout: res.stdout ?? '',
@@ -95,7 +95,7 @@ describe('marker-first import (source=codex-import-marker)', () => {
   test('extracts marker id from agent_message and pairs with next user_message', () => {
     const sessionPath = writeSessionFile([
       agentMessage(
-        'D1 — Test\nELI10: blah\n<gstack-qid:ship-test-failure-triage> Tests failed.\nRecommendation: A\nA) Fix now (recommended)\nB) Investigate\nC) Ack and ship',
+        'D1 — Test\nELI10: blah\n<paysec-qid:ship-test-failure-triage> Tests failed.\nRecommendation: A\nA) Fix now (recommended)\nB) Investigate\nC) Ack and ship',
       ),
       userMessage('A'),
     ]);
@@ -147,7 +147,7 @@ describe('edge cases', () => {
 
   test('agent_message with marker but no following user_message → skipped', () => {
     const sessionPath = writeSessionFile([
-      agentMessage('<gstack-qid:test-q> D1 — Q\nA) Foo\nB) Bar'),
+      agentMessage('<paysec-qid:test-q> D1 — Q\nA) Foo\nB) Bar'),
       // no user_message
     ]);
     const r = runImport(sessionPath);
@@ -157,9 +157,9 @@ describe('edge cases', () => {
 
   test('two D-briefs in sequence → both imported', () => {
     const sessionPath = writeSessionFile([
-      agentMessage('D1 — First <gstack-qid:q1>\nA) Foo (recommended)\nB) Bar'),
+      agentMessage('D1 — First <paysec-qid:q1>\nA) Foo (recommended)\nB) Bar'),
       userMessage('A'),
-      agentMessage('D2 — Second <gstack-qid:q2>\nA) Baz (recommended)\nB) Qux'),
+      agentMessage('D2 — Second <paysec-qid:q2>\nA) Baz (recommended)\nB) Qux'),
       userMessage('B'),
     ]);
     const r = runImport(sessionPath);
@@ -172,7 +172,7 @@ describe('edge cases', () => {
 
   test('numeric user response also resolves to letter index', () => {
     const sessionPath = writeSessionFile([
-      agentMessage('D1 — Test <gstack-qid:numeric-q>\nA) Foo\nB) Bar\nC) Baz'),
+      agentMessage('D1 — Test <paysec-qid:numeric-q>\nA) Foo\nB) Bar\nC) Baz'),
       userMessage('B - I think B is right'),
     ]);
     runImport(sessionPath);
@@ -188,13 +188,13 @@ describe('edge cases', () => {
 
 describe('default mode (no args → latest)', () => {
   test('returns NO_SESSIONS when sessions dir is empty', () => {
-    const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-empty-cdx-'));
+    const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-empty-cdx-'));
     try {
       const env: Record<string, string> = {};
       for (const [k, v] of Object.entries(process.env)) {
         if (v !== undefined) env[k] = v;
       }
-      env.GSTACK_STATE_ROOT = stateRoot;
+      env.PAYSEC_STATE_ROOT = stateRoot;
       env.CODEX_SESSIONS_ROOT = emptyDir;
       const res = spawnSync(BIN, [], { env, encoding: 'utf-8', cwd: ROOT });
       expect(res.status).toBe(0);

@@ -2,16 +2,16 @@
  * Resolvers for the Implementation Tasks emission (#1454).
  *
  *   {{TASKS_SECTION_EMIT:<phase>}}     — per-skill task emission + JSONL write
- *   {{TASKS_SECTION_AGGREGATE}}        — autoplan aggregation across all phases
+ *   {{TASKS_SECTION_AGGREGATE}}        — auto-plan-review aggregation across all phases
  *
  * JSONL artifact fields: phase, run_id, branch, commit, id, priority,
  * component, files, effort_human, effort_cc, title, source_finding
- * (consumed by /autoplan's aggregator).
+ * (consumed by /auto-plan-review's aggregator).
  */
 
 import type { TemplateContext, ResolverFn } from './types';
 
-const VALID_PHASES = new Set(['ceo-review', 'design-review', 'eng-review', 'devex-review']);
+const VALID_PHASES = new Set(['ceo-review', 'design-qa', 'eng-review', 'dx-audit']);
 
 export const generateTasksSectionEmit: ResolverFn = (_ctx: TemplateContext, args?: string[]) => {
   const phase = args?.[0];
@@ -23,7 +23,7 @@ export const generateTasksSectionEmit: ResolverFn = (_ctx: TemplateContext, args
 
 Before closing this review, synthesize the findings above into a flat list of
 build-actionable tasks. Each task derives from a specific finding — no padding.
-Emit the markdown section AND write a JSONL artifact that \`/autoplan\` can
+Emit the markdown section AND write a JSONL artifact that \`/auto-plan-review\` can
 aggregate across phases.
 
 ### Markdown section (always emit)
@@ -48,13 +48,13 @@ Rules:
 
 ### JSONL artifact (always write, even if zero tasks)
 
-\`/autoplan\` reads this file to aggregate across phases. Build each line with
+\`/auto-plan-review\` reads this file to aggregate across phases. Build each line with
 \`jq -nc\` so titles and source findings containing quotes, newlines, or
 backslashes serialize cleanly — never use hand-rolled \`echo\` / \`printf\`.
 
 \`\`\`bash
-eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
-TASKS_DIR="\${HOME}/.gstack/projects/\${SLUG:-unknown}"
+eval "$(~/.claude/skills/paysec/bin/paysec-slug 2>/dev/null)"
+TASKS_DIR="\${HOME}/.paysec/projects/\${SLUG:-unknown}"
 mkdir -p "$TASKS_DIR"
 TASKS_FILE="$TASKS_DIR/tasks-${phase}-$(date +%Y%m%d-%H%M%S).jsonl"
 COMMIT=$(git rev-parse HEAD 2>/dev/null || echo unknown)
@@ -65,7 +65,7 @@ RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 # Substitute the placeholders inline with shell variables you set per task:
 #   TASK_ID (T1, T2, ...), PRIORITY (P1/P2/P3), COMPONENT, TITLE,
 #   SOURCE_FINDING, EFFORT_HUMAN, EFFORT_CC, FILES_JSON (a JSON array literal
-#   like '["browse/src/sanitize.ts","browse/src/server.ts"]').
+#   like '["browser/src/sanitize.ts","browser/src/server.ts"]').
 jq -nc \\
   --arg phase '${phase}' \\
   --arg run_id "$RUN_ID" \\
@@ -84,7 +84,7 @@ jq -nc \\
 \`\`\`
 
 If \`jq\` is not installed, fall back to skipping the JSONL write and warn
-the user to install jq for autoplan aggregation. Never hand-roll JSONL.
+the user to install jq for auto-plan-review aggregation. Never hand-roll JSONL.
 
 If zero tasks were identified in this review, still touch the JSONL file
 (\`: > "$TASKS_FILE"\`) so the aggregator sees that the phase produced output
@@ -99,8 +99,8 @@ Before rendering the Final Approval Gate output block below, aggregate the
 per-phase task lists each review skill wrote.
 
 \`\`\`bash
-eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
-TASKS_DIR="\${HOME}/.gstack/projects/\${SLUG:-unknown}"
+eval "$(~/.claude/skills/paysec/bin/paysec-slug 2>/dev/null)"
+TASKS_DIR="\${HOME}/.paysec/projects/\${SLUG:-unknown}"
 BRANCH=$(git branch --show-current 2>/dev/null || echo unknown)
 # Commit window: last 5 commits on this branch. Drops stale standalone reviews.
 COMMITS_RECENT=$(git log --format=%H -n 5 2>/dev/null | tr '\\n' '|' | sed 's/|$//')
@@ -112,7 +112,7 @@ if command -v jq >/dev/null 2>&1; then
   # dedupe by (component, sorted(files), title) — exact match only.
   # Sort by priority (P1 > P2 > P3) then by phase order.
   ALL_JSONL=$(mktemp -t autoplan-tasks.XXXXXXXX)
-  for phase in ceo-review design-review eng-review devex-review; do
+  for phase in ceo-review design-qa eng-review dx-audit; do
     # Use find instead of glob expansion — zsh nomatch errors otherwise when
     # a phase produced no JSONL files. Sorting by name keeps the order stable.
     while IFS= read -r f; do
@@ -146,9 +146,9 @@ if command -v jq >/dev/null 2>&1; then
     'group_by([.component, (.files | sort), .title])
      | map(
          # Take the highest-priority entry per group; tie-break by phase order
-         sort_by({P1:0,P2:1,P3:2}[.priority] // 99, {"ceo-review":0,"design-review":1,"eng-review":2,"devex-review":3}[.phase] // 99) | .[0]
+         sort_by({P1:0,P2:1,P3:2}[.priority] // 99, {"ceo-review":0,"design-qa":1,"eng-review":2,"dx-audit":3}[.phase] // 99) | .[0]
        )
-     | sort_by({P1:0,P2:1,P3:2}[.priority] // 99, {"ceo-review":0,"design-review":1,"eng-review":2,"devex-review":3}[.phase] // 99)
+     | sort_by({P1:0,P2:1,P3:2}[.priority] // 99, {"ceo-review":0,"design-qa":1,"eng-review":2,"dx-audit":3}[.phase] // 99)
      | if length == 0 then "_No actionable tasks emitted from any phase._" else
          map("- [ ] **\\(.id) (\\(.priority), human: \\(.effort_human) / CC: \\(.effort_cc)) — \\(.component)** — \\(.title)\\n  - Surfaced by: \\(.phase) — \\(.source_finding)\\n  - Files: \\(.files | join(", "))") | join("\\n")
        end' "$ALL_JSONL" 2>/dev/null | sed 's/^"//;s/"$//;s/\\\\n/\\n/g')

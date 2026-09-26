@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""gstack-detach — run a long agent job (evals, benchmarks, syncs) robustly.
+"""paysec-detach — run a long agent job (evals, benchmarks, syncs) robustly.
 
 Agent-launched long jobs on a shared dev box keep dying to environmental
-killers. This tool bakes in the fixes so gstack (and every gstack user) runs
+killers. This tool bakes in the fixes so paysec (and every paysec user) runs
 them properly:
 
   * SIGTERM-proof: fork + setsid puts the job in its OWN session, so the
@@ -13,17 +13,17 @@ them properly:
     advisory lock so concurrent Conductor worktrees SERIALIZE their eval runs
     instead of saturating the shared model API (which mass-times-out E2E suites).
   * No shared-/tmp collision: a run-scoped log path by default
-    (~/.gstack-dev/eval-runs/<label>-<slug>-<branch>-<ts>-<pid>.log), so
+    (~/.paysec-dev/eval-runs/<label>-<slug>-<branch>-<ts>-<pid>.log), so
     concurrent runs never clobber or contaminate each other's logs.
   * No silent hang: `--timeout SECS` watchdog kills a stalled run, and a
-    `### gstack-detach EXIT=<code> ###` sentinel is ALWAYS appended on a
+    `### paysec-detach EXIT=<code> ###` sentinel is ALWAYS appended on a
     terminal path so a poller can tell finished-vs-died (silence != success).
 
 Usage:
-  gstack-detach [--log PATH] [--lock NAME] [--timeout SECS] [--label LBL] -- CMD [ARGS...]
+  paysec-detach [--log PATH] [--lock NAME] [--timeout SECS] [--label LBL] -- CMD [ARGS...]
 
-Prints `gstack-detach LOG <path>` and returns immediately. Poll the log; break
-on `### gstack-detach EXIT=` (both success and failure are marked).
+Prints `paysec-detach LOG <path>` and returns immediately. Poll the log; break
+on `### paysec-detach EXIT=` (both success and failure are marked).
 
 Secrets are inherited from the environment ONLY — never pass an API key in argv.
 """
@@ -49,7 +49,7 @@ def _git(*args):
 
 
 def run_scoped_log(label):
-    base = os.path.expanduser("~/.gstack-dev/eval-runs")
+    base = os.path.expanduser("~/.paysec-dev/eval-runs")
     os.makedirs(base, exist_ok=True)
     root = _git("rev-parse", "--show-toplevel")
     slug = os.path.basename(root) if root else "unknown"
@@ -69,17 +69,17 @@ def acquire_lock(name, log):
     Returns the held fd (kept open for the process lifetime)."""
     import fcntl
 
-    d = os.path.expanduser("~/.gstack/locks")
+    d = os.path.expanduser("~/.paysec/locks")
     os.makedirs(d, exist_ok=True)
     fd = open(os.path.join(d, f"{name}.lock"), "w")
     try:
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError:
-        log_line(log, f"### gstack-detach WAITING for lock '{name}' (another run holds it) ### {_now()}")
+        log_line(log, f"### paysec-detach WAITING for lock '{name}' (another run holds it) ### {_now()}")
         fcntl.flock(fd, fcntl.LOCK_EX)  # block until released
     fd.write(f"{os.getpid()} {_now()}\n")
     fd.flush()
-    log_line(log, f"### gstack-detach LOCK '{name}' ACQUIRED ### {_now()}")
+    log_line(log, f"### paysec-detach LOCK '{name}' ACQUIRED ### {_now()}")
     return fd
 
 
@@ -88,7 +88,7 @@ def child_run(args, log):
     cmd = args.cmd
     if shutil.which("caffeinate"):  # macOS: block idle-sleep for the run
         cmd = ["caffeinate", "-i", *cmd]
-    log_line(log, f"### gstack-detach START label={args.label} pgid={os.getpgid(0)} ### {_now()}")
+    log_line(log, f"### paysec-detach START label={args.label} pgid={os.getpgid(0)} ### {_now()}")
     with open(log, "ab", buffering=0) as f:
         # start_new_session: the command runs in its OWN process group so the
         # watchdog can killpg() it without also killing this supervisor (which
@@ -100,7 +100,7 @@ def child_run(args, log):
             try:
                 code = proc.wait(timeout=args.timeout)
             except subprocess.TimeoutExpired:
-                log_line(log, f"### gstack-detach WATCHDOG fired after {args.timeout}s — killing ### {_now()}")
+                log_line(log, f"### paysec-detach WATCHDOG fired after {args.timeout}s — killing ### {_now()}")
                 try:
                     os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
                 except Exception:
@@ -113,7 +113,7 @@ def child_run(args, log):
                 code = "timeout"
         else:
             code = proc.wait()
-    log_line(log, f"### gstack-detach EXIT={code} ### {_now()}")
+    log_line(log, f"### paysec-detach EXIT={code} ### {_now()}")
     if lock_fd:
         try:
             lock_fd.close()
@@ -134,7 +134,7 @@ def main():
     if cmd and cmd[0] == "--":
         cmd = cmd[1:]
     if not cmd:
-        print("gstack-detach: no command given (usage: gstack-detach [opts] -- CMD...)", file=sys.stderr)
+        print("paysec-detach: no command given (usage: paysec-detach [opts] -- CMD...)", file=sys.stderr)
         sys.exit(2)
     args.cmd = cmd
 
@@ -147,7 +147,7 @@ def main():
     if os.fork() > 0:
         # flush BEFORE os._exit — os._exit skips stdio buffer flush, which would
         # otherwise drop this line and leave the caller without the log path.
-        print(f"gstack-detach LOG {log}", flush=True)
+        print(f"paysec-detach LOG {log}", flush=True)
         os._exit(0)
     os.setsid()
     devnull = os.open(os.devnull, os.O_RDWR)
@@ -158,8 +158,8 @@ def main():
     try:
         child_run(args, log)
     except Exception as e:  # never leave the log without a terminal marker
-        log_line(log, f"### gstack-detach ERROR {e!r} ### {_now()}")
-        log_line(log, f"### gstack-detach EXIT=error ### {_now()}")
+        log_line(log, f"### paysec-detach ERROR {e!r} ### {_now()}")
+        log_line(log, f"### paysec-detach EXIT=error ### {_now()}")
     os._exit(0)
 
 

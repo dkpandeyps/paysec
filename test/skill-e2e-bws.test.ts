@@ -6,7 +6,7 @@ import {
   copyDirSync, setupBrowseShims, logCost, recordE2E,
   createEvalCollector, finalizeEvalCollector,
 } from './helpers/e2e-helpers';
-import { startTestServer } from '../browse/test/test-server';
+import { startTestServer } from '../browser/test/test-server';
 import { spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -85,14 +85,14 @@ Report what each command returned.`,
 
   testConcurrentIfSelected('skillmd-setup-discovery', async () => {
     // P2 (v1.2.0): the browse SETUP/binary-discovery block moved from the root
-    // router to browse/SKILL.md (end anchor is now ## Core QA Patterns).
-    const skillMd = fs.readFileSync(path.join(ROOT, 'browse', 'SKILL.md'), 'utf-8');
+    // router to browser/SKILL.md (end anchor is now ## Core QA Patterns).
+    const skillMd = fs.readFileSync(path.join(ROOT, 'browser', 'SKILL.md'), 'utf-8');
     const setupStart = skillMd.indexOf('## SETUP');
     const setupEnd = skillMd.indexOf('## Core QA Patterns');
     const setupBlock = skillMd.slice(setupStart, setupEnd);
 
     // Guard: verify we extracted a valid setup block
-    expect(setupBlock).toContain('browse/dist/browse');
+    expect(setupBlock).toContain('browser/dist/browse');
 
     const result = await runSkillTest({
       prompt: `Follow these instructions to find the browse binary and run a basic command.
@@ -115,12 +115,12 @@ Report whether it worked.`,
   }, 90_000);
 
   testConcurrentIfSelected('skillmd-no-local-binary', async () => {
-    // Create a tmpdir with no browse binary — no local .claude/skills/gstack/browse/dist/browse
+    // Create a tmpdir with no browse binary — no local .claude/skills/paysec/browser/dist/browse
     const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-empty-'));
 
     // P2 (v1.2.0): the browse SETUP/binary-discovery block moved from the root
-    // router to browse/SKILL.md (end anchor is now ## Core QA Patterns).
-    const skillMd = fs.readFileSync(path.join(ROOT, 'browse', 'SKILL.md'), 'utf-8');
+    // router to browser/SKILL.md (end anchor is now ## Core QA Patterns).
+    const skillMd = fs.readFileSync(path.join(ROOT, 'browser', 'SKILL.md'), 'utf-8');
     const setupStart = skillMd.indexOf('## SETUP');
     const setupEnd = skillMd.indexOf('## Core QA Patterns');
     const setupBlock = skillMd.slice(setupStart, setupEnd);
@@ -139,8 +139,8 @@ Report the exact output. Do NOT try to fix or install anything — just report w
     });
 
     // Setup block should either find the global binary (READY) or show NEEDS_SETUP.
-    // On dev machines with gstack installed globally, the fallback path
-    // ~/.claude/skills/gstack/browse/dist/browse exists, so we get READY.
+    // On dev machines with paysec installed globally, the fallback path
+    // ~/.claude/skills/paysec/browser/dist/browse exists, so we get READY.
     // The important thing is it doesn't crash or give a confusing error.
     const allText = result.output || '';
     recordE2E(evalCollector, 'SKILL.md setup block (no local binary)', 'Skill E2E tests', result);
@@ -156,8 +156,8 @@ Report the exact output. Do NOT try to fix or install anything — just report w
     const nonGitDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-nogit-'));
 
     // P2 (v1.2.0): the browse SETUP/binary-discovery block moved from the root
-    // router to browse/SKILL.md (end anchor is now ## Core QA Patterns).
-    const skillMd = fs.readFileSync(path.join(ROOT, 'browse', 'SKILL.md'), 'utf-8');
+    // router to browser/SKILL.md (end anchor is now ## Core QA Patterns).
+    const skillMd = fs.readFileSync(path.join(ROOT, 'browser', 'SKILL.md'), 'utf-8');
     const setupStart = skillMd.indexOf('## SETUP');
     const setupEnd = skillMd.indexOf('## Core QA Patterns');
     const setupBlock = skillMd.slice(setupStart, setupEnd);
@@ -186,7 +186,7 @@ Report the exact output — either "READY: <path>" or "NEEDS_SETUP".`,
 
   testConcurrentIfSelected('operational-learning', async () => {
     const opDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-oplearn-'));
-    const gstackHome = path.join(opDir, '.gstack-home');
+    const paysecHome = path.join(opDir, '.paysec-home');
 
     // Init git repo
     const run = (cmd: string, args: string[]) =>
@@ -198,7 +198,7 @@ Report the exact output — either "READY: <path>" or "NEEDS_SETUP".`,
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'initial']);
 
-    // Copy bin scripts + the lib module they import. gstack-learnings-log
+    // Copy bin scripts + the lib module they import. paysec-learnings-log
     // does `import ... from '$SCRIPT_DIR/../lib/jsonl-store.ts'` (v1.57.5.0
     // injection sanitization) — without lib/ alongside bin/, the script exits
     // 1 before writing anything, failing this test for a fixture reason, not
@@ -206,11 +206,11 @@ Report the exact output — either "READY: <path>" or "NEEDS_SETUP".`,
     // identically on main).
     const binDir = path.join(opDir, 'bin');
     fs.mkdirSync(binDir, { recursive: true });
-    for (const script of ['gstack-learnings-log', 'gstack-slug']) {
+    for (const script of ['paysec-learnings-log', 'paysec-slug']) {
       fs.copyFileSync(path.join(ROOT, 'bin', script), path.join(binDir, script));
       fs.chmodSync(path.join(binDir, script), 0o755);
     }
-    // gstack-learnings-log imports $SCRIPT_DIR/../lib/jsonl-store.ts (shared
+    // paysec-learnings-log imports $SCRIPT_DIR/../lib/jsonl-store.ts (shared
     // injection patterns, since v1.57.5.0) — a real install always ships bin/
     // and lib/ together, so the fixture must too. Without it the bin exits 1
     // before writing anything and the test fails on every attempt.
@@ -218,7 +218,7 @@ Report the exact output — either "READY: <path>" or "NEEDS_SETUP".`,
     fs.mkdirSync(libDir, { recursive: true });
     fs.copyFileSync(path.join(ROOT, 'lib', 'jsonl-store.ts'), path.join(libDir, 'jsonl-store.ts'));
 
-    // gstack-learnings-log will create the project dir automatically via gstack-slug
+    // paysec-learnings-log will create the project dir automatically via paysec-slug
 
     const result = await runSkillTest({
       prompt: `You just ran \`npm test\` in this project and it failed with this error:
@@ -236,7 +236,7 @@ Before completing, reflect on this session:
 If yes, log an operational learning for future sessions:
 
 \`\`\`bash
-GSTACK_HOME="${gstackHome}" ${binDir}/gstack-learnings-log '{"skill":"qa","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"observed"}'
+PAYSEC_HOME="${paysecHome}" ${binDir}/paysec-learnings-log '{"skill":"qa","type":"operational","key":"SHORT_KEY","insight":"DESCRIPTION","confidence":N,"source":"observed"}'
 \`\`\`
 
 Replace SHORT_KEY with a kebab-case key like "esm-vm-modules-flag".
@@ -258,7 +258,7 @@ Log the operational learning now. Then say what you logged.`,
     // Check if learnings file was created with an operational entry
     // The slug is derived from the git repo (dirname), so search all project dirs
     let hasOperational = false;
-    const projectsDir = path.join(gstackHome, 'projects');
+    const projectsDir = path.join(paysecHome, 'projects');
     if (fs.existsSync(projectsDir)) {
       for (const slug of fs.readdirSync(projectsDir)) {
         const lPath = path.join(projectsDir, slug, 'learnings.jsonl');
@@ -307,11 +307,11 @@ Log the operational learning now. Then say what you logged.`,
     // Extract AskUserQuestion format instructions from a generated SKILL.md.
     // ROOT/SKILL.md is the browse skill (Tier 1) and does NOT contain the
     // "## AskUserQuestion Format" section — that block is only emitted for
-    // Tier 2+ skills by scripts/resolvers/preamble.ts. Use office-hours/SKILL.md
+    // Tier 2+ skills by scripts/resolvers/preamble.ts. Use idea-review/SKILL.md
     // (Tier 3) which always has the format guidance baked in. Falls back to
     // the first SKILL.md that contains the header so a future template move
     // doesn't break this test again.
-    let skillMdPath = path.join(ROOT, 'office-hours', 'SKILL.md');
+    let skillMdPath = path.join(ROOT, 'idea-review', 'SKILL.md');
     let skillMd = '';
     if (fs.existsSync(skillMdPath)) {
       skillMd = fs.readFileSync(skillMdPath, 'utf-8');
@@ -340,7 +340,7 @@ Log the operational learning now. Then say what you logged.`,
     const outputPath = path.join(sessionDir, 'question-output.md');
 
     const result = await runSkillTest({
-      prompt: `You are running a gstack skill. The session preamble detected _SESSIONS=4 (the user has 4 gstack windows open).
+      prompt: `You are running a paysec skill. The session preamble detected _SESSIONS=4 (the user has 4 paysec windows open).
 
 ${aqBlock}
 

@@ -1,5 +1,5 @@
 ---
-name: make-pdf
+name: md-to-pdf
 preamble-tier: 1
 version: 1.0.0
 description: |
@@ -7,7 +7,7 @@ description: |
   intelligent page breaks, page numbers, cover pages, running headers, curly
   quotes and em dashes, clickable TOC, diagonal DRAFT watermark. Not a draft
   artifact — a finished artifact. Use when asked to "make a PDF", "export to
-  PDF", "turn this markdown into a PDF", or "generate a document". (gstack)
+  PDF", "turn this markdown into a PDF", or "generate a document". (paysec)
 voice-triggers:
   - "make this a pdf"
   - "make it a pdf"
@@ -30,7 +30,7 @@ allowed-tools:
 
 {{PREAMBLE}}
 
-# make-pdf: publication-quality PDFs from markdown
+# md-to-pdf: publication-quality PDFs from markdown
 
 Turn `.md` files into PDFs that look like Faber & Faber essays: 1in margins,
 left-aligned body, Helvetica throughout, curly quotes and em dashes, optional
@@ -45,7 +45,7 @@ Emoji need a color-emoji font. macOS (Apple Color Emoji) and Windows (Segoe UI
 Emoji) ship one; most Linux distros and containers ship none, so emoji render as
 empty boxes (▯). `./setup` auto-installs `fonts-noto-color-emoji` on Linux
 (apt/dnf/pacman/apk, best-effort) and the print CSS falls back through Apple /
-Segoe / Noto emoji families. Set `GSTACK_SKIP_FONTS=1` to skip the install (CI
+Segoe / Noto emoji families. Set `PAYSEC_SKIP_FONTS=1` to skip the install (CI
 without sudo, managed or offline machines).
 
 ## Core patterns
@@ -112,7 +112,7 @@ Fence info-string options:
 ```
 
 A ` ```excalidraw ` fence contains a full .excalidraw scene file (what
-excalidraw.com saves). Authoring NEW diagrams from English is `/diagram`'s
+excalidraw.com saves). Authoring NEW diagrams from English is `/make-diagram`'s
 job — it emits an editable triplet (source, .excalidraw, SVG/PNG) and pairs
 with this skill: embed the `.mmd` source in your markdown, not the PNG.
 

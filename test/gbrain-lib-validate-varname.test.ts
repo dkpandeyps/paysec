@@ -1,5 +1,5 @@
 /**
- * Coverage for #1606 — `_gstack_gbrain_validate_varname` LC_ALL=C pin.
+ * Coverage for #1606 — `_paysec_gbrain_validate_varname` LC_ALL=C pin.
  *
  * Without the `local LC_ALL=C`, macOS default locale (en_US.UTF-8) makes
  * `case "$name" in [A-Z_][A-Z0-9_]*)` match lowercase letters too —
@@ -7,8 +7,8 @@
  * with "not a valid identifier" the caller can't distinguish from other
  * failures.
  *
- * Tests exercise the validator by sourcing bin/gstack-gbrain-lib.sh and
- * calling _gstack_gbrain_validate_varname directly. Asserts:
+ * Tests exercise the validator by sourcing bin/paysec-gbrain-lib.sh and
+ * calling _paysec_gbrain_validate_varname directly. Asserts:
  *   - Valid uppercase identifiers accepted (return 0)
  *   - Lowercase identifiers REJECTED (return 2) — pre-#1606 regression case
  *   - Mixed-case rejected
@@ -22,7 +22,7 @@ import { spawnSync } from "node:child_process";
 import * as path from "node:path";
 
 const ROOT = path.resolve(import.meta.dir, "..");
-const LIB = path.join(ROOT, "bin", "gstack-gbrain-lib.sh");
+const LIB = path.join(ROOT, "bin", "paysec-gbrain-lib.sh");
 
 function runValidator(name: string): { status: number | null } {
   // Source the lib then run the validator against the input. Use bash -c with
@@ -31,7 +31,7 @@ function runValidator(name: string): { status: number | null } {
   // default locale would mask it.
   const result = spawnSync(
     "bash",
-    ["-c", `. "${LIB}"; _gstack_gbrain_validate_varname "$1"`, "bash", name],
+    ["-c", `. "${LIB}"; _paysec_gbrain_validate_varname "$1"`, "bash", name],
     {
       encoding: "utf-8",
       timeout: 5000,
@@ -41,7 +41,7 @@ function runValidator(name: string): { status: number | null } {
   return { status: result.status };
 }
 
-describe("#1606 _gstack_gbrain_validate_varname — LC_ALL=C pin", () => {
+describe("#1606 _paysec_gbrain_validate_varname — LC_ALL=C pin", () => {
   test("ACCEPTS uppercase identifier (canonical happy path)", () => {
     expect(runValidator("DATABASE_URL").status).toBe(0);
   });
@@ -85,7 +85,7 @@ describe("#1606 _gstack_gbrain_validate_varname — LC_ALL=C pin", () => {
     // distinctive value must survive.
     const result = spawnSync(
       "bash",
-      ["-c", `. "${LIB}"; LC_ALL=fr_FR.UTF-8; _gstack_gbrain_validate_varname FOO; echo "$LC_ALL"`],
+      ["-c", `. "${LIB}"; LC_ALL=fr_FR.UTF-8; _paysec_gbrain_validate_varname FOO; echo "$LC_ALL"`],
       {
         encoding: "utf-8",
         timeout: 5000,

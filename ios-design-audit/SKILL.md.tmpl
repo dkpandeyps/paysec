@@ -1,17 +1,17 @@
 ---
-name: ios-design-review
+name: ios-design-audit
 preamble-tier: 3
 version: 1.0.0
 description: |
   Visual design audit for iOS apps on real hardware. Connects to a real
-  iPhone via the same StateServer as /ios-qa, screenshots every screen,
+  iPhone via the same StateServer as /ios-device-qa, screenshots every screen,
   evaluates against Apple HIG, DESIGN.md, and design best practices. Scores
   each dimension 0-10 with "what would make it a 10" framing — mirrors
-  /plan-design-review for browser. For plan-stage design review (before
-  implementation), use /plan-design-review. For live web visual audits, use
-  /design-review.
+  /plan-ux-review for browser. For plan-stage design review (before
+  implementation), use /plan-ux-review. For live web visual audits, use
+  /design-qa.
   Use when asked to "review the iOS design", "audit the iPhone app's
-  visuals", or "design QA the iOS app". (gstack)
+  visuals", or "design QA the iOS app". (paysec)
 voice-triggers:
   - "review the iOS design"
   - "audit the iPhone app's visuals"
@@ -34,13 +34,13 @@ triggers:
 
 Designer's-eye QA on a real iOS device. Finds visual inconsistency, spacing
 issues, hierarchy problems, AI-slop patterns, and accessibility gaps. Rates
-each dimension 0-10. Mirrors `/plan-design-review`'s scoring rubric ported
+each dimension 0-10. Mirrors `/plan-ux-review`'s scoring rubric ported
 to iOS idioms.
 
 ## Connection
 
-Uses the running `gstack-ios-qa-daemon`. If no daemon is running, spawn one
-via the same flow as `/ios-qa` (Phase 0-2). Read-only by default — no
+Uses the running `paysec-ios-qa-daemon`. If no daemon is running, spawn one
+via the same flow as `/ios-device-qa` (Phase 0-2). Read-only by default — no
 mutating calls.
 
 ## Dimensions + scoring
@@ -92,7 +92,7 @@ For each screen in the app, score 0-10 and explain what would push it to 10:
 ## Output
 
 Write a markdown report to
-`~/.gstack/projects/<slug>/ios-design-review-<date>.md`. Include the
+`~/.paysec/projects/<slug>/ios-design-review-<date>.md`. Include the
 screenshots inline. The CEO/eng review skills can reference this report
 when planning UI changes.
 

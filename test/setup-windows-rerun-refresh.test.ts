@@ -5,7 +5,7 @@
  * Mode symlinks). The skill-linking guards `[ -L "$target" ] || [ ! -e
  * "$target" ]` in link_codex_skill_dirs / link_factory_skill_dirs /
  * link_opencode_skill_dirs / create_agents_sidecar therefore skipped every
- * re-run: `./setup --host codex` reported "gstack ready" but never refreshed
+ * re-run: `./setup --host codex` reported "paysec ready" but never refreshed
  * an already-installed SKILL.md after `git pull`. The fix bypasses the guard
  * when IS_WINDOWS=1 — _link_or_copy rm -rf's the destination first, so the
  * copy refreshes in place.
@@ -56,7 +56,7 @@ describe('setup: Windows re-run refresh — static guard sites (#2444)', () => {
   });
 
   // #2142 ownership census: the Windows bypass rm -rf's real dirs, so every
-  // skill-dir installer must gate the replacement on provable gstack
+  // skill-dir installer must gate the replacement on provable paysec
   // ownership, and every sidecar/runtime-root installer must refuse a
   // user-owned root. A bypass without its gate deletes user data.
   test.each([
@@ -78,53 +78,53 @@ describe('setup: Windows re-run refresh — static guard sites (#2444)', () => {
 });
 
 describe('setup: Windows refresh ownership gate — behavior fixture (#2142)', () => {
-  test("IS_WINDOWS=1: a user's own real dir on a gstack* name survives; a bannered install refreshes", () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-owned-'));
+  test("IS_WINDOWS=1: a user's own real dir on a paysec* name survives; a bannered install refreshes", () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-owned-'));
     try {
-      const fake = path.join(tmp, 'gstack');
+      const fake = path.join(tmp, 'paysec');
       const skills = path.join(tmp, 'skills');
       const banner = '<!-- AUTO-GENERATED from SKILL.md.tmpl - DO NOT EDIT DIRECTLY -->\n';
       // Generated tree ships two skills.
-      for (const name of ['gstack-demo', 'gstack-notes']) {
+      for (const name of ['paysec-demo', 'paysec-notes']) {
         const d = path.join(fake, '.agents', 'skills', name);
         fs.mkdirSync(d, { recursive: true });
         fs.writeFileSync(path.join(d, 'SKILL.md'), `${banner}upstream-v2\n`);
       }
       fs.mkdirSync(skills, { recursive: true });
-      // gstack-demo: a prior gstack install (bannered) — must refresh.
-      fs.mkdirSync(path.join(skills, 'gstack-demo'), { recursive: true });
-      fs.writeFileSync(path.join(skills, 'gstack-demo', 'SKILL.md'), `${banner}installed-v1\n`);
-      // gstack-notes: the USER'S own hand-written skill — must survive.
-      fs.mkdirSync(path.join(skills, 'gstack-notes'), { recursive: true });
-      fs.writeFileSync(path.join(skills, 'gstack-notes', 'SKILL.md'), '# my own notes\n');
+      // paysec-demo: a prior paysec install (bannered) — must refresh.
+      fs.mkdirSync(path.join(skills, 'paysec-demo'), { recursive: true });
+      fs.writeFileSync(path.join(skills, 'paysec-demo', 'SKILL.md'), `${banner}installed-v1\n`);
+      // paysec-notes: the USER'S own hand-written skill — must survive.
+      fs.mkdirSync(path.join(skills, 'paysec-notes'), { recursive: true });
+      fs.writeFileSync(path.join(skills, 'paysec-notes', 'SKILL.md'), '# my own notes\n');
 
       const r = runInstaller(
         '1',
         ['_owned_for_windows_refresh', 'link_codex_skill_dirs'],
-        `link_codex_skill_dirs "${tmp}/gstack" "${skills}"`,
+        `link_codex_skill_dirs "${tmp}/paysec" "${skills}"`,
       );
       expect(r.status).toBe(0);
-      expect(fs.readFileSync(path.join(skills, 'gstack-demo', 'SKILL.md'), 'utf-8')).toContain('upstream-v2');
-      expect(fs.readFileSync(path.join(skills, 'gstack-notes', 'SKILL.md'), 'utf-8')).toBe('# my own notes\n');
+      expect(fs.readFileSync(path.join(skills, 'paysec-demo', 'SKILL.md'), 'utf-8')).toContain('upstream-v2');
+      expect(fs.readFileSync(path.join(skills, 'paysec-notes', 'SKILL.md'), 'utf-8')).toBe('# my own notes\n');
       expect(r.stderr).toContain('left in place');
-      expect(r.stderr).toContain('gstack-notes');
+      expect(r.stderr).toContain('paysec-notes');
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
 
   test('IS_WINDOWS=1: create_agents_sidecar refuses a user-owned root and writes nothing into it', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-owned-sidecar-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-owned-sidecar-'));
     try {
-      const fake = path.join(tmp, 'gstack');
+      const fake = path.join(tmp, 'paysec');
       fs.mkdirSync(path.join(fake, 'bin'), { recursive: true });
       fs.writeFileSync(path.join(fake, 'bin', 'tool.sh'), 'v1\n');
-      // The user's own skill squats on .agents/skills/gstack.
-      const root = path.join(fake, '.agents', 'skills', 'gstack');
+      // The user's own skill squats on .agents/skills/paysec.
+      const root = path.join(fake, '.agents', 'skills', 'paysec');
       fs.mkdirSync(root, { recursive: true });
       fs.writeFileSync(path.join(root, 'SKILL.md'), '# hand-written\n');
 
-      const vars = `SOURCE_GSTACK_DIR="${fake}"`;
+      const vars = `SOURCE_PAYSEC_DIR="${fake}"`;
       const r = runInstaller(
         '1',
         ['_sidecar_root_user_owned', 'create_agents_sidecar'],
@@ -171,11 +171,11 @@ function runInstaller(
 
 describe('setup: Windows re-run refresh — behavior fixture (#2444)', () => {
   test('IS_WINDOWS=1: link_codex_skill_dirs refreshes an already-installed skill', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-rerun-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-rerun-'));
     try {
-      const fake = path.join(tmp, 'gstack');
+      const fake = path.join(tmp, 'paysec');
       const skills = path.join(tmp, 'skills');
-      const demo = path.join(fake, '.agents', 'skills', 'gstack-demo');
+      const demo = path.join(fake, '.agents', 'skills', 'paysec-demo');
       fs.mkdirSync(demo, { recursive: true });
       fs.mkdirSync(skills, { recursive: true });
       // Generated SKILL.md files always carry the banner — the #2142
@@ -186,9 +186,9 @@ describe('setup: Windows re-run refresh — behavior fixture (#2444)', () => {
       // First run: installs the copy.
       let r = runInstaller('1', ['link_codex_skill_dirs'], `link_codex_skill_dirs "${fake}" "${skills}"`);
       expect(r.status).toBe(0);
-      const installed = path.join(skills, 'gstack-demo', 'SKILL.md');
+      const installed = path.join(skills, 'paysec-demo', 'SKILL.md');
       expect(fs.readFileSync(installed, 'utf-8')).toBe(`${banner}v1-original\n`);
-      expect(fs.lstatSync(path.join(skills, 'gstack-demo')).isSymbolicLink()).toBe(false);
+      expect(fs.lstatSync(path.join(skills, 'paysec-demo')).isSymbolicLink()).toBe(false);
 
       // Upstream ships a change (the git pull).
       fs.writeFileSync(path.join(demo, 'SKILL.md'), `${banner}v2-UPDATED\n`);
@@ -203,18 +203,18 @@ describe('setup: Windows re-run refresh — behavior fixture (#2444)', () => {
   });
 
   test('IS_WINDOWS=1: create_agents_sidecar refreshes copied runtime assets', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-rerun-sidecar-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-rerun-sidecar-'));
     try {
-      const fake = path.join(tmp, 'gstack');
+      const fake = path.join(tmp, 'paysec');
       fs.mkdirSync(path.join(fake, 'bin'), { recursive: true });
       fs.writeFileSync(path.join(fake, 'bin', 'tool.sh'), 'v1\n');
       fs.writeFileSync(path.join(fake, 'ETHOS.md'), 'ethos-v1\n');
 
-      const vars = `SOURCE_GSTACK_DIR="${fake}"`;
+      const vars = `SOURCE_PAYSEC_DIR="${fake}"`;
       let r = runInstaller('1', ['create_agents_sidecar'], `create_agents_sidecar "${fake}"`, vars);
       expect(r.status).toBe(0);
-      const sidecarBin = path.join(fake, '.agents', 'skills', 'gstack', 'bin', 'tool.sh');
-      const sidecarEthos = path.join(fake, '.agents', 'skills', 'gstack', 'ETHOS.md');
+      const sidecarBin = path.join(fake, '.agents', 'skills', 'paysec', 'bin', 'tool.sh');
+      const sidecarEthos = path.join(fake, '.agents', 'skills', 'paysec', 'ETHOS.md');
       expect(fs.readFileSync(sidecarBin, 'utf-8')).toBe('v1\n');
       expect(fs.readFileSync(sidecarEthos, 'utf-8')).toBe('ethos-v1\n');
 
@@ -233,10 +233,10 @@ describe('setup: Windows re-run refresh — behavior fixture (#2444)', () => {
   test('IS_WINDOWS=1: nested gitignored build output does NOT survive the runtime-asset copy (P5)', () => {
     // The exclusion list in _link_skill_runtime_assets filters direct
     // children only; cp -R swept NESTED node_modules/.build/dist too
-    // (concrete: ios-qa/scripts/gen-accessors-tool/.build, 252MB). The
+    // (concrete: ios-device-qa/scripts/gen-accessors-tool/.build, 252MB). The
     // Windows branch prunes them post-copy; real asset files at every level
     // survive.
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-rerun-prune-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-rerun-prune-'));
     try {
       const src = path.join(tmp, 'skill-src');
       const dst = path.join(tmp, 'skill-dst');
@@ -279,7 +279,7 @@ describe('setup: Windows re-run refresh — behavior fixture (#2444)', () => {
     // so the symlink assertion is false by platform, not by regression. The
     // Unix lanes (macOS dev boxes + Linux CI) own this case.
     if (process.platform === 'win32') return;
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-rerun-prune-unix-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-rerun-prune-unix-'));
     try {
       const src = path.join(tmp, 'skill-src');
       const dst = path.join(tmp, 'skill-dst');
@@ -300,19 +300,19 @@ describe('setup: Windows re-run refresh — behavior fixture (#2444)', () => {
     }
   });
 
-  test('IS_WINDOWS=1: the gstack sidecar dir is still skipped by the skill loop', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-rerun-skip-'));
+  test('IS_WINDOWS=1: the paysec sidecar dir is still skipped by the skill loop', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-rerun-skip-'));
     try {
-      const fake = path.join(tmp, 'gstack');
+      const fake = path.join(tmp, 'paysec');
       const skills = path.join(tmp, 'skills');
-      const sidecar = path.join(fake, '.agents', 'skills', 'gstack');
+      const sidecar = path.join(fake, '.agents', 'skills', 'paysec');
       fs.mkdirSync(sidecar, { recursive: true });
       fs.mkdirSync(skills, { recursive: true });
       fs.writeFileSync(path.join(sidecar, 'SKILL.md'), 'sidecar\n');
 
       const r = runInstaller('1', ['link_codex_skill_dirs'], `link_codex_skill_dirs "${fake}" "${skills}"`);
       expect(r.status).toBe(0);
-      expect(fs.existsSync(path.join(skills, 'gstack'))).toBe(false);
+      expect(fs.existsSync(path.join(skills, 'paysec'))).toBe(false);
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
@@ -326,18 +326,18 @@ describe.skipIf(process.platform === 'win32')(
   'setup: Unix path unchanged by the #2444 bypass',
   () => {
     test('IS_WINDOWS=0: installs a symlink and re-runs still refresh through it', () => {
-      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-rerun-unix-'));
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-rerun-unix-'));
       try {
-        const fake = path.join(tmp, 'gstack');
+        const fake = path.join(tmp, 'paysec');
         const skills = path.join(tmp, 'skills');
-        const demo = path.join(fake, '.agents', 'skills', 'gstack-demo');
+        const demo = path.join(fake, '.agents', 'skills', 'paysec-demo');
         fs.mkdirSync(demo, { recursive: true });
         fs.mkdirSync(skills, { recursive: true });
         fs.writeFileSync(path.join(demo, 'SKILL.md'), 'v1-original\n');
 
         let r = runInstaller('0', ['link_codex_skill_dirs'], `link_codex_skill_dirs "${fake}" "${skills}"`);
         expect(r.status).toBe(0);
-        const target = path.join(skills, 'gstack-demo');
+        const target = path.join(skills, 'paysec-demo');
         expect(fs.lstatSync(target).isSymbolicLink()).toBe(true);
 
         // A symlink serves updates without any re-run at all…

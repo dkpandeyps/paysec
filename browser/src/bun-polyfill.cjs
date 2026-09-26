@@ -153,10 +153,10 @@ globalThis.Bun = {
     // generous: DPAPI outputs are tiny, tasklist is <1 KB, and the
     // browser-skill consumer has its own 1 MB readCapped. Once the cap is
     // reached we keep draining the pipe (so the child never blocks) but
-    // discard further bytes. Override via GSTACK_SPAWN_MAX_BUFFER (bytes).
+    // discard further bytes. Override via PAYSEC_SPAWN_MAX_BUFFER (bytes).
     const MAX_BUFFER = Math.max(
       0,
-      parseInt(process.env.GSTACK_SPAWN_MAX_BUFFER || '', 10) || 16 * 1024 * 1024,
+      parseInt(process.env.PAYSEC_SPAWN_MAX_BUFFER || '', 10) || 16 * 1024 * 1024,
     );
     const drain = (stream) => {
       if (!stream) return { done: Promise.resolve(), chunks: [], truncated: false };

@@ -14,12 +14,12 @@ let slugDir: string;
 function run(input: string, opts: { expectFail?: boolean } = {}): { stdout: string; exitCode: number } {
   const execOpts: ExecSyncOptionsWithStringEncoding = {
     cwd: ROOT,
-    env: { ...process.env, GSTACK_HOME: tmpDir },
+    env: { ...process.env, PAYSEC_HOME: tmpDir },
     encoding: 'utf-8',
     timeout: 10000,
   };
   try {
-    const stdout = execSync(`${BIN}/gstack-review-log '${input.replace(/'/g, "'\\''")}'`, execOpts).trim();
+    const stdout = execSync(`${BIN}/paysec-review-log '${input.replace(/'/g, "'\\''")}'`, execOpts).trim();
     return { stdout, exitCode: 0 };
   } catch (e: any) {
     if (opts.expectFail) {
@@ -30,8 +30,8 @@ function run(input: string, opts: { expectFail?: boolean } = {}): { stdout: stri
 }
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-revlog-'));
-  // gstack-review-log uses gstack-slug which needs a git repo — create the projects dir
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-revlog-'));
+  // paysec-review-log uses paysec-slug which needs a git repo — create the projects dir
   // with a predictable slug by pre-creating the directory structure
   slugDir = path.join(tmpDir, 'projects');
   fs.mkdirSync(slugDir, { recursive: true });
@@ -41,9 +41,9 @@ afterEach(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
-describe('gstack-review-log', () => {
+describe('paysec-review-log', () => {
   test('appends valid JSON to review JSONL file', () => {
-    const input = '{"skill":"plan-eng-review","status":"clean"}';
+    const input = '{"skill":"plan-tech-review","status":"clean"}';
     const result = run(input);
     expect(result.exitCode).toBe(0);
 
@@ -56,7 +56,7 @@ describe('gstack-review-log', () => {
 
     const content = fs.readFileSync(path.join(projectDir, jsonlFiles[0]), 'utf-8').trim();
     const parsed = JSON.parse(content);
-    expect(parsed.skill).toBe('plan-eng-review');
+    expect(parsed.skill).toBe('plan-tech-review');
     expect(parsed.status).toBe('clean');
   });
 
@@ -111,15 +111,15 @@ describe('gstack-review-log', () => {
   });
 
   test('append still succeeds outside a git repo (binding fields omitted)', () => {
-    const nonGit = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-nongit-'));
+    const nonGit = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-nongit-'));
     try {
       const execOpts: ExecSyncOptionsWithStringEncoding = {
         cwd: nonGit,
-        env: { ...process.env, GSTACK_HOME: tmpDir },
+        env: { ...process.env, PAYSEC_HOME: tmpDir },
         encoding: 'utf-8',
         timeout: 10000,
       };
-      execSync(`${BIN}/gstack-review-log '{"skill":"review","status":"clean"}'`, execOpts);
+      execSync(`${BIN}/paysec-review-log '{"skill":"review","status":"clean"}'`, execOpts);
       // A record landed somewhere under projects/ without a wtree stamp.
       const found: string[] = [];
       const walk = (d: string) => {
@@ -141,9 +141,9 @@ describe('gstack-review-log', () => {
   });
 });
 
-describe('gstack-wtree', () => {
+describe('paysec-wtree', () => {
   function withScratchRepo(fn: (repoDir: string, wtree: () => string) => void) {
-    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-wtree-'));
+    const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-wtree-'));
     try {
       const git = (args: string) => gitIn(repoDir, args);
       git('init -q -b main');
@@ -151,7 +151,7 @@ describe('gstack-wtree', () => {
       fs.writeFileSync(path.join(repoDir, '.gitignore'), 'scratch.txt\n');
       git('add a.txt .gitignore');
       git('commit -q -m init');
-      const wtree = () => execSync(`${BIN}/gstack-wtree`, { cwd: repoDir, encoding: 'utf-8', timeout: 10000 }).trim();
+      const wtree = () => execSync(`${BIN}/paysec-wtree`, { cwd: repoDir, encoding: 'utf-8', timeout: 10000 }).trim();
       fn(repoDir, wtree);
     } finally {
       fs.rmSync(repoDir, { recursive: true, force: true });
@@ -183,20 +183,20 @@ describe('gstack-wtree', () => {
   });
 
   test('exits non-zero outside a git repo', () => {
-    const nonGit = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-wtree-nongit-'));
+    const nonGit = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-wtree-nongit-'));
     try {
-      expect(() => execSync(`${BIN}/gstack-wtree`, { cwd: nonGit, timeout: 10000, stdio: 'pipe' })).toThrow();
+      expect(() => execSync(`${BIN}/paysec-wtree`, { cwd: nonGit, timeout: 10000, stdio: 'pipe' })).toThrow();
     } finally {
       fs.rmSync(nonGit, { recursive: true, force: true });
     }
   });
 });
 
-describe('gstack-review-read', () => {
+describe('paysec-review-read', () => {
   test('emits ---WTREE---, ---TREE--- and ---DIRTY--- sections', () => {
-    const out = execSync(`${BIN}/gstack-review-read`, {
+    const out = execSync(`${BIN}/paysec-review-read`, {
       cwd: ROOT,
-      env: { ...process.env, GSTACK_HOME: tmpDir },
+      env: { ...process.env, PAYSEC_HOME: tmpDir },
       encoding: 'utf-8',
       timeout: 10000,
     });

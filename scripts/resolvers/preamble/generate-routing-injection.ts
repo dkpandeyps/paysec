@@ -6,7 +6,7 @@ Check if a CLAUDE.md file exists in the project root. If it does not exist, crea
 
 Use AskUserQuestion:
 
-> gstack works best when your project's CLAUDE.md includes skill routing rules.
+> paysec works best when your project's CLAUDE.md includes skill routing rules.
 
 Options:
 - A) Add routing rules to CLAUDE.md (recommended)
@@ -21,24 +21,24 @@ If A: Append this section to the end of CLAUDE.md:
 When the user's request matches an available skill, invoke it via the Skill tool. When in doubt, invoke the skill.
 
 Key routing rules:
-- Product ideas/brainstorming → invoke /office-hours
-- Strategy/scope → invoke /plan-ceo-review
-- Architecture → invoke /plan-eng-review
-- Design system/plan review → invoke /design-consultation or /plan-design-review
-- Full review pipeline → invoke /autoplan
-- Bugs/errors → invoke /investigate
-- QA/testing site behavior → invoke /qa or /qa-only
-- Code review/diff check → invoke /review
-- Visual polish → invoke /design-review
-- Ship/deploy/PR → invoke /ship or /land-and-deploy
-- Save progress → invoke /context-save
-- Resume context → invoke /context-restore
-- Author a backlog-ready spec/issue → invoke /spec
+- Product ideas/brainstorming → invoke /idea-review
+- Strategy/scope → invoke /plan-business-review
+- Architecture → invoke /plan-tech-review
+- Design system/plan review → invoke /design-system or /plan-ux-review
+- Full review pipeline → invoke /auto-plan-review
+- Bugs/errors → invoke /debug-root-cause
+- QA/testing site behavior → invoke /qa-fix or /qa-report
+- Code review/diff check → invoke /pr-review
+- Visual polish → invoke /design-qa
+- Ship/deploy/PR → invoke /ship-pr or /merge-and-deploy
+- Save progress → invoke /save-context
+- Resume context → invoke /restore-context
+- Author a backlog-ready spec/issue → invoke /write-spec
 \`\`\`
 
-Then commit the change: \`git add CLAUDE.md && git commit -m "chore: add gstack skill routing rules to CLAUDE.md"\`
+Then commit the change: \`git add CLAUDE.md && git commit -m "chore: add paysec skill routing rules to CLAUDE.md"\`
 
-If B: run \`${ctx.paths.binDir}/gstack-config set routing_declined true\` and say they can re-enable with \`gstack-config set routing_declined false\`.
+If B: run \`${ctx.paths.binDir}/paysec-config set routing_declined true\` and say they can re-enable with \`paysec-config set routing_declined false\`.
 
 This only happens once per project. Skip if \`HAS_ROUTING\` is \`yes\` or \`ROUTING_DECLINED\` is \`true\`.`;
 }

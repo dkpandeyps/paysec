@@ -121,7 +121,7 @@ describe('Serve HTTP endpoints', () => {
     expect(res.status).toBe(200);
     const html = await res.text();
     // No more per-origin URL injection; board JS uses relative paths.
-    expect(html).not.toContain('__GSTACK_SERVER_URL');
+    expect(html).not.toContain('__PAYSEC_SERVER_URL');
     expect(html).not.toContain(baseUrl);
     // Board JS calls relative endpoints so the same HTML works at / and at
     // /boards/<id>/ (daemon mode).

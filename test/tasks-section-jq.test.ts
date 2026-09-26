@@ -1,5 +1,5 @@
 /**
- * Regression pin for #2018: /autoplan Phase 4's task aggregator emitted zero
+ * Regression pin for #2018: /auto-plan-review Phase 4's task aggregator emitted zero
  * tasks on every run, forever, for everyone.
  *
  * Root cause: the branch+commit filter in scripts/resolvers/tasks-section.ts

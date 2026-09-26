@@ -1,5 +1,5 @@
 ---
-name: design-shotgun
+name: design-variants
 preamble-tier: 2
 version: 1.0.0
 description: |
@@ -8,7 +8,7 @@ description: |
   run anytime. Use when: "explore designs", "show me options", "design variants",
   "visual brainstorm", or "I don't like how this looks".
   Proactively suggest when the user describes a UI feature but hasn't seen
-  what it could look like. (gstack)
+  what it could look like. (paysec)
 triggers:
   - explore design variants
   - show me design options
@@ -25,7 +25,7 @@ gbrain:
   context_queries:
     - id: prior-approved-variants
       kind: filesystem
-      glob: "~/.gstack/projects/{repo_slug}/designs/*/approved.json"
+      glob: "~/.paysec/projects/{repo_slug}/designs/*/approved.json"
       sort: mtime_desc
       limit: 5
       render_as: "## Prior approved design variants for this project"
@@ -36,7 +36,7 @@ gbrain:
       render_as: "## DESIGN.md (project design system)"
     - id: recent-design-docs
       kind: filesystem
-      glob: "~/.gstack/projects/{repo_slug}/*-design-*.md"
+      glob: "~/.paysec/projects/{repo_slug}/*-design-*.md"
       sort: mtime_desc
       limit: 3
       render_as: "## Recent design docs"
@@ -44,7 +44,7 @@ gbrain:
 
 {{PREAMBLE}}
 
-# /design-shotgun: Visual Design Exploration
+# /design-variants: Visual Design Exploration
 
 You are a design brainstorming partner. Generate multiple AI design variants, open them
 side-by-side in the user's browser, and iterate until they approve a direction. This is
@@ -59,9 +59,9 @@ visual brainstorming, not a review process.
 Check for prior design exploration sessions for this project:
 
 ```bash
-eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
+eval "$(~/.claude/skills/paysec/bin/paysec-slug 2>/dev/null)"
 setopt +o nomatch 2>/dev/null || true
-_PREV=$(find ~/.gstack/projects/$SLUG/designs/ -name "approved.json" -maxdepth 2 2>/dev/null | sort -r | head -5)
+_PREV=$(find ~/.paysec/projects/$SLUG/designs/ -name "approved.json" -maxdepth 2 2>/dev/null | sort -r | head -5)
 [ -n "$_PREV" ] && echo "PREVIOUS_SESSIONS_FOUND" || echo "NO_PREVIOUS_SESSIONS"
 echo "$_PREV"
 ```
@@ -81,14 +81,14 @@ If B: proceed to Step 1.
 
 **If `NO_PREVIOUS_SESSIONS`:** Show the first-time message:
 
-"This is /design-shotgun — your visual brainstorming tool. I'll generate multiple AI
+"This is /design-variants — your visual brainstorming tool. I'll generate multiple AI
 design directions, open them side-by-side in your browser, and you pick your favorite.
-You can run /design-shotgun anytime during development to explore design directions for
+You can run /design-variants anytime during development to explore design directions for
 any part of your product. Let's start."
 
 ## Step 1: Context Gathering
 
-When design-shotgun is invoked from plan-design-review, design-consultation, or another
+When design-variants is invoked from plan-ux-review, design-system, or another
 skill, the calling skill has already gathered context. Check for `$_DESIGN_BRIEF` — if
 it's set, skip to Step 2.
 
@@ -113,12 +113,12 @@ ls src/ app/ pages/ components/ 2>/dev/null | head -30
 
 ```bash
 setopt +o nomatch 2>/dev/null || true
-ls ~/.gstack/projects/$SLUG/*office-hours* 2>/dev/null | head -5
+ls ~/.paysec/projects/$SLUG/*idea-review* 2>/dev/null | head -5
 ```
 
 If DESIGN.md exists, tell the user: "I'll follow your design system in DESIGN.md by
 default. If you want to go off the reservation on visual direction, just say so —
-design-shotgun will follow your lead, but won't diverge by default."
+design-variants will follow your lead, but won't diverge by default."
 
 **Check for a live site to screenshot** (for the "I don't like THIS" use case):
 
@@ -131,7 +131,7 @@ like how this looks," screenshot the current page and use `$D evolve` instead of
 `$D variants` to generate improvement variants from the existing design.
 
 **AskUserQuestion with pre-filled context:** Pre-fill what you inferred from the codebase,
-DESIGN.md, and office-hours output. Then ask for what's missing. Frame as ONE question
+DESIGN.md, and idea-review output. Then ask for what's missing. Frame as ONE question
 covering all gaps:
 
 > "Here's what I know: [pre-filled context]. I'm missing [gaps].
@@ -145,7 +145,7 @@ Two rounds max of context gathering, then proceed with what you have and note as
 Read both the persistent taste profile (cross-session) AND the per-session approved
 designs to bias generation toward the user's demonstrated taste.
 
-**Persistent taste profile (v1 schema at `~/.gstack/projects/$SLUG/taste-profile.json`):**
+**Persistent taste profile (v1 schema at `~/.paysec/projects/$SLUG/taste-profile.json`):**
 
 {{TASTE_PROFILE}}
 
@@ -153,7 +153,7 @@ designs to bias generation toward the user's demonstrated taste.
 
 ```bash
 setopt +o nomatch 2>/dev/null || true
-_TASTE=$(find ~/.gstack/projects/$SLUG/designs/ -name "approved.json" -maxdepth 2 2>/dev/null | sort -r | head -10)
+_TASTE=$(find ~/.paysec/projects/$SLUG/designs/ -name "approved.json" -maxdepth 2 2>/dev/null | sort -r | head -10)
 ```
 
 If prior sessions exist, read each `approved.json` and extract patterns from the
@@ -163,9 +163,9 @@ approved.json files add the specific recent approval context.
 
 Limit to last 10 sessions. Try/catch JSON parse on each (skip corrupted files).
 
-**Updating taste profile after a design-shotgun session:** When the user picks a
-variant, call `{{BIN_DIR}}/gstack-taste-update approved <variant-path>`. When they
-explicitly reject a variant, call `{{BIN_DIR}}/gstack-taste-update rejected <variant-path>`.
+**Updating taste profile after a design-variants session:** When the user picks a
+variant, call `{{BIN_DIR}}/paysec-taste-update approved <variant-path>`. When they
+explicitly reject a variant, call `{{BIN_DIR}}/paysec-taste-update rejected <variant-path>`.
 The CLI handles schema migration from approved.json, decay, and conflict flagging.
 
 ## Step 3: Generate Variants
@@ -173,8 +173,8 @@ The CLI handles schema migration from approved.json, decay, and conflict flaggin
 Set up the output directory:
 
 ```bash
-eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
-_DESIGN_DIR="$HOME/.gstack/projects/$SLUG/designs/<screen-name>-$(date +%Y%m%d)"
+eval "$(~/.claude/skills/paysec/bin/paysec-slug 2>/dev/null)"
+_DESIGN_DIR="$HOME/.paysec/projects/$SLUG/designs/<screen-name>-$(date +%Y%m%d)"
 mkdir -p "$_DESIGN_DIR"
 echo "DESIGN_DIR: $_DESIGN_DIR"
 ```
@@ -270,7 +270,7 @@ For the evolve path, replace step 1 with:
 {$D path} evolve --screenshot {_DESIGN_DIR}/current.png --brief "{brief}" --output /tmp/variant-{letter}.png
 ```
 
-**Why /tmp/ then cp?** In observed sessions, `$D generate --output ~/.gstack/...`
+**Why /tmp/ then cp?** In observed sessions, `$D generate --output ~/.paysec/...`
 failed with "The operation was aborted" while `--output /tmp/...` succeeded. This is
 a sandbox restriction. Always generate to `/tmp/` first, then `cp`.
 
@@ -328,14 +328,14 @@ If standalone, offer next steps via AskUserQuestion:
 
 > "Design direction locked in. What's next?
 > A) Iterate more — refine the approved variant with specific feedback
-> B) Finalize — generate production Pretext-native HTML/CSS with /design-html
+> B) Finalize — generate production Pretext-native HTML/CSS with /design-to-html
 > C) Save to plan — add this as an approved mockup reference in the current plan
 > D) Done — I'll use this later"
 
 ## Important Rules
 
 1. **Never save to `.context/`, `docs/designs/`, or `/tmp/`.** All design artifacts go
-   to `~/.gstack/projects/$SLUG/designs/`. This is enforced. See DESIGN_SETUP above.
+   to `~/.paysec/projects/$SLUG/designs/`. This is enforced. See DESIGN_SETUP above.
 2. **Show variants inline before opening the board.** The user should see designs
    immediately in their terminal. The browser board is for detailed feedback.
 3. **Confirm feedback before saving.** Always summarize what you understood and verify.

@@ -1,13 +1,13 @@
-# Spike: Codex session storage format for plan-tune cathedral
+# Spike: Codex session storage format for tune-questions cathedral
 
 **Status:** complete (2026-05-27)
 **Surfaces:** D5 (Codex import parses structured files, not regex)
-**Downstream consumers:** T9 (gstack-codex-session-import)
+**Downstream consumers:** T9 (paysec-codex-session-import)
 
 ## Question this spike answers
 
 What's the actual on-disk format of Codex sessions, and how do we recover
-AskUserQuestion-shaped events from it for `gstack-codex-session-import`?
+AskUserQuestion-shaped events from it for `paysec-codex-session-import`?
 
 ## Storage layout
 
@@ -59,7 +59,7 @@ embedded in the `session_meta` event. CLI version recorded.
 ## Critical finding: Codex has no `AskUserQuestion` tool
 
 Codex doesn't surface AskUserQuestion as a tool call in `response_item`
-stream. Gstack skills running on Codex emit AskUserQuestion-shaped
+stream. Paysec skills running on Codex emit AskUserQuestion-shaped
 Decision Briefs as plain prose inside `agent_message` events (the
 `AskUserQuestion Format` from preamble). The user's answer comes back in
 the next `user_message`.
@@ -74,12 +74,12 @@ tool calls):
   the D-numbered Decision Brief pattern, then match against the
   subsequent `user_message` for the answer.
 
-## Recovery strategy for `gstack-codex-session-import`
+## Recovery strategy for `paysec-codex-session-import`
 
 **Two-tier extraction:**
 
 1. **Marker-first (D18 mechanism).** Search `agent_message` text for the
-   `<gstack-qid:foo-bar>` marker. If present, we have an exact question_id
+   `<paysec-qid:foo-bar>` marker. If present, we have an exact question_id
    and can reliably recover. (Will work once T14 adds markers to the top
    10 registry questions and Codex starts emitting them via the
    host-aware preamble path.)
@@ -97,7 +97,7 @@ tool calls):
 
 ## Schema we'll write to question-log.jsonl from Codex import
 
-Per existing `bin/gstack-question-log` schema, augmented with:
+Per existing `bin/paysec-question-log` schema, augmented with:
 - `source: "codex-import-marker"` (when qid marker found)
 - `source: "codex-import-pattern"` (when fallback regex used)
 - `codex_session_id` (UUID from session_meta)
@@ -129,7 +129,7 @@ for AUQ extraction.** Sessions JSONL is authoritative.
 ## Project-slug derivation
 
 From `session_meta.payload.cwd` — derive via the existing
-`bin/gstack-slug` logic on the cwd path. Conductor worktrees have their
+`bin/paysec-slug` logic on the cwd path. Conductor worktrees have their
 own slug naming convention encoded in cwd; the bin already handles this.
 
 ## Versioning safety

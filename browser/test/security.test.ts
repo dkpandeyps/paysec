@@ -1,5 +1,5 @@
 /**
- * Unit tests for browse/src/security.ts — pure-string operations that must
+ * Unit tests for browser/src/security.ts — pure-string operations that must
  * behave deterministically in the compiled browse binary AND in the
  * security sidecar subprocess. No ML, no network, no subprocess spawning.
  *
@@ -239,7 +239,7 @@ describe('canary', () => {
 
 
 // NOTE (#2557): the session-state + getStatus tests that lived here wrote
-// REAL fixture data into ~/.gstack/security/session-state.json — after which
+// REAL fixture data into ~/.paysec/security/session-state.json — after which
 // /health reported a false-green 'protected' indefinitely. The surfaces they
 // covered (SessionState, read/writeSessionState, getStatus, the /health
 // security field, the sidepanel SEC shield) were dead since the PTY terminal

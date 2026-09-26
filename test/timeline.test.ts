@@ -13,12 +13,12 @@ let slugDir: string;
 function runLog(input: string, opts: { expectFail?: boolean } = {}): { stdout: string; exitCode: number } {
   const execOpts: ExecSyncOptionsWithStringEncoding = {
     cwd: ROOT,
-    env: { ...process.env, GSTACK_HOME: tmpDir },
+    env: { ...process.env, PAYSEC_HOME: tmpDir },
     encoding: 'utf-8',
     timeout: 15000,
   };
   try {
-    const stdout = execSync(`${BIN}/gstack-timeline-log '${input.replace(/'/g, "'\\''")}'`, execOpts).trim();
+    const stdout = execSync(`${BIN}/paysec-timeline-log '${input.replace(/'/g, "'\\''")}'`, execOpts).trim();
     return { stdout, exitCode: 0 };
   } catch (e: any) {
     if (opts.expectFail) {
@@ -31,12 +31,12 @@ function runLog(input: string, opts: { expectFail?: boolean } = {}): { stdout: s
 function runRead(args: string = ''): string {
   const execOpts: ExecSyncOptionsWithStringEncoding = {
     cwd: ROOT,
-    env: { ...process.env, GSTACK_HOME: tmpDir },
+    env: { ...process.env, PAYSEC_HOME: tmpDir },
     encoding: 'utf-8',
     timeout: 15000,
   };
   try {
-    return execSync(`${BIN}/gstack-timeline-read ${args}`, execOpts).trim();
+    return execSync(`${BIN}/paysec-timeline-read ${args}`, execOpts).trim();
   } catch {
     return '';
   }
@@ -45,19 +45,19 @@ function runRead(args: string = ''): string {
 function runReadArgs(args: string[] = []): string {
   const execOpts: ExecSyncOptionsWithStringEncoding = {
     cwd: ROOT,
-    env: { ...process.env, GSTACK_HOME: tmpDir },
+    env: { ...process.env, PAYSEC_HOME: tmpDir },
     encoding: 'utf-8',
     timeout: 15000,
   };
   try {
-    return execFileSync(path.join(BIN, 'gstack-timeline-read'), args, execOpts).trim();
+    return execFileSync(path.join(BIN, 'paysec-timeline-read'), args, execOpts).trim();
   } catch {
     return '';
   }
 }
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-timeline-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-timeline-'));
   slugDir = path.join(tmpDir, 'projects');
   fs.mkdirSync(slugDir, { recursive: true });
 });
@@ -73,7 +73,7 @@ function findTimelineFile(): string | null {
   return fs.existsSync(f) ? f : null;
 }
 
-describe('gstack-timeline-log', () => {
+describe('paysec-timeline-log', () => {
   test('accepts valid JSON and appends to timeline.jsonl', () => {
     const input = '{"skill":"review","event":"started","branch":"main"}';
     const result = runLog(input);
@@ -135,7 +135,7 @@ describe('gstack-timeline-log', () => {
   });
 });
 
-describe('gstack-timeline-read', () => {
+describe('paysec-timeline-read', () => {
   test('returns empty output for missing file (exit 0)', () => {
     const output = runRead();
     expect(output).toBe('');

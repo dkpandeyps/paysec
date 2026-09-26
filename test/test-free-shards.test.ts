@@ -140,7 +140,7 @@ describe('test-free-shards: sharding', () => {
     const expected = stableHash(target) % 7;
     const alone = assignFilesToShards([target], 7);
     const crowded = assignFilesToShards(
-      [target, 'test/a.test.ts', 'test/b.test.ts', 'test/c.test.ts', 'test/d.test.ts', 'browse/test/e.test.ts'],
+      [target, 'test/a.test.ts', 'test/b.test.ts', 'test/c.test.ts', 'test/d.test.ts', 'browser/test/e.test.ts'],
       7,
     );
     expect(alone.findIndex((s) => s.includes(target))).toBe(expected);
@@ -266,14 +266,14 @@ describe('test-free-shards: strict shard execution', () => {
     const lines: string[] = [];
     const outcome = await runFreeShard(['pass'], 1, 1, { commandFor, quiet: true, log: (l) => lines.push(l) });
     expect(outcome.status).toBe('passed');
-    const announced = lines.filter((l) => /^\[test:free\] full log: .+gstack-free-test-.+\.log$/.test(l));
+    const announced = lines.filter((l) => /^\[test:free\] full log: .+paysec-free-test-.+\.log$/.test(l));
     expect(announced.length).toBe(1);
     // PASS epilogue carries the counts from the terminal summary + the log path.
     expect(lines.some((l) => /^\[test:free\] PASS — 3 tests, 1 files, \d+s\. Full log: .+\.log$/.test(l))).toBe(true);
   });
 
-  test('spawned shard gets throwaway TMPDIR but NEVER an injected GSTACK_HOME', async () => {
-    // GSTACK_HOME injection was tried and reverted: one shared scratch home
+  test('spawned shard gets throwaway TMPDIR but NEVER an injected PAYSEC_HOME', async () => {
+    // PAYSEC_HOME injection was tried and reverted: one shared scratch home
     // per invocation made 6,900 tests share MUTABLE state — config tests
     // wrote keys that relink/update-check tests then read (12 measured
     // cross-contamination failures). This pin keeps the regression out.
@@ -283,7 +283,7 @@ describe('test-free-shards: strict shard execution', () => {
       const script =
         `const fs = require("fs");`
         + `fs.writeFileSync(${JSON.stringify(dump)}, JSON.stringify({`
-        + `  home: process.env.GSTACK_HOME ?? null, tmp: process.env.TMPDIR,`
+        + `  home: process.env.PAYSEC_HOME ?? null, tmp: process.env.TMPDIR,`
         + `  tmpExists: fs.existsSync(process.env.TMPDIR || "") }));`
         + `console.log(${JSON.stringify(SUMMARY_1)});`;
       const outcome = await runFreeShard(['env-dump'], 1, 1, {
@@ -293,10 +293,10 @@ describe('test-free-shards: strict shard execution', () => {
       });
       expect(outcome.status).toBe('passed');
       const seen = JSON.parse(fs.readFileSync(dump, 'utf8'));
-      // GSTACK_HOME passes through untouched (whatever the parent had, incl. unset).
-      expect(seen.home).toBe(process.env.GSTACK_HOME ?? null);
+      // PAYSEC_HOME passes through untouched (whatever the parent had, incl. unset).
+      expect(seen.home).toBe(process.env.PAYSEC_HOME ?? null);
       // TMPDIR is a per-shard throwaway, cleaned up once the shard finishes.
-      expect(seen.tmp).toContain('gstack-free-shard-');
+      expect(seen.tmp).toContain('paysec-free-shard-');
       expect(seen.tmpExists).toBe(true);
       expect(seen.tmp).not.toBe(process.env.TMPDIR ?? '');
       expect(fs.existsSync(seen.tmp)).toBe(false);
@@ -477,11 +477,11 @@ describe('test-free-shards: output contract (log capture, quiet console, failure
   });
 
   test('../-prefixed printed paths canonicalize to planned relative paths (symlinked cwd)', () => {
-    const reporter = new FreeRunReporter(['browse/test/x.test.ts']);
-    reporter.write('../../../work/repo/browse/test/x.test.ts:\n', 'stderr');
+    const reporter = new FreeRunReporter(['browser/test/x.test.ts']);
+    reporter.write('../../../work/repo/browser/test/x.test.ts:\n', 'stderr');
     reporter.write(`${failLine('boom')}\n`, 'stderr');
     reporter.end();
-    expect(reporter.report().failures[0]).toEqual({ file: 'browse/test/x.test.ts', testName: 'boom' });
+    expect(reporter.report().failures[0]).toEqual({ file: 'browser/test/x.test.ts', testName: 'boom' });
   });
 });
 

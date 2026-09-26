@@ -13,15 +13,15 @@ import * as path from 'path';
 import * as os from 'os';
 import { getProjectEvalDir } from '../test/helpers/eval-store';
 
-const GSTACK_DEV_DIR = path.join(os.homedir(), '.gstack-dev');
+const PAYSEC_DEV_DIR = path.join(os.homedir(), '.paysec-dev');
 // Heartbeat + per-run progress logs are GLOBAL by design — session-runner.ts
-// writes ~/.gstack-dev/e2e-live.json regardless of project ("heartbeat stays
+// writes ~/.paysec-dev/e2e-live.json regardless of project ("heartbeat stays
 // global"). The PARTIAL file is per-project: EvalCollector writes it into
-// getProjectEvalDir() (or GSTACK_EVAL_DIR), so watching the legacy global
+// getProjectEvalDir() (or PAYSEC_EVAL_DIR), so watching the legacy global
 // path missed it whenever slug detection succeeded — i.e. the normal case.
-const HEARTBEAT_PATH = path.join(GSTACK_DEV_DIR, 'e2e-live.json');
+const HEARTBEAT_PATH = path.join(PAYSEC_DEV_DIR, 'e2e-live.json');
 const PARTIAL_PATH = path.join(
-  process.env.GSTACK_EVAL_DIR || getProjectEvalDir(),
+  process.env.PAYSEC_EVAL_DIR || getProjectEvalDir(),
   '_partial-e2e.json',
 );
 const STALE_THRESHOLD_SEC = 600; // 10 minutes
@@ -134,7 +134,7 @@ export function renderDashboard(heartbeat: HeartbeatData | null, partial: Partia
   lines.push(` Completed: ${completedCount}  Running: ${running}  Cost: $${totalCost.toFixed(2)}  Elapsed: ${formatDuration(elapsed)}`);
 
   if (heartbeat?.runId) {
-    const logPath = path.join(GSTACK_DEV_DIR, 'e2e-runs', heartbeat.runId, 'progress.log');
+    const logPath = path.join(PAYSEC_DEV_DIR, 'e2e-runs', heartbeat.runId, 'progress.log');
     lines.push(` Logs: ${logPath}`);
   }
 
@@ -164,7 +164,7 @@ if (import.meta.main) {
 
     // --tail: show last 10 lines of progress.log
     if (showTail && heartbeat?.runId) {
-      const logPath = path.join(GSTACK_DEV_DIR, 'e2e-runs', heartbeat.runId, 'progress.log');
+      const logPath = path.join(PAYSEC_DEV_DIR, 'e2e-runs', heartbeat.runId, 'progress.log');
       try {
         const content = fs.readFileSync(logPath, 'utf-8');
         const tail = content.split('\n').filter(l => l.trim()).slice(-10);

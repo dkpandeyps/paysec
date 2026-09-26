@@ -68,7 +68,7 @@ final class StateServerSmokeTests: XCTestCase {
         // Read boot token from os_log scrape — in production this comes from
         // devicectl process launch. For this test we can read it from the
         // bootTokenPath file. (StateServer writes a 0600 file as fallback.)
-        let bootTokenPath = NSTemporaryDirectory() + "gstack-ios-qa.token"
+        let bootTokenPath = NSTemporaryDirectory() + "paysec-ios-device-qa.token"
         let bootToken = try? String(contentsOfFile: bootTokenPath, encoding: .utf8)
         guard let bt = bootToken?.trimmingCharacters(in: .whitespacesAndNewlines), !bt.isEmpty else {
             throw XCTSkip("Boot token file not written — StateServer may not have started cleanly")

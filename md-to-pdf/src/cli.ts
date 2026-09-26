@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * make-pdf CLI — argv parse, dispatch, exit.
+ * md-to-pdf CLI — argv parse, dispatch, exit.
  *
  * Output contract (per CEO plan DX spec):
  *   stdout: ONLY the output path on success. One line. Nothing else.
@@ -68,7 +68,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
 
 function printUsage(): void {
   const lines = [
-    "make-pdf — turn markdown into publication-quality PDFs",
+    "md-to-pdf — turn markdown into publication-quality PDFs",
     "",
     "Usage:",
   ];
@@ -232,7 +232,7 @@ async function main(): Promise<void> {
           const version = fs.readFileSync(versionFile, "utf8").trim();
           console.log(version);
         } catch {
-          console.log("make-pdf (version unknown)");
+          console.log("md-to-pdf (version unknown)");
         }
         process.exit(ExitCode.Success);
       }

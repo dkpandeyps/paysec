@@ -16,7 +16,7 @@ const evalCollector = createEvalCollector('e2e-plan');
 
 // --- Plan CEO Review E2E ---
 
-describeIfSelected('Plan CEO Review E2E', ['plan-ceo-review'], () => {
+describeIfSelected('Plan CEO Review E2E', ['plan-business-review'], () => {
   let planDir: string;
 
   beforeAll(() => {
@@ -55,23 +55,23 @@ We're building a new user dashboard that shows recent activity, notifications, a
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'add plan']);
 
-    // Copy plan-ceo-review skill
-    fs.mkdirSync(path.join(planDir, 'plan-ceo-review'), { recursive: true });
+    // Copy plan-business-review skill
+    fs.mkdirSync(path.join(planDir, 'plan-business-review'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'plan-ceo-review', 'SKILL.md'),
-      path.join(planDir, 'plan-ceo-review', 'SKILL.md'),
+      path.join(ROOT, 'plan-business-review', 'SKILL.md'),
+      path.join(planDir, 'plan-business-review', 'SKILL.md'),
     );
     // Carved skills (v2 plan T9): copy sections/ so the review workflow + report template are present.
-    { const _sec = path.join(ROOT, 'plan-ceo-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-ceo-review', 'sections'), { recursive: true }); }
+    { const _sec = path.join(ROOT, 'plan-business-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-business-review', 'sections'), { recursive: true }); }
   });
 
   afterAll(() => {
     try { fs.rmSync(planDir, { recursive: true, force: true }); } catch {}
   });
 
-  testConcurrentIfSelected('plan-ceo-review', async () => {
+  testConcurrentIfSelected('plan-business-review', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-ceo-review/SKILL.md for the review workflow.
+      prompt: `Read plan-business-review/SKILL.md for the review workflow.
 
 Read plan.md — that's the plan to review. This is a standalone plan document, not a codebase — skip any codebase exploration or system audit steps.
 
@@ -85,13 +85,13 @@ Focus on reviewing the plan content: architecture, error handling, security, and
       // design-doc discovery block (fork port wave 2) add real probing turns;
       // main cleared this at 243s, the enriched skill needs more headroom.
       timeout: 540_000,
-      testName: 'plan-ceo-review',
+      testName: 'plan-business-review',
       runId,
       model: 'claude-opus-4-7',
     });
 
-    logCost('/plan-ceo-review', result);
-    recordE2E(evalCollector, '/plan-ceo-review', 'Plan CEO Review E2E', result, {
+    logCost('/plan-business-review', result);
+    recordE2E(evalCollector, '/plan-business-review', 'Plan CEO Review E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason),
     });
     // Accept error_max_turns — the CEO review is very thorough and may exceed turns
@@ -145,13 +145,13 @@ We're building a new user dashboard that shows recent activity, notifications, a
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'add plan']);
 
-    fs.mkdirSync(path.join(planDir, 'plan-ceo-review'), { recursive: true });
+    fs.mkdirSync(path.join(planDir, 'plan-business-review'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'plan-ceo-review', 'SKILL.md'),
-      path.join(planDir, 'plan-ceo-review', 'SKILL.md'),
+      path.join(ROOT, 'plan-business-review', 'SKILL.md'),
+      path.join(planDir, 'plan-business-review', 'SKILL.md'),
     );
     // Carved skills (v2 plan T9): copy sections/ so the review workflow + report template are present.
-    { const _sec = path.join(ROOT, 'plan-ceo-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-ceo-review', 'sections'), { recursive: true }); }
+    { const _sec = path.join(ROOT, 'plan-business-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-business-review', 'sections'), { recursive: true }); }
   });
 
   afterAll(() => {
@@ -160,7 +160,7 @@ We're building a new user dashboard that shows recent activity, notifications, a
 
   testConcurrentIfSelected('plan-ceo-review-selective', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-ceo-review/SKILL.md for the review workflow.
+      prompt: `Read plan-business-review/SKILL.md for the review workflow.
 
 Read plan.md — that's the plan to review. This is a standalone plan document, not a codebase — skip any codebase exploration or system audit steps.
 
@@ -177,7 +177,7 @@ Focus on reviewing the plan content: architecture, error handling, security, and
       model: 'claude-opus-4-7',
     });
 
-    logCost('/plan-ceo-review (SELECTIVE)', result);
+    logCost('/plan-business-review (SELECTIVE)', result);
     recordE2E(evalCollector, '/plan-ceo-review-selective', 'Plan CEO Review SELECTIVE EXPANSION E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason),
     });
@@ -215,13 +215,13 @@ describeIfSelected('Plan CEO Review Expansion Energy E2E', ['plan-ceo-review-exp
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'add plan']);
 
-    fs.mkdirSync(path.join(planDir, 'plan-ceo-review'), { recursive: true });
+    fs.mkdirSync(path.join(planDir, 'plan-business-review'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'plan-ceo-review', 'SKILL.md'),
-      path.join(planDir, 'plan-ceo-review', 'SKILL.md'),
+      path.join(ROOT, 'plan-business-review', 'SKILL.md'),
+      path.join(planDir, 'plan-business-review', 'SKILL.md'),
     );
     // Carved skills (v2 plan T9): copy sections/ so the review workflow + report template are present.
-    { const _sec = path.join(ROOT, 'plan-ceo-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-ceo-review', 'sections'), { recursive: true }); }
+    { const _sec = path.join(ROOT, 'plan-business-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-business-review', 'sections'), { recursive: true }); }
   });
 
   afterAll(() => {
@@ -230,7 +230,7 @@ describeIfSelected('Plan CEO Review Expansion Energy E2E', ['plan-ceo-review-exp
 
   testConcurrentIfSelected('plan-ceo-review-expansion-energy', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-ceo-review/SKILL.md for the review workflow.
+      prompt: `Read plan-business-review/SKILL.md for the review workflow.
 
 Read plan.md — that's the plan to review. This is a standalone plan document, not a codebase — skip any codebase exploration or system audit steps.
 
@@ -245,7 +245,7 @@ Write your expansion proposals to ${planDir}/proposals.md with ONLY the proposal
       model: 'claude-opus-4-7',
     });
 
-    logCost('/plan-ceo-review (EXPANSION ENERGY)', result);
+    logCost('/plan-business-review (EXPANSION ENERGY)', result);
     recordE2E(evalCollector, '/plan-ceo-review-expansion-energy', 'Plan CEO Review Expansion Energy E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason),
     });
@@ -275,7 +275,7 @@ Write your expansion proposals to ${planDir}/proposals.md with ONLY the proposal
 
 // --- Plan Eng Review E2E ---
 
-describeIfSelected('Plan Eng Review E2E', ['plan-eng-review'], () => {
+describeIfSelected('Plan Eng Review E2E', ['plan-tech-review'], () => {
   let planDir: string;
 
   beforeAll(() => {
@@ -322,23 +322,23 @@ Replace session-cookie auth with JWT tokens. Currently using express-session + R
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'add plan']);
 
-    // Copy plan-eng-review skill
-    fs.mkdirSync(path.join(planDir, 'plan-eng-review'), { recursive: true });
+    // Copy plan-tech-review skill
+    fs.mkdirSync(path.join(planDir, 'plan-tech-review'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'plan-eng-review', 'SKILL.md'),
-      path.join(planDir, 'plan-eng-review', 'SKILL.md'),
+      path.join(ROOT, 'plan-tech-review', 'SKILL.md'),
+      path.join(planDir, 'plan-tech-review', 'SKILL.md'),
     );
     // Carved skills (v2 plan T9): copy sections/ so the review workflow + report template are present.
-    { const _sec = path.join(ROOT, 'plan-eng-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-eng-review', 'sections'), { recursive: true }); }
+    { const _sec = path.join(ROOT, 'plan-tech-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-tech-review', 'sections'), { recursive: true }); }
   });
 
   afterAll(() => {
     try { fs.rmSync(planDir, { recursive: true, force: true }); } catch {}
   });
 
-  testConcurrentIfSelected('plan-eng-review', async () => {
+  testConcurrentIfSelected('plan-tech-review', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-eng-review/SKILL.md for the review workflow.
+      prompt: `Read plan-tech-review/SKILL.md for the review workflow.
 
 Read plan.md — that's the plan to review. This is a standalone plan document, not a codebase — skip any codebase exploration steps.
 
@@ -349,13 +349,13 @@ Focus on architecture, code quality, tests, and performance sections.`,
       workingDirectory: planDir,
       maxTurns: 15,
       timeout: 360_000,
-      testName: 'plan-eng-review',
+      testName: 'plan-tech-review',
       runId,
       model: 'claude-opus-4-7',
     });
 
-    logCost('/plan-eng-review', result);
-    recordE2E(evalCollector, '/plan-eng-review', 'Plan Eng Review E2E', result, {
+    logCost('/plan-tech-review', result);
+    recordE2E(evalCollector, '/plan-tech-review', 'Plan Eng Review E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason),
     });
     expect(['success', 'error_max_turns']).toContain(result.exitReason);
@@ -420,20 +420,20 @@ export function main() { return Dashboard(); }
     run('git', ['add', 'plan.md']);
     run('git', ['commit', '-m', 'add plan']);
 
-    // Copy plan-eng-review skill
-    fs.mkdirSync(path.join(planDir, 'plan-eng-review'), { recursive: true });
+    // Copy plan-tech-review skill
+    fs.mkdirSync(path.join(planDir, 'plan-tech-review'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'plan-eng-review', 'SKILL.md'),
-      path.join(planDir, 'plan-eng-review', 'SKILL.md'),
+      path.join(ROOT, 'plan-tech-review', 'SKILL.md'),
+      path.join(planDir, 'plan-tech-review', 'SKILL.md'),
     );
     // Carved skills (v2 plan T9): copy sections/ so the review workflow + report template are present.
-    { const _sec = path.join(ROOT, 'plan-eng-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-eng-review', 'sections'), { recursive: true }); }
+    { const _sec = path.join(ROOT, 'plan-tech-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-tech-review', 'sections'), { recursive: true }); }
 
-    // Set up remote-slug shim and browse shims (plan-eng-review uses remote-slug for artifact path)
+    // Set up remote-slug shim and browse shims (plan-tech-review uses remote-slug for artifact path)
     setupBrowseShims(planDir);
 
     // Create project directory for artifacts
-    projectDir = path.join(os.homedir(), '.gstack', 'projects', 'test-project');
+    projectDir = path.join(os.homedir(), '.paysec', 'projects', 'test-project');
     fs.mkdirSync(projectDir, { recursive: true });
 
     // Clean up stale test-plan files from previous runs
@@ -463,14 +463,14 @@ export function main() { return Dashboard(); }
     const beforeFiles = fs.readdirSync(projectDir).filter(f => f.includes('test-plan'));
 
     const result = await runSkillTest({
-      prompt: `Read plan-eng-review/SKILL.md for the review workflow.
+      prompt: `Read plan-tech-review/SKILL.md for the review workflow.
 Skip the preamble bash block, lake intro, telemetry, and contributor mode sections — go straight to the review.
 
 Read plan.md — that's the plan to review. This is a standalone plan with source code in app.ts and dashboard.ts.
 
 Proceed directly to the full review. Skip any AskUserQuestion calls — this is non-interactive.
 
-IMPORTANT: After your review, you MUST write the test-plan artifact as described in the "Test Plan Artifact" section of SKILL.md. The remote-slug shim is at ${planDir}/browse/bin/remote-slug.
+IMPORTANT: After your review, you MUST write the test-plan artifact as described in the "Test Plan Artifact" section of SKILL.md. The remote-slug shim is at ${planDir}/browser/bin/remote-slug.
 
 Write your review to ${planDir}/review-output.md`,
       workingDirectory: planDir,
@@ -482,8 +482,8 @@ Write your review to ${planDir}/review-output.md`,
       model: 'claude-opus-4-7',
     });
 
-    logCost('/plan-eng-review artifact', result);
-    recordE2E(evalCollector, '/plan-eng-review test-plan artifact', 'Plan-Eng-Review Test-Plan Artifact E2E', result, {
+    logCost('/plan-tech-review artifact', result);
+    recordE2E(evalCollector, '/plan-tech-review test-plan artifact', 'Plan-Eng-Review Test-Plan Artifact E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason),
     });
 
@@ -527,13 +527,13 @@ describeIfSelected('Office Hours Spec Review E2E', ['office-hours-spec-review'],
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'init']);
 
-    // Copy office-hours skill
-    fs.mkdirSync(path.join(ohDir, 'office-hours'), { recursive: true });
+    // Copy idea-review skill
+    fs.mkdirSync(path.join(ohDir, 'idea-review'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'office-hours', 'SKILL.md'),
-      path.join(ohDir, 'office-hours', 'SKILL.md'),
+      path.join(ROOT, 'idea-review', 'SKILL.md'),
+      path.join(ohDir, 'idea-review', 'SKILL.md'),
     );
-    { const _sec = path.join(ROOT, 'office-hours', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(ohDir, 'office-hours', 'sections'), { recursive: true }); }
+    { const _sec = path.join(ROOT, 'idea-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(ohDir, 'idea-review', 'sections'), { recursive: true }); }
   });
 
   afterAll(() => {
@@ -542,7 +542,7 @@ describeIfSelected('Office Hours Spec Review E2E', ['office-hours-spec-review'],
 
   testConcurrentIfSelected('office-hours-spec-review', async () => {
     const result = await runSkillTest({
-      prompt: `Read office-hours/SKILL.md. I want to understand the spec review loop.
+      prompt: `Read idea-review/SKILL.md. I want to understand the spec review loop.
 
 Summarize what the "Spec Review Loop" section does — specifically:
 1. How many dimensions does the reviewer check?
@@ -553,7 +553,7 @@ Summarize what the "Spec Review Loop" section does — specifically:
 Write your summary to ${ohDir}/spec-review-summary.md`,
       workingDirectory: ohDir,
       // 12, not 8 (#2473): the Spec Review Loop content is CARVED out of
-      // SKILL.md into office-hours/sections/, so the agent legitimately needs
+      // SKILL.md into idea-review/sections/, so the agent legitimately needs
       // discovery hops (grep SKILL.md -> ls sections/ -> read the section)
       // before it can write. The 8-turn budget predates the carve — observed
       // failures wrote a correct summary on tool-turn 8 and hit the cap on
@@ -564,7 +564,7 @@ Write your summary to ${ohDir}/spec-review-summary.md`,
       runId,
     });
 
-    logCost('/office-hours spec review', result);
+    logCost('/idea-review spec review', result);
     recordE2E(evalCollector, '/office-hours-spec-review', 'Office Hours Spec Review E2E', result);
     expect(result.exitReason).toBe('success');
 
@@ -595,12 +595,12 @@ describeIfSelected('Plan CEO Review Benefits-From E2E', ['plan-ceo-review-benefi
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'init']);
 
-    fs.mkdirSync(path.join(benefitsDir, 'plan-ceo-review'), { recursive: true });
+    fs.mkdirSync(path.join(benefitsDir, 'plan-business-review'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'plan-ceo-review', 'SKILL.md'),
-      path.join(benefitsDir, 'plan-ceo-review', 'SKILL.md'),
+      path.join(ROOT, 'plan-business-review', 'SKILL.md'),
+      path.join(benefitsDir, 'plan-business-review', 'SKILL.md'),
     );
-    { const _sec = path.join(ROOT, 'plan-ceo-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(benefitsDir, 'plan-ceo-review', 'sections'), { recursive: true }); }
+    { const _sec = path.join(ROOT, 'plan-business-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(benefitsDir, 'plan-business-review', 'sections'), { recursive: true }); }
   });
 
   afterAll(() => {
@@ -609,10 +609,10 @@ describeIfSelected('Plan CEO Review Benefits-From E2E', ['plan-ceo-review-benefi
 
   testConcurrentIfSelected('plan-ceo-review-benefits', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-ceo-review/SKILL.md. Search for sections about "Prerequisite" or "office-hours" or "design doc found".
+      prompt: `Read plan-business-review/SKILL.md. Search for sections about "Prerequisite" or "idea-review" or "design doc found".
 
 Summarize what happens when no design doc is found — specifically:
-1. Is /office-hours offered as a prerequisite?
+1. Is /idea-review offered as a prerequisite?
 2. What options does the user get?
 3. Is there a mid-session detection for when the user seems lost?
 
@@ -624,7 +624,7 @@ Write your summary to ${benefitsDir}/benefits-summary.md`,
       runId,
     });
 
-    logCost('/plan-ceo-review benefits-from', result);
+    logCost('/plan-business-review benefits-from', result);
     recordE2E(evalCollector, '/plan-ceo-review-benefits', 'Plan CEO Review Benefits-From E2E', result);
     expect(result.exitReason).toBe('success');
 
@@ -638,7 +638,7 @@ Write your summary to ${benefitsDir}/benefits-summary.md`,
 });
 
 // --- Plan Review Report E2E ---
-// Verifies that plan-eng-review writes a "## GSTACK REVIEW REPORT" section
+// Verifies that plan-tech-review writes a "## PAYSEC REVIEW REPORT" section
 // to the bottom of the plan file (the living review status footer).
 
 describeIfSelected('Plan Review Report E2E', ['plan-review-report'], () => {
@@ -678,30 +678,30 @@ We're building a real-time notification system for our SaaS app.
     run('git', ['add', '.']);
     run('git', ['commit', '-m', 'add plan']);
 
-    // Copy plan-eng-review skill
-    fs.mkdirSync(path.join(planDir, 'plan-eng-review'), { recursive: true });
+    // Copy plan-tech-review skill
+    fs.mkdirSync(path.join(planDir, 'plan-tech-review'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'plan-eng-review', 'SKILL.md'),
-      path.join(planDir, 'plan-eng-review', 'SKILL.md'),
+      path.join(ROOT, 'plan-tech-review', 'SKILL.md'),
+      path.join(planDir, 'plan-tech-review', 'SKILL.md'),
     );
     // Carved skills (v2 plan T9): copy sections/ so the review workflow + report template are present.
-    { const _sec = path.join(ROOT, 'plan-eng-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-eng-review', 'sections'), { recursive: true }); }
+    { const _sec = path.join(ROOT, 'plan-tech-review', 'sections'); if (fs.existsSync(_sec)) fs.cpSync(_sec, path.join(planDir, 'plan-tech-review', 'sections'), { recursive: true }); }
   });
 
   afterAll(() => {
     try { fs.rmSync(planDir, { recursive: true, force: true }); } catch {}
   });
 
-  test('/plan-eng-review writes GSTACK REVIEW REPORT to plan file', async () => {
+  test('/plan-tech-review writes PAYSEC REVIEW REPORT to plan file', async () => {
     const result = await runSkillTest({
-      prompt: `Read plan-eng-review/SKILL.md for the review workflow.
+      prompt: `Read plan-tech-review/SKILL.md for the review workflow.
 
 Read plan.md — that's the plan to review. This is a standalone plan document, not a codebase — skip any codebase exploration steps.
 
 Proceed directly to the full review. Skip any AskUserQuestion calls — this is non-interactive.
 Skip the preamble bash block, lake intro, telemetry, and contributor mode sections.
 
-CRITICAL REQUIREMENT: plan.md IS the plan file for this review session. After completing your review, you MUST write a "## GSTACK REVIEW REPORT" section to the END of plan.md, exactly as described in the "Plan File Review Report" section of SKILL.md. If gstack-review-read is not available or returns NO_REVIEWS, write the placeholder table with all five review rows (CEO, Codex, Eng, Design, DX). The report MUST end with the mandatory unresolved-decisions status as its final line — the exact unbolded line NO UNRESOLVED DECISIONS when nothing is open, or a "**UNRESOLVED DECISIONS:**" block of bullets when items remain. Nothing may follow it. Use the Edit tool to append to plan.md — do NOT overwrite the existing plan content.
+CRITICAL REQUIREMENT: plan.md IS the plan file for this review session. After completing your review, you MUST write a "## PAYSEC REVIEW REPORT" section to the END of plan.md, exactly as described in the "Plan File Review Report" section of SKILL.md. If paysec-review-read is not available or returns NO_REVIEWS, write the placeholder table with all five review rows (CEO, Codex, Eng, Design, DX). The report MUST end with the mandatory unresolved-decisions status as its final line — the exact unbolded line NO UNRESOLVED DECISIONS when nothing is open, or a "**UNRESOLVED DECISIONS:**" block of bullets when items remain. Nothing may follow it. Use the Edit tool to append to plan.md — do NOT overwrite the existing plan content.
 
 This review report at the bottom of the plan is the MOST IMPORTANT deliverable of this test.`,
       workingDirectory: planDir,
@@ -712,7 +712,7 @@ This review report at the bottom of the plan is the MOST IMPORTANT deliverable o
       model: 'claude-opus-4-7',
     });
 
-    logCost('/plan-eng-review report', result);
+    logCost('/plan-tech-review report', result);
     recordE2E(evalCollector, '/plan-review-report', 'Plan Review Report E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason),
     });
@@ -738,10 +738,10 @@ This review report at the bottom of the plan is the MOST IMPORTANT deliverable o
     expect(planContent).toContain('WebSocket');
 
     // Review report section must exist
-    expect(planContent).toContain('## GSTACK REVIEW REPORT');
+    expect(planContent).toContain('## PAYSEC REVIEW REPORT');
 
     // Report should be at the bottom of the file
-    const reportIndex = planContent.lastIndexOf('## GSTACK REVIEW REPORT');
+    const reportIndex = planContent.lastIndexOf('## PAYSEC REVIEW REPORT');
     const afterReport = planContent.slice(reportIndex);
 
     // Should contain the review table with standard rows
@@ -773,7 +773,7 @@ This review report at the bottom of the plan is the MOST IMPORTANT deliverable o
 
 // --- Codex Offering E2E ---
 // Verifies that Codex is properly offered (with availability check, user prompt,
-// and fallback) in office-hours, plan-ceo-review, plan-design-review, plan-eng-review.
+// and fallback) in idea-review, plan-business-review, plan-ux-review, plan-tech-review.
 
 describeIfSelected('Codex Offering E2E', [
   'codex-offered-office-hours', 'codex-offered-ceo-review',
@@ -794,7 +794,7 @@ describeIfSelected('Codex Offering E2E', [
     run('git', ['commit', '-m', 'init']);
 
     // Copy all 4 SKILL.md files
-    for (const skill of ['office-hours', 'plan-ceo-review', 'plan-design-review', 'plan-eng-review']) {
+    for (const skill of ['idea-review', 'plan-business-review', 'plan-ux-review', 'plan-tech-review']) {
       fs.mkdirSync(path.join(testDir, skill), { recursive: true });
       fs.copyFileSync(
         path.join(ROOT, skill, 'SKILL.md'),
@@ -849,19 +849,19 @@ Write your summary to ${testDir}/${testName}-summary.md`,
   }
 
   testConcurrentIfSelected('codex-offered-office-hours', async () => {
-    await checkCodexOffering('office-hours', 'codex-offered-office-hours', 'second opinion');
+    await checkCodexOffering('idea-review', 'codex-offered-office-hours', 'second opinion');
   }, 180_000);
 
   testConcurrentIfSelected('codex-offered-ceo-review', async () => {
-    await checkCodexOffering('plan-ceo-review', 'codex-offered-ceo-review', 'outside voice');
+    await checkCodexOffering('plan-business-review', 'codex-offered-ceo-review', 'outside voice');
   }, 180_000);
 
   testConcurrentIfSelected('codex-offered-design-review', async () => {
-    await checkCodexOffering('plan-design-review', 'codex-offered-design-review', 'design outside voices');
+    await checkCodexOffering('plan-ux-review', 'codex-offered-design-review', 'design outside voices');
   }, 180_000);
 
   testConcurrentIfSelected('codex-offered-eng-review', async () => {
-    await checkCodexOffering('plan-eng-review', 'codex-offered-eng-review', 'outside voice');
+    await checkCodexOffering('plan-tech-review', 'codex-offered-eng-review', 'outside voice');
   }, 180_000);
 });
 

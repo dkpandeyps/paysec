@@ -14,23 +14,23 @@ const ROOT = path.resolve(import.meta.dir, "..");
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), "utf-8");
 
 let tmp: string;
-beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), "gstack-slug-")); });
+beforeEach(() => { tmp = fs.mkdtempSync(path.join(os.tmpdir(), "paysec-slug-")); });
 afterEach(() => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch {} });
 
 /**
- * Windows cannot exec bin/gstack-slug -- a `#!/usr/bin/env bash` script with no file
+ * Windows cannot exec bin/paysec-slug -- a `#!/usr/bin/env bash` script with no file
  * extension -- so spawnSync fails ENOENT and resolveSlug used to return the literal
  * string "unknown". Every decision on the machine landed in one shared
- * ~/.gstack/projects/unknown/ bucket, while the bash-side Context Recovery preamble
+ * ~/.paysec/projects/unknown/ bucket, while the bash-side Context Recovery preamble
  * resolved the real slug and silently found nothing there.
  *
  * These exercise the native fallback on EVERY platform (it is only the *gating* that
  * is win32-specific), so macOS/Linux CI catches a regression that would otherwise
  * only ever surface on a Windows user's disk.
  */
-describe("native slug fallback mirrors bin/gstack-slug", () => {
+describe("native slug fallback mirrors bin/paysec-slug", () => {
   test("toMsysPath reproduces the git-bash cache key", () => {
-    // gstack-slug does: CACHE_KEY=$(printf '%s' "$(pwd)" | tr '/' '_')
+    // paysec-slug does: CACHE_KEY=$(printf '%s' "$(pwd)" | tr '/' '_')
     // and git-bash `pwd` reports C:\Users\j\foo as /c/Users/j/foo.
     expect(toMsysPath("C:\\Users\\j\\foo")).toBe("/c/Users/j/foo");
     expect(toMsysPath("D:/Work/Repo")).toBe("/d/Work/Repo");
@@ -75,7 +75,7 @@ describe("native slug fallback mirrors bin/gstack-slug", () => {
     const slug = slugFromEnvironment(home, cwd);
     const key = path.join(home, "slug-cache", toMsysPath(cwd).replace(/\//g, "_"));
     expect(fs.existsSync(key)).toBe(true);
-    // no trailing newline: gstack-slug writes with printf '%s'
+    // no trailing newline: paysec-slug writes with printf '%s'
     expect(fs.readFileSync(key, "utf-8")).toBe(slug);
   });
 

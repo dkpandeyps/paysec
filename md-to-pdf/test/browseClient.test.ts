@@ -63,7 +63,7 @@ describe("findExecutable", () => {
   // access(X_OK) is TRUE for directories — they carry the execute/traverse bit — so a
   // bare X_OK test returned ~/.claude/skills/browse, the skill's docs folder, as "the
   // browse binary". Every browse call then failed with an empty error, which surfaced
-  // as make-pdf reporting "Chromium failed to launch".
+  // as md-to-pdf reporting "Chromium failed to launch".
   test("rejects a DIRECTORY even though it passes access(X_OK)", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mkpdf-dir-"));
     try {
@@ -106,7 +106,7 @@ describe("resolveBrowseBin", () => {
     try {
       withEnv(
         {
-          GSTACK_BROWSE_BIN: "/nonexistent/gstack-browse-bin",
+          PAYSEC_BROWSE_BIN: "/nonexistent/paysec-browse-bin",
           BROWSE_BIN: "/nonexistent/browse-bin",
           PATH: "",
           Path: "",
@@ -121,7 +121,7 @@ describe("resolveBrowseBin", () => {
       expect(thrown).toBeInstanceOf(BrowseClientError);
       expect((thrown as BrowseClientError).message).toContain("browse binary not found");
       expect((thrown as BrowseClientError).message).toContain("./setup");
-      expect((thrown as BrowseClientError).message).toContain("GSTACK_BROWSE_BIN");
+      expect((thrown as BrowseClientError).message).toContain("PAYSEC_BROWSE_BIN");
       // Back-compat alias still surfaces in the diagnostic.
       expect((thrown as BrowseClientError).message).toContain("BROWSE_BIN");
     }
@@ -130,29 +130,29 @@ describe("resolveBrowseBin", () => {
     // gated on whether it threw at all.
   });
 
-  test("honors GSTACK_BROWSE_BIN when it points at a real executable", () => {
-    const resolved = withEnv({ GSTACK_BROWSE_BIN: REAL_EXE }, () => resolveBrowseBin());
+  test("honors PAYSEC_BROWSE_BIN when it points at a real executable", () => {
+    const resolved = withEnv({ PAYSEC_BROWSE_BIN: REAL_EXE }, () => resolveBrowseBin());
     expect(resolved).toBe(REAL_EXE);
   });
 
   test("honors BROWSE_BIN as a back-compat alias", () => {
     const resolved = withEnv(
-      { GSTACK_BROWSE_BIN: undefined, BROWSE_BIN: REAL_EXE },
+      { PAYSEC_BROWSE_BIN: undefined, BROWSE_BIN: REAL_EXE },
       () => resolveBrowseBin(),
     );
     expect(resolved).toBe(REAL_EXE);
   });
 
-  test("GSTACK_BROWSE_BIN takes precedence over BROWSE_BIN", () => {
+  test("PAYSEC_BROWSE_BIN takes precedence over BROWSE_BIN", () => {
     const resolved = withEnv(
-      { GSTACK_BROWSE_BIN: REAL_EXE, BROWSE_BIN: "/nonexistent/legacy" },
+      { PAYSEC_BROWSE_BIN: REAL_EXE, BROWSE_BIN: "/nonexistent/legacy" },
       () => resolveBrowseBin(),
     );
     expect(resolved).toBe(REAL_EXE);
   });
 
   test("strips wrapping double quotes from override values", () => {
-    const resolved = withEnv({ GSTACK_BROWSE_BIN: `"${REAL_EXE}"` }, () => resolveBrowseBin());
+    const resolved = withEnv({ PAYSEC_BROWSE_BIN: `"${REAL_EXE}"` }, () => resolveBrowseBin());
     expect(resolved).toBe(REAL_EXE);
   });
 });

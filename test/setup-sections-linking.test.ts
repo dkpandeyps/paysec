@@ -6,7 +6,7 @@
  *
  * Matches the repo's static-tripwire style (setup-windows-fallback,
  * cdp-session-cleanup). End-to-end "sections resolve in a temp install" runs in
- * the group-5/6 functional pass once real ship/sections/ exist.
+ * the group-5/6 functional pass once real ship-pr/sections/ exist.
  */
 
 import { describe, test, expect } from 'bun:test';
@@ -31,7 +31,7 @@ describe('setup links sections/ for cherry-pick install targets', () => {
     // routes through _link_or_copy internally (windows-safe), so the old
     // per-directory _link_or_copy assertion moved there.
     const body = fnBody(SETUP, 'link_claude_skill_dirs');
-    expect(body).toMatch(/_link_skill_runtime_assets\s+"\$gstack_dir\/\$dir_name"\s+"\$target"/);
+    expect(body).toMatch(/_link_skill_runtime_assets\s+"\$paysec_dir\/\$dir_name"\s+"\$target"/);
     const helper = fnBody(SETUP, '_link_skill_runtime_assets');
     expect(helper).toContain('_link_or_copy');
     expect(helper).not.toMatch(/\bln -s/);

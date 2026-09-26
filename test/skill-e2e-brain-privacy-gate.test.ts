@@ -9,7 +9,7 @@
  *     --fast --json succeeds)
  *
  * This test stages all three conditions (via env + a fake `gbrain` binary
- * on PATH), runs a cheap gstack skill through the Agent SDK, intercepts
+ * on PATH), runs a cheap paysec skill through the Agent SDK, intercepts
  * every tool use via canUseTool, and asserts: one of the AskUserQuestions
  * fired by the preamble is the privacy gate with its distinctive prose
  * and three options (full / artifacts-only / decline).
@@ -30,9 +30,9 @@ import { runAgentSdkTest, passThroughNonAskUserQuestion, resolveClaudeBinary } f
 const describeE2E = describeE2ETier('periodic');
 
 describeE2E('gbrain-sync privacy gate fires once via preamble', () => {
-  test('gstack skill preamble fires the 3-option AskUserQuestion when gbrain is detected', async () => {
-    // Stage a fresh GSTACK_HOME with artifacts_sync_mode_prompted=false.
-    const gstackHome = fs.mkdtempSync(path.join(os.tmpdir(), 'privacy-gate-gstack-'));
+  test('paysec skill preamble fires the 3-option AskUserQuestion when gbrain is detected', async () => {
+    // Stage a fresh PAYSEC_HOME with artifacts_sync_mode_prompted=false.
+    const paysecHome = fs.mkdtempSync(path.join(os.tmpdir(), 'privacy-gate-paysec-'));
     const fakeBinDir = fs.mkdtempSync(path.join(os.tmpdir(), 'privacy-gate-bin-'));
     // Fresh HOME with NO ~/.claude.json: on a machine where gbrain is
     // registered type=http, the preamble's remote-mode detection reads the
@@ -43,7 +43,7 @@ describeE2E('gbrain-sync privacy gate fires once via preamble', () => {
 
     // Seed the config so the gate's condition passes.
     fs.writeFileSync(
-      path.join(gstackHome, 'config.yaml'),
+      path.join(paysecHome, 'config.yaml'),
       'artifacts_sync_mode: off\nartifacts_sync_mode_prompted: false\n',
       { mode: 0o600 }
     );
@@ -67,32 +67,32 @@ describeE2E('gbrain-sync privacy gate fires once via preamble', () => {
 
     // Per-test env, merged LAST by the hermetic env builder (safe post-v1.39:
     // the runner always passes a COMPLETE hermetic env, so overrides can't
-    // break auth). Ambient process.env.GSTACK_HOME mutation does NOT work
-    // here — hermetic-env scrubs GSTACK_* and repoints GSTACK_HOME at its
+    // break auth). Ambient process.env.PAYSEC_HOME mutation does NOT work
+    // here — hermetic-env scrubs PAYSEC_* and repoints PAYSEC_HOME at its
     // own singleton dir, so the staged config would never reach the child.
     const childEnv = {
-      GSTACK_HOME: gstackHome,
+      PAYSEC_HOME: paysecHome,
       HOME: tempHome,
       PATH: `${fakeBinDir}:${process.env.PATH ?? '/usr/bin:/bin:/opt/homebrew/bin'}`,
     };
 
     try {
       // Pick a small skill with the preamble and load it via Read to force
-      // the model to execute every preamble directive. A narrow "run /learn"
+      // the model to execute every preamble directive. A narrow "run /learnings"
       // prompt often gets reduced to a direct action, skipping the preamble
       // gates. Mirror the plan-mode-no-op test pattern: ask the model to
       // follow the skill's instructions in full.
       const learnSkill = path.resolve(
         import.meta.dir,
         '..',
-        'learn',
+        'learnings',
         'SKILL.md'
       );
       await runAgentSdkTest({
         systemPrompt: { type: 'preset', preset: 'claude_code' },
         userPrompt:
           `Read the skill file at ${learnSkill} and follow its instructions from the top, including every preamble directive. Execute every bash block. If any AskUserQuestion fires, present it.`,
-        workingDirectory: gstackHome,
+        workingDirectory: paysecHome,
         maxTurns: 10,
         allowedTools: ['Read', 'Grep', 'Glob', 'Bash'],
         env: childEnv,
@@ -146,7 +146,7 @@ describeE2E('gbrain-sync privacy gate fires once via preamble', () => {
       // (The preamble is supposed to be idempotent within a session.)
       expect(privacyQuestions.length).toBe(1);
     } finally {
-      fs.rmSync(gstackHome, { recursive: true, force: true });
+      fs.rmSync(paysecHome, { recursive: true, force: true });
       fs.rmSync(fakeBinDir, { recursive: true, force: true });
       fs.rmSync(tempHome, { recursive: true, force: true });
     }
@@ -154,7 +154,7 @@ describeE2E('gbrain-sync privacy gate fires once via preamble', () => {
 
   test('privacy gate does NOT fire when artifacts_sync_mode_prompted is already true', async () => {
     // Same staging, but prompted=true this time. Gate should be silent.
-    const gstackHome = fs.mkdtempSync(path.join(os.tmpdir(), 'privacy-gate-off-'));
+    const paysecHome = fs.mkdtempSync(path.join(os.tmpdir(), 'privacy-gate-off-'));
     const fakeBinDir = fs.mkdtempSync(path.join(os.tmpdir(), 'privacy-gate-off-bin-'));
     // Fresh HOME without a .claude.json — same rationale as the first test:
     // without it the operator's ~/.claude.json flips the preamble into
@@ -162,7 +162,7 @@ describeE2E('gbrain-sync privacy gate fires once via preamble', () => {
     const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'privacy-gate-off-home-'));
 
     fs.writeFileSync(
-      path.join(gstackHome, 'config.yaml'),
+      path.join(paysecHome, 'config.yaml'),
       'artifacts_sync_mode: off\nartifacts_sync_mode_prompted: true\n',
       { mode: 0o600 }
     );
@@ -177,9 +177,9 @@ describeE2E('gbrain-sync privacy gate fires once via preamble', () => {
     const binary = resolveClaudeBinary();
 
     // Per-test env, merged LAST by the hermetic env builder (see note on the
-    // first test — ambient GSTACK_HOME mutation is scrubbed by hermetic-env).
+    // first test — ambient PAYSEC_HOME mutation is scrubbed by hermetic-env).
     const childEnv = {
-      GSTACK_HOME: gstackHome,
+      PAYSEC_HOME: paysecHome,
       HOME: tempHome,
       PATH: `${fakeBinDir}:${process.env.PATH ?? '/usr/bin:/bin:/opt/homebrew/bin'}`,
     };
@@ -188,8 +188,8 @@ describeE2E('gbrain-sync privacy gate fires once via preamble', () => {
       await runAgentSdkTest({
         systemPrompt: { type: 'preset', preset: 'claude_code' },
         userPrompt:
-          'Run /learn with no arguments. Just report the learnings count.',
-        workingDirectory: gstackHome,
+          'Run /learnings with no arguments. Just report the learnings count.',
+        workingDirectory: paysecHome,
         maxTurns: 4,
         allowedTools: ['Read', 'Grep', 'Glob', 'Bash'],
         env: childEnv,
@@ -224,7 +224,7 @@ describeE2E('gbrain-sync privacy gate fires once via preamble', () => {
       });
       expect(privacyQuestions.length).toBe(0);
     } finally {
-      fs.rmSync(gstackHome, { recursive: true, force: true });
+      fs.rmSync(paysecHome, { recursive: true, force: true });
       fs.rmSync(fakeBinDir, { recursive: true, force: true });
       fs.rmSync(tempHome, { recursive: true, force: true });
     }

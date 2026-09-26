@@ -22,8 +22,8 @@
  */
 export const E2E_TOUCHFILES: Record<string, string[]> = {
   // Browse core (+ test-server dependency)
-  'browse-basic':    ['browse/src/**', 'browse/test/test-server.ts'],
-  'browse-snapshot': ['browse/src/**', 'browse/test/test-server.ts'],
+  'browse-basic':    ['browser/src/**', 'browser/test/test-server.ts'],
+  'browse-snapshot': ['browser/src/**', 'browser/test/test-server.ts'],
 
   // Hermetic isolation canaries (hermetic-env.ts is also a GLOBAL touchfile;
   // these entries exist so the canaries themselves stay tier-classified)
@@ -32,7 +32,7 @@ export const E2E_TOUCHFILES: Record<string, string[]> = {
 
   // P4 first-run scaffold (activation lift) — the detection binary end-to-end
   // through the real runner, plus the preamble wiring that gates + maps it.
-  'first-task-scaffold': ['bin/gstack-first-task-detect', 'scripts/resolvers/preamble/generate-first-run-guidance.ts', 'scripts/resolvers/preamble/generate-preamble-bash.ts', 'test/skill-e2e-first-task-scaffold.test.ts', 'test/helpers/session-runner.ts'],
+  'first-task-scaffold': ['bin/paysec-first-task-detect', 'scripts/resolvers/preamble/generate-first-run-guidance.ts', 'scripts/resolvers/preamble/generate-preamble-bash.ts', 'test/skill-e2e-first-task-scaffold.test.ts', 'test/helpers/session-runner.ts'],
 
   // SKILL.md setup + preamble (depend on ROOT SKILL.md + gen-skill-docs)
   'skillmd-setup-discovery':  ['SKILL.md', 'SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
@@ -40,45 +40,45 @@ export const E2E_TOUCHFILES: Record<string, string[]> = {
   'skillmd-outside-git':      ['SKILL.md', 'SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
 
   'session-awareness':        ['SKILL.md', 'SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
-  'operational-learning':     ['scripts/resolvers/preamble.ts', 'bin/gstack-learnings-log'],
+  'operational-learning':     ['scripts/resolvers/preamble.ts', 'bin/paysec-learnings-log'],
 
   // QA (+ test-server dependency)
-  'qa-quick':       ['qa/**', 'browse/src/**', 'browse/test/test-server.ts'],
-  'qa-b6-static':   ['qa/**', 'browse/src/**', 'browse/test/test-server.ts', 'test/helpers/llm-judge.ts', 'browse/test/fixtures/qa-eval.html', 'test/fixtures/qa-eval-ground-truth.json'],
-  'qa-b7-spa':      ['qa/**', 'browse/src/**', 'browse/test/test-server.ts', 'test/helpers/llm-judge.ts', 'browse/test/fixtures/qa-eval-spa.html', 'test/fixtures/qa-eval-spa-ground-truth.json'],
-  'qa-b8-checkout': ['qa/**', 'browse/src/**', 'browse/test/test-server.ts', 'test/helpers/llm-judge.ts', 'browse/test/fixtures/qa-eval-checkout.html', 'test/fixtures/qa-eval-checkout-ground-truth.json'],
-  'qa-only-no-fix': ['qa-only/**', 'qa/templates/**'],
-  'qa-fix-loop':    ['qa/**', 'browse/src/**', 'browse/test/test-server.ts'],
-  'qa-bootstrap':   ['qa/**', 'ship/**'],
+  'qa-quick':       ['qa-fix/**', 'browser/src/**', 'browser/test/test-server.ts'],
+  'qa-b6-static':   ['qa-fix/**', 'browser/src/**', 'browser/test/test-server.ts', 'test/helpers/llm-judge.ts', 'browser/test/fixtures/qa-eval.html', 'test/fixtures/qa-eval-ground-truth.json'],
+  'qa-b7-spa':      ['qa-fix/**', 'browser/src/**', 'browser/test/test-server.ts', 'test/helpers/llm-judge.ts', 'browser/test/fixtures/qa-eval-spa.html', 'test/fixtures/qa-eval-spa-ground-truth.json'],
+  'qa-b8-checkout': ['qa-fix/**', 'browser/src/**', 'browser/test/test-server.ts', 'test/helpers/llm-judge.ts', 'browser/test/fixtures/qa-eval-checkout.html', 'test/fixtures/qa-eval-checkout-ground-truth.json'],
+  'qa-only-no-fix': ['qa-report/**', 'qa-fix/templates/**'],
+  'qa-fix-loop':    ['qa-fix/**', 'browser/src/**', 'browser/test/test-server.ts'],
+  'qa-bootstrap':   ['qa-fix/**', 'ship-pr/**'],
 
   // Review
-  'review-sql-injection':     ['review/**', 'test/fixtures/review-eval-vuln.rb', 'test/skill-e2e-review.test.ts'],
-  'review-enum-completeness': ['review/**', 'test/fixtures/review-eval-enum*.rb', 'test/skill-e2e-review.test.ts'],
-  'review-base-branch':       ['review/**', 'test/skill-e2e-review-attribution.test.ts'],
-  'review-design-lite':       ['review/**', 'test/fixtures/review-eval-design-slop.*', 'test/skill-e2e-review.test.ts'],
+  'review-sql-injection':     ['pr-review/**', 'test/fixtures/review-eval-vuln.rb', 'test/skill-e2e-pr-review.test.ts'],
+  'review-enum-completeness': ['pr-review/**', 'test/fixtures/review-eval-enum*.rb', 'test/skill-e2e-pr-review.test.ts'],
+  'review-base-branch':       ['pr-review/**', 'test/skill-e2e-pr-review-attribution.test.ts'],
+  'review-design-lite':       ['pr-review/**', 'test/fixtures/review-eval-design-slop.*', 'test/skill-e2e-pr-review.test.ts'],
 
   // Review Army (specialist dispatch)
-  'review-army-migration-safety': ['review/**', 'scripts/resolvers/review-army.ts', 'bin/gstack-diff-scope'],
-  'review-army-perf-n-plus-one':  ['review/**', 'scripts/resolvers/review-army.ts', 'bin/gstack-diff-scope'],
-  'review-army-delivery-audit':   ['review/**', 'scripts/resolvers/review.ts', 'scripts/resolvers/review-army.ts'],
-  'review-army-quality-score':    ['review/**', 'scripts/resolvers/review-army.ts'],
-  'review-army-json-findings':    ['review/**', 'scripts/resolvers/review-army.ts'],
-  'review-army-red-team':         ['review/**', 'scripts/resolvers/review-army.ts'],
-  'review-army-consensus':        ['review/**', 'scripts/resolvers/review-army.ts'],
+  'review-army-migration-safety': ['pr-review/**', 'scripts/resolvers/review-army.ts', 'bin/paysec-diff-scope'],
+  'review-army-perf-n-plus-one':  ['pr-review/**', 'scripts/resolvers/review-army.ts', 'bin/paysec-diff-scope'],
+  'review-army-delivery-audit':   ['pr-review/**', 'scripts/resolvers/review.ts', 'scripts/resolvers/review-army.ts'],
+  'review-army-quality-score':    ['pr-review/**', 'scripts/resolvers/review-army.ts'],
+  'review-army-json-findings':    ['pr-review/**', 'scripts/resolvers/review-army.ts'],
+  'review-army-red-team':         ['pr-review/**', 'scripts/resolvers/review-army.ts'],
+  'review-army-consensus':        ['pr-review/**', 'scripts/resolvers/review-army.ts'],
 
   // Office Hours
-  'office-hours-spec-review':     ['office-hours/**', 'scripts/gen-skill-docs.ts'],
-  'office-hours-forcing-energy':  ['office-hours/**', 'scripts/resolvers/preamble.ts', 'test/fixtures/mode-posture/**', 'test/helpers/llm-judge.ts'],
-  'office-hours-builder-wildness': ['office-hours/**', 'scripts/resolvers/preamble.ts', 'test/fixtures/mode-posture/**', 'test/helpers/llm-judge.ts'],
+  'office-hours-spec-review':     ['idea-review/**', 'scripts/gen-skill-docs.ts'],
+  'office-hours-forcing-energy':  ['idea-review/**', 'scripts/resolvers/preamble.ts', 'test/fixtures/mode-posture/**', 'test/helpers/llm-judge.ts'],
+  'office-hours-builder-wildness': ['idea-review/**', 'scripts/resolvers/preamble.ts', 'test/fixtures/mode-posture/**', 'test/helpers/llm-judge.ts'],
 
   // Plan reviews
-  'plan-ceo-review':                  ['plan-ceo-review/**'],
-  'plan-ceo-review-selective':        ['plan-ceo-review/**'],
-  'plan-ceo-review-benefits':         ['plan-ceo-review/**', 'scripts/gen-skill-docs.ts'],
-  'plan-ceo-review-expansion-energy': ['plan-ceo-review/**', 'scripts/resolvers/preamble.ts', 'test/fixtures/mode-posture/**', 'test/helpers/llm-judge.ts'],
-  'plan-eng-review':           ['plan-eng-review/**'],
-  'plan-eng-review-artifact':  ['plan-eng-review/**'],
-  'plan-review-report':        ['plan-eng-review/**', 'scripts/gen-skill-docs.ts'],
+  'plan-business-review':                  ['plan-business-review/**'],
+  'plan-ceo-review-selective':        ['plan-business-review/**'],
+  'plan-ceo-review-benefits':         ['plan-business-review/**', 'scripts/gen-skill-docs.ts'],
+  'plan-ceo-review-expansion-energy': ['plan-business-review/**', 'scripts/resolvers/preamble.ts', 'test/fixtures/mode-posture/**', 'test/helpers/llm-judge.ts'],
+  'plan-tech-review':           ['plan-tech-review/**'],
+  'plan-eng-review-artifact':  ['plan-tech-review/**'],
+  'plan-review-report':        ['plan-tech-review/**', 'scripts/gen-skill-docs.ts'],
 
   // Plan-mode smoke tests — gate-tier safety regression tests. Each test file
   // contains TWO test cases as of v1.21: the baseline plan-mode case and the
@@ -87,17 +87,17 @@ export const E2E_TOUCHFILES: Record<string, string[]> = {
   // include question-tuning.ts and generate-ask-user-format.ts because the
   // AUTO_DECIDE preamble injection lives there and changes can flip the
   // regression test outcome between 'asked' and 'auto_decided'.
-  'plan-ceo-review-plan-mode':    ['plan-ceo-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-ceo-plan-mode.test.ts'],
-  'plan-eng-review-plan-mode':    ['plan-eng-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-eng-plan-mode.test.ts'],
-  'plan-design-review-plan-mode': ['plan-design-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-design-plan-mode.test.ts'],
-  'plan-devex-review-plan-mode':  ['plan-devex-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-devex-plan-mode.test.ts'],
+  'plan-ceo-review-plan-mode':    ['plan-business-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-business-plan-mode.test.ts'],
+  'plan-eng-review-plan-mode':    ['plan-tech-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-tech-plan-mode.test.ts'],
+  'plan-design-review-plan-mode': ['plan-ux-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-ux-plan-mode.test.ts'],
+  'plan-devex-review-plan-mode':  ['plan-dx-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-dx-plan-mode.test.ts'],
   // Covers ceo (preamble misfire) + eng/design (scope-gate bypass must not
   // fire outside plan mode) + the named-target exception case. 4 PTY runs;
   // in CI these run CONCURRENT with the rest of the pty-plan-smoke suite
   // (--max-concurrency + --retry 1), so worst-case cost is ~2x a single
   // pass of each, sharing the API budget with sibling tests — not the
   // sequential ~+10min a local read suggests.
-  'plan-mode-no-op':              ['plan-ceo-review/**', 'plan-eng-review/**', 'plan-design-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/preamble.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-mode-no-op.test.ts'],
+  'plan-mode-no-op':              ['plan-business-review/**', 'plan-tech-review/**', 'plan-ux-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/preamble.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-mode-no-op.test.ts'],
 
   // v1.21+ AskUserQuestion-blocked regression tests — Conductor launches
   // claude with `--disallowedTools AskUserQuestion --permission-mode default`
@@ -107,241 +107,241 @@ export const E2E_TOUCHFILES: Record<string, string[]> = {
   // INSIDE the existing 4 plan-X-review-plan-mode test files (covered
   // transitively by the entries above). Two new standalone files exist for
   // skills with no prior plan-mode test:
-  'office-hours-auto-mode':       ['office-hours/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-office-hours-auto-mode.test.ts'],
-  'office-hours-phase4-fork':     ['office-hours/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/question-tuning.ts', 'test/helpers/llm-judge.ts', 'test/skill-e2e-office-hours-phase4.test.ts'],
-  'llm-judge-recommendation':     ['test/helpers/llm-judge.ts', 'test/llm-judge-recommendation.test.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'codex/SKILL.md.tmpl', 'scripts/resolvers/review.ts'],
+  'office-hours-auto-mode':       ['idea-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-idea-review-auto-mode.test.ts'],
+  'office-hours-phase4-fork':     ['idea-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/question-tuning.ts', 'test/helpers/llm-judge.ts', 'test/skill-e2e-idea-review-phase4.test.ts'],
+  'llm-judge-recommendation':     ['test/helpers/llm-judge.ts', 'test/llm-judge-recommendation.test.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'codex-second-opinion/SKILL.md.tmpl', 'scripts/resolvers/review.ts'],
   // v1.21+ AUTO_DECIDE preserve eval (periodic). Verifies the Tool resolution
-  // fix doesn't trip the legitimate /plan-tune opt-in path: when the user has
+  // fix doesn't trip the legitimate /tune-questions opt-in path: when the user has
   // written a never-ask preference, AUQ should still auto-decide rather than
   // surfacing the question. Touches the question-tuning + preference
   // infrastructure plus the resolvers that own the AUTO_DECIDE preamble.
-  'auto-decide-preserved':        ['scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-preamble-bash.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'plan-ceo-review/**', 'bin/gstack-question-preference', 'bin/gstack-config', 'bin/gstack-slug', 'hosts/claude/hooks/question-preference-hook.ts', 'lib/is-conductor.ts', 'test/helpers/claude-pty-runner.ts'],
+  'auto-decide-preserved':        ['scripts/resolvers/question-tuning.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-preamble-bash.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'plan-business-review/**', 'bin/paysec-question-preference', 'bin/paysec-config', 'bin/paysec-slug', 'hosts/claude/hooks/question-preference-hook.ts', 'lib/is-conductor.ts', 'test/helpers/claude-pty-runner.ts'],
 
   // Conductor → prose decision brief (Conductor signal makes prose the default;
   // the PreToolUse hook denies the flaky tool). Touches the resolver that owns
   // the Conductor rule, the preamble signal, the hook, and the detection helper.
-  'conductor-prose':              ['scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-preamble-bash.ts', 'scripts/resolvers/preamble.ts', 'plan-eng-review/**', 'hosts/claude/hooks/question-preference-hook.ts', 'lib/is-conductor.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-conductor-prose.test.ts'],
+  'conductor-prose':              ['scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-preamble-bash.ts', 'scripts/resolvers/preamble.ts', 'plan-tech-review/**', 'hosts/claude/hooks/question-preference-hook.ts', 'lib/is-conductor.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-conductor-prose.test.ts'],
 
   // Real-PTY E2E batch (#6 new tests on the harness).
   // Each one tests behavior the SDK harness can't observe (rendered TTY,
   // numbered-option lists, multi-phase ordering, idempotency state echo).
-  'auq-format-gate':                           ['plan-ceo-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'scripts/resolvers/preamble.ts', 'test/helpers/auq-sdk-capture.ts', 'test/helpers/session-runner.ts', 'test/helpers/llm-judge.ts'],
-  'plan-ceo-mode-routing':       ['plan-ceo-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-ceo-mode-routing.test.ts'],
-  'plan-design-with-ui-scope':   ['plan-design-review/**', 'test/fixtures/plans/ui-heavy-feature.md', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-design-with-ui.test.ts'],
+  'auq-format-gate':                           ['plan-business-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'scripts/resolvers/preamble.ts', 'test/helpers/auq-sdk-capture.ts', 'test/helpers/session-runner.ts', 'test/helpers/llm-judge.ts'],
+  'plan-ceo-mode-routing':       ['plan-business-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-business-mode-routing.test.ts'],
+  'plan-design-with-ui-scope':   ['plan-ux-review/**', 'test/fixtures/plans/ui-heavy-feature.md', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-ux-with-ui.test.ts'],
   'budget-regression-pty':       ['test/helpers/eval-store.ts', 'test/skill-budget-regression.test.ts'],
-  'ship-idempotency-pty':        ['ship/**', 'bin/gstack-next-version', 'bin/gstack-version-bump', 'scripts/resolvers/sections.ts', 'lib/worktree.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-ship-idempotency.test.ts'],
-  'ship-section-loading':        ['ship/**', 'scripts/resolvers/sections.ts', 'scripts/gen-skill-docs.ts', 'test/helpers/auq-sdk-capture.ts', 'test/helpers/session-runner.ts', 'test/skill-e2e-ship-section-loading.test.ts'],
-  'plan-ceo-section-loading':    ['plan-ceo-review/**', 'scripts/resolvers/sections.ts', 'scripts/gen-skill-docs.ts', 'test/helpers/auq-sdk-capture.ts', 'test/helpers/session-runner.ts'],
+  'ship-idempotency-pty':        ['ship-pr/**', 'bin/paysec-next-version', 'bin/paysec-version-bump', 'scripts/resolvers/sections.ts', 'lib/worktree.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-ship-pr-idempotency.test.ts'],
+  'ship-section-loading':        ['ship-pr/**', 'scripts/resolvers/sections.ts', 'scripts/gen-skill-docs.ts', 'test/helpers/auq-sdk-capture.ts', 'test/helpers/session-runner.ts', 'test/skill-e2e-ship-pr-section-loading.test.ts'],
+  'plan-ceo-section-loading':    ['plan-business-review/**', 'scripts/resolvers/sections.ts', 'scripts/gen-skill-docs.ts', 'test/helpers/auq-sdk-capture.ts', 'test/helpers/session-runner.ts'],
   // Data-driven behavioral guard for the 'plan'/'prompt' carves (eng, design,
-  // devex, office-hours + future PR2 carves). One file iterating CARVE_GUARDS;
-  // the selector sets GSTACK_CARVE_SKILL=<name> to scope cost to the changed
+  // devex, idea-review + future PR2 carves). One file iterating CARVE_GUARDS;
+  // the selector sets PAYSEC_CARVE_SKILL=<name> to scope cost to the changed
   // skill (D-CODEX A). Touching the registry/helper or sections.ts runs all.
-  'carve-section-loading':       ['plan-eng-review/**', 'plan-design-review/**', 'plan-devex-review/**', 'office-hours/**', 'document-release/**', 'design-consultation/**', 'cso/**', 'test/helpers/carve-guards.ts', 'scripts/resolvers/sections.ts', 'scripts/gen-skill-docs.ts', 'test/helpers/auq-sdk-capture.ts', 'test/helpers/session-runner.ts'],
-  'autoplan-chain-pty':          ['autoplan/**', 'plan-ceo-review/**', 'plan-design-review/**', 'plan-eng-review/**', 'plan-devex-review/**', 'test/fixtures/plans/ui-heavy-feature.md', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-autoplan-chain.test.ts'],
-  'e2e-harness-audit':            ['plan-ceo-review/**', 'plan-eng-review/**', 'plan-design-review/**', 'plan-devex-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'test/helpers/agent-sdk-runner.ts', 'test/helpers/claude-pty-runner.ts'],
+  'carve-section-loading':       ['plan-tech-review/**', 'plan-ux-review/**', 'plan-dx-review/**', 'idea-review/**', 'docs-release-update/**', 'design-system/**', 'security-audit/**', 'test/helpers/carve-guards.ts', 'scripts/resolvers/sections.ts', 'scripts/gen-skill-docs.ts', 'test/helpers/auq-sdk-capture.ts', 'test/helpers/session-runner.ts'],
+  'autoplan-chain-pty':          ['auto-plan-review/**', 'plan-business-review/**', 'plan-ux-review/**', 'plan-tech-review/**', 'plan-dx-review/**', 'test/fixtures/plans/ui-heavy-feature.md', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-auto-plan-review-chain.test.ts'],
+  'e2e-harness-audit':            ['plan-business-review/**', 'plan-tech-review/**', 'plan-ux-review/**', 'plan-dx-review/**', 'scripts/resolvers/preamble/generate-completion-status.ts', 'test/helpers/agent-sdk-runner.ts', 'test/helpers/claude-pty-runner.ts'],
 
   // Per-finding AskUserQuestion count + review-report-at-bottom assertion.
   // Each test drives its skill end-to-end; touchfiles include preamble +
   // completion-status resolvers because they affect question cadence and
   // terminal output (the regression surface this test catches).
-  'plan-ceo-finding-count':      ['plan-ceo-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-ceo-finding-count.test.ts'],
-  'plan-eng-finding-count':      ['plan-eng-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-eng-finding-count.test.ts'],
-  'plan-design-finding-count':   ['plan-design-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-design-finding-count.test.ts'],
-  'plan-devex-finding-count':    ['plan-devex-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-devex-finding-count.test.ts'],
+  'plan-ceo-finding-count':      ['plan-business-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-business-finding-count.test.ts'],
+  'plan-eng-finding-count':      ['plan-tech-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-tech-finding-count.test.ts'],
+  'plan-design-finding-count':   ['plan-ux-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-ux-finding-count.test.ts'],
+  'plan-devex-finding-count':    ['plan-dx-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'test/helpers/claude-pty-runner.ts', 'test/skill-e2e-plan-dx-finding-count.test.ts'],
 
   // Gate-tier reviewCount-floor counterparts. Catch the May 2026 transcript
   // bug (model wrote a plan-mode plan and ExitPlanMode'd without firing any
   // review-phase AskUserQuestion). Uses runPlanSkillFloorCheck — minimal
   // "did agent fire ANY AUQ?" observer that exits early on first non-permission
   // numbered-option render. ~1-3 min typical wall time per test, ~$2-6 total.
-  'plan-eng-finding-floor':      ['plan-eng-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-eng-finding-floor.test.ts'],
-  'plan-ceo-finding-floor':      ['plan-ceo-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-ceo-finding-floor.test.ts'],
-  'plan-design-finding-floor':   ['plan-design-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-design-finding-floor.test.ts'],
-  'plan-devex-finding-floor':    ['plan-devex-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-devex-finding-floor.test.ts'],
+  'plan-eng-finding-floor':      ['plan-tech-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-tech-finding-floor.test.ts'],
+  'plan-ceo-finding-floor':      ['plan-business-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-business-finding-floor.test.ts'],
+  'plan-design-finding-floor':   ['plan-ux-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-ux-finding-floor.test.ts'],
+  'plan-devex-finding-floor':    ['plan-dx-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-dx-finding-floor.test.ts'],
 
   // Multi-finding batching regression — periodic tier complement to the
   // gate-tier finding-floor. Catches the May 2026 transcript shape where
   // a model fires one AUQ then batches the rest into a "## Decisions to
   // confirm" plan write. runPlanSkillFloorCheck cannot detect that shape
   // (it exits on first AUQ); runPlanSkillCounting can.
-  'plan-eng-multi-finding-batching': ['plan-eng-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-eng-multi-finding-batching.test.ts'],
-  'plan-ceo-split-overflow': ['plan-ceo-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'bin/gstack-question-preference', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-ceo-split-overflow.test.ts'],
-  'brain-privacy-gate':           ['scripts/resolvers/preamble/generate-brain-sync-block.ts', 'scripts/resolvers/preamble.ts', 'bin/gstack-brain-sync', 'bin/gstack-artifacts-init', 'bin/gstack-config', 'test/helpers/agent-sdk-runner.ts', 'test/skill-e2e-brain-privacy-gate.test.ts'],
+  'plan-eng-multi-finding-batching': ['plan-tech-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completion-status.ts', 'scripts/resolvers/review.ts', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-tech-multi-finding-batching.test.ts'],
+  'plan-ceo-split-overflow': ['plan-business-review/**', 'scripts/resolvers/preamble.ts', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'bin/paysec-question-preference', 'test/helpers/claude-pty-runner.ts', 'test/fixtures/forcing-finding-seeds.ts', 'test/skill-e2e-plan-business-split-overflow.test.ts'],
+  'brain-privacy-gate':           ['scripts/resolvers/preamble/generate-brain-sync-block.ts', 'scripts/resolvers/preamble.ts', 'bin/paysec-brain-sync', 'bin/paysec-artifacts-init', 'bin/paysec-config', 'test/helpers/agent-sdk-runner.ts', 'test/skill-e2e-brain-privacy-gate.test.ts'],
 
-  // /setup-gbrain Path 4 (Remote MCP) — happy + bad-token end-to-end via
+  // /brain-setup Path 4 (Remote MCP) — happy + bad-token end-to-end via
   // Agent SDK. Gate-tier (deterministic stub server, fixed inputs); fires
   // when the skill template, the verify helper, the artifacts-init helper,
   // or the detect script changes.
-  'setup-gbrain-remote':          ['setup-gbrain/SKILL.md.tmpl', 'bin/gstack-gbrain-mcp-verify', 'bin/gstack-artifacts-init', 'bin/gstack-gbrain-detect', 'test/helpers/agent-sdk-runner.ts', 'test/skill-e2e-setup-gbrain-remote.test.ts'],
-  'setup-gbrain-bad-token':       ['setup-gbrain/SKILL.md.tmpl', 'bin/gstack-gbrain-mcp-verify', 'test/helpers/agent-sdk-runner.ts', 'test/skill-e2e-setup-gbrain-bad-token.test.ts'],
+  'setup-gbrain-remote':          ['brain-setup/SKILL.md.tmpl', 'bin/paysec-gbrain-mcp-verify', 'bin/paysec-artifacts-init', 'bin/paysec-gbrain-detect', 'test/helpers/agent-sdk-runner.ts', 'test/skill-e2e-brain-setup-remote.test.ts'],
+  'setup-gbrain-bad-token':       ['brain-setup/SKILL.md.tmpl', 'bin/paysec-gbrain-mcp-verify', 'test/helpers/agent-sdk-runner.ts', 'test/skill-e2e-brain-setup-bad-token.test.ts'],
   // v1.34.0.0 split-engine Path 4 + Step 4.5 Yes (local PGLite for code).
   // Periodic-tier per codex #12 (AgentSDK harness is non-deterministic).
-  // Fires when the setup-gbrain template, install/verify/init helpers, or
+  // Fires when the brain-setup template, install/verify/init helpers, or
   // the agent-sdk-runner harness changes.
-  'setup-gbrain-path4-local-pglite': ['setup-gbrain/SKILL.md.tmpl', 'bin/gstack-gbrain-mcp-verify', 'bin/gstack-gbrain-install', 'bin/gstack-gbrain-detect', 'lib/gbrain-local-status.ts', 'test/helpers/agent-sdk-runner.ts', 'test/skill-e2e-setup-gbrain-path4-local-pglite.test.ts'],
+  'setup-gbrain-path4-local-pglite': ['brain-setup/SKILL.md.tmpl', 'bin/paysec-gbrain-mcp-verify', 'bin/paysec-gbrain-install', 'bin/paysec-gbrain-detect', 'lib/gbrain-local-status.ts', 'test/helpers/agent-sdk-runner.ts', 'test/skill-e2e-brain-setup-path4-local-pglite.test.ts'],
 
   // AskUserQuestion format regression (RECOMMENDATION + Completeness: N/10)
   // Fires when either template OR the two preamble resolvers change.
-  'plan-ceo-review-format-mode':      ['plan-ceo-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md', 'test/helpers/llm-judge.ts'],
-  'plan-ceo-review-format-approach':  ['plan-ceo-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md', 'test/helpers/llm-judge.ts'],
-  'plan-eng-review-format-coverage':  ['plan-eng-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md', 'test/helpers/llm-judge.ts'],
-  'plan-eng-review-format-kind':      ['plan-eng-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md', 'test/helpers/llm-judge.ts'],
+  'plan-ceo-review-format-mode':      ['plan-business-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md', 'test/helpers/llm-judge.ts'],
+  'plan-ceo-review-format-approach':  ['plan-business-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md', 'test/helpers/llm-judge.ts'],
+  'plan-eng-review-format-coverage':  ['plan-tech-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md', 'test/helpers/llm-judge.ts'],
+  'plan-eng-review-format-kind':      ['plan-tech-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble/generate-completeness-section.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md', 'test/helpers/llm-judge.ts'],
 
   // v1.7.0.0 Pros/Cons format cadence + format + negative-escape evals.
   // Dependencies: same as format-mode + the 4 plan-review templates + overlay.
   // All periodic-tier (non-deterministic Opus 4.7 behavior).
-  'plan-ceo-review-prosons-cadence':  ['plan-ceo-review/**', 'plan-eng-review/**', 'plan-design-review/**', 'plan-devex-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
-  'plan-review-prosons-format':       ['plan-ceo-review/**', 'plan-eng-review/**', 'plan-design-review/**', 'plan-devex-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
-  'plan-review-prosons-hardstop-neg': ['plan-ceo-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
-  'plan-review-prosons-neutral-neg':  ['plan-ceo-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
+  'plan-ceo-review-prosons-cadence':  ['plan-business-review/**', 'plan-tech-review/**', 'plan-ux-review/**', 'plan-dx-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
+  'plan-review-prosons-format':       ['plan-business-review/**', 'plan-tech-review/**', 'plan-ux-review/**', 'plan-dx-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
+  'plan-review-prosons-hardstop-neg': ['plan-business-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
+  'plan-review-prosons-neutral-neg':  ['plan-business-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
 
   // Expanded coverage (CT3) — 6 non-plan-review skills inherit Pros/Cons via preamble
-  'ship-prosons-format':              ['ship/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
-  'office-hours-prosons-format':      ['office-hours/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
-  'investigate-prosons-format':       ['investigate/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
-  'qa-prosons-format':                ['qa/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
-  'review-prosons-format':            ['review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
-  'design-review-prosons-format':     ['design-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
-  'document-release-prosons-format':  ['document-release/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
+  'ship-prosons-format':              ['ship-pr/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
+  'office-hours-prosons-format':      ['idea-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
+  'investigate-prosons-format':       ['debug-root-cause/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
+  'qa-prosons-format':                ['qa-fix/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
+  'review-prosons-format':            ['pr-review/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
+  'design-review-prosons-format':     ['design-qa/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
+  'document-release-prosons-format':  ['docs-release-update/**', 'scripts/resolvers/preamble/generate-ask-user-format.ts', 'scripts/resolvers/preamble.ts', 'model-overlays/opus-4-7.md'],
 
-  // /plan-tune (v1 observational)
-  'plan-tune-inspect':         ['plan-tune/**', 'scripts/question-registry.ts', 'scripts/psychographic-signals.ts', 'scripts/one-way-doors.ts', 'bin/gstack-question-log', 'bin/gstack-question-preference', 'bin/gstack-developer-profile'],
+  // /tune-questions (v1 observational)
+  'plan-tune-inspect':         ['tune-questions/**', 'scripts/question-registry.ts', 'scripts/psychographic-signals.ts', 'scripts/one-way-doors.ts', 'bin/paysec-question-log', 'bin/paysec-question-preference', 'bin/paysec-developer-profile'],
 
-  // /plan-tune cathedral (T16 — 5 E2E scenarios, all gate per D12)
-  'plan-tune-hook-capture':      ['hosts/claude/hooks/**', 'bin/gstack-question-log', 'bin/gstack-developer-profile', 'plan-tune/**'],
-  'plan-tune-enforcement':       ['hosts/claude/hooks/**', 'bin/gstack-question-preference', 'scripts/question-registry.ts'],
+  // /tune-questions cathedral (T16 — 5 E2E scenarios, all gate per D12)
+  'plan-tune-hook-capture':      ['hosts/claude/hooks/**', 'bin/paysec-question-log', 'bin/paysec-developer-profile', 'tune-questions/**'],
+  'plan-tune-enforcement':       ['hosts/claude/hooks/**', 'bin/paysec-question-preference', 'scripts/question-registry.ts'],
   'plan-tune-annotation':        ['hosts/claude/hooks/**', 'scripts/declared-annotation.ts', 'scripts/psychographic-signals.ts', 'scripts/question-registry.ts'],
-  'plan-tune-codex-import':      ['bin/gstack-codex-session-import', 'bin/gstack-question-log', 'docs/spikes/codex-session-format.md'],
-  'plan-tune-dream-cycle':       ['bin/gstack-distill-free-text', 'bin/gstack-distill-apply', 'hosts/claude/hooks/**', 'plan-tune/**'],
+  'plan-tune-codex-import':      ['bin/paysec-codex-session-import', 'bin/paysec-question-log', 'docs/spikes/codex-session-format.md'],
+  'plan-tune-dream-cycle':       ['bin/paysec-distill-free-text', 'bin/paysec-distill-apply', 'hosts/claude/hooks/**', 'tune-questions/**'],
 
   // Codex offering verification
-  'codex-offered-office-hours':  ['office-hours/**', 'scripts/gen-skill-docs.ts'],
-  'codex-offered-ceo-review':    ['plan-ceo-review/**', 'scripts/gen-skill-docs.ts'],
-  'codex-offered-design-review': ['plan-design-review/**', 'scripts/gen-skill-docs.ts'],
-  'codex-offered-eng-review':    ['plan-eng-review/**', 'scripts/gen-skill-docs.ts'],
+  'codex-offered-office-hours':  ['idea-review/**', 'scripts/gen-skill-docs.ts'],
+  'codex-offered-ceo-review':    ['plan-business-review/**', 'scripts/gen-skill-docs.ts'],
+  'codex-offered-design-review': ['plan-ux-review/**', 'scripts/gen-skill-docs.ts'],
+  'codex-offered-eng-review':    ['plan-tech-review/**', 'scripts/gen-skill-docs.ts'],
 
   // Ship
-  'ship-base-branch': ['ship/**', 'bin/gstack-repo-mode', 'test/skill-e2e-review-attribution.test.ts'],
-  'ship-local-workflow': ['ship/**', 'scripts/gen-skill-docs.ts'],
-  'review-dashboard-via': ['ship/**', 'scripts/resolvers/review.ts', 'codex/**', 'autoplan/**', 'land-and-deploy/**', 'test/skill-e2e-review-attribution.test.ts'],
+  'ship-base-branch': ['ship-pr/**', 'bin/paysec-repo-mode', 'test/skill-e2e-pr-review-attribution.test.ts'],
+  'ship-local-workflow': ['ship-pr/**', 'scripts/gen-skill-docs.ts'],
+  'review-dashboard-via': ['ship-pr/**', 'scripts/resolvers/review.ts', 'codex-second-opinion/**', 'auto-plan-review/**', 'merge-and-deploy/**', 'test/skill-e2e-pr-review-attribution.test.ts'],
 
   // Retro
-  'retro':             ['retro/**', 'test/skill-e2e-retro.test.ts'],
-  'retro-base-branch': ['retro/**', 'test/skill-e2e-retro.test.ts'],
+  'retro':             ['weekly-retro/**', 'test/skill-e2e-weekly-retro.test.ts'],
+  'retro-base-branch': ['weekly-retro/**', 'test/skill-e2e-weekly-retro.test.ts'],
 
   // Global discover
-  'global-discover':   ['bin/gstack-global-discover.ts', 'test/global-discover.test.ts'],
+  'global-discover':   ['bin/paysec-global-discover.ts', 'test/global-discover.test.ts'],
 
   // CSO
-  'cso-full-audit':   ['cso/**'],
-  'cso-diff-mode':    ['cso/**'],
-  'cso-infra-scope':  ['cso/**'],
+  'cso-full-audit':   ['security-audit/**'],
+  'cso-diff-mode':    ['security-audit/**'],
+  'cso-infra-scope':  ['security-audit/**'],
 
   // Learnings
-  'learnings-show': ['learn/**', 'bin/gstack-learnings-search', 'bin/gstack-learnings-log', 'scripts/resolvers/learnings.ts'],
+  'learnings-show': ['learnings/**', 'bin/paysec-learnings-search', 'bin/paysec-learnings-log', 'scripts/resolvers/learnings.ts'],
 
-  // Session Intelligence (timeline, context recovery, /context-save + /context-restore)
-  'timeline-event-flow':            ['bin/gstack-timeline-log', 'bin/gstack-timeline-read'],
-  'context-recovery-artifacts':     ['scripts/resolvers/preamble.ts', 'bin/gstack-timeline-log', 'bin/gstack-slug', 'learn/**'],
-  'context-save-writes-file':       ['context-save/**', 'bin/gstack-slug'],
-  'context-restore-loads-latest':   ['context-restore/**', 'bin/gstack-slug'],
+  // Session Intelligence (timeline, context recovery, /save-context + /restore-context)
+  'timeline-event-flow':            ['bin/paysec-timeline-log', 'bin/paysec-timeline-read'],
+  'context-recovery-artifacts':     ['scripts/resolvers/preamble.ts', 'bin/paysec-timeline-log', 'bin/paysec-slug', 'learnings/**'],
+  'context-save-writes-file':       ['save-context/**', 'bin/paysec-slug'],
+  'context-restore-loads-latest':   ['restore-context/**', 'bin/paysec-slug'],
 
   // Context skills E2E (live-fire, Skill-tool routing path) — see
   // test/skill-e2e-context-skills.test.ts. These are periodic-tier because
   // each one spawns claude -p and costs ~$0.20-$0.40. Collectively they
-  // verify the thing the /checkpoint → /context-save rename was for.
-  'context-save-routing':                  ['context-save/**', 'scripts/resolvers/preamble.ts'],
-  'context-save-then-restore-roundtrip':   ['context-save/**', 'context-restore/**', 'bin/gstack-slug'],
-  'context-restore-fragment-match':        ['context-restore/**'],
-  'context-restore-empty-state':           ['context-restore/**'],
-  'context-restore-list-delegates':        ['context-restore/**'],
-  'context-restore-legacy-compat':         ['context-restore/**'],
-  'context-save-list-current-branch':      ['context-save/**'],
-  'context-save-list-all-branches':        ['context-save/**'],
+  // verify the thing the /checkpoint → /save-context rename was for.
+  'context-save-routing':                  ['save-context/**', 'scripts/resolvers/preamble.ts'],
+  'context-save-then-restore-roundtrip':   ['save-context/**', 'restore-context/**', 'bin/paysec-slug'],
+  'context-restore-fragment-match':        ['restore-context/**'],
+  'context-restore-empty-state':           ['restore-context/**'],
+  'context-restore-list-delegates':        ['restore-context/**'],
+  'context-restore-legacy-compat':         ['restore-context/**'],
+  'context-save-list-current-branch':      ['save-context/**'],
+  'context-save-list-all-branches':        ['save-context/**'],
 
   // Document-release
-  'document-release': ['document-release/**'],
+  'docs-release-update': ['docs-release-update/**'],
 
-  // Codex (Claude E2E — tests /codex skill via Claude)
-  'codex-review': ['codex/**'],
+  // Codex (Claude E2E — tests /codex-second-opinion skill via Claude)
+  'codex-review': ['codex-second-opinion/**'],
 
   // Codex E2E (tests skills via Codex CLI + worktree)
-  'codex-discover-skill':  ['codex/**', '.agents/skills/**', 'test/helpers/codex-session-runner.ts', 'lib/worktree.ts'],
-  'codex-review-findings': ['review/**', '.agents/skills/gstack-review/**', 'codex/**', 'test/helpers/codex-session-runner.ts', 'lib/worktree.ts'],
+  'codex-discover-skill':  ['codex-second-opinion/**', '.agents/skills/**', 'test/helpers/codex-session-runner.ts', 'lib/worktree.ts'],
+  'codex-review-findings': ['pr-review/**', '.agents/skills/paysec-pr-review/**', 'codex-second-opinion/**', 'test/helpers/codex-session-runner.ts', 'lib/worktree.ts'],
 
   // Gemini E2E — smoke test only (Gemini gets lost in worktrees on complex tasks)
   'gemini-smoke':  ['.agents/skills/**', 'test/helpers/gemini-session-runner.ts', 'lib/worktree.ts'],
 
 
   // Coverage audit (shared fixture) + triage + gates
-  'ship-coverage-audit': ['ship/**', 'test/fixtures/coverage-audit-fixture.ts', 'bin/gstack-repo-mode'],
-  'review-coverage-audit': ['review/**', 'test/fixtures/coverage-audit-fixture.ts', 'test/skill-e2e-coverage-audit.test.ts'],
-  'plan-eng-coverage-audit': ['plan-eng-review/**', 'test/fixtures/coverage-audit-fixture.ts', 'test/skill-e2e-coverage-audit.test.ts'],
-  'ship-triage': ['ship/**', 'bin/gstack-repo-mode', 'test/skill-e2e-triage.test.ts'],
+  'ship-coverage-audit': ['ship-pr/**', 'test/fixtures/coverage-audit-fixture.ts', 'bin/paysec-repo-mode'],
+  'review-coverage-audit': ['pr-review/**', 'test/fixtures/coverage-audit-fixture.ts', 'test/skill-e2e-coverage-audit.test.ts'],
+  'plan-eng-coverage-audit': ['plan-tech-review/**', 'test/fixtures/coverage-audit-fixture.ts', 'test/skill-e2e-coverage-audit.test.ts'],
+  'ship-triage': ['ship-pr/**', 'bin/paysec-repo-mode', 'test/skill-e2e-triage.test.ts'],
 
   // Plan completion audit + verification
-  'ship-plan-completion': ['ship/**', 'scripts/gen-skill-docs.ts'],
-  'ship-plan-verification': ['ship/**', 'qa-only/**', 'scripts/gen-skill-docs.ts'],
-  'review-plan-completion': ['review/**', 'scripts/gen-skill-docs.ts'],
+  'ship-plan-completion': ['ship-pr/**', 'scripts/gen-skill-docs.ts'],
+  'ship-plan-verification': ['ship-pr/**', 'qa-report/**', 'scripts/gen-skill-docs.ts'],
+  'review-plan-completion': ['pr-review/**', 'scripts/gen-skill-docs.ts'],
 
   // Design
-  'design-consultation-core':       ['design-consultation/**', 'scripts/gen-skill-docs.ts', 'test/helpers/llm-judge.ts'],
-  'design-consultation-existing':   ['design-consultation/**', 'scripts/gen-skill-docs.ts'],
-  'design-consultation-research':   ['design-consultation/**', 'scripts/gen-skill-docs.ts'],
-  'design-consultation-preview':    ['design-consultation/**', 'scripts/gen-skill-docs.ts'],
-  'plan-design-review-no-ui-scope': ['plan-design-review/**', 'scripts/gen-skill-docs.ts'],
-  'design-review-fix':              ['design-review/**', 'browse/src/**', 'scripts/gen-skill-docs.ts'],
+  'design-consultation-core':       ['design-system/**', 'scripts/gen-skill-docs.ts', 'test/helpers/llm-judge.ts'],
+  'design-consultation-existing':   ['design-system/**', 'scripts/gen-skill-docs.ts'],
+  'design-consultation-research':   ['design-system/**', 'scripts/gen-skill-docs.ts'],
+  'design-consultation-preview':    ['design-system/**', 'scripts/gen-skill-docs.ts'],
+  'plan-design-review-no-ui-scope': ['plan-ux-review/**', 'scripts/gen-skill-docs.ts'],
+  'design-review-fix':              ['design-qa/**', 'browser/src/**', 'scripts/gen-skill-docs.ts'],
 
   // Design Shotgun
-  'design-shotgun-path':            ['design-shotgun/**', 'design/src/**', 'scripts/resolvers/design.ts'],
-  'design-shotgun-session':         ['design-shotgun/**', 'scripts/resolvers/design.ts'],
-  'design-shotgun-full':            ['design-shotgun/**', 'design/src/**', 'browse/src/**'],
+  'design-shotgun-path':            ['design-variants/**', 'design/src/**', 'scripts/resolvers/design.ts'],
+  'design-shotgun-session':         ['design-variants/**', 'scripts/resolvers/design.ts'],
+  'design-shotgun-full':            ['design-variants/**', 'design/src/**', 'browser/src/**'],
 
-  // /diagram (diagram-render bundle consumers). Triplet = deterministic
+  // /make-diagram (diagram-render bundle consumers). Triplet = deterministic
   // functional (gate); authoring quality = LLM-judged benchmark (periodic).
-  'diagram-triplet':            ['diagram/**', 'lib/diagram-render/**', 'browse/src/write-commands.ts', 'browse/src/read-commands.ts'],
-  'diagram-authoring-quality':  ['diagram/**', 'lib/diagram-render/**', 'test/helpers/llm-judge.ts'],
+  'diagram-triplet':            ['make-diagram/**', 'lib/diagram-render/**', 'browser/src/write-commands.ts', 'browser/src/read-commands.ts'],
+  'diagram-authoring-quality':  ['make-diagram/**', 'lib/diagram-render/**', 'test/helpers/llm-judge.ts'],
 
-  // gstack-upgrade
-  'gstack-upgrade-happy-path': ['gstack-upgrade/**'],
+  // paysec-upgrade
+  'paysec-upgrade-happy-path': ['paysec-upgrade/**'],
 
   // Deploy skills
-  'land-and-deploy-workflow':      ['land-and-deploy/**', 'scripts/gen-skill-docs.ts'],
-  'land-and-deploy-first-run':     ['land-and-deploy/**', 'scripts/gen-skill-docs.ts', 'bin/gstack-slug'],
-  'land-and-deploy-review-gate':   ['land-and-deploy/**', 'bin/gstack-review-read'],
-  'canary-workflow':               ['canary/**', 'browse/src/**'],
-  'benchmark-workflow':            ['benchmark/**', 'browse/src/**'],
-  'setup-deploy-workflow':         ['setup-deploy/**', 'scripts/gen-skill-docs.ts'],
+  'land-and-deploy-workflow':      ['merge-and-deploy/**', 'scripts/gen-skill-docs.ts'],
+  'land-and-deploy-first-run':     ['merge-and-deploy/**', 'scripts/gen-skill-docs.ts', 'bin/paysec-slug'],
+  'land-and-deploy-review-gate':   ['merge-and-deploy/**', 'bin/paysec-review-read'],
+  'canary-workflow':               ['post-deploy-monitor/**', 'browser/src/**'],
+  'benchmark-workflow':            ['perf-check/**', 'browser/src/**'],
+  'setup-deploy-workflow':         ['deploy-setup/**', 'scripts/gen-skill-docs.ts'],
 
 
   // Autoplan
-  'autoplan-core':  ['autoplan/**', 'plan-ceo-review/**', 'plan-eng-review/**', 'plan-design-review/**'],
-  'autoplan-dual-voice': ['autoplan/**', 'codex/**', 'bin/gstack-codex-probe', 'scripts/resolvers/review.ts', 'scripts/resolvers/design.ts'],
+  'autoplan-core':  ['auto-plan-review/**', 'plan-business-review/**', 'plan-tech-review/**', 'plan-ux-review/**'],
+  'autoplan-dual-voice': ['auto-plan-review/**', 'codex-second-opinion/**', 'bin/paysec-codex-probe', 'scripts/resolvers/review.ts', 'scripts/resolvers/design.ts'],
 
   // Multi-provider benchmark adapters — live API smoke against real claude/codex/gemini CLIs
-  'benchmark-providers-live': ['bin/gstack-model-benchmark', 'test/helpers/providers/**', 'test/helpers/benchmark-runner.ts', 'test/helpers/pricing.ts', 'test/skill-e2e-benchmark-providers.test.ts'],
+  'benchmark-providers-live': ['bin/paysec-model-benchmark', 'test/helpers/providers/**', 'test/helpers/benchmark-runner.ts', 'test/helpers/pricing.ts', 'test/skill-e2e-benchmark-providers.test.ts'],
 
-  // Browser-skills Phase 2a — /scrape + /skillify (v1.19.0.0). Gate-tier
+  // Browser-skills Phase 2a — /web-scrape + /save-scrape-skill (v1.19.0.0). Gate-tier
   // E2E covers the D1 (provenance guard), D3 (atomic write) contracts plus
   // the basic loop. Shared deps: both skill templates, the D3 helper, the
   // Phase 1 runtime, and the bundled hackernews-frontpage reference (the
   // match-path test relies on it).
   'scrape-match-path': [
-    'scrape/**', 'browse/src/browser-skills.ts', 'browse/src/browser-skill-commands.ts',
+    'web-scrape/**', 'browser/src/browser-skills.ts', 'browser/src/browser-skill-commands.ts',
     'browser-skills/hackernews-frontpage/**',
   ],
   'scrape-prototype-path': [
-    'scrape/**', 'browse/src/browser-skills.ts', 'browse/src/browser-skill-commands.ts',
+    'web-scrape/**', 'browser/src/browser-skills.ts', 'browser/src/browser-skill-commands.ts',
   ],
   'skillify-happy-path': [
-    'skillify/**', 'scrape/**', 'browse/src/browser-skill-write.ts',
-    'browse/src/browser-skills.ts', 'browse/src/browser-skill-commands.ts',
+    'save-scrape-skill/**', 'web-scrape/**', 'browser/src/browser-skill-write.ts',
+    'browser/src/browser-skills.ts', 'browser/src/browser-skill-commands.ts',
   ],
   'skillify-provenance-refusal': [
-    'skillify/**', 'browse/src/browser-skill-write.ts',
+    'save-scrape-skill/**', 'browser/src/browser-skill-write.ts',
   ],
   'skillify-approval-reject': [
-    'skillify/**', 'scrape/**', 'browse/src/browser-skill-write.ts',
+    'save-scrape-skill/**', 'web-scrape/**', 'browser/src/browser-skill-write.ts',
   ],
 
   // Skill routing — journey-stage tests (depend on ALL skill descriptions)
@@ -385,43 +385,43 @@ export const E2E_TOUCHFILES: Record<string, string[]> = {
     'test/skill-e2e-overlay-harness.test.ts',
   ],
 
-  // /ios-qa — agent flow E2E. Daemon + stub StateServer + codegen
+  // /ios-device-qa — agent flow E2E. Daemon + stub StateServer + codegen
   // exercised end-to-end. The no-device path is gate-tier; the with-device
-  // path requires GSTACK_HAS_IOS_DEVICE=1 and is periodic-tier.
-  'ios-qa-e2e':       ['ios-qa/**', 'ios-fix/**', 'ios-design-review/**', 'ios-clean/**', 'ios-sync/**', 'test/skill-e2e-ios.test.ts'],
+  // path requires PAYSEC_HAS_IOS_DEVICE=1 and is periodic-tier.
+  'ios-qa-e2e':       ['ios-device-qa/**', 'ios-auto-fix/**', 'ios-design-audit/**', 'ios-remove-debug/**', 'ios-bridge-sync/**', 'test/skill-e2e-ios.test.ts'],
   // Swift-build invariant test — requires the Swift toolchain. Compiles the
   // fixture SPM package + runs the XCTest suite that validates the real
   // Swift StateServer implementation (loopback bind, boot token rotation,
   // session lock). Periodic-tier — Swift build is heavier than TS unit tests.
-  'ios-qa-swift-build': ['ios-qa/templates/**', 'test/fixtures/ios-qa/FixtureApp/**', 'test/skill-e2e-ios-swift-build.test.ts'],
-  // Real-device path — only runs with GSTACK_HAS_IOS_DEVICE=1 + a paired
+  'ios-qa-swift-build': ['ios-device-qa/templates/**', 'test/fixtures/ios-device-qa/FixtureApp/**', 'test/skill-e2e-ios-swift-build.test.ts'],
+  // Real-device path — only runs with PAYSEC_HAS_IOS_DEVICE=1 + a paired
   // iPhone. Validates the CoreDevice agent + iOS SDK toolchain. Periodic-tier.
-  'ios-qa-device':    ['ios-qa/templates/**', 'test/fixtures/ios-qa/FixtureApp/**', 'test/skill-e2e-ios-device.test.ts'],
+  'ios-qa-device':    ['ios-device-qa/templates/**', 'test/fixtures/ios-device-qa/FixtureApp/**', 'test/skill-e2e-ios-device.test.ts'],
 
-  // /spec end-to-end via PTY — exercises the full Phase 1→5 pipeline
+  // /write-spec end-to-end via PTY — exercises the full Phase 1→5 pipeline
   // including --execute spawn. Periodic-tier — paid + non-deterministic.
-  'spec-execute':     ['spec/**', 'test/skill-e2e-spec-execute.test.ts'],
+  'spec-execute':     ['write-spec/**', 'test/skill-e2e-write-spec-execute.test.ts'],
 
-  // /office-hours brain-writeback path under fake gbrain CLI (v1.50.0.0
-  // T7). Drives /office-hours with a regenerated SKILL.md that has the
+  // /idea-review brain-writeback path under fake gbrain CLI (v1.50.0.0
+  // T7). Drives /idea-review with a regenerated SKILL.md that has the
   // compressed GBRAIN_SAVE_RESULTS block + a fake gbrain on PATH; asserts
-  // the agent calls `gbrain put office-hours/<slug>` with valid YAML
+  // the agent calls `gbrain put idea-review/<slug>` with valid YAML
   // frontmatter. Touched by anything that changes resolver output, gen
   // pipeline, detection helper, refresh subcommand, or the on-demand
   // docs the resolver points to.
   'office-hours-brain-writeback': [
     'scripts/resolvers/gbrain.ts',
     'scripts/gen-skill-docs.ts',
-    'bin/gstack-gbrain-detect',
-    'bin/gstack-config',
-    'office-hours/SKILL.md.tmpl',
+    'bin/paysec-gbrain-detect',
+    'bin/paysec-config',
+    'idea-review/SKILL.md.tmpl',
     'docs/gbrain-write-surfaces.md',
     'test/fixtures/office-hours-brain-writeback/**',
-    'test/skill-e2e-office-hours-brain-writeback.test.ts',
+    'test/skill-e2e-idea-review-brain-writeback.test.ts',
   ],
 
   // gbrain CLI real round-trip against a local PGLite store (v1.50.0.0
-  // T11). Proves the gbrain CLI persistence contract gstack relies on —
+  // T11). Proves the gbrain CLI persistence contract paysec relies on —
   // a `gbrain put` followed by `gbrain get` returns the body. Skips if
   // VOYAGE_API_KEY is unset OR gbrain CLI not on PATH. Touched by the
   // resolver (which emits the CLI shape) and the test itself.
@@ -498,17 +498,17 @@ export const E2E_TIERS: Record<string, 'gate' | 'periodic'> = {
   // posture). Per CLAUDE.md tier-classification rules, non-deterministic
   // quality benchmarks belong in periodic, not gate. The wave's +21-line
   // CJK preamble cascade (#1205) pushed the score from 5/5 → 3/3 on the
-  // same /office-hours BUILDER prompt — same model, same fixture — proving
+  // same /idea-review BUILDER prompt — same model, same fixture — proving
   // the bar is sensitive to preamble-byte changes that have nothing to do
   // with the test's intent (creativity, not preamble compliance).
   'office-hours-builder-wildness': 'periodic',
 
   // Plan reviews — gate for cheap functional, periodic for Opus quality
-  'plan-ceo-review': 'periodic',
+  'plan-business-review': 'periodic',
   'plan-ceo-review-selective': 'periodic',
   'plan-ceo-review-benefits': 'gate',
   'plan-ceo-review-expansion-energy': 'gate',  // V1.1 mode-posture regression gate (Opus generator, Sonnet judge)
-  'plan-eng-review': 'periodic',
+  'plan-tech-review': 'periodic',
   'plan-eng-review-artifact': 'periodic',
   'plan-eng-coverage-audit': 'gate',
   'plan-review-report': 'gate',
@@ -538,10 +538,10 @@ export const E2E_TIERS: Record<string, 'gate' | 'periodic'> = {
   'plan-ceo-mode-routing':     'periodic',   // ~$3/run, deep navigation through 8-12 prior AskUserQuestions
   'plan-design-with-ui-scope': 'gate',       // ~$0.80/run
   'budget-regression-pty':     'gate',       // free, library-only assertion
-  'ship-idempotency-pty':      'periodic',   // ~$3/run, real /ship in plan mode
-  'ship-section-loading':      'periodic',   // ~$3/run, real /ship; asserts section reads
-  'plan-ceo-section-loading':  'periodic',   // ~$3-5/run, real /plan-ceo-review; asserts section read
-  'carve-section-loading':     'periodic',   // ~$1-2/skill, data-driven; GSTACK_CARVE_SKILL scopes to one
+  'ship-idempotency-pty':      'periodic',   // ~$3/run, real /ship-pr in plan mode
+  'ship-section-loading':      'periodic',   // ~$3/run, real /ship-pr; asserts section reads
+  'plan-ceo-section-loading':  'periodic',   // ~$3-5/run, real /plan-business-review; asserts section read
+  'carve-section-loading':     'periodic',   // ~$1-2/skill, data-driven; PAYSEC_CARVE_SKILL scopes to one
   'autoplan-chain-pty':        'periodic',   // ~$8/run, all 3 phases sequential
 
   // Per-finding count + review-report-at-bottom — periodic because each
@@ -559,11 +559,11 @@ export const E2E_TIERS: Record<string, 'gate' | 'periodic'> = {
   'plan-eng-multi-finding-batching': 'periodic',
   'plan-ceo-split-overflow': 'periodic',
 
-  // Privacy gate for gstack-brain-sync — periodic (non-deterministic LLM call,
+  // Privacy gate for paysec-brain-sync — periodic (non-deterministic LLM call,
   // costs ~$0.30-$0.50 per run, not needed on every commit)
   'brain-privacy-gate': 'periodic',
 
-  // /setup-gbrain Path 4 (Remote MCP) — periodic-tier. The stub HTTP
+  // /brain-setup Path 4 (Remote MCP) — periodic-tier. The stub HTTP
   // server is deterministic but the model's interpretation of "follow
   // Path 4 only" is not — assertions on which steps the model ran are
   // flaky. The deterministic gate-tier coverage for Path 4 lives in
@@ -602,10 +602,10 @@ export const E2E_TIERS: Record<string, 'gate' | 'periodic'> = {
   'design-review-prosons-format': 'periodic',
   'document-release-prosons-format': 'periodic',
 
-  // /plan-tune — gate (core v1 DX promise: plain-English intent routing)
+  // /tune-questions — gate (core v1 DX promise: plain-English intent routing)
   'plan-tune-inspect': 'gate',
 
-  // /plan-tune cathedral (T16 per D12 — all gate)
+  // /tune-questions cathedral (T16 per D12 — all gate)
   'plan-tune-hook-capture': 'gate',
   'plan-tune-enforcement': 'gate',
   'plan-tune-annotation': 'gate',
@@ -621,15 +621,15 @@ export const E2E_TIERS: Record<string, 'gate' | 'periodic'> = {
   // Session Intelligence — gate for data flow, periodic for agent integration
   'timeline-event-flow': 'gate',                   // Binary data flow (no LLM needed)
   'context-recovery-artifacts': 'gate',            // Preamble reads seeded artifacts
-  'context-save-writes-file': 'gate',              // /context-save writes a file
+  'context-save-writes-file': 'gate',              // /save-context writes a file
   'context-restore-loads-latest': 'gate',          // Cross-branch newest-by-filename restore
 
   // Context skills live-fire — periodic (each test spawns claude -p, ~$0.20-$0.40)
-  'context-save-routing': 'periodic',              // Proves /context-save routes via Skill tool
+  'context-save-routing': 'periodic',              // Proves /save-context routes via Skill tool
   'context-save-then-restore-roundtrip': 'periodic', // Full cycle in one session
-  'context-restore-fragment-match': 'periodic',    // /context-restore <fragment>
+  'context-restore-fragment-match': 'periodic',    // /restore-context <fragment>
   'context-restore-empty-state': 'periodic',       // Graceful zero-saves message
-  'context-restore-list-delegates': 'periodic',    // /context-restore list redirect
+  'context-restore-list-delegates': 'periodic',    // /restore-context list redirect
   'context-restore-legacy-compat': 'periodic',     // Pre-rename files still load
   'context-save-list-current-branch': 'periodic',  // Default branch filter
   'context-save-list-all-branches': 'periodic',    // --all flag
@@ -650,7 +650,7 @@ export const E2E_TIERS: Record<string, 'gate' | 'periodic'> = {
   'global-discover': 'gate',
 
   // CSO — gate for security guardrails, periodic for quality
-  'cso-full-audit': 'periodic',  // D2a demotion 2026-08: 250s/$0.57 full audit; cso targeted tests stay gate
+  'cso-full-audit': 'periodic',  // D2a demotion 2026-08: 250s/$0.57 full audit; security-audit targeted tests stay gate
   'cso-diff-mode': 'gate',
   'cso-infra-scope': 'periodic',
 
@@ -658,7 +658,7 @@ export const E2E_TIERS: Record<string, 'gate' | 'periodic'> = {
   'learnings-show': 'gate',
 
   // Document-release — gate (CHANGELOG guardrail)
-  'document-release': 'gate',
+  'docs-release-update': 'gate',
 
   // Codex — periodic (Opus, requires codex CLI)
   'codex-review': 'periodic',
@@ -679,12 +679,12 @@ export const E2E_TIERS: Record<string, 'gate' | 'periodic'> = {
   'design-shotgun-session': 'gate',
   'design-shotgun-full': 'periodic',
 
-  // /diagram — triplet is deterministic functional, judge is a quality benchmark
+  // /make-diagram — triplet is deterministic functional, judge is a quality benchmark
   'diagram-triplet': 'gate',
   'diagram-authoring-quality': 'periodic',
 
-  // gstack-upgrade
-  'gstack-upgrade-happy-path': 'gate',
+  // paysec-upgrade
+  'paysec-upgrade-happy-path': 'gate',
 
   // Deploy skills
   'land-and-deploy-workflow': 'gate',
@@ -729,14 +729,14 @@ export const E2E_TIERS: Record<string, 'gate' | 'periodic'> = {
   'overlay-harness-opus-4-7-fanout-toy': 'periodic',
   'overlay-harness-opus-4-7-fanout-realistic': 'periodic',
 
-  // /ios-qa daemon + codegen — no-device path runs every PR (no hardware
-  // dependency, deterministic). with-device path requires GSTACK_HAS_IOS_DEVICE.
+  // /ios-device-qa daemon + codegen — no-device path runs every PR (no hardware
+  // dependency, deterministic). with-device path requires PAYSEC_HAS_IOS_DEVICE.
   'ios-qa-e2e': 'gate',
   // Swift toolchain only, no device required, but heavier than TS unit tests.
   'ios-qa-swift-build': 'periodic',
   // Requires a real connected + paired iPhone. Manual-trigger only.
   'ios-qa-device': 'periodic',
-  // /spec end-to-end PTY pipeline (paid, non-deterministic — periodic-tier).
+  // /write-spec end-to-end PTY pipeline (paid, non-deterministic — periodic-tier).
   'spec-execute': 'periodic',
 };
 
@@ -744,49 +744,49 @@ export const E2E_TIERS: Record<string, 'gate' | 'periodic'> = {
  * LLM-judge test touchfiles — keyed by test description string.
  */
 export const LLM_JUDGE_TOUCHFILES: Record<string, string[]> = {
-  'command reference table':          ['SKILL.md', 'SKILL.md.tmpl', 'browse/src/commands.ts'],
-  'snapshot flags reference':         ['SKILL.md', 'SKILL.md.tmpl', 'browse/src/snapshot.ts'],
-  'browse/SKILL.md reference':        ['browse/SKILL.md', 'browse/SKILL.md.tmpl', 'browse/src/**'],
+  'command reference table':          ['SKILL.md', 'SKILL.md.tmpl', 'browser/src/commands.ts'],
+  'snapshot flags reference':         ['SKILL.md', 'SKILL.md.tmpl', 'browser/src/snapshot.ts'],
+  'browser/SKILL.md reference':        ['browser/SKILL.md', 'browser/SKILL.md.tmpl', 'browser/src/**'],
   'setup block':                      ['SKILL.md', 'SKILL.md.tmpl'],
-  'regression vs baseline':           ['SKILL.md', 'SKILL.md.tmpl', 'browse/src/commands.ts', 'test/fixtures/eval-baselines.json'],
-  'qa/SKILL.md workflow':             ['qa/SKILL.md', 'qa/SKILL.md.tmpl'],
-  'qa/SKILL.md health rubric':        ['qa/SKILL.md', 'qa/SKILL.md.tmpl'],
-  'qa/SKILL.md anti-refusal':         ['qa/SKILL.md', 'qa/SKILL.md.tmpl', 'qa-only/SKILL.md', 'qa-only/SKILL.md.tmpl'],
-  'cross-skill greptile consistency': ['review/SKILL.md', 'review/SKILL.md.tmpl', 'ship/SKILL.md', 'ship/SKILL.md.tmpl', 'review/greptile-triage.md', 'retro/SKILL.md', 'retro/SKILL.md.tmpl'],
+  'regression vs baseline':           ['SKILL.md', 'SKILL.md.tmpl', 'browser/src/commands.ts', 'test/fixtures/eval-baselines.json'],
+  'qa-fix/SKILL.md workflow':             ['qa-fix/SKILL.md', 'qa-fix/SKILL.md.tmpl'],
+  'qa-fix/SKILL.md health rubric':        ['qa-fix/SKILL.md', 'qa-fix/SKILL.md.tmpl'],
+  'qa-fix/SKILL.md anti-refusal':         ['qa-fix/SKILL.md', 'qa-fix/SKILL.md.tmpl', 'qa-report/SKILL.md', 'qa-report/SKILL.md.tmpl'],
+  'cross-skill greptile consistency': ['pr-review/SKILL.md', 'pr-review/SKILL.md.tmpl', 'ship-pr/SKILL.md', 'ship-pr/SKILL.md.tmpl', 'pr-review/greptile-triage.md', 'weekly-retro/SKILL.md', 'weekly-retro/SKILL.md.tmpl'],
   'baseline score pinning':           ['SKILL.md', 'SKILL.md.tmpl', 'test/fixtures/eval-baselines.json'],
 
   // Ship & Release
-  'ship/SKILL.md workflow':               ['ship/SKILL.md', 'ship/SKILL.md.tmpl'],
-  'document-release/SKILL.md workflow':   ['document-release/SKILL.md', 'document-release/SKILL.md.tmpl'],
+  'ship-pr/SKILL.md workflow':               ['ship-pr/SKILL.md', 'ship-pr/SKILL.md.tmpl'],
+  'docs-release-update/SKILL.md workflow':   ['docs-release-update/SKILL.md', 'docs-release-update/SKILL.md.tmpl'],
 
   // Plan Reviews
-  'plan-ceo-review/SKILL.md modes':       ['plan-ceo-review/SKILL.md', 'plan-ceo-review/SKILL.md.tmpl'],
-  'plan-eng-review/SKILL.md sections':    ['plan-eng-review/SKILL.md', 'plan-eng-review/SKILL.md.tmpl'],
+  'plan-business-review/SKILL.md modes':       ['plan-business-review/SKILL.md', 'plan-business-review/SKILL.md.tmpl'],
+  'plan-tech-review/SKILL.md sections':    ['plan-tech-review/SKILL.md', 'plan-tech-review/SKILL.md.tmpl'],
 
-  // /spec authored-spec quality (paid LLM-judge — periodic-tier).
-  'plan-design-review/SKILL.md passes':   ['plan-design-review/SKILL.md', 'plan-design-review/SKILL.md.tmpl'],
+  // /write-spec authored-spec quality (paid LLM-judge — periodic-tier).
+  'plan-ux-review/SKILL.md passes':   ['plan-ux-review/SKILL.md', 'plan-ux-review/SKILL.md.tmpl'],
 
   // Design skills
-  'design-review/SKILL.md fix loop':      ['design-review/SKILL.md', 'design-review/SKILL.md.tmpl'],
-  'design-consultation/SKILL.md research': ['design-consultation/SKILL.md', 'design-consultation/SKILL.md.tmpl'],
+  'design-qa/SKILL.md fix loop':      ['design-qa/SKILL.md', 'design-qa/SKILL.md.tmpl'],
+  'design-system/SKILL.md research': ['design-system/SKILL.md', 'design-system/SKILL.md.tmpl'],
 
   // Office Hours
-  'office-hours/SKILL.md spec review':    ['office-hours/SKILL.md', 'office-hours/SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
-  'office-hours/SKILL.md design sketch':  ['office-hours/SKILL.md', 'office-hours/SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
+  'idea-review/SKILL.md spec review':    ['idea-review/SKILL.md', 'idea-review/SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
+  'idea-review/SKILL.md design sketch':  ['idea-review/SKILL.md', 'idea-review/SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
 
   // Deploy skills
-  'land-and-deploy/SKILL.md workflow':    ['land-and-deploy/SKILL.md', 'land-and-deploy/SKILL.md.tmpl'],
-  'canary/SKILL.md monitoring loop':      ['canary/SKILL.md', 'canary/SKILL.md.tmpl'],
-  'benchmark/SKILL.md perf collection':   ['benchmark/SKILL.md', 'benchmark/SKILL.md.tmpl'],
-  'setup-deploy/SKILL.md platform setup': ['setup-deploy/SKILL.md', 'setup-deploy/SKILL.md.tmpl'],
+  'merge-and-deploy/SKILL.md workflow':    ['merge-and-deploy/SKILL.md', 'merge-and-deploy/SKILL.md.tmpl'],
+  'post-deploy-monitor/SKILL.md monitoring loop':      ['post-deploy-monitor/SKILL.md', 'post-deploy-monitor/SKILL.md.tmpl'],
+  'perf-check/SKILL.md perf collection':   ['perf-check/SKILL.md', 'perf-check/SKILL.md.tmpl'],
+  'deploy-setup/SKILL.md platform setup': ['deploy-setup/SKILL.md', 'deploy-setup/SKILL.md.tmpl'],
 
   // Other skills
-  'retro/SKILL.md instructions':          ['retro/SKILL.md', 'retro/SKILL.md.tmpl'],
-  'qa-only/SKILL.md workflow':            ['qa-only/SKILL.md', 'qa-only/SKILL.md.tmpl'],
-  'gstack-upgrade/SKILL.md upgrade flow': ['gstack-upgrade/SKILL.md', 'gstack-upgrade/SKILL.md.tmpl'],
+  'weekly-retro/SKILL.md instructions':          ['weekly-retro/SKILL.md', 'weekly-retro/SKILL.md.tmpl'],
+  'qa-report/SKILL.md workflow':            ['qa-report/SKILL.md', 'qa-report/SKILL.md.tmpl'],
+  'paysec-upgrade/SKILL.md upgrade flow': ['paysec-upgrade/SKILL.md', 'paysec-upgrade/SKILL.md.tmpl'],
 
   // Voice directive
-  'voice directive tone':                 ['scripts/resolvers/preamble.ts', 'review/SKILL.md', 'review/SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
+  'voice directive tone':                 ['scripts/resolvers/preamble.ts', 'pr-review/SKILL.md', 'pr-review/SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
 };
 
 /**

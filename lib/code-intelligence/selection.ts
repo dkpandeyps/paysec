@@ -1,7 +1,7 @@
 /**
  * selection — persists the user's chosen code-intelligence provider and their
- * per-repo indexing consent. Stored at `$GSTACK_HOME/code-intelligence.json`
- * (default `~/.gstack/`), the same home the rest of gstack uses.
+ * per-repo indexing consent. Stored at `$PAYSEC_HOME/code-intelligence.json`
+ * (default `~/.paysec/`), the same home the rest of paysec uses.
  *
  * Portions copyright (c) 2026 Sina Matian, time-attack/gstack (GStack 2), MIT.
  *
@@ -31,7 +31,7 @@ export interface Selection {
 const EMPTY: Selection = { provider: null, consents: {}, roots: {}, declined: false };
 
 function storePath(env: NodeJS.ProcessEnv = process.env): string {
-  const home = env.GSTACK_HOME || join(env.HOME || homedir(), ".gstack");
+  const home = env.PAYSEC_HOME || join(env.HOME || homedir(), ".paysec");
   return join(home, "code-intelligence.json");
 }
 
@@ -76,12 +76,12 @@ export function setConsent(repoPath: string, consented: boolean, env: NodeJS.Pro
 }
 
 /**
- * The per-remote trust store (gstack-gbrain-repo-policy) is the SINGLE
+ * The per-remote trust store (paysec-gbrain-repo-policy) is the SINGLE
  * authority for consent-to-send: a `deny` tier vetoes any recorded
  * code-intelligence consent, so two stores can never disagree about whether
  * code may leave this repo (R1, fork port wave 2 review). The veto is
  * op-class-aware (R2): `read-only` means "search allowed, page writes never"
- * (the exact semantics runCodeImport in bin/gstack-gbrain-sync.ts enforces —
+ * (the exact semantics runCodeImport in bin/paysec-gbrain-sync.ts enforces —
  * code ingest writes pages), so it vetoes write-class ops (register / index /
  * refresh / add / delete) while read-class ops (search / export / status)
  * pass; `deny` vetoes both classes. Mirrors the gbrain-sync chokepoint's

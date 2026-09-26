@@ -1,5 +1,5 @@
 /**
- * gstack browse server — persistent Chromium daemon
+ * paysec browse server — persistent Chromium daemon
  *
  * Architecture:
  *   Bun.serve HTTP on localhost → routes commands to Playwright
@@ -8,8 +8,8 @@
  *   Auto-shutdown after BROWSE_IDLE_TIMEOUT (default 30 min)
  *
  * State:
- *   State file: <project-root>/.gstack/browse.json (set via BROWSE_STATE_FILE env)
- *   Log files:  <project-root>/.gstack/browse-{console,network,dialog}.log
+ *   State file: <project-root>/.paysec/browse.json (set via BROWSE_STATE_FILE env)
+ *   Log files:  <project-root>/.paysec/browse-{console,network,dialog}.log
  *   Port:       random 10000-60000 (or BROWSE_PORT env for debug override)
  */
 
@@ -193,15 +193,15 @@ export interface ServerConfig {
   proxyBridge?: BridgeHandle | null;
   startTime: number;
   /**
-   * Overlay hook. Runs AFTER gstack resolves auth and BEFORE route dispatch.
-   * Invalid tokens are auto-rejected at the gstack layer (401 returned
+   * Overlay hook. Runs AFTER paysec resolves auth and BEFORE route dispatch.
+   * Invalid tokens are auto-rejected at the paysec layer (401 returned
    * before hook fires), so the hook only ever sees valid TokenInfo or null
-   * (no token presented). Returning a Response short-circuits gstack
+   * (no token presented). Returning a Response short-circuits paysec
    * dispatch; returning null falls through.
    */
   beforeRoute?: (req: Request, surface: Surface, auth: TokenInfo | null) => Promise<Response | null>;
   /**
-   * Whether gstack owns the lifecycle of the terminal-agent process and its
+   * Whether paysec owns the lifecycle of the terminal-agent process and its
    * discovery files (`<stateDir>/terminal-port`, `<stateDir>/terminal-internal-token`,
    * `<stateDir>/terminal-agent-pid`).
    *
@@ -209,13 +209,13 @@ export interface ServerConfig {
    *   1. Identity-based kill via `killAgentByRecord(readAgentRecord(stateDir))`
    *      (v1.44+). Only signals the PID recorded by THIS daemon's agent.
    *      Replaced the historical `pkill -f terminal-agent\.ts` regex that
-   *      matched sibling gstack sessions on the same host — see
+   *      matched sibling paysec sessions on the same host — see
    *      terminal-agent-control.ts for rationale.
    *   2. `safeUnlinkQuiet(<stateDir>/terminal-port)`
    *   3. `safeUnlinkQuiet(<stateDir>/terminal-internal-token)`
    *   4. `safeUnlinkQuiet(<stateDir>/terminal-agent-pid)` (the v1.44 record)
    *
-   * This is correct for gstack's CLI path, which spawns `terminal-agent.ts` as
+   * This is correct for paysec's CLI path, which spawns `terminal-agent.ts` as
    * the producer of those files (see cli.ts:1037-1063).
    *
    * Embedders (gbrowser phoenix overlay, future hosts) that run their own PTY
@@ -255,7 +255,7 @@ export interface ServerHandle {
 }
 
 /**
- * Build a ServerConfig-shaped object from process.env. Used by gstack's
+ * Build a ServerConfig-shaped object from process.env. Used by paysec's
  * own CLI when running `bun run dev` or the compiled binary directly.
  * Embedders construct their own ServerConfig explicitly.
  *
@@ -293,15 +293,15 @@ const TUNNEL_PATHS = new Set<string>([
 ]);
 
 /**
- * The gstack sidebar extension's pinned Chrome extension ID. Derived from
+ * The paysec sidebar extension's pinned Chrome extension ID. Derived from
  * the "key" field in extension/manifest.json (first 16 bytes of SHA-256 of
  * the DER public key, hex nibbles mapped 0-9a-f → a-p). Reproduce with:
- *   bun browse/scripts/extension-id.ts
+ *   bun browser/scripts/extension-id.ts
  * POST /extension-token releases AUTH_TOKEN only to an Origin of exactly
  * `chrome-extension://<this id>`. If the manifest keypair is ever rotated,
  * this constant must be updated in the same commit.
  */
-export const GSTACK_EXTENSION_ID = 'dgbkdbjebeiblbajiilljmhjdpmiglep';
+export const PAYSEC_EXTENSION_ID = 'dgbkdbjebeiblbajiilljmhjdpmiglep';
 
 /**
  * Commands reachable via POST /command over the tunnel surface. A paired
@@ -342,7 +342,7 @@ export function canDispatchOverTunnel(command: string | undefined | null, args?:
 }
 
 /**
- * Read ngrok authtoken from env var, ~/.gstack/ngrok.env, or ngrok's native
+ * Read ngrok authtoken from env var, ~/.paysec/ngrok.env, or ngrok's native
  * config files.  Returns null if nothing found.  Shared between the
  * /tunnel/start handler and the BROWSE_TUNNEL=1 auto-start flow.
  */
@@ -351,7 +351,7 @@ function resolveNgrokAuthtoken(): string | null {
   if (authtoken) return authtoken;
 
   const home = process.env.HOME || '';
-  const ngrokEnvPath = path.join(home, '.gstack', 'ngrok.env');
+  const ngrokEnvPath = path.join(home, '.paysec', 'ngrok.env');
   if (fs.existsSync(ngrokEnvPath)) {
     try {
       const envContent = fs.readFileSync(ngrokEnvPath, 'utf-8');
@@ -489,7 +489,7 @@ async function startTunnel(opts: {
 
 /**
  * Terminal-agent discovery. The non-compiled bun process at
- * `browse/src/terminal-agent.ts` writes its chosen port to
+ * `browser/src/terminal-agent.ts` writes its chosen port to
  * `<stateDir>/terminal-port` and the loopback handshake token to
  * `<stateDir>/terminal-internal-token` once it boots. Read on demand —
  * lazy so we don't break tests that don't spawn the agent.
@@ -594,7 +594,7 @@ function generateHelpText(): string {
     'Visual', 'Snapshot', 'Meta', 'Tabs', 'Server',
   ];
 
-  const lines = ['gstack browse — headless browser for AI agents', '', 'Commands:'];
+  const lines = ['paysec browse — headless browser for AI agents', '', 'Commands:'];
   for (const cat of categoryOrder) {
     const cmds = groups.get(cat);
     if (!cmds) continue;
@@ -767,12 +767,12 @@ const BROWSE_PARENT_PID = parseInt(process.env.BROWSE_PARENT_PID || '0', 10);
 // Outer gate: if the spawner explicitly marks this as headed (env var set at
 // launch time), skip registering the watchdog entirely. Cheaper than entering
 // the closure every 15s. The CLI's connect path sets BROWSE_HEADED=1 + PID=0,
-// so this branch is the normal path for /open-gstack-browser.
+// so this branch is the normal path for /open-paysec-browser.
 const IS_HEADED_WATCHDOG = process.env.BROWSE_HEADED === '1';
 // Runtime promotion to headed (`handoff`) must NOT clear this interval — the
 // same tick is the tunnel-orphan reaper, and idle timeout is disabled in
 // tunnel mode, so parent death is the ONLY thing that reaps an
-// internet-exposed daemon after handoff → resume → /pair-agent. Promotion
+// internet-exposed daemon after handoff → resume → /pair-remote-agent. Promotion
 // sets this suppress flag instead; the tick re-reads it (and tunnelActive)
 // every pass. See suppressHeadedParentShutdown() below.
 let headedParentShutdownSuppressed = false;
@@ -792,8 +792,8 @@ function parentWatchdogTick(parentPid: number = BROWSE_PARENT_PID): void {
     // 2. Headed (unless suppressed by a runtime promotion) / tunnel mode?
     //    Shutdown. The idle timeout doesn't apply in these modes (see
     //    idleCheckInterval above — both early-return), so ignoring parent
-    //    death here would leak orphan daemons after /pair-agent or
-    //    /open-gstack-browser sessions.
+    //    death here would leak orphan daemons after /pair-remote-agent or
+    //    /open-paysec-browser sessions.
     // 3. Normal (headless) mode, or headed-by-promotion? Stay alive. Claude
     //    Code's Bash tool kills the parent shell between invocations, and a
     //    promoted daemon's user owns the window lifecycle. The idle timeout
@@ -835,7 +835,7 @@ if (BROWSE_PARENT_PID > 0 && !IS_HEADED_WATCHDOG) {
  *
  * A flag, NOT clearInterval: the tick doubles as the tunnel-orphan reaper
  * (its `tunnelActive` branch), and idle timeout is disabled in tunnel mode —
- * clearing the whole interval here left handoff → resume → /pair-agent with
+ * clearing the whole interval here left handoff → resume → /pair-remote-agent with
  * an internet-exposed daemon nothing could ever reap. After promotion, parent
  * death no longer kills the daemon for BEING HEADED, but still kills it when
  * a tunnel is active.
@@ -1061,9 +1061,9 @@ async function handleCommandInternalImpl(
     }
   }
 
-  // ─── Tab ownership check (own-only tokens / pair-agent isolation) ──
+  // ─── Tab ownership check (own-only tokens / pair-remote-agent isolation) ──
   //
-  // Only `own-only` tokens (pair-agent over tunnel) are bound to their own
+  // Only `own-only` tokens (pair-remote-agent over tunnel) are bound to their own
   // tabs. `shared` tokens — the default for skill spawns and local scoped
   // clients — can drive any tab; the capability gate (scope checks above)
   // and rate limits already constrain what they can do.
@@ -1381,7 +1381,7 @@ async function handleCommand(body: any, tokenInfo?: TokenInfo | null): Promise<R
 //
 // Gated on `import.meta.main` so embedders (gbrowser phoenix) that import
 // server.ts as a submodule can register their own signal handlers without
-// fighting with gstack's. CLI path is unchanged.
+// fighting with paysec's. CLI path is unchanged.
 if (import.meta.main) {
   // SIGINT (Ctrl+C): user intentionally stopping → shutdown.
   process.on('SIGINT', () => activeShutdown?.());
@@ -1521,7 +1521,7 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
   const { authToken, browserManager: cfgBrowserManager, startTime, beforeRoute, browsePort } = cfg;
   // Strict opt-out: only explicit `false` flips the gate. Any other value
   // (undefined, truthy non-bool from a JS caller bypassing TS, etc.) defaults
-  // to gstack-owns. Matches the "default-true preserves CLI bit-for-bit"
+  // to paysec-owns. Matches the "default-true preserves CLI bit-for-bit"
   // premise even under malformed cfg.
   const ownsTerminalAgent = cfg.ownsTerminalAgent === false ? false : true;
 
@@ -1549,7 +1549,7 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
   let agentWatchdogInterval: ReturnType<typeof setInterval> | null = null;
   const respawnHistory: number[] = [];
   const AGENT_WATCHDOG_TICK_MS = parseInt(
-    process.env.GSTACK_AGENT_WATCHDOG_TICK_MS || '60000',
+    process.env.PAYSEC_AGENT_WATCHDOG_TICK_MS || '60000',
     10,
   );
   const RESPAWN_GUARD_MAX = 3;
@@ -1638,7 +1638,7 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
     console.log('[browse] Shutting down...');
     if (ownsTerminalAgent) {
       // Identity-based kill (v1.44+). Replaces the v1.43- `pkill -f
-      // terminal-agent\.ts` regex teardown which matched sibling gstack
+      // terminal-agent\.ts` regex teardown which matched sibling paysec
       // sessions on the same host. Only the PID recorded in
       // `<stateDir>/terminal-agent-pid` by THIS daemon's agent is signaled.
       try {
@@ -1728,7 +1728,7 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
   // instead of overwriting it: gbrowser may have set its own onDisconnect
   // before calling buildFetchHandler (e.g. for snapshot/log work that needs
   // to run before the process exits). Caller errors are logged but never
-  // block gstack shutdown — defensive symmetry with the safeUnlinkQuiet /
+  // block paysec shutdown — defensive symmetry with the safeUnlinkQuiet /
   // safeKill philosophy in error-handling.ts.
   const callerOnDisconnect = cfgBrowserManager.onDisconnect;
   cfgBrowserManager.onDisconnect = async (code) => {
@@ -1811,26 +1811,26 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
         return handleCookiePickerRoute(url, req, browserManager, authToken);
       }
 
-      // Welcome page — served when GStack Browser launches in headed mode
+      // Welcome page — served when PaySec Browser launches in headed mode
       if (url.pathname === '/welcome') {
         const welcomePath = (() => {
-          // Gate GSTACK_SLUG on a strict regex BEFORE interpolating it into
+          // Gate PAYSEC_SLUG on a strict regex BEFORE interpolating it into
           // the filesystem path. Without this, a slug like "../../etc/passwd"
-          // would resolve to ~/.gstack/projects/../../etc/passwd/... — path
+          // would resolve to ~/.paysec/projects/../../etc/passwd/... — path
           // traversal.  Not exploitable today (attacker needs local env-var
           // access), but the gate is one regex and buys us defense-in-depth.
-          const rawSlug = process.env.GSTACK_SLUG || 'unknown';
+          const rawSlug = process.env.PAYSEC_SLUG || 'unknown';
           const slug = /^[a-z0-9_-]+$/.test(rawSlug) ? rawSlug : 'unknown';
           const homeDir = process.env.HOME || process.env.USERPROFILE || '/tmp';
-          const projectWelcome = `${homeDir}/.gstack/projects/${slug}/designs/welcome-page-20260331/finalized.html`;
+          const projectWelcome = `${homeDir}/.paysec/projects/${slug}/designs/welcome-page-20260331/finalized.html`;
           if (fs.existsSync(projectWelcome)) return projectWelcome;
-          // Fallback: built-in welcome page from gstack install.  Reject
+          // Fallback: built-in welcome page from paysec install.  Reject
           // SKILL_ROOT values containing '..' for the same defense-in-depth
-          // reason as the GSTACK_SLUG regex above.  Not exploitable today
+          // reason as the PAYSEC_SLUG regex above.  Not exploitable today
           // (env set at install time), but the gate is one check.
-          const rawSkillRoot = process.env.GSTACK_SKILL_ROOT || `${homeDir}/.claude/skills/gstack`;
+          const rawSkillRoot = process.env.PAYSEC_SKILL_ROOT || `${homeDir}/.claude/skills/paysec`;
           if (rawSkillRoot.includes('..')) return null;
-          const builtinWelcome = `${rawSkillRoot}/browse/src/welcome.html`;
+          const builtinWelcome = `${rawSkillRoot}/browser/src/welcome.html`;
           if (fs.existsSync(builtinWelcome)) return builtinWelcome;
           return null;
         })();
@@ -1844,10 +1844,10 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
         }
         // No welcome page found — serve a simple fallback (avoid ERR_UNSAFE_REDIRECT on Windows)
         return new Response(
-          `<!DOCTYPE html><html><head><title>GStack Browser</title>
+          `<!DOCTYPE html><html><head><title>PaySec Browser</title>
           <style>body{background:#111;color:#fff;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}
           .msg{text-align:center;opacity:.7;}.gold{color:#f5a623;font-size:2em;margin-bottom:12px;}</style></head>
-          <body><div class="msg"><div class="gold">◈</div><p>GStack Browser ready.</p><p style="font-size:.85em">Waiting for commands from Claude Code.</p></div></body></html>`,
+          <body><div class="msg"><div class="gold">◈</div><p>PaySec Browser ready.</p><p style="font-size:.85em">Waiting for commands from Claude Code.</p></div></body></html>`,
           { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
         );
       }
@@ -1859,9 +1859,9 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
       // which meant ANY extension — or any localhost caller in headed
       // mode — could read the root token. Now the token is released only
       // to the one extension identity we ship: the Origin header must be
-      // exactly `chrome-extension://<GSTACK_EXTENSION_ID>`, where the ID
+      // exactly `chrome-extension://<PAYSEC_EXTENSION_ID>`, where the ID
       // is pinned by the "key" field in extension/manifest.json (derive
-      // it with `bun browse/scripts/extension-id.ts`). Chrome sets Origin
+      // it with `bun browser/scripts/extension-id.ts`). Chrome sets Origin
       // on cross-origin POSTs from extension contexts and web pages
       // cannot forge a chrome-extension:// Origin.
       //
@@ -1879,7 +1879,7 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
           if (!(err instanceof TypeError)) throw err;  // TypeError = malformed Host
         }
         const originOk =
-          req.headers.get('origin') === `chrome-extension://${GSTACK_EXTENSION_ID}`;
+          req.headers.get('origin') === `chrome-extension://${PAYSEC_EXTENSION_ID}`;
         const hostOk = hostname === '127.0.0.1' || hostname === 'localhost';
         if (!originOk || !hostOk) {
           // No detail in the body — don't teach a probing caller which
@@ -2143,7 +2143,7 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
       }
 
       // ─── /pty-inject-scan — pre-inject prompt-injection scan for the
-      // extension's gstackInjectToTerminal callers. The extension routes
+      // extension's paysecInjectToTerminal callers. The extension routes
       // every page-derived text through this endpoint BEFORE writing to
       // the PTY (#1370). Local-only by intent: not added to the tunnel
       // allowlist; root-token auth required. Sidecar absence degrades to
@@ -2254,7 +2254,7 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
         );
       }
 
-      // ─── /connect — setup key exchange for /pair-agent ceremony ────
+      // ─── /connect — setup key exchange for /pair-remote-agent ceremony ────
       if (url.pathname === '/connect' && req.method === 'POST') {
         if (!checkConnectRateLimit()) {
           return new Response(JSON.stringify({
@@ -2363,7 +2363,7 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
         });
       }
 
-      // ─── /pair — create setup key for pair-agent ceremony (root-only) ───
+      // ─── /pair — create setup key for pair-remote-agent ceremony (root-only) ───
       if (url.pathname === '/pair' && req.method === 'POST') {
         if (!isRootRequest(req)) {
           return new Response(JSON.stringify({ error: 'Root token required' }), {
@@ -2438,11 +2438,11 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
           });
         }
         if (!isPairAgentEnabled()) {
-          // Consent-on-first-use: the /pair-agent skill asks once and sets the
+          // Consent-on-first-use: the /pair-remote-agent skill asks once and sets the
           // key; a direct API caller gets the same hint instead of a tunnel.
           return new Response(JSON.stringify({
-            error: 'pair-agent is off (tunnel exposes this browser beyond the machine)',
-            hint: 'enable once with: gstack-config set pair_agent on — or run /pair-agent, which asks for consent and sets it',
+            error: 'pair-remote-agent is off (tunnel exposes this browser beyond the machine)',
+            hint: 'enable once with: paysec-config set pair_agent on — or run /pair-remote-agent, which asks for consent and sets it',
           }), { status: 403, headers: { 'Content-Type': 'application/json' } });
         }
         if (tunnelActive && tunnelUrl && tunnelServer) {
@@ -2466,7 +2466,7 @@ export function buildFetchHandler(cfg: ServerConfig): ServerHandle {
           await closeTunnel();
         }
 
-        // 1) Resolve ngrok authtoken from env / .gstack / native config
+        // 1) Resolve ngrok authtoken from env / .paysec / native config
         const authtoken = resolveNgrokAuthtoken();
         if (!authtoken) {
           return new Response(JSON.stringify({
@@ -3193,11 +3193,11 @@ export async function start() {
   // pattern: bind a dedicated tunnel listener on an ephemeral port and
   // point ngrok.forward() at IT, not the local daemon port.
   if (process.env.BROWSE_TUNNEL === '1' && !isPairAgentEnabled()) {
-    console.error('[browse] BROWSE_TUNNEL=1 ignored: pair-agent is off. Enable once with: gstack-config set pair_agent on');
+    console.error('[browse] BROWSE_TUNNEL=1 ignored: pair-remote-agent is off. Enable once with: paysec-config set pair_agent on');
   } else if (process.env.BROWSE_TUNNEL === '1') {
     const authtoken = resolveNgrokAuthtoken();
     if (!authtoken) {
-      console.error('[browse] BROWSE_TUNNEL=1 but no NGROK_AUTHTOKEN found. Set it via env var or ~/.gstack/ngrok.env');
+      console.error('[browse] BROWSE_TUNNEL=1 but no NGROK_AUTHTOKEN found. Set it via env var or ~/.paysec/ngrok.env');
     } else {
       // Shared startTunnel helper: binds the tunnel listener, opens ngrok,
       // and on any failure tears down BOTH ngrok and the Bun listener so we

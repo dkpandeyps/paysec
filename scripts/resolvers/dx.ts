@@ -2,16 +2,16 @@
  * DX Framework resolver
  *
  * Shared principles, characteristics, cognitive patterns, and scoring rubric
- * for /plan-devex-review and /devex-review. Compact (~150 lines).
+ * for /plan-dx-review and /dx-audit. Compact (~150 lines).
  *
  * Hall of Fame examples are NOT included here. They live in
- * plan-devex-review/dx-hall-of-fame.md and are loaded on-demand per pass
+ * plan-dx-review/dx-hall-of-fame.md and are loaded on-demand per pass
  * to avoid prompt bloat.
  */
 import type { TemplateContext } from './types';
 
 export function generateDxFramework(ctx: TemplateContext): string {
-  const hallOfFamePath = `${ctx.paths.skillRoot}/plan-devex-review/dx-hall-of-fame.md`;
+  const hallOfFamePath = `${ctx.paths.skillRoot}/plan-dx-review/dx-hall-of-fame.md`;
 
   return `## DX First Principles
 

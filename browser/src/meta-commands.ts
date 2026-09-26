@@ -42,10 +42,10 @@ function tokenizePipeSegment(segment: string): string[] {
   return tokens;
 }
 
-// ─── PDF flag parsing (make-pdf contract) ─────────────────────────────
+// ─── PDF flag parsing (md-to-pdf contract) ─────────────────────────────
 //
 // The $B pdf command grew from a 2-line wrapper (format: 'A4') into a real
-// PDF engine frontend. make-pdf/dist/pdf shells out to `browse pdf` with
+// PDF engine frontend. md-to-pdf/dist/pdf shells out to `browse pdf` with
 // this flag set, so the contract here has to be stable.
 //
 // Mutex rules enforced:
@@ -59,7 +59,7 @@ function tokenizePipeSegment(segment: string): string[] {
 //
 // Large payloads: header/footer HTML and custom CSS can exceed Windows'
 // 8191-char CreateProcess cap via argv. Callers pass `--from-file <path>`
-// to a JSON file holding the full options. make-pdf always uses this path.
+// to a JSON file holding the full options. md-to-pdf always uses this path.
 interface ParsedPdfArgs {
   output: string;
   format?: string;
@@ -139,7 +139,7 @@ function parsePdfArgs(args: string[]): ParsedPdfArgs {
 }
 
 export function parsePdfFromFile(payloadPath: string): ParsedPdfArgs {
-  // Parity with load-html --from-file (browse/src/write-commands.ts) and
+  // Parity with load-html --from-file (browser/src/write-commands.ts) and
   // the direct load-html <file> path: every caller-supplied file path
   // must pass validateReadPath so the safe-dirs policy can't be skirted
   // by routing reads through the --from-file shortcut.
@@ -281,7 +281,7 @@ export async function handleMetaCommand(
 
     case 'newtab': {
       // --json returns structured output (machine-parseable). Other flag-like
-      // tokens are treated as the url. make-pdf always passes --json.
+      // tokens are treated as the url. md-to-pdf always passes --json.
       let url: string | undefined;
       let jsonMode = false;
       for (const a of args) {
@@ -546,7 +546,7 @@ export async function handleMetaCommand(
 
       // If --toc: wait up to 3s for Paged.js to signal by setting
       // window.__pagedjsAfterFired = true. If the polyfill isn't injected
-      // (make-pdf v1 ships without Paged.js; TOC renders without page
+      // (md-to-pdf v1 ships without Paged.js; TOC renders without page
       // numbers), we fall through silently — callers that require strict
       // TOC pagination should pass --require-paged-js too.
       if (parsed.toc) {

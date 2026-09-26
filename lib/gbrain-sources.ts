@@ -1,17 +1,17 @@
 /**
  * gbrain-sources — TypeScript helper for idempotent gbrain federated source registration.
  *
- * Mirrors the bash logic in bin/gstack-gbrain-source-wireup:204-310 but in a form
- * importable by other TS callers (currently bin/gstack-gbrain-sync.ts; future
+ * Mirrors the bash logic in bin/paysec-gbrain-source-wireup:204-310 but in a form
+ * importable by other TS callers (currently bin/paysec-gbrain-sync.ts; future
  * callers welcome). gbrain has no `sources update` — drift recovery is
  * `sources remove` followed by `sources add`.
  *
- * Per /plan-eng-review D3 (DRY extraction).
+ * Per /plan-tech-review D3 (DRY extraction).
  */
 
 import { execFileSync, spawnSync } from "child_process";
 import { realpathSync } from "fs";
-import { withErrorContext } from "./gstack-memory-helpers";
+import { withErrorContext } from "./paysec-memory-helpers";
 import { execGbrainJson, gbrainInvocation } from "./gbrain-exec";
 import {
   detectAutopilot,
@@ -132,7 +132,7 @@ export function probeSource(id: string, env?: NodeJS.ProcessEnv): SourceState {
       throw new Error("gbrain CLI not on PATH");
     }
     if (stderr.includes("Cannot connect to database") || stderr.includes("config.json")) {
-      throw new Error("gbrain not configured (run /setup-gbrain)");
+      throw new Error("gbrain not configured (run /brain-setup)");
     }
     throw err;
   }
@@ -163,7 +163,7 @@ export function probeSource(id: string, env?: NodeJS.ProcessEnv): SourceState {
  *     (Skip when reregister_on_drift=false; returns changed=false.)
  *
  * Caller is responsible for catching errors. The function uses withErrorContext for
- * forensic logging to ~/.gstack/.gbrain-errors.jsonl.
+ * forensic logging to ~/.paysec/.gbrain-errors.jsonl.
  */
 export async function ensureSourceRegistered(
   id: string,
@@ -197,7 +197,7 @@ export async function ensureSourceRegistered(
     // #1985: gbrain >= 0.42 gates `sources remove` behind --confirm-destructive
     // (`--yes` alone no longer suppresses the data-loss prompt). Without it the
     // remove fails with "To proceed, pass --confirm-destructive", which surfaces
-    // as "source registration failed" and aborts the whole /sync-gbrain code
+    // as "source registration failed" and aborts the whole /brain-sync code
     // stage for any source that has drifted to a new path. This matches the
     // flag the orchestrator's own safeSourcesRemove() already passes.
     if (state.status === "drift") {
@@ -217,7 +217,7 @@ export async function ensureSourceRegistered(
       if (ap.active) {
         throw new Error(
           `refusing drift re-register of ${id}: autopilot active (${ap.signal}). ` +
-            `Stop autopilot, then re-run /sync-gbrain.`,
+            `Stop autopilot, then re-run /brain-sync.`,
         );
       }
       const decision = decideSourceRemove(id, env ?? process.env, options.removeDecision ?? {});
@@ -328,7 +328,7 @@ interface DoctorReport {
  * `sourceId` is matched as a LITERAL substring (not a regex) so an id with
  * regex metacharacters can never misfire. Routes through `execGbrainJson` so
  * DATABASE_URL is seeded from gbrain's config (consistent with every other
- * gstack-side gbrain call). `env` is the caller's base env (tests inject a
+ * paysec-side gbrain call). `env` is the caller's base env (tests inject a
  * shim on PATH).
  */
 export function cycleCompleted(sourceId: string, env?: NodeJS.ProcessEnv): CycleStatus {

@@ -5,7 +5,7 @@
  * Pins:
  * 1. Default mode applies the always-on Layer C stealth script (and NOT
  *    the extended script) — the consistency-first default.
- * 2. GSTACK_STEALTH=extended adds EXTENDED_STEALTH_SCRIPT on top of Layer C.
+ * 2. PAYSEC_STEALTH=extended adds EXTENDED_STEALTH_SCRIPT on top of Layer C.
  * 3. EXTENDED_STEALTH_SCRIPT contains the six detection-vector patches.
  * 4. Apply order: Layer C first, extended second (so the extended
  *    delete-from-prototype path layers on top of Layer C's getter without
@@ -26,32 +26,32 @@ import {
 let originalEnv: string | undefined;
 
 beforeEach(() => {
-  originalEnv = process.env.GSTACK_STEALTH;
+  originalEnv = process.env.PAYSEC_STEALTH;
 });
 
 afterEach(() => {
-  if (originalEnv === undefined) delete process.env.GSTACK_STEALTH;
-  else process.env.GSTACK_STEALTH = originalEnv;
+  if (originalEnv === undefined) delete process.env.PAYSEC_STEALTH;
+  else process.env.PAYSEC_STEALTH = originalEnv;
 });
 
 describe('extended stealth — opt-in mode flag', () => {
   test('default mode is OFF (consistency-first contract)', () => {
-    delete process.env.GSTACK_STEALTH;
+    delete process.env.PAYSEC_STEALTH;
     expect(isExtendedStealthEnabled()).toBe(false);
   });
 
-  test('GSTACK_STEALTH=extended enables extended mode', () => {
-    process.env.GSTACK_STEALTH = 'extended';
+  test('PAYSEC_STEALTH=extended enables extended mode', () => {
+    process.env.PAYSEC_STEALTH = 'extended';
     expect(isExtendedStealthEnabled()).toBe(true);
   });
 
-  test('GSTACK_STEALTH=1 also enables (env-style boolean)', () => {
-    process.env.GSTACK_STEALTH = '1';
+  test('PAYSEC_STEALTH=1 also enables (env-style boolean)', () => {
+    process.env.PAYSEC_STEALTH = '1';
     expect(isExtendedStealthEnabled()).toBe(true);
   });
 
-  test('GSTACK_STEALTH=anything-else does NOT enable', () => {
-    process.env.GSTACK_STEALTH = 'verbose';
+  test('PAYSEC_STEALTH=anything-else does NOT enable', () => {
+    process.env.PAYSEC_STEALTH = 'verbose';
     expect(isExtendedStealthEnabled()).toBe(false);
   });
 });
@@ -90,7 +90,7 @@ describe('EXTENDED_STEALTH_SCRIPT — six detection-vector patches', () => {
 
 describe('applyStealth — script wiring', () => {
   test('default mode applies Layer C + cleanup, not extended', async () => {
-    delete process.env.GSTACK_STEALTH;
+    delete process.env.PAYSEC_STEALTH;
     const calls: string[] = [];
     const fakeCtx = {
       addInitScript: async (opts: { content: string }) => {
@@ -111,7 +111,7 @@ describe('applyStealth — script wiring', () => {
   });
 
   test('extended mode applies Layer C, cleanup, then extended (in order)', async () => {
-    process.env.GSTACK_STEALTH = 'extended';
+    process.env.PAYSEC_STEALTH = 'extended';
     const calls: string[] = [];
     const fakeCtx = {
       addInitScript: async (opts: { content: string }) => {

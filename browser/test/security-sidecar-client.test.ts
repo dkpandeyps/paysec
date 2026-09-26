@@ -1,5 +1,5 @@
 /**
- * Unit tests for browse/src/security-sidecar-client.ts.
+ * Unit tests for browser/src/security-sidecar-client.ts.
  *
  * Tests the IPC client's behavior against a fake sidecar (a tiny Node
  * script we spawn) — verifies request/response id correlation, timeout,

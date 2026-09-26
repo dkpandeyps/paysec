@@ -6,7 +6,7 @@ import {
   copyDirSync, setupBrowseShims, logCost, recordE2E,
   createEvalCollector, finalizeEvalCollector,
 } from './helpers/e2e-helpers';
-import { startTestServer } from '../browse/test/test-server';
+import { startTestServer } from '../browser/test/test-server';
 import { spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -26,7 +26,7 @@ describeIfSelected('QA skill E2E', ['qa-quick'], () => {
     setupBrowseShims(qaDir);
 
     // Copy qa skill files into tmpDir
-    copyDirSync(path.join(ROOT, 'qa'), path.join(qaDir, 'qa'));
+    copyDirSync(path.join(ROOT, 'qa-fix'), path.join(qaDir, 'qa'));
 
     // Create report directory
     fs.mkdirSync(path.join(qaDir, 'qa-reports'), { recursive: true });
@@ -44,7 +44,7 @@ describeIfSelected('QA skill E2E', ['qa-quick'], () => {
 The test server is already running at: ${testServer.url}
 Target page: ${testServer.url}/basic.html
 
-Read the file qa/SKILL.md for the QA workflow instructions.
+Read the file qa-fix/SKILL.md for the QA workflow instructions.
 Skip the preamble bash block, lake intro, telemetry, and contributor mode sections — go straight to the QA workflow.
 
 Run a Quick-depth QA test on ${testServer.url}/basic.html
@@ -58,13 +58,13 @@ Write your report to ${qaDir}/qa-reports/qa-report.md`,
       runId,
     });
 
-    logCost('/qa quick', result);
-    recordE2E(evalCollector, '/qa quick', 'QA skill E2E', result, {
+    logCost('/qa-fix quick', result);
+    recordE2E(evalCollector, '/qa-fix quick', 'QA skill E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason),
     });
     // browseErrors can include false positives from hallucinated paths
     if (result.browseErrors.length > 0) {
-      console.warn('/qa quick browse errors (non-fatal):', result.browseErrors);
+      console.warn('/qa-fix quick browse errors (non-fatal):', result.browseErrors);
     }
     // Accept error_max_turns — the agent doing thorough QA work is not a failure
     expect(['success', 'error_max_turns']).toContain(result.exitReason);
@@ -82,17 +82,17 @@ describeIfSelected('QA-Only skill E2E', ['qa-only-no-fix'], () => {
     qaOnlyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-qa-only-'));
     setupBrowseShims(qaOnlyDir);
 
-    // Copy qa-only skill files
-    copyDirSync(path.join(ROOT, 'qa-only'), path.join(qaOnlyDir, 'qa-only'));
+    // Copy qa-report skill files
+    copyDirSync(path.join(ROOT, 'qa-report'), path.join(qaOnlyDir, 'qa-report'));
 
-    // Copy qa templates (qa-only references qa/templates/qa-report-template.md)
-    fs.mkdirSync(path.join(qaOnlyDir, 'qa', 'templates'), { recursive: true });
+    // Copy qa templates (qa-report references qa-fix/templates/qa-report-template.md)
+    fs.mkdirSync(path.join(qaOnlyDir, 'qa-fix', 'templates'), { recursive: true });
     fs.copyFileSync(
-      path.join(ROOT, 'qa', 'templates', 'qa-report-template.md'),
-      path.join(qaOnlyDir, 'qa', 'templates', 'qa-report-template.md'),
+      path.join(ROOT, 'qa-fix', 'templates', 'qa-report-template.md'),
+      path.join(qaOnlyDir, 'qa-fix', 'templates', 'qa-report-template.md'),
     );
 
-    // Init git repo (qa-only checks for feature branch in diff-aware mode)
+    // Init git repo (qa-report checks for feature branch in diff-aware mode)
     const run = (cmd: string, args: string[]) =>
       spawnSync(cmd, args, { cwd: qaOnlyDir, stdio: 'pipe', timeout: 5000 });
 
@@ -114,7 +114,7 @@ describeIfSelected('QA-Only skill E2E', ['qa-only-no-fix'], () => {
 
 B="${browseBin}"
 
-Read the file qa-only/SKILL.md for the QA-only workflow instructions.
+Read the file qa-report/SKILL.md for the QA-only workflow instructions.
 Skip the preamble bash block, lake intro, telemetry, and contributor mode sections — go straight to the QA workflow.
 
 Run a Quick QA test on ${testServer.url}/qa-eval.html
@@ -128,17 +128,17 @@ Write your report to ${qaOnlyDir}/qa-reports/qa-only-report.md`,
       runId,
     });
 
-    logCost('/qa-only', result);
+    logCost('/qa-report', result);
 
     // Verify Edit was not used — the critical guardrail for report-only mode.
     // Glob is read-only and may be used for file discovery (e.g. finding SKILL.md).
     const editCalls = result.toolCalls.filter(tc => tc.tool === 'Edit');
     if (editCalls.length > 0) {
-      console.warn('qa-only used Edit tool:', editCalls.length, 'times');
+      console.warn('qa-report used Edit tool:', editCalls.length, 'times');
     }
 
     const exitOk = ['success', 'error_max_turns'].includes(result.exitReason);
-    recordE2E(evalCollector, '/qa-only no-fix', 'QA-Only skill E2E', result, {
+    recordE2E(evalCollector, '/qa-report no-fix', 'QA-Only skill E2E', result, {
       passed: exitOk && editCalls.length === 0,
     });
 
@@ -152,7 +152,7 @@ Write your report to ${qaOnlyDir}/qa-reports/qa-only-report.md`,
       cwd: qaOnlyDir, stdio: 'pipe',
     });
     const statusLines = gitStatus.stdout.toString().trim().split('\n').filter(
-      (l: string) => l.trim() && !l.includes('.prompt-tmp') && !l.includes('.gstack/') && !l.includes('qa-reports/'),
+      (l: string) => l.trim() && !l.includes('.prompt-tmp') && !l.includes('.paysec/') && !l.includes('qa-reports/'),
     );
     expect(statusLines.filter((l: string) => l.startsWith(' M') || l.startsWith('M '))).toHaveLength(0);
   }, 240_000);
@@ -169,7 +169,7 @@ describeIfSelected('QA Fix Loop E2E', ['qa-fix-loop'], () => {
     setupBrowseShims(qaFixDir);
 
     // Copy qa skill files
-    copyDirSync(path.join(ROOT, 'qa'), path.join(qaFixDir, 'qa'));
+    copyDirSync(path.join(ROOT, 'qa-fix'), path.join(qaFixDir, 'qa'));
 
     // Create a simple HTML page with obvious fixable bugs
     fs.writeFileSync(path.join(qaFixDir, 'index.html'), `<!DOCTYPE html>
@@ -233,7 +233,7 @@ describeIfSelected('QA Fix Loop E2E', ['qa-fix-loop'], () => {
     const result = await runSkillTest({
       prompt: `You have a browse binary at ${browseBin}. Assign it to B variable like: B="${browseBin}"
 
-Read the file qa/SKILL.md for the QA workflow instructions.
+Read the file qa-fix/SKILL.md for the QA workflow instructions.
 Skip the preamble bash block, lake intro, telemetry, and contributor mode sections — go straight to the QA workflow.
 
 Run a Quick-tier QA test on ${qaFixUrl}
@@ -250,8 +250,8 @@ This is a test+fix loop: find bugs, fix them in the source code, commit each fix
       runId,
     });
 
-    logCost('/qa fix loop', result);
-    recordE2E(evalCollector, '/qa fix loop', 'QA Fix Loop E2E', result, {
+    logCost('/qa-fix fix loop', result);
+    recordE2E(evalCollector, '/qa-fix fix loop', 'QA Fix Loop E2E', result, {
       passed: ['success', 'error_max_turns'].includes(result.exitReason),
     });
 
@@ -263,7 +263,7 @@ This is a test+fix loop: find bugs, fix them in the source code, commit each fix
       cwd: qaFixDir, stdio: 'pipe',
     });
     const commits = gitLog.stdout.toString().trim().split('\n');
-    console.log(`/qa fix loop: ${commits.length} commits total (1 initial + ${commits.length - 1} fixes)`);
+    console.log(`/qa-fix fix loop: ${commits.length} commits total (1 initial + ${commits.length - 1} fixes)`);
     expect(commits.length).toBeGreaterThan(1);
 
     // Verify Edit tool was used (agent actually modified source code)
@@ -283,7 +283,7 @@ describeIfSelected('Test Bootstrap E2E', ['qa-bootstrap'], () => {
     setupBrowseShims(bootstrapDir);
 
     // Copy qa skill files
-    copyDirSync(path.join(ROOT, 'qa'), path.join(bootstrapDir, 'qa'));
+    copyDirSync(path.join(ROOT, 'qa-fix'), path.join(bootstrapDir, 'qa'));
 
     // Create a minimal Node.js project with NO test framework
     fs.writeFileSync(path.join(bootstrapDir, 'package.json'), JSON.stringify({
@@ -387,14 +387,14 @@ Do NOT fix any bugs. Do NOT use AskUserQuestion — just pick vitest.`,
       runId,
     });
 
-    logCost('/qa bootstrap', result);
+    logCost('/qa-fix bootstrap', result);
 
     const hasTestConfig = fs.existsSync(path.join(bsDir, 'vitest.config.ts'))
       || fs.existsSync(path.join(bsDir, 'vitest.config.js'));
     const hasTestFile = fs.readdirSync(bsDir).some(f => f.includes('.test.'));
     const hasTestingMd = fs.existsSync(path.join(bsDir, 'TESTING.md'));
 
-    recordE2E(evalCollector, '/qa bootstrap', 'Test Bootstrap E2E', result, {
+    recordE2E(evalCollector, '/qa-fix bootstrap', 'Test Bootstrap E2E', result, {
       passed: hasTestConfig && ['success', 'error_max_turns'].includes(result.exitReason),
     });
 

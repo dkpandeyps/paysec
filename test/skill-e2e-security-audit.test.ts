@@ -61,24 +61,24 @@ app.listen(3000);
     try { fs.rmSync(csoDir, { recursive: true, force: true }); } catch {}
   });
 
-  test('/cso finds planted vulnerabilities', async () => {
+  test('/security-audit finds planted vulnerabilities', async () => {
     const result = await runSkillTest({
-      prompt: `Read the file ${path.join(ROOT, 'cso', 'SKILL.md')} for the CSO skill instructions.
+      prompt: `Read the file ${path.join(ROOT, 'security-audit', 'SKILL.md')} for the CSO skill instructions.
 
-Run /cso on this repo (full daily audit, no flags).
+Run /security-audit on this repo (full daily audit, no flags).
 
 IMPORTANT:
 - Do NOT use AskUserQuestion — skip any interactive prompts.
 - Focus on finding the planted vulnerabilities in this small repo.
 - Produce the SECURITY FINDINGS table.
-- Save the report to .gstack/security-reports/.`,
+- Save the report to .paysec/security-reports/.`,
       workingDirectory: csoDir,
       maxTurns: 30,
       allowedTools: ['Bash', 'Read', 'Write', 'Edit', 'Grep', 'Glob', 'Agent'],
       timeout: 300_000,
     });
 
-    logCost('cso', result);
+    logCost('security-audit', result);
     expect(result.exitReason).toBe('success');
 
     // Should detect hardcoded API key
@@ -98,7 +98,7 @@ IMPORTANT:
     ).toBe(true);
 
     // Should save a report
-    const reportDir = path.join(csoDir, '.gstack', 'security-reports');
+    const reportDir = path.join(csoDir, '.paysec', 'security-reports');
     const reportExists = fs.existsSync(reportDir);
     if (reportExists) {
       const reports = fs.readdirSync(reportDir).filter(f => f.endsWith('.json'));
@@ -150,11 +150,11 @@ app.post('/webhook/stripe', (req, res) => {
     try { fs.rmSync(csoDiffDir, { recursive: true, force: true }); } catch {}
   });
 
-  test('/cso --diff scopes to branch changes', async () => {
+  test('/security-audit --diff scopes to branch changes', async () => {
     const result = await runSkillTest({
-      prompt: `Read the file ${path.join(ROOT, 'cso', 'SKILL.md')} for the CSO skill instructions.
+      prompt: `Read the file ${path.join(ROOT, 'security-audit', 'SKILL.md')} for the CSO skill instructions.
 
-Run /cso --diff on this repo. The base branch is "main".
+Run /security-audit --diff on this repo. The base branch is "main".
 
 IMPORTANT:
 - Do NOT use AskUserQuestion — skip any interactive prompts.
@@ -171,7 +171,7 @@ IMPORTANT:
       timeout: 360_000,
     });
 
-    logCost('cso', result);
+    logCost('security-audit', result);
     expect(result.exitReason).toBe('success');
 
     const output = result.output.toLowerCase();
@@ -229,18 +229,18 @@ CMD ["node", "server.js"]
     try { fs.rmSync(csoInfraDir, { recursive: true, force: true }); } catch {}
   });
 
-  test('/cso --infra runs infrastructure phases only', async () => {
+  test('/security-audit --infra runs infrastructure phases only', async () => {
     const result = await runSkillTest({
-      prompt: `Read the file ${path.join(ROOT, 'cso', 'SKILL.md')} for the CSO skill instructions.
+      prompt: `Read the file ${path.join(ROOT, 'security-audit', 'SKILL.md')} for the CSO skill instructions.
 
-Run /cso --infra on this repo. This should run infrastructure-only phases (0-6, 12-14).
+Run /security-audit --infra on this repo. This should run infrastructure-only phases (0-6, 12-14).
 
 IMPORTANT:
 - Do NOT use AskUserQuestion — skip any interactive prompts.
 - This is a TINY repo with only 3 files: .github/workflows/ci.yml, Dockerfile, and package.json. Do NOT waste turns exploring — just read those files directly and audit them.
 - The Dockerfile has no USER directive (runs as root). The CI workflow uses an unpinned third-party GitHub Action (some-third-party/action@main).
 - Focus on infrastructure findings, NOT code-level OWASP scanning.
-- Skip the preamble (gstack-update-check, telemetry, etc.) — go straight to the audit.
+- Skip the preamble (paysec-update-check, telemetry, etc.) — go straight to the audit.
 - Do NOT use the Agent tool for exploration or verification — read the files yourself. This repo is too small to need subagents.`,
       workingDirectory: csoInfraDir,
       maxTurns: 30,
@@ -248,7 +248,7 @@ IMPORTANT:
       timeout: 360_000,
     });
 
-    logCost('cso', result);
+    logCost('security-audit', result);
     expect(result.exitReason).toBe('success');
 
     const output = result.output.toLowerCase();

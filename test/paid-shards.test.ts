@@ -29,7 +29,7 @@ import {
 
 describe('paid test enumeration', () => {
   test('matches the globs package.json test:gate expands', () => {
-    expect(isPaidTestFile('test/skill-e2e-qa-workflow.test.ts')).toBe(true);
+    expect(isPaidTestFile('test/skill-e2e-qa-fix-workflow.test.ts')).toBe(true);
     expect(isPaidTestFile('test/skill-llm-eval.test.ts')).toBe(true);
     expect(isPaidTestFile('test/codex-e2e.test.ts')).toBe(true);
     expect(isPaidTestFile('test/skill-e2e-triage-audit.test.ts')).toBe(true);

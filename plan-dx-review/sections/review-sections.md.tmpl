@@ -11,8 +11,8 @@
 Before starting review passes, check for prior DX reviews on this project:
 
 ```bash
-eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"
-~/.claude/skills/gstack/bin/gstack-review-read 2>/dev/null | grep plan-devex-review || echo "NO_PRIOR_DX_REVIEWS"
+eval "$(~/.claude/skills/paysec/bin/paysec-slug 2>/dev/null)"
+~/.claude/skills/paysec/bin/paysec-review-read 2>/dev/null | grep plan-dx-review || echo "NO_PRIOR_DX_REVIEWS"
 ```
 
 If prior reviews exist, display the trend:
@@ -31,7 +31,7 @@ Rate 0-10: Can a developer go from zero to hello world in under 5 minutes?
 magical moment from 0D (delivery vehicle), and any Install/Hello World friction
 points from 0F.
 
-Load reference: Read the "## Pass 1" section from `~/.claude/skills/gstack/plan-devex-review/dx-hall-of-fame.md`.
+Load reference: Read the "## Pass 1" section from `~/.claude/skills/paysec/plan-dx-review/dx-hall-of-fame.md`.
 
 Evaluate:
 - **Installation**: One command? One click? No prerequisites?
@@ -60,7 +60,7 @@ Rate 0-10: Is the interface intuitive, consistent, and complete?
 A YC founder expects `tool.do(thing)`. A platform engineer expects
 `tool.configure(options).execute(thing)`.
 
-Load reference: Read the "## Pass 2" section from `~/.claude/skills/gstack/plan-devex-review/dx-hall-of-fame.md`.
+Load reference: Read the "## Pass 2" section from `~/.claude/skills/paysec/plan-dx-review/dx-hall-of-fame.md`.
 
 Evaluate:
 - **Naming**: Guessable without docs? Consistent grammar?
@@ -84,7 +84,7 @@ and how to fix it?
 **Evidence recall:** Reference any error-related friction points from 0F and confusion
 points from 0G.
 
-Load reference: Read the "## Pass 3" section from `~/.claude/skills/gstack/plan-devex-review/dx-hall-of-fame.md`.
+Load reference: Read the "## Pass 3" section from `~/.claude/skills/paysec/plan-dx-review/dx-hall-of-fame.md`.
 
 **Trace 3 specific error paths** from the plan or codebase. For each, evaluate against
 the three-tier system from the Hall of Fame:
@@ -109,7 +109,7 @@ Rate 0-10: Can a developer find what they need and learn by doing?
 style? A YC founder needs copy-paste examples front and center. A platform engineer
 needs architecture docs and API reference.
 
-Load reference: Read the "## Pass 4" section from `~/.claude/skills/gstack/plan-devex-review/dx-hall-of-fame.md`.
+Load reference: Read the "## Pass 4" section from `~/.claude/skills/paysec/plan-dx-review/dx-hall-of-fame.md`.
 
 Evaluate:
 - **Information architecture**: Find what they need in under 2 minutes?
@@ -125,7 +125,7 @@ Evaluate:
 
 Rate 0-10: Can developers upgrade without fear?
 
-Load reference: Read the "## Pass 5" section from `~/.claude/skills/gstack/plan-devex-review/dx-hall-of-fame.md`.
+Load reference: Read the "## Pass 5" section from `~/.claude/skills/paysec/plan-dx-review/dx-hall-of-fame.md`.
 
 Evaluate:
 - **Backward compatibility**: What breaks? Blast radius limited?
@@ -143,7 +143,7 @@ Rate 0-10: Does this integrate into developers' existing workflows?
 **Evidence recall:** Does local dev setup work for [persona from 0A]'s typical
 environment?
 
-Load reference: Read the "## Pass 6" section from `~/.claude/skills/gstack/plan-devex-review/dx-hall-of-fame.md`.
+Load reference: Read the "## Pass 6" section from `~/.claude/skills/paysec/plan-dx-review/dx-hall-of-fame.md`.
 
 Evaluate:
 - **Editor integration**: Language server? Autocomplete? Inline docs?
@@ -161,7 +161,7 @@ Evaluate:
 
 Rate 0-10: Is there a community, and does the plan invest in ecosystem health?
 
-Load reference: Read the "## Pass 7" section from `~/.claude/skills/gstack/plan-devex-review/dx-hall-of-fame.md`.
+Load reference: Read the "## Pass 7" section from `~/.claude/skills/paysec/plan-dx-review/dx-hall-of-fame.md`.
 
 Evaluate:
 - **Open source**: Code open? Permissive license?
@@ -177,14 +177,14 @@ Evaluate:
 
 Rate 0-10: Does the plan include ways to measure and improve DX over time?
 
-Load reference: Read the "## Pass 8" section from `~/.claude/skills/gstack/plan-devex-review/dx-hall-of-fame.md`.
+Load reference: Read the "## Pass 8" section from `~/.claude/skills/paysec/plan-dx-review/dx-hall-of-fame.md`.
 
 Evaluate:
 - **TTHW tracking**: Can you measure getting started time? Is it instrumented?
 - **Journey analytics**: Where do devs drop off?
 - **Feedback mechanisms**: Bug reports? NPS? Feedback button?
 - **Friction audits**: Periodic reviews planned?
-- **Boomerang readiness**: Will /devex-review be able to measure reality vs. plan?
+- **Boomerang readiness**: Will /dx-audit be able to measure reality vs. plan?
 
 **STOP.** AskUserQuestion once per issue. Recommend + WHY.
 
@@ -192,10 +192,10 @@ Evaluate:
 
 **Conditional: only run when product type includes "Claude Code skill".**
 
-This is NOT a scored pass. It's a checklist of proven patterns from gstack's own DX.
+This is NOT a scored pass. It's a checklist of proven patterns from paysec's own DX.
 
 Load reference: Read the "## Claude Code Skill DX Checklist" section from
-`~/.claude/skills/gstack/plan-devex-review/dx-hall-of-fame.md`.
+`~/.claude/skills/paysec/plan-dx-review/dx-hall-of-fame.md`.
 
 Check each item. For any unchecked item, explain what's missing and suggest the fix.
 
@@ -329,18 +329,18 @@ DX IMPLEMENTATION CHECKLIST
 [ ] Community channel exists and is monitored
 ```
 
-{{TASKS_SECTION_EMIT:devex-review}}
+{{TASKS_SECTION_EMIT:dx-audit}}
 
 ### Unresolved Decisions
 If any AskUserQuestion goes unanswered, note here. Never silently default.
 
 ## Review Log
 
-Persist after the DX Scorecard — the dashboard, the GSTACK REVIEW REPORT, and the EXIT
-PLAN MODE GATE's "review log was called" check depend on it. **PLAN MODE EXCEPTION — ALWAYS RUN** (writes to `~/.gstack/`, not project files):
+Persist after the DX Scorecard — the dashboard, the PAYSEC REVIEW REPORT, and the EXIT
+PLAN MODE GATE's "review log was called" check depend on it. **PLAN MODE EXCEPTION — ALWAYS RUN** (writes to `~/.paysec/`, not project files):
 
 ```bash
-~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"plan-devex-review","timestamp":"TIMESTAMP","status":"STATUS","initial_score":N,"overall_score":N,"product_type":"PRODUCT_TYPE","tthw_current":"TTHW_CURRENT","tthw_target":"TTHW_TARGET","mode":"MODE","persona":"PERSONA","competitive_tier":"COMPETITIVE_TIER","unresolved":N,"commit":"COMMIT"}'
+~/.claude/skills/paysec/bin/paysec-review-log '{"skill":"plan-dx-review","timestamp":"TIMESTAMP","status":"STATUS","initial_score":N,"overall_score":N,"product_type":"PRODUCT_TYPE","tthw_current":"TTHW_CURRENT","tthw_target":"TTHW_TARGET","mode":"MODE","persona":"PERSONA","competitive_tier":"COMPETITIVE_TIER","unresolved":N,"commit":"COMMIT"}'
 ```
 
 TIMESTAMP = current ISO 8601 datetime; STATUS = "clean" if score 8+ AND 0 unresolved, else "issues_open"; other fields from the DX Scorecard + Step 0; COMMIT = `git rev-parse --short HEAD`.
@@ -361,22 +361,22 @@ TIMESTAMP = current ISO 8601 datetime; STATUS = "clean" if score 8+ AND 0 unreso
 
 After displaying the Review Readiness Dashboard, recommend next reviews:
 
-**Recommend /plan-eng-review if eng review is not skipped globally** — DX issues often
+**Recommend /plan-tech-review if eng review is not skipped globally** — DX issues often
 have architectural implications. If this DX review found API design problems, error
 handling gaps, or CLI ergonomics issues, eng review should validate the fixes.
 
-**Suggest /plan-design-review if user-facing UI exists** — DX review focuses on
+**Suggest /plan-ux-review if user-facing UI exists** — DX review focuses on
 developer-facing surfaces; design review covers end-user-facing UI.
 
-**Recommend /devex-review after implementation** — the boomerang. Plan said TTHW would
-be [target from 0C]. Did reality match? Run /devex-review on the live product to find
+**Recommend /dx-audit after implementation** — the boomerang. Plan said TTHW would
+be [target from 0C]. Did reality match? Run /dx-audit on the live product to find
 out. This is where the competitive benchmark pays off: you have a concrete target to
 measure against.
 
 Use AskUserQuestion with applicable options:
-- **A)** Run /plan-eng-review next (required gate)
-- **B)** Run /plan-design-review (only if UI scope detected)
-- **C)** Ready to implement, run /devex-review after shipping
+- **A)** Run /plan-tech-review next (required gate)
+- **B)** Run /plan-ux-review (only if UI scope detected)
+- **C)** Ready to implement, run /dx-audit after shipping
 - **D)** Skip, I'll handle next steps manually
 
 ## Mode Quick Reference

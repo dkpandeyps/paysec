@@ -1,9 +1,9 @@
 /**
- * Unit tests for gstack-upgrade/migrations/v1.37.0.0.sh — split-engine notice.
+ * Unit tests for paysec-upgrade/migrations/v1.37.0.0.sh — split-engine notice.
  *
  * Per plan D5: print a one-time discoverability notice for existing Path 4
  * (remote-http MCP) users who don't yet have a local engine, so they
- * find /setup-gbrain Step 4.5. Silent for everyone else. Idempotent.
+ * find /brain-setup Step 4.5. Silent for everyone else. Idempotent.
  *
  * Test matrix (5 cases):
  *   1. state match (remote-http + no local config) → notice printed, touchfile written
@@ -29,7 +29,7 @@ import { execFileSync, spawnSync } from "child_process";
 const MIGRATION = join(
   import.meta.dir,
   "..",
-  "gstack-upgrade",
+  "paysec-upgrade",
   "migrations",
   "v1.37.0.0.sh",
 );
@@ -37,7 +37,7 @@ const MIGRATION = join(
 interface MigEnv {
   tmp: string;
   home: string;
-  gstackHome: string;
+  paysecHome: string;
   doneTouch: string;
   claudeJson: string;
   gbrainConfig: string;
@@ -52,15 +52,15 @@ function makeEnv(opts: {
 }): MigEnv {
   const tmp = mkdtempSync(join(tmpdir(), "migration-v1340-"));
   const home = join(tmp, "home");
-  const gstackHome = join(home, ".gstack");
+  const paysecHome = join(home, ".paysec");
   const gbrainDir = join(home, ".gbrain");
-  const claudeSkillsBin = join(home, ".claude", "skills", "gstack", "bin");
+  const claudeSkillsBin = join(home, ".claude", "skills", "paysec", "bin");
   const claudeJson = join(home, ".claude.json");
   const gbrainConfig = join(gbrainDir, "config.json");
-  const configBin = join(claudeSkillsBin, "gstack-config");
+  const configBin = join(claudeSkillsBin, "paysec-config");
 
   mkdirSync(home, { recursive: true });
-  mkdirSync(gstackHome, { recursive: true });
+  mkdirSync(paysecHome, { recursive: true });
   mkdirSync(gbrainDir, { recursive: true });
   mkdirSync(claudeSkillsBin, { recursive: true });
 
@@ -81,7 +81,7 @@ function makeEnv(opts: {
     writeFileSync(gbrainConfig, JSON.stringify({ engine: "pglite" }));
   }
 
-  // Fake gstack-config: returns "true" iff opted-out (matches the real bin's
+  // Fake paysec-config: returns "true" iff opted-out (matches the real bin's
   // `get` contract on stdout for set values).
   const optedOutResponse = opts.optedOut ? "true" : "false";
   writeFileSync(
@@ -99,8 +99,8 @@ exit 0
   return {
     tmp,
     home,
-    gstackHome,
-    doneTouch: join(gstackHome, ".migrations", "v1.37.0.0.done"),
+    paysecHome,
+    doneTouch: join(paysecHome, ".migrations", "v1.37.0.0.done"),
     claudeJson,
     gbrainConfig,
     configBin,
@@ -115,8 +115,8 @@ function runMigration(env: MigEnv): { stdout: string; stderr: string; exitCode: 
     env: {
       ...process.env,
       HOME: env.home,
-      GSTACK_HOME: env.gstackHome,
-      // The script looks for gstack-config at $HOME/.claude/skills/gstack/bin
+      PAYSEC_HOME: env.paysecHome,
+      // The script looks for paysec-config at $HOME/.claude/skills/paysec/bin
       // which is already in env.home; nothing else needed.
     },
   });
@@ -127,14 +127,14 @@ function runMigration(env: MigEnv): { stdout: string; stderr: string; exitCode: 
   };
 }
 
-describe("gstack-upgrade/migrations/v1.37.0.0.sh", () => {
+describe("paysec-upgrade/migrations/v1.37.0.0.sh", () => {
   it("STATE MATCH: remote-http MCP + no local config → notice printed, touchfile written", () => {
     const env = makeEnv({ remoteHttpMcp: true, hasLocalConfig: false });
     try {
       const r = runMigration(env);
       expect(r.exitCode).toBe(0);
       expect(r.stdout + r.stderr).toContain("split-engine");
-      expect(r.stdout + r.stderr).toContain("/setup-gbrain");
+      expect(r.stdout + r.stderr).toContain("/brain-setup");
       expect(existsSync(env.doneTouch)).toBe(true);
     } finally {
       env.cleanup();

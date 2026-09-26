@@ -1,27 +1,27 @@
 /**
- * E2E: /office-hours brain-writeback path under fake gbrain CLI.
+ * E2E: /idea-review brain-writeback path under fake gbrain CLI.
  *
  * The matched-pair check for v1.50.0.0's "brain-aware planning actually
  * works under Claude Code" headline: prove that when a user runs
- * /office-hours with gbrain on PATH, the agent actually calls
- * `gbrain put office-hours/<slug>` with valid frontmatter.
+ * /idea-review with gbrain on PATH, the agent actually calls
+ * `gbrain put idea-review/<slug>` with valid frontmatter.
  *
  * Approach:
- *   1. Regenerate office-hours/SKILL.md with --respect-detection against
- *      a temp GSTACK_HOME that has detected:true. Snapshot the rendered
+ *   1. Regenerate idea-review/SKILL.md with --respect-detection against
+ *      a temp PAYSEC_HOME that has detected:true. Snapshot the rendered
  *      content (which now contains the compressed SAVE_RESULTS block),
  *      then restore the canonical no-gbrain version so the working tree
  *      stays clean.
- *   2. Write the snapshot into a temp workdir's office-hours/SKILL.md.
+ *   2. Write the snapshot into a temp workdir's idea-review/SKILL.md.
  *      Also write docs/gbrain-write-surfaces.md so the agent can read the
  *      template on demand (the compact block points to it).
  *   3. Write a fake `gbrain` shell script into workdir/bin/ with robust
  *      argv quoting (printf %q) so heredoc payloads in --content survive
  *      shell-to-shell. The fake logs every invocation + writes payloads
  *      to a per-slug file for inspection.
- *   4. Run /office-hours via runSkillTest with workdir/bin/ first on PATH.
+ *   4. Run /idea-review via runSkillTest with workdir/bin/ first on PATH.
  *      Feed a deterministic founder pitch + auto-decide instructions.
- *   5. Assert the argv log contains `gbrain put office-hours/<slug>`, the
+ *   5. Assert the argv log contains `gbrain put idea-review/<slug>`, the
  *      payload file exists with valid YAML frontmatter, and entity stubs
  *      were created.
  *
@@ -90,8 +90,8 @@ describeIfSelected(
       );
       copyFileSync(briefSrc, join(workDir, 'pitch.md'));
 
-      // Generate a brain-aware office-hours/SKILL.md (with --respect-detection
-      // against a temp GSTACK_HOME). Snapshot the content, restore the
+      // Generate a brain-aware idea-review/SKILL.md (with --respect-detection
+      // against a temp PAYSEC_HOME). Snapshot the content, restore the
       // canonical version, write the snapshot into the workdir.
       const tmpHome = mkdtempSync(join(tmpdir(), 'gbrain-detect-home-'));
       writeFileSync(
@@ -102,13 +102,13 @@ describeIfSelected(
           gbrain_version: 'test-0.41.0',
         }),
       );
-      const skillPath = join(ROOT, 'office-hours', 'SKILL.md');
+      const skillPath = join(ROOT, 'idea-review', 'SKILL.md');
       const originalSkill = readFileSync(skillPath, 'utf-8');
-      // office-hours is carved (v2 plan T9): GBRAIN_SAVE_RESULTS moved into
+      // idea-review is carved (v2 plan T9): GBRAIN_SAVE_RESULTS moved into
       // sections/design-and-handoff.md. Regen rewrites BOTH the skeleton and the
       // section, so we snapshot + restore + ship both, and check the UNION for
       // the gbrain put block.
-      const sectionPath = join(ROOT, 'office-hours', 'sections', 'design-and-handoff.md');
+      const sectionPath = join(ROOT, 'idea-review', 'sections', 'design-and-handoff.md');
       const hasSection = existsSync(sectionPath);
       const originalSection = hasSection ? readFileSync(sectionPath, 'utf-8') : null;
       try {
@@ -123,24 +123,24 @@ describeIfSelected(
           ],
           {
             cwd: ROOT,
-            env: { ...process.env, GSTACK_HOME: tmpHome },
+            env: { ...process.env, PAYSEC_HOME: tmpHome },
             stdio: ['ignore', 'pipe', 'pipe'],
             timeout: 60_000,
           },
         );
         const brainAwareSkill = readFileSync(skillPath, 'utf-8');
         const brainAwareSection = hasSection ? readFileSync(sectionPath, 'utf-8') : '';
-        if (!(brainAwareSkill + brainAwareSection).includes('gbrain put "office-hours/')) {
+        if (!(brainAwareSkill + brainAwareSection).includes('gbrain put "idea-review/')) {
           throw new Error(
-            'Regenerated office-hours skeleton+section does not contain gbrain put block. ' +
+            'Regenerated idea-review skeleton+section does not contain gbrain put block. ' +
               'Detection override may be broken — see test/gbrain-detection-override.test.ts.',
           );
         }
-        mkdirSync(join(workDir, 'office-hours'), { recursive: true });
-        writeFileSync(join(workDir, 'office-hours', 'SKILL.md'), brainAwareSkill);
+        mkdirSync(join(workDir, 'idea-review'), { recursive: true });
+        writeFileSync(join(workDir, 'idea-review', 'SKILL.md'), brainAwareSkill);
         if (hasSection) {
-          mkdirSync(join(workDir, 'office-hours', 'sections'), { recursive: true });
-          writeFileSync(join(workDir, 'office-hours', 'sections', 'design-and-handoff.md'), brainAwareSection);
+          mkdirSync(join(workDir, 'idea-review', 'sections'), { recursive: true });
+          writeFileSync(join(workDir, 'idea-review', 'sections', 'design-and-handoff.md'), brainAwareSection);
         }
       } finally {
         // Always restore the canonical skeleton + section so the working tree stays clean.
@@ -209,7 +209,7 @@ exit 0
       'office-hours-brain-writeback',
       async () => {
         const result = await runSkillTest({
-          prompt: `Read office-hours/SKILL.md for the workflow.
+          prompt: `Read idea-review/SKILL.md for the workflow.
 
 Read pitch.md — that's a founder pitch coming to office hours. Select Startup Mode. Skip any AskUserQuestion — this is non-interactive; auto-decide the recommended option for any question.
 
@@ -229,7 +229,7 @@ This is a test of the brain-writeback path. Do NOT skip the gbrain save step und
           },
         });
 
-        logCost('/office-hours (BRAIN WRITEBACK)', result);
+        logCost('/idea-review (BRAIN WRITEBACK)', result);
         recordE2E(
           evalCollector,
           '/office-hours-brain-writeback',
@@ -247,7 +247,7 @@ This is a test of the brain-writeback path. Do NOT skip the gbrain save step und
           throw new Error(
             `No gbrain calls log at ${callsLogPath}. ` +
               `Agent likely did NOT invoke gbrain at all. ` +
-              `Check that office-hours/SKILL.md in the workdir contains the gbrain put block.`,
+              `Check that idea-review/SKILL.md in the workdir contains the gbrain put block.`,
           );
         }
         const callsLog = readFileSync(callsLogPath, 'utf-8');
@@ -257,14 +257,14 @@ This is a test of the brain-writeback path. Do NOT skip the gbrain save step und
 
         expect(callsLog).toContain('gbrain put');
         // Agent obedience: the slug should contain 'pixel-fund' somewhere
-        // (preferably under the office-hours/ prefix). The strict slug
-        // SHAPE (office-hours/<slug>) is already pinned by the resolver
+        // (preferably under the idea-review/ prefix). The strict slug
+        // SHAPE (idea-review/<slug>) is already pinned by the resolver
         // unit test (test/resolvers-gbrain-save-results.test.ts); this
         // E2E proves the agent actually invokes gbrain put with the
         // payload, not the resolver's literal output shape.
         expect(callsLog).toMatch(/gbrain put .*pixel-fund/);
 
-        // Payload file exists. Agent may write to office-hours/pixel-fund.md
+        // Payload file exists. Agent may write to idea-review/pixel-fund.md
         // (resolver-faithful) OR pixel-fund.md (agent dropped prefix); both
         // are acceptable here because the YAML frontmatter is the real
         // contract test. Search the payload tree for any *.md file that

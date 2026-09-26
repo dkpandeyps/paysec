@@ -1,7 +1,7 @@
 # How to put diagrams in your documents (and export beyond PDF)
 
 This guide covers the diagram + multi-format engine that ships with
-`/make-pdf` and `/diagram` (v1.58.0.0+). Everything here runs fully offline:
+`/md-to-pdf` and `/make-diagram` (v1.58.0.0+). Everything here runs fully offline:
 the mermaid and excalidraw runtimes are vendored in `lib/diagram-render/`,
 loaded into the browse daemon's Chromium. No CDN, no network at render time.
 
@@ -19,12 +19,12 @@ graph LR
 ````
 
 ```bash
-make-pdf generate doc.md out.pdf
+md-to-pdf generate doc.md out.pdf
 ```
 
 The fence renders as a **vector** diagram (crisp at any zoom, selectable
 text), with the `title` as caption and accessibility label. The raw mermaid
-source is preserved base64-encoded in a `data-gstack-source` attribute on the
+source is preserved base64-encoded in a `data-paysec-source` attribute on the
 figure for debugging and round-trips (an HTML comment would corrupt mermaid's
 `-->` arrows). One catch: the fence must start at **column 0** — indented
 fences (inside lists, for example) stay plain code blocks by design.
@@ -81,8 +81,8 @@ add `{page=portrait}`.
 ## Export single-file HTML or Word
 
 ```bash
-make-pdf generate doc.md out.html --to html
-make-pdf generate doc.md out.docx --to docx
+md-to-pdf generate doc.md out.html --to html
+md-to-pdf generate doc.md out.docx --to docx
 ```
 
 - **`--to html`** writes ONE self-contained file: diagrams as inline SVG,
@@ -100,7 +100,7 @@ Heads-up: `--to` is the output format. `--format` is an old alias for
 ## Generate a diagram from English
 
 ```
-/diagram make a flowchart of our deploy pipeline: build, test, canary, promote
+/make-diagram make a flowchart of our deploy pipeline: build, test, canary, promote
 ```
 
 The skill authors mermaid and emits a **triplet**:
@@ -116,12 +116,12 @@ Flowcharts convert to fully editable excalidraw scenes. Other mermaid types
 artifact — an upstream converter limitation the skill will tell you about.
 
 For documents, embed the `.mmd` source in your markdown instead of the PNG —
-`/make-pdf` renders it as vector and the diagram stays editable forever.
+`/md-to-pdf` renders it as vector and the diagram stays editable forever.
 
 ## CI: fail loud instead of shipping placeholders
 
 ```bash
-make-pdf generate docs.md --strict
+md-to-pdf generate docs.md --strict
 ```
 
 Missing local images, blocked remote images, out-of-tree image reads (a path
@@ -133,7 +133,7 @@ break the build.
 ## Troubleshooting
 
 - **"diagram-render bundle not found"** → run `bun run build:diagram-render`
-  in the gstack repo, or re-run `./setup`.
+  in the paysec repo, or re-run `./setup`.
 - **Diagram renders but looks squished inline** → it's wide; give it room
   with `page=landscape` on the fence.
 - **A two-row "racetrack" loop instead of one long line:** mermaid subgraph

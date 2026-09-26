@@ -1,5 +1,5 @@
 ---
-name: office-hours
+name: idea-review
 preamble-tier: 3
 version: 2.0.0
 description: |
@@ -13,7 +13,7 @@ description: |
   a new product idea, asks whether something is worth building, wants to think
   through design decisions for something that doesn't exist yet, or is exploring
   a concept before any code is written.
-  Use before /plan-ceo-review or /plan-eng-review. (gstack)
+  Use before /plan-business-review or /plan-tech-review. (paysec)
 allowed-tools:
   - Bash
   - Read
@@ -38,21 +38,21 @@ gbrain:
         tags_contains: "repo:{repo_slug}"
       sort: updated_at_desc
       limit: 5
-      render_as: "## Prior office-hours sessions in this repo"
+      render_as: "## Prior idea-review sessions in this repo"
     - id: builder-profile
       kind: filesystem
-      glob: "~/.gstack/builder-profile.jsonl"
+      glob: "~/.paysec/builder-profile.jsonl"
       tail: 1
       render_as: "## Your builder profile snapshot"
     - id: design-doc-history
       kind: filesystem
-      glob: "~/.gstack/projects/{repo_slug}/*-design-*.md"
+      glob: "~/.paysec/projects/{repo_slug}/*-design-*.md"
       sort: mtime_desc
       limit: 3
       render_as: "## Recent design docs for this project"
     - id: prior-eureka
       kind: filesystem
-      glob: "~/.gstack/analytics/eureka.jsonl"
+      glob: "~/.paysec/analytics/eureka.jsonl"
       tail: 5
       render_as: "## Recent eureka moments"
 ---
@@ -89,7 +89,7 @@ Understand the project and the area the user wants to change.
 4. **List existing design docs for this project:**
    ```bash
    setopt +o nomatch 2>/dev/null || true  # zsh compat
-   ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null
+   ls -t ~/.paysec/projects/$SLUG/*-design-*.md 2>/dev/null
    ```
    If design docs exist, list them: "Prior designs for this project: [titles + dates]"
 
@@ -123,7 +123,7 @@ Output: "Here's what I understand about this project and the area you want to ch
 
 
 ---
-{{SECTION_INDEX:office-hours}}
+{{SECTION_INDEX:idea-review}}
 ---
 
 ## Phase 2A: Startup Mode — YC Product Diagnostic
@@ -343,14 +343,14 @@ After the user states the problem (first question in Phase 2A or 2B), search exi
 Extract 3-5 significant keywords from the user's problem statement and grep across design docs:
 ```bash
 setopt +o nomatch 2>/dev/null || true  # zsh compat
-grep -li "<keyword1>\|<keyword2>\|<keyword3>" ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null
+grep -li "<keyword1>\|<keyword2>\|<keyword3>" ~/.paysec/projects/$SLUG/*-design-*.md 2>/dev/null
 ```
 
 If matches found, read the matching design docs and surface them:
 - "FYI: Related design found — '{title}' by {user} on {date} (branch: {branch}). Key overlap: {1-line summary of relevant section}."
 - Ask via AskUserQuestion: "Should we build on this prior design or start fresh?"
 
-This enables cross-team discovery — multiple users exploring the same project will see each other's design docs in `~/.gstack/projects/`.
+This enables cross-team discovery — multiple users exploring the same project will see each other's design docs in `~/.paysec/projects/`.
 
 If no matches found, proceed silently.
 
@@ -360,7 +360,7 @@ If no matches found, proceed silently.
 
 Read ETHOS.md for the full Search Before Building framework (three layers, eureka moments). The preamble's Search Before Building section has the ETHOS.md path.
 
-After understanding the problem through questioning, search for what the world thinks. This is NOT competitive research (that's /design-consultation's job). This is understanding conventional wisdom so you can evaluate where it's wrong.
+After understanding the problem through questioning, search for what the world thinks. This is NOT competitive research (that's /design-system's job). This is understanding conventional wisdom so you can evaluate where it's wrong.
 
 **Privacy gate:** Before searching, use AskUserQuestion: "I'd like to search for what the world thinks about this space to inform our discussion. This sends generalized category terms (not your specific idea) to a search provider. OK to proceed?"
 Options: A) Yes, search away  B) Skip — keep this session private
@@ -481,8 +481,8 @@ Count the signals. You'll use this count in Phase 6 to determine which tier of c
 
 After counting signals, append a session entry to the builder profile. This is the single
 source of truth for all closing state (tier, resource dedup, journey tracking). The
-`gstack-developer-profile --log-session` binary handles its own directory creation
-and writes via atomic mktemp+mv to `~/.gstack/developer-profile.json`.
+`paysec-developer-profile --log-session` binary handles its own directory creation
+and writes via atomic mktemp+mv to `~/.paysec/developer-profile.json`.
 
 Append one JSON line with these fields (substitute actual values from this session):
 - `date`: current ISO 8601 timestamp
@@ -496,7 +496,7 @@ Append one JSON line with these fields (substitute actual values from this sessi
 - `topics`: array of 2-3 topic keywords that describe what this session was about
 
 ```bash
-~/.claude/skills/gstack/bin/gstack-developer-profile --log-session '{"date":"TIMESTAMP","mode":"MODE","project_slug":"SLUG","signal_count":N,"signals":SIGNALS_ARRAY,"design_doc":"DOC_PATH","assignment":"ASSIGNMENT_TEXT","resources_shown":[],"topics":TOPICS_ARRAY}' 2>/dev/null || true
+~/.claude/skills/paysec/bin/paysec-developer-profile --log-session '{"date":"TIMESTAMP","mode":"MODE","project_slug":"SLUG","signal_count":N,"signals":SIGNALS_ARRAY,"design_doc":"DOC_PATH","assignment":"ASSIGNMENT_TEXT","resources_shown":[],"topics":TOPICS_ARRAY}' 2>/dev/null || true
 ```
 
 The session entry is appended to `developer-profile.json`'s `sessions[]` array. A second

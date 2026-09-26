@@ -1,7 +1,7 @@
-// CLI tests for gstack-ios-qa-mint. Invokes the bash launcher end-to-end
+// CLI tests for paysec-ios-qa-mint. Invokes the bash launcher end-to-end
 // so we catch any breakage between bin/, the entry-point resolution, and
 // the underlying allowlist primitives. Runs against a temp allowlist path
-// so the user's real ~/.gstack/ios-qa-allowlist.json is untouched.
+// so the user's real ~/.paysec/ios-qa-allowlist.json is untouched.
 
 import { describe, test, expect, beforeEach } from 'bun:test';
 import { mkdtempSync, rmSync, readFileSync, statSync, existsSync, chmodSync } from 'fs';
@@ -10,14 +10,14 @@ import { join } from 'path';
 import { spawnSync } from 'child_process';
 
 const ROOT = join(import.meta.dir, '..', '..', '..');
-const MINT_BIN = join(ROOT, 'bin', 'gstack-ios-qa-mint');
-const DAEMON_BIN = join(ROOT, 'bin', 'gstack-ios-qa-daemon');
+const MINT_BIN = join(ROOT, 'bin', 'paysec-ios-qa-mint');
+const DAEMON_BIN = join(ROOT, 'bin', 'paysec-ios-qa-daemon');
 
 function runMint(args: string[]) {
   return spawnSync(MINT_BIN, args, { stdio: 'pipe', encoding: 'utf-8' });
 }
 
-describe('bin/gstack-ios-qa-mint launcher', () => {
+describe('bin/paysec-ios-qa-mint launcher', () => {
   let tmpDir: string;
   let listPath: string;
 
@@ -29,7 +29,7 @@ describe('bin/gstack-ios-qa-mint launcher', () => {
   test('--help prints usage without touching allowlist', () => {
     const r = runMint(['--help']);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain('gstack-ios-qa-mint');
+    expect(r.stdout).toContain('paysec-ios-qa-mint');
     expect(r.stdout).toContain('grant');
     expect(r.stdout).toContain('revoke');
     expect(r.stdout).toContain('list');
@@ -97,7 +97,7 @@ describe('bin/gstack-ios-qa-mint launcher', () => {
   });
 });
 
-describe('bin/gstack-ios-qa-daemon launcher', () => {
+describe('bin/paysec-ios-qa-daemon launcher', () => {
   test('launcher is executable', () => {
     expect(existsSync(DAEMON_BIN)).toBe(true);
     const mode = statSync(DAEMON_BIN).mode & 0o111;

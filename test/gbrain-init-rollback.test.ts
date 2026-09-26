@@ -1,12 +1,12 @@
 /**
- * Tests the .bak-rollback contract used by /setup-gbrain Step 1.5 (broken-db
+ * Tests the .bak-rollback contract used by /brain-setup Step 1.5 (broken-db
  * repair) and Step 4.5 (Path 4 opt-in to local PGLite), per plan D7.
  *
  * These code paths live in the skill TEMPLATE, not in a TypeScript helper —
  * the skill follows AI-readable instructions. The instructions specify the
  * exact sequence:
  *
- *   1. mv ~/.gbrain/config.json ~/.gbrain/config.json.gstack-bak-$(date +%s)
+ *   1. mv ~/.gbrain/config.json ~/.gbrain/config.json.paysec-bak-$(date +%s)
  *   2. gbrain init --pglite --json
  *   3. on non-zero exit: mv .bak back; surface error
  *
@@ -102,7 +102,7 @@ exit 0
 function runRollbackSequence(env: RollbackEnv): { exitCode: number; stderr: string } {
   const script = `
 set -u
-BACKUP="${env.configPath}.gstack-bak-$(date +%s)-$$"
+BACKUP="${env.configPath}.paysec-bak-$(date +%s)-$$"
 if [ -f "${env.configPath}" ]; then
   mv "${env.configPath}" "$BACKUP"
 fi
@@ -147,7 +147,7 @@ describe("Step 1.5 / 4.5 .bak-rollback contract (plan D7)", () => {
 
       // No leftover .bak — it was renamed back to the original path.
       const baks = readdirSync(join(env.home, ".gbrain")).filter((f) =>
-        f.includes(".gstack-bak-"),
+        f.includes(".paysec-bak-"),
       );
       expect(baks).toEqual([]);
     } finally {
@@ -171,7 +171,7 @@ describe("Step 1.5 / 4.5 .bak-rollback contract (plan D7)", () => {
 
       // The .bak survives — user can audit before deleting.
       const baks = readdirSync(join(env.home, ".gbrain")).filter((f) =>
-        f.includes(".gstack-bak-"),
+        f.includes(".paysec-bak-"),
       );
       expect(baks.length).toBe(1);
     } finally {

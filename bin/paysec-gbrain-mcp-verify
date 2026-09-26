@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# gstack-gbrain-mcp-verify — probe a remote gbrain MCP endpoint.
+# paysec-gbrain-mcp-verify — probe a remote gbrain MCP endpoint.
 #
 # Usage:
-#   GBRAIN_MCP_TOKEN=<bearer> gstack-gbrain-mcp-verify <url>
+#   GBRAIN_MCP_TOKEN=<bearer> paysec-gbrain-mcp-verify <url>
 #
 # Output (always valid JSON):
 #   {
@@ -32,19 +32,19 @@
 set -euo pipefail
 
 die_usage() {
-  echo "Usage: GBRAIN_MCP_TOKEN=<bearer> gstack-gbrain-mcp-verify <url>" >&2
+  echo "Usage: GBRAIN_MCP_TOKEN=<bearer> paysec-gbrain-mcp-verify <url>" >&2
   exit 2
 }
 
 [ $# -eq 1 ] || die_usage
 URL="$1"
-[ -n "${GBRAIN_MCP_TOKEN:-}" ] || { echo "gstack-gbrain-mcp-verify: GBRAIN_MCP_TOKEN env var required" >&2; exit 2; }
+[ -n "${GBRAIN_MCP_TOKEN:-}" ] || { echo "paysec-gbrain-mcp-verify: GBRAIN_MCP_TOKEN env var required" >&2; exit 2; }
 
-command -v curl >/dev/null 2>&1 || { echo "gstack-gbrain-mcp-verify: curl is required" >&2; exit 2; }
-command -v jq >/dev/null 2>&1 || { echo "gstack-gbrain-mcp-verify: jq is required (brew install jq)" >&2; exit 2; }
+command -v curl >/dev/null 2>&1 || { echo "paysec-gbrain-mcp-verify: curl is required" >&2; exit 2; }
+command -v jq >/dev/null 2>&1 || { echo "paysec-gbrain-mcp-verify: jq is required (brew install jq)" >&2; exit 2; }
 
 # Egress receipt helpers (_receipted_curl): receipt-before-send, fail-closed.
-. "$(cd "$(dirname "$0")" && pwd)/gstack-egress-lib.sh"
+. "$(cd "$(dirname "$0")" && pwd)/paysec-egress-lib.sh"
 MCP_HOST=$(echo "$URL" | sed -E 's|^[a-z]+://([^/]+).*|\1|')
 
 emit() {
@@ -71,16 +71,16 @@ emit() {
 # JSON-RPC initialize body. Both `application/json` AND `text/event-stream`
 # in Accept — the MCP server returns 406 Not Acceptable without both. The
 # transcript that motivated this script hit that exact failure.
-INIT_BODY='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"gstack-mcp-verify","version":"1"}}}'
+INIT_BODY='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"paysec-mcp-verify","version":"1"}}}'
 
 # Capture HTTP code + body in one pass; --max-time 10 caps total wall time.
-TMPBODY=$(mktemp -t gstack-mcp-verify.XXXXXX)
+TMPBODY=$(mktemp -t paysec-mcp-verify.XXXXXX)
 trap 'rm -f "$TMPBODY"' EXIT
 
 # Receipted fail-closed: the payload file is hashed and handed to curl as
 # the exact wire bytes. A refused receipt never hits the network — it lands
 # in the NETWORK class below (curl never ran, no HTTP code).
-INIT_PAYLOAD=$(mktemp -t gstack-mcp-init.XXXXXX)
+INIT_PAYLOAD=$(mktemp -t paysec-mcp-init.XXXXXX)
 printf '%s' "$INIT_BODY" > "$INIT_PAYLOAD"
 set +e
 HTTP_CODE=$(_receipted_curl closed gbrain-mcp-verify "$MCP_HOST" mcp-initialize-probe "user-invoked mcp verify" "$INIT_PAYLOAD" \
@@ -106,12 +106,12 @@ fi
 # --- AUTH class: 401, 403, or 500 with stale-token-shaped body ---
 case "$HTTP_CODE" in
   401|403)
-    emit "auth" "" "" "AUTH" "rotate token on the brain host, re-run /setup-gbrain (HTTP $HTTP_CODE)" false "$BODY"
+    emit "auth" "" "" "AUTH" "rotate token on the brain host, re-run /brain-setup (HTTP $HTTP_CODE)" false "$BODY"
     exit 1
     ;;
   500)
     if echo "$BODY" | grep -qiE '"(error_description|message)":[[:space:]]*"[^"]*(auth|token|unauthorized)' 2>/dev/null; then
-      emit "auth" "" "" "AUTH" "rotate token on the brain host, re-run /setup-gbrain (HTTP 500 stale-token shape)" false "$BODY"
+      emit "auth" "" "" "AUTH" "rotate token on the brain host, re-run /brain-setup (HTTP 500 stale-token shape)" false "$BODY"
       exit 1
     fi
     ;;
@@ -153,15 +153,15 @@ fi
 # --- Capability probe: tools/list to detect sources_add ---
 # Best-effort. A failure here doesn't fail the verify; we just default
 # sources_add_url_supported=false. Future gbrain versions that ship
-# mcp__gbrain__sources_add will flip this true and gstack-artifacts-init
+# mcp__gbrain__sources_add will flip this true and paysec-artifacts-init
 # will print the one-liner form instead of the clone-then-path form.
 URL_SUPPORTED=false
-TOOLS_BODY_FILE=$(mktemp -t gstack-mcp-tools.XXXXXX)
+TOOLS_BODY_FILE=$(mktemp -t paysec-mcp-tools.XXXXXX)
 TOOLS_REQ='{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 
 # Receipted fail-closed like the initialize probe. A refused receipt skips
 # the probe (nonzero TOOLS_EXIT) and the field stays false — best-effort.
-TOOLS_PAYLOAD=$(mktemp -t gstack-mcp-tools-req.XXXXXX)
+TOOLS_PAYLOAD=$(mktemp -t paysec-mcp-tools-req.XXXXXX)
 printf '%s' "$TOOLS_REQ" > "$TOOLS_PAYLOAD"
 set +e
 _receipted_curl closed gbrain-mcp-verify "$MCP_HOST" mcp-tools-list-probe "user-invoked mcp verify" "$TOOLS_PAYLOAD" \

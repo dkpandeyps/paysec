@@ -16,7 +16,7 @@
  * Out of scope, documented here on purpose: the preamble-generated brain
  * sync block (scripts/resolvers/preamble/generate-brain-sync-block.ts)
  * renders a `git fetch` into skill PROSE that the agent executes — it is
- * agent-executed instructions, not a gstack binary, so it is covered by the
+ * agent-executed instructions, not a paysec binary, so it is covered by the
  * skill-prose exemption below rather than a receipt.
  *
  * Pattern mirrors test/hermetic-wiring.test.ts: read source files as text,
@@ -43,7 +43,7 @@ function exists(rel: string): boolean {
 // written (fail-closed) vs warn and proceed (fail-open). Changing a sink's
 // polarity is a security decision — update this table deliberately.
 const POLARITY: Record<string, 'fail-closed' | 'fail-open'> = {
-  // fail-closed: gstack state leaving the machine unrecorded is worse than
+  // fail-closed: paysec state leaving the machine unrecorded is worse than
   // the operation failing.
   'brain-sync': 'fail-closed',
   'memory-ingest': 'fail-closed',
@@ -64,9 +64,9 @@ const POLARITY: Record<string, 'fail-closed' | 'fail-open'> = {
 
 /** TS sinks: must import the canonical helper and call writeReceipt(). */
 const MODULE_SINKS = [
-  'bin/gstack-gbrain-sync.ts',
-  'bin/gstack-memory-ingest.ts',
-  'browse/src/server.ts',
+  'bin/paysec-gbrain-sync.ts',
+  'bin/paysec-memory-ingest.ts',
+  'browser/src/server.ts',
   // Code-intelligence adapters (fork port wave 2): the gbrain adapter shells
   // repo content to the user's gbrain DB and the Sourcebot adapter POSTs
   // queries to a self-hosted HTTP endpoint — both sensitive-class
@@ -78,22 +78,22 @@ const MODULE_SINKS = [
   // missing file must fail loudly (a rename/move that drops its receipt wiring
   // is exactly what this pins), not silently soften the assertion.
   'lib/context-bill.ts',
-  // supabase-provision engine (bin/gstack-gbrain-supabase-provision is a thin
+  // supabase-provision engine (bin/paysec-gbrain-supabase-provision is a thin
   // bun-shebang entry over this module; the receipt lives at the api-call layer).
   'lib/gbrain-supabase-provision.ts',
 ];
 
 /** Shell sinks: must source the shared lib; every network op receipted. */
 const SHELL_SINKS = [
-  'bin/gstack-telemetry-sync',
-  'bin/gstack-update-check',
-  'bin/gstack-brain-sync',
-  'bin/gstack-gbrain-mcp-verify',
-  'bin/gstack-security-dashboard',
-  'bin/gstack-community-dashboard',
-  'bin/gstack-artifacts-init',
-  'bin/gstack-brain-restore',
-  'bin/gstack-session-update',
+  'bin/paysec-telemetry-sync',
+  'bin/paysec-update-check',
+  'bin/paysec-brain-sync',
+  'bin/paysec-gbrain-mcp-verify',
+  'bin/paysec-security-dashboard',
+  'bin/paysec-community-dashboard',
+  'bin/paysec-artifacts-init',
+  'bin/paysec-brain-restore',
+  'bin/paysec-session-update',
 ];
 
 /** design files that talk to api.openai.com — all must use receiptedFetch. */
@@ -113,34 +113,34 @@ const DESIGN_SINKS = [
 // swept tree fails the scanner — add real sinks to the wired lists above,
 // not here.
 const SCANNER_EXEMPT: Record<string, string> = {
-  'bin/gstack-team-init':
+  'bin/paysec-team-init':
     'every git clone is inside an echoed instruction string (install docs); the script executes no network ops',
-  'bin/gstack-gbrain-install':
-    'user-invoked installer: bodyless HEAD reachability probe to github.com + clone of the public gbrain repo (user-directed install; no gstack state leaves the machine)',
-  'bin/gstack-next-version':
-    'fetches the user\'s own repo\'s base branch for version-claim freshness — a user-repo dev-workflow op, not gstack-state egress',
-  'bin/gstack-version-bump':
+  'bin/paysec-gbrain-install':
+    'user-invoked installer: bodyless HEAD reachability probe to github.com + clone of the public gbrain repo (user-directed install; no paysec state leaves the machine)',
+  'bin/paysec-next-version':
+    'fetches the user\'s own repo\'s base branch for version-claim freshness — a user-repo dev-workflow op, not paysec-state egress',
+  'bin/paysec-version-bump':
     'git fetch appears only in an error-message string',
-  'bin/gstack-redact-prepush':
+  'bin/paysec-redact-prepush':
     'git push mentions are hook documentation strings (bypass instructions)',
-  'browse/src/security-classifier.ts':
+  'browser/src/security-classifier.ts':
     'HF model download: bodyless GET of a public classifier model (variable URL)',
-  'browse/src/write-commands.ts':
+  'browser/src/write-commands.ts':
     'user-directed page fetch — the browser command surface fetches what the user asked for',
-  'browse/src/cli.ts':
-    'health probe of the user\'s own pair-agent tunnel URL (reachability probe)',
-  'browse/src/commands.ts':
+  'browser/src/cli.ts':
+    'health probe of the user\'s own pair-remote-agent tunnel URL (reachability probe)',
+  'browser/src/commands.ts':
     'git pull appears only in an upgrade-hint message string',
-  'browse/src/cookie-picker-ui.ts':
+  'browser/src/cookie-picker-ui.ts':
     'served-page JS talking to its own loopback server (same-origin relative fetch)',
   'design/src/compare.ts':
     'served-page JS talking to its own loopback server (relative ./api fetch)',
   // Skill prose templates: these render agent-executed instructions (the
   // agent runs git in the USER\'S repo at the user\'s direction), they are
-  // not gstack binaries. Includes the preamble-generated brain-sync block —
+  // not paysec binaries. Includes the preamble-generated brain-sync block —
   // see the header.
   'scripts/resolvers':
-    'skill prose templates — agent-executed instructions rendered into SKILL.md, not gstack binaries',
+    'skill prose templates — agent-executed instructions rendered into SKILL.md, not paysec binaries',
 };
 
 function isExempt(rel: string): string | undefined {
@@ -152,7 +152,7 @@ function isExempt(rel: string): string | undefined {
 
 // Receipt markers that make a nearby network op "wired".
 const RECEIPT_MARKER =
-  /_receipted_(curl|git|version_fetch)\b|gstack-egress-receipt["']?\s+write\b|writeReceipt\(|receiptedFetch\(/;
+  /_receipted_(curl|git|version_fetch)\b|paysec-egress-receipt["']?\s+write\b|writeReceipt\(|receiptedFetch\(/;
 
 /** Was a receipt marker present on this line or the 30 preceding lines? */
 function guarded(lines: string[], i: number): boolean {
@@ -242,12 +242,12 @@ describe('egress receipt wiring tripwire', () => {
     }
   });
 
-  test('every shell sink sources gstack-egress-lib.sh', () => {
+  test('every shell sink sources paysec-egress-lib.sh', () => {
     for (const rel of SHELL_SINKS) {
       const src = read(rel);
       expect(
-        src.includes('gstack-egress-lib.sh'),
-        `${rel}: must source bin/gstack-egress-lib.sh for _receipted_* helpers`,
+        src.includes('paysec-egress-lib.sh'),
+        `${rel}: must source bin/paysec-egress-lib.sh for _receipted_* helpers`,
       ).toBe(true);
     }
   });
@@ -262,7 +262,7 @@ describe('egress receipt wiring tripwire', () => {
   });
 
   test('browse tunnel: every ngrok.forward() has a writeReceipt in the 30 preceding lines', () => {
-    const lines = read('browse/src/server.ts').split('\n');
+    const lines = read('browser/src/server.ts').split('\n');
     const offenders: string[] = [];
     let sawForward = false;
     for (let i = 0; i < lines.length; i++) {
@@ -270,7 +270,7 @@ describe('egress receipt wiring tripwire', () => {
       if (/^\s*(\/\/|\*)/.test(lines[i])) continue;
       sawForward = true;
       const context = lines.slice(Math.max(0, i - 30), i).join('\n');
-      if (!context.includes('writeReceipt(')) offenders.push(`browse/src/server.ts:${i + 1}`);
+      if (!context.includes('writeReceipt(')) offenders.push(`browser/src/server.ts:${i + 1}`);
     }
     expect(sawForward, 'expected ngrok.forward call sites in server.ts').toBe(true);
     expect(offenders, 'tunnel session opened without a receipt: ' + offenders.join(', ')).toEqual([]);
@@ -298,7 +298,7 @@ describe('egress receipt wiring tripwire', () => {
 
   test('deprecated dead-endpoint brain consumer/reader scripts stay deleted', () => {
     // lstat (not existsSync) so a dangling symlink also fails.
-    for (const rel of ['bin/gstack-brain-consumer', 'bin/gstack-brain-reader']) {
+    for (const rel of ['bin/paysec-brain-consumer', 'bin/paysec-brain-reader']) {
       let present = true;
       try {
         fs.lstatSync(path.join(ROOT, rel));
@@ -333,16 +333,16 @@ describe('egress receipt wiring tripwire', () => {
 
   test('polarity spot-checks: closed sinks refuse, open sinks warn', () => {
     // telemetry-sync (closed): the wrapped POST uses the `closed` policy.
-    expect(read('bin/gstack-telemetry-sync')).toMatch(/_receipted_curl closed telemetry-sync/);
+    expect(read('bin/paysec-telemetry-sync')).toMatch(/_receipted_curl closed telemetry-sync/);
     // brain-sync (closed): refusal exits before the commit consumes the queue.
-    expect(read('bin/gstack-brain-sync')).toMatch(/gstack-egress-receipt["']? write/);
+    expect(read('bin/paysec-brain-sync')).toMatch(/paysec-egress-receipt["']? write/);
     // update-check (open).
-    expect(read('bin/gstack-update-check')).toMatch(/_receipted_curl open update-check/);
+    expect(read('bin/paysec-update-check')).toMatch(/_receipted_curl open update-check/);
     // dashboards (open).
-    expect(read('bin/gstack-security-dashboard')).toMatch(/_receipted_curl open security-dashboard/);
-    expect(read('bin/gstack-community-dashboard')).toMatch(/_receipted_curl open community-dashboard/);
+    expect(read('bin/paysec-security-dashboard')).toMatch(/_receipted_curl open security-dashboard/);
+    expect(read('bin/paysec-community-dashboard')).toMatch(/_receipted_curl open community-dashboard/);
     // mcp-verify (closed).
-    expect(read('bin/gstack-gbrain-mcp-verify')).toMatch(/_receipted_curl closed gbrain-mcp-verify/);
+    expect(read('bin/paysec-gbrain-mcp-verify')).toMatch(/_receipted_curl closed gbrain-mcp-verify/);
     // supabase-provision (closed): TS module — the receipt is written before
     // the fetch, and a receipt failure refuses the send (fail-closed, exit 8).
     const provision = read('lib/gbrain-supabase-provision.ts');
@@ -357,7 +357,7 @@ describe('egress receipt wiring tripwire', () => {
   });
 
   test('NEW-SINK SCANNER: every outbound network op in the tree is wired or reasoned-exempt', () => {
-    const SWEEP = ['bin', 'lib', 'scripts', 'design/src', 'browse/src'];
+    const SWEEP = ['bin', 'lib', 'scripts', 'design/src', 'browser/src'];
     const offenders: string[] = [];
     for (const dirRel of SWEEP) {
       const dir = path.join(ROOT, dirRel);
@@ -378,10 +378,10 @@ describe('egress receipt wiring tripwire', () => {
     ).toEqual([]);
   });
 
-  test('shebang tripwire: no bin/gstack-* file carries a node shebang (amendment 2A)', () => {
+  test('shebang tripwire: no bin/paysec-* file carries a node shebang (amendment 2A)', () => {
     const offenders: string[] = [];
     for (const entry of fs.readdirSync(path.join(ROOT, 'bin'))) {
-      if (!entry.startsWith('gstack-')) continue;
+      if (!entry.startsWith('paysec-')) continue;
       const full = path.join(ROOT, 'bin', entry);
       if (!fs.lstatSync(full).isFile()) continue;
       if (!isTextFile(full)) continue;

@@ -1,7 +1,7 @@
 /**
  * Shared loopback port allocation (#2314, decision 8).
  *
- * One fixed scan range (10000-49151) for EVERY long-lived gstack listener:
+ * One fixed scan range (10000-49151) for EVERY long-lived paysec listener:
  * the main browse daemon and the terminal-agent. Binding `port: 0` instead
  * hands out a port from the OS EPHEMERAL range (49152-65535 on macOS) — the
  * same pool every short-lived test server draws from — so a daemon that

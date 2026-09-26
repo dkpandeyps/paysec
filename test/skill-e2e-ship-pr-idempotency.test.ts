@@ -1,7 +1,7 @@
 /**
- * /ship idempotency E2E (periodic, paid, real-PTY).
+ * /ship-pr idempotency E2E (periodic, paid, real-PTY).
  *
- * Asserts: when /ship runs against a branch that has ALREADY been bumped
+ * Asserts: when /ship-pr runs against a branch that has ALREADY been bumped
  * (VERSION ahead of base AND package.json synced AND a CHANGELOG entry
  * exists for the bumped version), the workflow:
  *
@@ -14,10 +14,10 @@
  * Why real-PTY: the old SDK-harness ship-idempotency variant (removed in
  * v1.64.1.0 as redundant with this test) used a synthetic prompt asking
  * the agent to "run ONLY the idempotency checks." This test exercises the
- * actual /ship skill end-to-end against a real git fixture so a regression
+ * actual /ship-pr skill end-to-end against a real git fixture so a regression
  * that silently re-bumps despite the check passing would be caught.
  *
- * Plan-mode framing: we run /ship in plan mode so the agent cannot push,
+ * Plan-mode framing: we run /ship-pr in plan mode so the agent cannot push,
  * commit, or open PRs. The Step 12 idempotency check is read-only
  * (reads VERSION + package.json + git rev-parse) and runs fine in plan
  * mode. The plan-ready output serves as the terminal signal — the agent
@@ -58,10 +58,10 @@ interface ShipFixture {
  *     CHANGELOG has [0.0.2] entry on top of [0.0.1], one feature commit
  *   - bareRemote is the origin; both branches are pushed
  *
- * Returns the work-tree dir for /ship to operate on.
+ * Returns the work-tree dir for /ship-pr to operate on.
  */
 function buildShippedFixture(): ShipFixture {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-ship-fixture-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-ship-fixture-'));
   const workTree = path.join(root, 'workspace');
   const bareRemote = path.join(root, 'origin.git');
   fs.mkdirSync(workTree, { recursive: true });
@@ -148,9 +148,9 @@ function snapshotFixture(workTree: string): FixtureSnapshot {
   return { versionFile, packageVersion: pkg.version, changelogEntryCount, bumpCommitCount, branchHead };
 }
 
-describeE2E('/ship idempotency E2E (periodic, real-PTY)', () => {
+describeE2E('/ship-pr idempotency E2E (periodic, real-PTY)', () => {
   test(
-    'rerunning /ship on an already-shipped branch detects ALREADY_BUMPED and does not mutate fixture',
+    'rerunning /ship-pr on an already-shipped branch detects ALREADY_BUMPED and does not mutate fixture',
     async () => {
       const fixture = buildShippedFixture();
       const before = snapshotFixture(fixture.workTree);
@@ -199,7 +199,7 @@ describeE2E('/ship idempotency E2E (periodic, real-PTY)', () => {
           }
 
           // Positive: idempotency classify reported ALREADY_BUMPED. Post-carve
-          // (T9), Step 12 runs `gstack-version-bump classify` which emits JSON
+          // (T9), Step 12 runs `paysec-version-bump classify` which emits JSON
           // (`"state":"ALREADY_BUMPED"`); the legacy inline bash echoed
           // `STATE: ALREADY_BUMPED`. Accept either so the test survives the carve.
           if (/STATE:\s*ALREADY_BUMPED|"state":\s*"ALREADY_BUMPED"/.test(visible)) {
@@ -212,12 +212,12 @@ describeE2E('/ship idempotency E2E (periodic, real-PTY)', () => {
           //   - classify reported FRESH (CLI JSON or legacy echo) → would re-bump
           //   - agent attempted git commit -m "chore: bump version"
           //   - agent attempted git push
-          //   - agent ran the CLI write path (gstack-version-bump write) — a
+          //   - agent ran the CLI write path (paysec-version-bump write) — a
           //     re-bump on an already-shipped branch
           if (
             /"state":\s*"FRESH"/.test(visible) ||
             /STATE:\s*FRESH(?![\w-])/i.test(visible) ||
-            /gstack-version-bump\s+write/i.test(visible) ||
+            /paysec-version-bump\s+write/i.test(visible) ||
             /git\s+commit\s+.*chore:\s*bump\s+version/i.test(visible) ||
             /git\s+push.*origin/i.test(visible)
           ) {
@@ -256,7 +256,7 @@ describeE2E('/ship idempotency E2E (periodic, real-PTY)', () => {
       try {
         if (outcome === 'attempted_mutation') {
           throw new Error(
-            `/ship attempted to mutate already-shipped state.\n` +
+            `/ship-pr attempted to mutate already-shipped state.\n` +
               `--- evidence (last 3KB) ---\n${evidence}\n` +
               `--- before ---\n${JSON.stringify(before, null, 2)}\n` +
               `--- after  ---\n${JSON.stringify(after, null, 2)}`,

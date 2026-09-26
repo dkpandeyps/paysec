@@ -2,35 +2,35 @@ import { type TemplateContext, toShellPath } from './types';
 
 /**
  * {{MAKE_PDF_SETUP}} — emits the shell preamble that resolves $P to the
- * make-pdf binary. Mirrors generateBrowseSetup / generateDesignSetup.
+ * md-to-pdf binary. Mirrors generateBrowseSetup / generateDesignSetup.
  *
- * $P = make-pdf/dist/pdf.
+ * $P = md-to-pdf/dist/pdf.
  *
  * Resolution order (matches src/browseClient.ts::resolveBrowseBin):
- *   1. Local skill root: $_ROOT/{localSkillRoot}/make-pdf/dist/pdf
- *   2. Global: ~/{globalRoot}/make-pdf/dist/pdf
+ *   1. Local skill root: $_ROOT/{localSkillRoot}/md-to-pdf/dist/pdf
+ *   2. Global: ~/{globalRoot}/md-to-pdf/dist/pdf
  *   3. Env override (MAKE_PDF_BIN) — for contributor dev builds
  */
 export function generateMakePdfSetup(ctx: TemplateContext): string {
-  return `## MAKE-PDF SETUP (run this check BEFORE any make-pdf command)
+  return `## MAKE-PDF SETUP (run this check BEFORE any md-to-pdf command)
 
 \`\`\`bash
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 P=""
 [ -n "$MAKE_PDF_BIN" ] && [ -x "$MAKE_PDF_BIN" ] && P="$MAKE_PDF_BIN"
-[ -z "$P" ] && [ -n "$_ROOT" ] && [ -x "$_ROOT/${ctx.paths.localSkillRoot}/make-pdf/dist/pdf" ] && P="$_ROOT/${ctx.paths.localSkillRoot}/make-pdf/dist/pdf"
+[ -z "$P" ] && [ -n "$_ROOT" ] && [ -x "$_ROOT/${ctx.paths.localSkillRoot}/md-to-pdf/dist/pdf" ] && P="$_ROOT/${ctx.paths.localSkillRoot}/md-to-pdf/dist/pdf"
 [ -z "$P" ] && P="${toShellPath(ctx.paths.makePdfDir)}/pdf"
 if [ -x "$P" ]; then
   echo "MAKE_PDF_READY: $P"
   alias _p_="$P"   # shellcheck alias helper (not exported)
   export P   # available as $P in subsequent blocks within the same skill invocation
 else
-  echo "MAKE_PDF_NOT_AVAILABLE (run './setup' in the gstack repo to build it)"
+  echo "MAKE_PDF_NOT_AVAILABLE (run './setup' in the paysec repo to build it)"
 fi
 \`\`\`
 
 If \`MAKE_PDF_NOT_AVAILABLE\` is printed: tell the user the binary is not
-built. Have them run \`./setup\` from the gstack repo, then retry.
+built. Have them run \`./setup\` from the paysec repo, then retry.
 
 If \`MAKE_PDF_READY\` is printed: \`$P\` is the binary path for the rest of
 the skill. Use \`$P\` (not an explicit path) so the skill body stays portable.

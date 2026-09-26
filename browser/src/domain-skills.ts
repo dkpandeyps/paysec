@@ -1,10 +1,10 @@
 /**
  * Domain skills — per-site notes the agent writes for itself, persisted
- * alongside /learn's per-project learnings as type:"domain" rows.
+ * alongside /learnings's per-project learnings as type:"domain" rows.
  *
  * Scope:
- *   - per-project: ~/.gstack/projects/<slug>/learnings.jsonl
- *   - global:      ~/.gstack/global-domain-skills.jsonl
+ *   - per-project: ~/.paysec/projects/<slug>/learnings.jsonl
+ *   - global:      ~/.paysec/global-domain-skills.jsonl
  *
  * State machine (T6 — defense against persistent prompt poisoning):
  *
@@ -62,16 +62,16 @@ export interface DomainSkillRow {
 
 const PROMOTE_THRESHOLD = 3;
 
-function gstackHome(): string {
-  return process.env.GSTACK_HOME || path.join(os.homedir(), '.gstack');
+function paysecHome(): string {
+  return process.env.PAYSEC_HOME || path.join(os.homedir(), '.paysec');
 }
 
 function globalFile(): string {
-  return path.join(gstackHome(), 'global-domain-skills.jsonl');
+  return path.join(paysecHome(), 'global-domain-skills.jsonl');
 }
 
 function projectFile(slug: string): string {
-  return path.join(gstackHome(), 'projects', slug, 'learnings.jsonl');
+  return path.join(paysecHome(), 'projects', slug, 'learnings.jsonl');
 }
 
 // ─── Hostname normalization (T3) ──────────────────────────────

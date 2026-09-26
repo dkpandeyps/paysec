@@ -15,19 +15,19 @@ const evalCollector = createEvalCollector('e2e-session-intelligence');
 
 // --- Session Intelligence E2E ---
 // Tests the core contract: timeline events flow in, context recovery flows out,
-// /context-save + /context-restore round-trip.
+// /save-context + /restore-context round-trip.
 
 describeIfSelected('Session Intelligence E2E', [
   'timeline-event-flow', 'context-recovery-artifacts',
   'context-save-writes-file', 'context-restore-loads-latest',
 ], () => {
   let workDir: string;
-  let gstackHome: string;
+  let paysecHome: string;
   let slug: string;
 
   beforeAll(() => {
     workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-session-intel-'));
-    gstackHome = path.join(workDir, '.gstack-home');
+    paysecHome = path.join(workDir, '.paysec-home');
 
     // Init git repo
     const run = (cmd: string, args: string[]) =>
@@ -43,8 +43,8 @@ describeIfSelected('Session Intelligence E2E', [
     const binDir = path.join(workDir, 'bin');
     fs.mkdirSync(binDir, { recursive: true });
     for (const script of [
-      'gstack-timeline-log', 'gstack-timeline-read', 'gstack-slug',
-      'gstack-learnings-log', 'gstack-learnings-search',
+      'paysec-timeline-log', 'paysec-timeline-read', 'paysec-slug',
+      'paysec-learnings-log', 'paysec-learnings-search',
     ]) {
       const src = path.join(ROOT, 'bin', script);
       if (fs.existsSync(src)) {
@@ -53,7 +53,7 @@ describeIfSelected('Session Intelligence E2E', [
       }
     }
 
-    // Compute slug (same logic as gstack-slug without git remote)
+    // Compute slug (same logic as paysec-slug without git remote)
     slug = path.basename(workDir).replace(/[^a-zA-Z0-9._-]/g, '');
   });
 
@@ -63,16 +63,16 @@ describeIfSelected('Session Intelligence E2E', [
   });
 
   // --- Test 1: Timeline event flow ---
-  // Write a timeline event via gstack-timeline-log, read it back via gstack-timeline-read.
+  // Write a timeline event via paysec-timeline-log, read it back via paysec-timeline-read.
   // This is the foundational data flow test: events go in, they come back out.
   testConcurrentIfSelected('timeline-event-flow', async () => {
-    const projectDir = path.join(gstackHome, 'projects', slug);
+    const projectDir = path.join(paysecHome, 'projects', slug);
     fs.mkdirSync(projectDir, { recursive: true });
 
     // Write two events via the binary
-    const logBin = path.join(workDir, 'bin', 'gstack-timeline-log');
-    const readBin = path.join(workDir, 'bin', 'gstack-timeline-read');
-    const env = { ...process.env, GSTACK_HOME: gstackHome };
+    const logBin = path.join(workDir, 'bin', 'paysec-timeline-log');
+    const readBin = path.join(workDir, 'bin', 'paysec-timeline-read');
+    const env = { ...process.env, PAYSEC_HOME: paysecHome };
     const opts = { cwd: workDir, env, stdio: 'pipe' as const, timeout: 10000 };
 
     spawnSync(logBin, [JSON.stringify({
@@ -83,7 +83,7 @@ describeIfSelected('Session Intelligence E2E', [
       outcome: 'success', duration_s: 120, session: 'test-1',
     })], opts);
 
-    // Read via gstack-timeline-read
+    // Read via paysec-timeline-read
     const readResult = spawnSync(readBin, ['--branch', 'main'], opts);
     const readOutput = readResult.stdout?.toString() || '';
 
@@ -104,7 +104,7 @@ describeIfSelected('Session Intelligence E2E', [
     expect(event2.event).toBe('completed');
     expect(event2.outcome).toBe('success');
 
-    // Verify gstack-timeline-read output includes the events
+    // Verify paysec-timeline-read output includes the events
     expect(readOutput).toContain('review');
 
     recordE2E(evalCollector, 'timeline event flow', 'Session Intelligence E2E', {
@@ -127,7 +127,7 @@ describeIfSelected('Session Intelligence E2E', [
   // Seed CEO plans and timeline events, then run a skill and verify the preamble
   // outputs "RECENT ARTIFACTS" and "LAST_SESSION".
   testConcurrentIfSelected('context-recovery-artifacts', async () => {
-    const projectDir = path.join(gstackHome, 'projects', slug);
+    const projectDir = path.join(paysecHome, 'projects', slug);
     fs.mkdirSync(path.join(projectDir, 'ceo-plans'), { recursive: true });
 
     // Seed a CEO plan
@@ -148,18 +148,18 @@ describeIfSelected('Session Intelligence E2E', [
     });
     fs.writeFileSync(path.join(projectDir, 'timeline.jsonl'), timelineEntry + '\n');
 
-    // Copy the /learn skill (lightweight, tier-2 skill that runs context recovery)
-    copyDirSync(path.join(ROOT, 'learn'), path.join(workDir, 'learn'));
+    // Copy the /learnings skill (lightweight, tier-2 skill that runs context recovery)
+    copyDirSync(path.join(ROOT, 'learnings'), path.join(workDir, 'learn'));
 
     const result = await runSkillTest({
-      prompt: `Read the file learn/SKILL.md for instructions.
+      prompt: `Read the file learnings/SKILL.md for instructions.
 
 Run the context recovery check — the preamble should show recent artifacts.
 
 IMPORTANT:
-- Use GSTACK_HOME="${gstackHome}" as an environment variable when running bin scripts.
-- The bin scripts are at ./bin/ (relative to this directory), not at ~/.claude/skills/gstack/bin/.
-  Replace any references to ~/.claude/skills/gstack/bin/ with ./bin/ when running commands.
+- Use PAYSEC_HOME="${paysecHome}" as an environment variable when running bin scripts.
+- The bin scripts are at ./bin/ (relative to this directory), not at ~/.claude/skills/paysec/bin/.
+  Replace any references to ~/.claude/skills/paysec/bin/ with ./bin/ when running commands.
 - Do NOT use AskUserQuestion.
 - Just run the preamble bash block and report what you see.
 - Look for "RECENT ARTIFACTS" and "LAST_SESSION" in the output.`,
@@ -195,35 +195,35 @@ IMPORTANT:
     console.log(`Context recovery: artifacts=${foundArtifacts}, lastSession=${foundLastSession}, timeline=${foundTimeline}`);
   }, 180_000);
 
-  // --- Test 3: /context-save writes a file ---
-  // Hand-feed the save section of context-save/SKILL.md to claude -p and verify
+  // --- Test 3: /save-context writes a file ---
+  // Hand-feed the save section of save-context/SKILL.md to claude -p and verify
   // a file gets written to the project's checkpoints dir with valid frontmatter.
   testConcurrentIfSelected('context-save-writes-file', async () => {
-    const projectDir = path.join(gstackHome, 'projects', slug);
+    const projectDir = path.join(paysecHome, 'projects', slug);
     fs.mkdirSync(path.join(projectDir, 'checkpoints'), { recursive: true });
 
-    // Copy the /context-save skill
-    copyDirSync(path.join(ROOT, 'context-save'), path.join(workDir, 'context-save'));
+    // Copy the /save-context skill
+    copyDirSync(path.join(ROOT, 'save-context'), path.join(workDir, 'save-context'));
 
-    // Add a staged change so /context-save has something to capture
+    // Add a staged change so /save-context has something to capture
     fs.writeFileSync(path.join(workDir, 'feature.ts'), 'export function newFeature() { return true; }\n');
     spawnSync('git', ['add', 'feature.ts'], { cwd: workDir, stdio: 'pipe', timeout: 5000 });
 
     // Extract the save section from the skill template (before the List section)
-    const full = fs.readFileSync(path.join(ROOT, 'context-save', 'SKILL.md'), 'utf-8');
+    const full = fs.readFileSync(path.join(ROOT, 'save-context', 'SKILL.md'), 'utf-8');
     const saveStart = full.indexOf('## Save flow');
     const listStart = full.indexOf('## List flow');
     const saveSection = full.slice(saveStart, listStart > saveStart ? listStart : undefined);
 
     const result = await runSkillTest({
-      prompt: `You are testing the /context-save skill. Follow these instructions to save a context file.
+      prompt: `You are testing the /save-context skill. Follow these instructions to save a context file.
 
 ${saveSection.slice(0, 2000)}
 
 IMPORTANT:
-- Use GSTACK_HOME="${gstackHome}" as an environment variable when running bin scripts.
-- The bin scripts are at ./bin/ (relative to this directory), not at ~/.claude/skills/gstack/bin/.
-  Replace any references to ~/.claude/skills/gstack/bin/ with ./bin/ when running commands.
+- Use PAYSEC_HOME="${paysecHome}" as an environment variable when running bin scripts.
+- The bin scripts are at ./bin/ (relative to this directory), not at ~/.claude/skills/paysec/bin/.
+  Replace any references to ~/.claude/skills/paysec/bin/ with ./bin/ when running commands.
 - Save the file to ${projectDir}/checkpoints/ with a filename like "20260401-test-context.md".
 - Include YAML frontmatter with status, branch, and timestamp.
 - Include a summary of what's being worked on (you can see from git status).
@@ -236,7 +236,7 @@ IMPORTANT:
       runId,
     });
 
-    logCost('context-save', result);
+    logCost('save-context', result);
 
     // Check that a context file was created
     const checkpointDir = path.join(projectDir, 'checkpoints');
@@ -255,7 +255,7 @@ IMPORTANT:
     const hasYamlFrontmatter = fileContent.includes('---') && fileContent.includes('status:');
     const hasBranch = fileContent.includes('branch:') || fileContent.includes('main');
 
-    recordE2E(evalCollector, 'context-save writes file', 'Session Intelligence E2E', result, {
+    recordE2E(evalCollector, 'save-context writes file', 'Session Intelligence E2E', result, {
       passed: exitOk && fileCreated && hasYamlFrontmatter,
     });
 
@@ -263,21 +263,21 @@ IMPORTANT:
     expect(fileCreated).toBe(true);
     expect(hasYamlFrontmatter).toBe(true);
 
-    console.log(`context-save: ${files.length} files created, YAML frontmatter: ${hasYamlFrontmatter}, branch: ${hasBranch}`);
+    console.log(`save-context: ${files.length} files created, YAML frontmatter: ${hasYamlFrontmatter}, branch: ${hasBranch}`);
   }, 180_000);
 
-  // --- Test 4: /context-restore loads the newest file across branches ---
+  // --- Test 4: /restore-context loads the newest file across branches ---
   // Seed two saved-context files with different YYYYMMDD-HHMMSS prefixes and
   // different branches in their frontmatter. Hand-feed the restore section to
   // claude -p. Verify the agent identifies the newer file (by filename prefix)
   // and presents its content, regardless of the current branch.
   testConcurrentIfSelected('context-restore-loads-latest', async () => {
-    const projectDir = path.join(gstackHome, 'projects', slug);
+    const projectDir = path.join(paysecHome, 'projects', slug);
     const checkpointDir = path.join(projectDir, 'checkpoints');
     fs.mkdirSync(checkpointDir, { recursive: true });
 
-    // Copy the /context-restore skill
-    copyDirSync(path.join(ROOT, 'context-restore'), path.join(workDir, 'context-restore'));
+    // Copy the /restore-context skill
+    copyDirSync(path.join(ROOT, 'restore-context'), path.join(workDir, 'restore-context'));
 
     // Seed two files: older on branch-a (title "old-work"), newer on branch-b
     // (title "newer-wintermute-work"). Current branch (main) matches neither.
@@ -320,19 +320,19 @@ This is the newest saved context. Cross-branch restore should load THIS file.
     fs.utimesSync(newerFile, pastNewerMtime, pastNewerMtime);
 
     // Extract the restore-flow section from the skill template
-    const full = fs.readFileSync(path.join(ROOT, 'context-restore', 'SKILL.md'), 'utf-8');
+    const full = fs.readFileSync(path.join(ROOT, 'restore-context', 'SKILL.md'), 'utf-8');
     const restoreStart = full.indexOf('## Restore flow');
     const importantStart = full.indexOf('## Important Rules', restoreStart);
     const restoreSection = full.slice(restoreStart, importantStart > restoreStart ? importantStart : undefined);
 
     const result = await runSkillTest({
-      prompt: `You are testing the /context-restore skill. Follow these instructions to restore the most recent saved context.
+      prompt: `You are testing the /restore-context skill. Follow these instructions to restore the most recent saved context.
 
 ${restoreSection.slice(0, 2500)}
 
 IMPORTANT:
-- Use GSTACK_HOME="${gstackHome}" as an environment variable when running bin scripts.
-- The bin scripts are at ./bin/ (relative to this directory), not at ~/.claude/skills/gstack/bin/.
+- Use PAYSEC_HOME="${paysecHome}" as an environment variable when running bin scripts.
+- The bin scripts are at ./bin/ (relative to this directory), not at ~/.claude/skills/paysec/bin/.
 - Look in ${checkpointDir} for saved context files.
 - Current branch is "main" — do NOT filter by current branch. Load across all branches.
 - The newest file by YYYYMMDD-HHMMSS prefix is the canonical "most recent". Filesystem mtime has been scrambled — do not use it.
@@ -345,14 +345,14 @@ IMPORTANT:
       runId,
     });
 
-    logCost('context-restore', result);
+    logCost('restore-context', result);
 
     const output = result.output ?? '';
     const loadedNewer = output.includes('newer wintermute work') || output.includes('wintermute integration');
     const loadedOlder = output.includes('old work') && !output.includes('newer');
     const exitOk = ['success', 'error_max_turns'].includes(result.exitReason);
 
-    recordE2E(evalCollector, 'context-restore loads latest', 'Session Intelligence E2E', result, {
+    recordE2E(evalCollector, 'restore-context loads latest', 'Session Intelligence E2E', result, {
       passed: exitOk && loadedNewer && !loadedOlder,
     });
 
@@ -360,6 +360,6 @@ IMPORTANT:
     expect(loadedNewer).toBe(true);
     expect(loadedOlder).toBe(false);
 
-    console.log(`context-restore: loadedNewer=${loadedNewer}, loadedOlder=${loadedOlder}`);
+    console.log(`restore-context: loadedNewer=${loadedNewer}, loadedOlder=${loadedOlder}`);
   }, 180_000);
 });

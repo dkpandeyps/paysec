@@ -5,12 +5,12 @@ import * as path from 'path';
 import * as os from 'os';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const DRIVER = path.join(ROOT, 'bin', 'gstack-jsonl-merge');
+const DRIVER = path.join(ROOT, 'bin', 'paysec-jsonl-merge');
 
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-jsonl-merge-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-jsonl-merge-'));
 });
 
 afterEach(() => {
@@ -45,7 +45,7 @@ function runMerge(
   return fs.readFileSync(oursPath, 'utf-8');
 }
 
-describe('gstack-jsonl-merge', () => {
+describe('paysec-jsonl-merge', () => {
   test('equal-ts entries resolve identically regardless of side (convergence)', () => {
     // Two machines append a different event in the same second, then each
     // merges the other's push. Machine A sees its own line as "ours"; machine

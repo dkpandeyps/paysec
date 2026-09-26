@@ -13,16 +13,16 @@ Running bare test migrations without INSTANCE hits an orphan DB and corrupts str
 Run both test suites in parallel, each wrapped in the evidence ledger. The
 wrapper is transparent (streams output live, exit code passes through) and
 records `{command, exit, working-tree fingerprint, log path}` to
-`~/.gstack/projects/<slug>/<branch>-evidence.jsonl` — Step 16 cites this
+`~/.paysec/projects/<slug>/<branch>-evidence.jsonl` — Step 16 cites this
 record instead of re-running when the content hasn't changed:
 
 ```bash
-~/.claude/skills/gstack/bin/gstack-evidence run --label tests -- 'bin/test-lane 2>&1' &
-~/.claude/skills/gstack/bin/gstack-evidence run --label vitest -- 'npm run test 2>&1' &
+~/.claude/skills/paysec/bin/paysec-evidence run --label tests -- 'bin/test-lane 2>&1' &
+~/.claude/skills/paysec/bin/paysec-evidence run --label vitest -- 'npm run test 2>&1' &
 wait
 ```
 
-After both complete, check the `gstack-evidence: recorded label=... exit=...
+After both complete, check the `paysec-evidence: recorded label=... exit=...
 log=...` summary lines — each carries the lane's exit code and a per-run log
 file (no shared /tmp collisions between concurrent ships). Read the log files
 for failure detail.
@@ -75,7 +75,7 @@ Map runner → test file: `post_generation_eval_runner.rb` → `post_generation_
 
 **3. Run affected suites at `EVAL_JUDGE_TIER=full`:**
 
-`/ship` is a pre-merge gate, so always use full tier (Sonnet structural + Opus persona judges).
+`/ship-pr` is a pre-merge gate, so always use full tier (Sonnet structural + Opus persona judges).
 
 ```bash
 EVAL_JUDGE_TIER=full EVAL_VERBOSE=1 bin/test-lane --eval test/evals/<suite>_eval_test.rb 2>&1 | tee /tmp/ship_evals.txt
@@ -86,13 +86,13 @@ If multiple suites need to run, run them sequentially (each needs a test lane). 
 **Long eval suites (30+ min): launch detached so a turn boundary can't kill them.**
 A plain backgrounded eval lives in the harness's process group and dies to a
 SIGTERM ("polite quit") on a turn boundary, a stopped monitor, or an interruption
-(observed mid-`/ship`: `script terminated by signal SIGTERM`). Run it through
-`~/.claude/skills/gstack/bin/gstack-detach` instead — it survives in its own
+(observed mid-`/ship-pr`: `script terminated by signal SIGTERM`). Run it through
+`~/.claude/skills/paysec/bin/paysec-detach` instead — it survives in its own
 session, serializes against other worktrees via a machine lock (no API
-saturation), and writes a guaranteed `### gstack-detach EXIT=<code> ###` sentinel:
+saturation), and writes a guaranteed `### paysec-detach EXIT=<code> ###` sentinel:
 
 ```bash
-~/.claude/skills/gstack/bin/gstack-detach --label ship-evals --lock gstack-evals --timeout 5400 -- <project eval command>
+~/.claude/skills/paysec/bin/paysec-detach --label ship-evals --lock paysec-evals --timeout 5400 -- <project eval command>
 ```
 
 Then poll the printed log path; break on the `EXIT=` sentinel (covers both pass
@@ -106,11 +106,11 @@ poller is reaped.
 
 **5. Save eval output** — include eval results and cost dashboard in the PR body (Step 19).
 
-**Tier reference (for context — /ship always uses `full`):**
+**Tier reference (for context — /ship-pr always uses `full`):**
 | Tier | When | Speed (cached) | Cost |
 |------|------|----------------|------|
 | `fast` (Haiku) | Dev iteration, smoke tests | ~5s (14x faster) | ~$0.07/run |
 | `standard` (Sonnet) | Default dev, `bin/test-lane --eval` | ~17s (4x faster) | ~$0.37/run |
-| `full` (Opus persona) | **`/ship` and pre-merge** | ~72s (baseline) | ~$1.27/run |
+| `full` (Opus persona) | **`/ship-pr` and pre-merge** | ~72s (baseline) | ~$1.27/run |
 
 ---

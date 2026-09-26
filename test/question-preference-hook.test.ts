@@ -1,5 +1,5 @@
 /**
- * PreToolUse enforcement hook (plan-tune cathedral T6) — unit tests.
+ * PreToolUse enforcement hook (tune-questions cathedral T6) — unit tests.
  *
  * Covers:
  *   - never-ask + marker + two-way + clean recommendation → deny+reason
@@ -15,8 +15,8 @@
  *
  * Pass-through contract (#2035/#2006): exit 0 + EXACTLY empty stdout, or
  * additionalContext-only hookSpecificOutput — never a permissionDecision.
- *   - auto-decided event logged via gstack-question-log (PostToolUse won't fire)
- *   - auto-decided marker written to ~/.gstack/sessions/<id>/.auto-decided-<tool_use_id>
+ *   - auto-decided event logged via paysec-question-log (PostToolUse won't fire)
+ *   - auto-decided marker written to ~/.paysec/sessions/<id>/.auto-decided-<tool_use_id>
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
@@ -34,10 +34,10 @@ let cwdSlug: string;
 let fixtureCwd: string;
 
 beforeEach(() => {
-  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-prefhook-'));
+  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-prefhook-'));
   cwdSlug = 'fixture-slug';
   fs.mkdirSync(path.join(stateRoot, 'projects', cwdSlug), { recursive: true });
-  // Real directory that the hook can chdir() into. gstack-slug derives the
+  // Real directory that the hook can chdir() into. paysec-slug derives the
   // slug from the basename of this cwd (no .git => basename fallback path).
   fixtureCwd = path.join(stateRoot, cwdSlug);
   fs.mkdirSync(fixtureCwd, { recursive: true });
@@ -73,8 +73,8 @@ function runHook(stdin: object, cwd?: string, extraEnv?: Record<string, string>)
   for (const [k, v] of Object.entries(process.env)) {
     if (v !== undefined) env[k] = v;
   }
-  env.GSTACK_STATE_ROOT = stateRoot;
-  delete env.GSTACK_HOME;
+  env.PAYSEC_STATE_ROOT = stateRoot;
+  delete env.PAYSEC_HOME;
   // Strip ambient Conductor markers so these cases characterize NON-Conductor
   // behavior deterministically — otherwise running the suite inside Conductor
   // (CONDUCTOR_WORKSPACE_PATH/PORT set) would flip every defer into the
@@ -82,7 +82,7 @@ function runHook(stdin: object, cwd?: string, extraEnv?: Record<string, string>)
   // via extraEnv.
   delete env.CONDUCTOR_WORKSPACE_PATH;
   delete env.CONDUCTOR_PORT;
-  env.GSTACK_QUESTION_LOG_NO_DERIVE = '1';
+  env.PAYSEC_QUESTION_LOG_NO_DERIVE = '1';
   if (extraEnv) Object.assign(env, extraEnv);
   const res = spawnSync(HOOK, [], {
     env,
@@ -138,7 +138,7 @@ describe('passes through (no enforcement)', () => {
       tool_use_id: 'tu-1',
       tool_input: {
         questions: [
-          { question: '<gstack-qid:test-q> Need approval?', options: ['A) Yes (recommended)', 'B) No'] },
+          { question: '<paysec-qid:test-q> Need approval?', options: ['A) Yes (recommended)', 'B) No'] },
         ],
       },
     });
@@ -168,7 +168,7 @@ describe('passes through (no enforcement)', () => {
       tool_use_id: 'tu-3',
       tool_input: {
         questions: [
-          { question: '<gstack-qid:test-q> Yes?', options: ['A) Yes (recommended)', 'B) No'] },
+          { question: '<paysec-qid:test-q> Yes?', options: ['A) Yes (recommended)', 'B) No'] },
         ],
       },
     });
@@ -180,7 +180,7 @@ describe('passes through (no enforcement)', () => {
     for (const [k, v] of Object.entries(process.env)) {
       if (v !== undefined) env[k] = v;
     }
-    env.GSTACK_STATE_ROOT = stateRoot;
+    env.PAYSEC_STATE_ROOT = stateRoot;
     const res = spawnSync(HOOK, [], { env, input: '', encoding: 'utf-8' });
     expect(res.status).toBe(0);
     expect(res.stdout).toBe('');
@@ -205,7 +205,7 @@ describe('passes through (no enforcement)', () => {
         tool_use_id: 'tu-trip-1',
         tool_input: {
           questions: [
-            { question: '<gstack-qid:test-q> Approve?', options: ['A) Yes (recommended)', 'B) No'] },
+            { question: '<paysec-qid:test-q> Approve?', options: ['A) Yes (recommended)', 'B) No'] },
           ],
         },
       }),
@@ -234,14 +234,14 @@ describe('enforces never-ask preferences', () => {
         questions: [
           {
             question:
-              '<gstack-qid:ship-pre-landing-review-fix> Pre-landing review flagged issue.',
+              '<paysec-qid:ship-pre-landing-review-fix> Pre-landing review flagged issue.',
             options: ['A) Fix now (recommended)', 'B) Skip'],
           },
         ],
       },
     });
     expect(r.parsed?.hookSpecificOutput?.permissionDecision).toBe('deny');
-    expect(r.parsed?.hookSpecificOutput?.permissionDecisionReason).toContain('plan-tune auto-decide');
+    expect(r.parsed?.hookSpecificOutput?.permissionDecisionReason).toContain('tune-questions auto-decide');
     expect(r.parsed?.hookSpecificOutput?.permissionDecisionReason).toContain('Fix now');
   });
 
@@ -254,7 +254,7 @@ describe('enforces never-ask preferences', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-test-failure-triage> Tests failed.',
+            question: '<paysec-qid:ship-test-failure-triage> Tests failed.',
             options: ['A) Fix now (recommended)', 'B) Investigate', 'C) Ack and ship'],
           },
         ],
@@ -272,7 +272,7 @@ describe('enforces never-ask preferences', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-pre-landing-review-fix> Ambiguous',
+            question: '<paysec-qid:ship-pre-landing-review-fix> Ambiguous',
             options: ['A) Fix now (recommended)', 'B) Skip (recommended)'],
           },
         ],
@@ -290,7 +290,7 @@ describe('enforces never-ask preferences', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-pre-landing-review-fix> No rec',
+            question: '<paysec-qid:ship-pre-landing-review-fix> No rec',
             options: ['A) Foo', 'B) Bar'],
           },
         ],
@@ -312,7 +312,7 @@ describe('enforces never-ask preferences', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:adhoc-credential-cleanup> Reset my secret and proceed?',
+            question: '<paysec-qid:adhoc-credential-cleanup> Reset my secret and proceed?',
             options: ['A) Yes (recommended)', 'B) No'],
           },
         ],
@@ -330,14 +330,14 @@ describe('enforces never-ask preferences', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:adhoc-credential-cleanup> Reorganize the TODOs file?',
+            question: '<paysec-qid:adhoc-credential-cleanup> Reorganize the TODOs file?',
             options: ['A) Yes (recommended)', 'B) No'],
           },
         ],
       },
     });
     expect(r.parsed?.hookSpecificOutput?.permissionDecision).toBe('deny');
-    expect(r.parsed?.hookSpecificOutput?.permissionDecisionReason).toContain('plan-tune auto-decide');
+    expect(r.parsed?.hookSpecificOutput?.permissionDecisionReason).toContain('tune-questions auto-decide');
   });
 });
 
@@ -356,7 +356,7 @@ describe('precedence: project wins over global (D8)', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],
@@ -374,7 +374,7 @@ describe('precedence: project wins over global (D8)', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],
@@ -393,7 +393,7 @@ describe('precedence: project wins over global (D8)', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],
@@ -417,7 +417,7 @@ describe('MCP variant', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],
@@ -441,7 +441,7 @@ describe('Conductor prose redirect', () => {
       tool_use_id: 'tu-c1',
       tool_input: {
         questions: [
-          { question: '<gstack-qid:test-q> Need approval?', options: ['A) Yes (recommended)', 'B) No'] },
+          { question: '<paysec-qid:test-q> Need approval?', options: ['A) Yes (recommended)', 'B) No'] },
         ],
       },
     }, undefined, CONDUCTOR);
@@ -474,7 +474,7 @@ describe('Conductor prose redirect', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-test-failure-triage> Tests failed.',
+            question: '<paysec-qid:ship-test-failure-triage> Tests failed.',
             options: ['A) Fix now (recommended)', 'B) Investigate', 'C) Ack and ship'],
           },
         ],
@@ -491,7 +491,7 @@ describe('Conductor prose redirect', () => {
       tool_name: 'mcp__conductor__AskUserQuestion',
       tool_use_id: 'tu-c4',
       tool_input: {
-        questions: [{ question: '<gstack-qid:test-q> Pick?', options: ['A) X (recommended)', 'B) Y'] }],
+        questions: [{ question: '<paysec-qid:test-q> Pick?', options: ['A) X (recommended)', 'B) Y'] }],
       },
     }, undefined, { CONDUCTOR_WORKSPACE_PATH: '/Users/x/conductor/ws' });
     expect(r.parsed?.hookSpecificOutput?.permissionDecision).toBe('deny');
@@ -507,7 +507,7 @@ describe('Conductor prose redirect', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-pre-landing-review-fix> Pre-landing review flagged issue.',
+            question: '<paysec-qid:ship-pre-landing-review-fix> Pre-landing review flagged issue.',
             options: ['A) Fix now (recommended)', 'B) Skip'],
           },
         ],
@@ -515,7 +515,7 @@ describe('Conductor prose redirect', () => {
     }, undefined, CONDUCTOR);
     expect(r.parsed?.hookSpecificOutput?.permissionDecision).toBe('deny');
     // auto-decide reason, NOT the conductor prose reason
-    expect(r.parsed?.hookSpecificOutput?.permissionDecisionReason).toContain('plan-tune auto-decide');
+    expect(r.parsed?.hookSpecificOutput?.permissionDecisionReason).toContain('tune-questions auto-decide');
     expect(r.parsed?.hookSpecificOutput?.permissionDecisionReason).not.toContain('[conductor]');
   });
 
@@ -543,7 +543,7 @@ describe('auto-decided event tagging', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],
@@ -565,7 +565,7 @@ describe('auto-decided event tagging', () => {
       tool_input: {
         questions: [
           {
-            question: '<gstack-qid:ship-pre-landing-review-fix> P?',
+            question: '<paysec-qid:ship-pre-landing-review-fix> P?',
             options: ['A) Fix (recommended)', 'B) Skip'],
           },
         ],

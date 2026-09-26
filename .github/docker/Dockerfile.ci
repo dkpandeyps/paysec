@@ -1,4 +1,4 @@
-# gstack CI eval runner — pre-baked toolchain + deps
+# paysec CI eval runner — pre-baked toolchain + deps
 # Rebuild weekly via ci-image.yml, on Dockerfile changes, or on lockfile changes
 FROM ubuntu:24.04
 
@@ -28,10 +28,10 @@ RUN printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\nAcquire::https:
 
 # System deps (retry apt-get update + install as a unit — even Hetzner can blip).
 # Includes xz-utils so the Node.js .tar.xz download below can decompress.
-# python3: bin/gstack-jsonl-merge, gstack-brain-sync, gstack-detach, and other
+# python3: bin/paysec-jsonl-merge, paysec-brain-sync, paysec-detach, and other
 #   bash bins shell out to it (macOS ships python3; the base image doesn't).
 # file: skill-validation's no-compiled-binaries-in-git check runs `file --mime-type`.
-# poppler-utils: make-pdf's e2e gates hard-require pdftotext/pdffonts/pdfinfo in CI.
+# poppler-utils: md-to-pdf's e2e gates hard-require pdftotext/pdffonts/pdfinfo in CI.
 RUN for i in 1 2 3; do \
       apt-get update && apt-get install -y --no-install-recommends \
         git curl unzip xz-utils ca-certificates jq bc gpg python3 file poppler-utils && break || \
@@ -80,7 +80,7 @@ RUN npm i -g @anthropic-ai/claude-code
 # Playwright system deps (Chromium) — needed for browse E2E tests
 RUN npx playwright install-deps chromium
 
-# Linux has neither Helvetica nor Arial. make-pdf's print CSS stacks fall back
+# Linux has neither Helvetica nor Arial. md-to-pdf's print CSS stacks fall back
 # to Liberation Sans (metric-compatible Arial clone, SIL OFL 1.1) so PDFs don't
 # render in DejaVu Sans. playwright install-deps happens to pull this in today,
 # but the dep is implicit and could change — install explicitly so upgrades
@@ -90,7 +90,7 @@ RUN npx playwright install-deps chromium
 # (headed-xvfb, headed-orphan-cleanup) can exercise the Linux container
 # auto-spawn path on every CI run. Without Xvfb in the image, the most
 # common production --headed path goes untested.
-# fonts-noto-color-emoji: the make-pdf emoji render gate needs a color-emoji
+# fonts-noto-color-emoji: the md-to-pdf emoji render gate needs a color-emoji
 # fallback font (mirrors make-pdf-gate.yml's Ubuntu setup step).
 RUN for i in 1 2 3; do \
       apt-get update && apt-get install -y --no-install-recommends fonts-liberation fonts-noto-color-emoji fontconfig xvfb x11-utils && break || \
@@ -123,7 +123,7 @@ RUN bun --version && node --version && claude --version && jq --version && gh --
     && python3 --version && command -v file && command -v pdftotext && command -v pdffonts && command -v pdfinfo \
     && npx playwright --version \
     && fc-match "Liberation Sans" | grep -qi "Liberation" \
-        || (echo "ERROR: fonts-liberation not installed — make-pdf PDFs will render in DejaVu Sans" && exit 1)
+        || (echo "ERROR: fonts-liberation not installed — md-to-pdf PDFs will render in DejaVu Sans" && exit 1)
 
 # At runtime: checkout overwrites /workspace, but node_modules persists
 # if we move it out of the way and symlink back
@@ -137,6 +137,6 @@ RUN mv /workspace/node_modules /opt/node_modules_cache \
 # the workflow must set options.user or use gosu/su-exec at runtime).
 RUN useradd -m -s /bin/bash runner \
     && chmod -R a+rX /opt/node_modules_cache \
-    && mkdir -p /home/runner/.gstack && chown -R runner:runner /home/runner/.gstack \
+    && mkdir -p /home/runner/.paysec && chown -R runner:runner /home/runner/.paysec \
     && chmod 1777 /tmp \
     && mkdir -p /home/runner/.bun && chown -R runner:runner /home/runner/.bun

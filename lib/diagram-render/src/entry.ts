@@ -2,11 +2,11 @@
  * diagram-render bundle entry.
  *
  * Built into a single self-contained HTML page (dist/diagram-render.html) that
- * make-pdf and /diagram load into a browse daemon tab via `load-html`. Every
+ * md-to-pdf and /make-diagram load into a browse daemon tab via `load-html`. Every
  * capability is exposed as a window.__* function and driven through `browse js`;
  * binary results return as data URLs that `js --out` decodes to bytes on disk.
  *
- *   page lifecycle (one tab per make-pdf run, reused across fences):
+ *   page lifecycle (one tab per md-to-pdf run, reused across fences):
  *     load-html dist copy ─▶ poll #status == "ready" ─▶ N × __renderMermaid/
  *     __excalidrawToSvg/__rasterize ─▶ close tab (orchestrator finally)
  *     render error ─▶ caller reloads the page before the next fence
@@ -14,11 +14,11 @@
  *
  * Render contract (eng-review D3):
  *  - securityLevel "strict": no click callbacks, no HTML label injection in
- *    this tab. The make-pdf sanitizer is the second defense layer downstream.
+ *    this tab. The md-to-pdf sanitizer is the second defense layer downstream.
  *  - Callers pass a unique id per fence (mermaid-fence-<n>); mermaid bakes it
  *    into every internal SVG id, so two diagrams inlined into one document
  *    can't collide on gradients/markers.
- *  - Font stacks mirror make-pdf/src/print-css.ts so text measured here lays
+ *  - Font stacks mirror md-to-pdf/src/print-css.ts so text measured here lays
  *    out identically in the printed document.
  *  - htmlLabels false: foreignObject labels taint canvases (blocks toDataURL
  *    rasterization) and break when the SVG is inlined into another document.
@@ -45,9 +45,9 @@ declare global {
 // Excalidraw's font registry builds URLs from this against the document base.
 // The host must be absolute and never resolves — the page is offline by design;
 // exportToSvg embeds the bundled Excalifont glyphs without fetching.
-window.EXCALIDRAW_ASSET_PATH = "https://gstack-render.localhost/excalidraw-assets/";
+window.EXCALIDRAW_ASSET_PATH = "https://paysec-render.localhost/excalidraw-assets/";
 
-// Font stacks must match make-pdf/src/print-css.ts (sans + CJK + emoji) so
+// Font stacks must match md-to-pdf/src/print-css.ts (sans + CJK + emoji) so
 // mermaid's text measurement in this tab matches the print document's layout.
 const PRINT_SANS =
   'Helvetica, "Liberation Sans", Arial, "Hiragino Kaku Gothic ProN", ' +
@@ -75,7 +75,7 @@ window.__mermaidToExcalidraw = async (text: string): Promise<string> => {
   const scene = {
     type: "excalidraw",
     version: 2,
-    source: "gstack-diagram-render",
+    source: "paysec-diagram-render",
     elements: converted,
     appState: { viewBackgroundColor: "#ffffff" },
     files: files ?? {},
@@ -200,7 +200,7 @@ window.__probeImage = async (src: string): Promise<string> => {
 };
 
 // __BUNDLE_INFO__ is replaced at build time with the pinned dependency map.
-window.__bundleInfo = { name: "gstack-diagram-render", deps: __BUNDLE_INFO_DEPS__ };
+window.__bundleInfo = { name: "paysec-diagram-render", deps: __BUNDLE_INFO_DEPS__ };
 
 // Readiness signal: pollable text beats a bare invisible div (Playwright's
 // visibility-based `wait` never fires on an empty element).

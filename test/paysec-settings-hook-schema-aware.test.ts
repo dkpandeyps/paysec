@@ -1,10 +1,10 @@
 /**
- * gstack-settings-hook schema-aware surface (T3 plan-tune cathedral).
+ * paysec-settings-hook schema-aware surface (T3 tune-questions cathedral).
  *
  * Verifies add-event / remove-source / diff-event / rollback / list-sources
  * for PreToolUse + PostToolUse registration. Existing team-mode.test.ts
  * covers the legacy `add <cmd>` / `remove <cmd>` shape; this file only
- * covers the new surface introduced for the plan-tune cathedral.
+ * covers the new surface introduced for the tune-questions cathedral.
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
@@ -14,13 +14,13 @@ import * as os from 'os';
 import { execSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const SETTINGS_HOOK = path.join(ROOT, 'bin', 'gstack-settings-hook');
+const SETTINGS_HOOK = path.join(ROOT, 'bin', 'paysec-settings-hook');
 
 let tmpDir: string;
 let settingsFile: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-shsa-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-shsa-'));
   settingsFile = path.join(tmpDir, 'settings.json');
 });
 
@@ -31,7 +31,7 @@ afterEach(() => {
 function run(args: string[]): { stdout: string; stderr: string; exitCode: number } {
   try {
     const stdout = execSync([SETTINGS_HOOK, ...args].map((s) => `'${s}'`).join(' '), {
-      env: { ...process.env, GSTACK_SETTINGS_FILE: settingsFile },
+      env: { ...process.env, PAYSEC_SETTINGS_FILE: settingsFile },
       encoding: 'utf-8',
       timeout: 10000,
     });
@@ -63,7 +63,7 @@ describe('add-event', () => {
     const s = settings();
     expect(s.hooks.PreToolUse).toHaveLength(1);
     expect(s.hooks.PreToolUse[0].matcher).toBe('(AskUserQuestion|mcp__.*__AskUserQuestion)');
-    expect(s.hooks.PreToolUse[0]._gstack_source).toBe('plan-tune-cathedral');
+    expect(s.hooks.PreToolUse[0]._paysec_source).toBe('plan-tune-cathedral');
     expect(s.hooks.PreToolUse[0].hooks[0].command).toBe('/abs/path/to/question-preference-hook');
     expect(s.hooks.PreToolUse[0].hooks[0].timeout).toBe(5);
   });
@@ -130,7 +130,7 @@ describe('add-event', () => {
     ]);
     const s = settings();
     expect(s.hooks.PostToolUse).toHaveLength(1);
-    expect(s.hooks.PostToolUse[0]._gstack_source).toBe('source-B');
+    expect(s.hooks.PostToolUse[0]._paysec_source).toBe('source-B');
   });
 
   test('dedup includes command: untagged entry with same command is updated not duplicated', () => {
@@ -157,7 +157,7 @@ describe('add-event', () => {
     ]);
     const s = settings();
     expect(s.hooks.PostToolUse).toHaveLength(1);
-    expect(s.hooks.PostToolUse[0]._gstack_source).toBe('plan-tune-cathedral');
+    expect(s.hooks.PostToolUse[0]._paysec_source).toBe('plan-tune-cathedral');
   });
 
   test('preserves unrelated existing hooks', () => {
@@ -178,7 +178,7 @@ describe('add-event', () => {
       'add-event',
       '--event', 'PreToolUse',
       '--matcher', 'AskUserQuestion',
-      '--command', '/gstack-hook',
+      '--command', '/paysec-hook',
       '--source', 'plan-tune-cathedral',
     ]);
     const s = settings();
@@ -195,7 +195,7 @@ describe('add-event', () => {
       'add-event',
       '--event', 'PreToolUse',
       '--matcher', 'AskUserQuestion',
-      '--command', '/gstack',
+      '--command', '/paysec',
       '--source', 'plan-tune-cathedral',
     ]);
     const backups = fs
@@ -212,7 +212,7 @@ describe('add-event', () => {
       'add-event',
       '--event', 'NotAnEvent',
       '--command', '/x',
-      '--source', 'plan-tune',
+      '--source', 'tune-questions',
     ]);
     expect(r.exitCode).not.toBe(0);
     expect(r.stderr).toMatch(/invalid --event/);
@@ -275,7 +275,7 @@ describe('diff-event', () => {
       'diff-event',
       '--event', 'PreToolUse',
       '--matcher', 'AskUserQuestion',
-      '--command', '/gstack',
+      '--command', '/paysec',
       '--source', 'plan-tune-cathedral',
     ]);
     expect(r.exitCode).toBe(0);
@@ -298,7 +298,7 @@ describe('rollback', () => {
       'add-event',
       '--event', 'PreToolUse',
       '--matcher', 'AskUserQuestion',
-      '--command', '/gstack',
+      '--command', '/paysec',
       '--source', 'plan-tune-cathedral',
     ]);
     expect(settings().hooks).toBeDefined();

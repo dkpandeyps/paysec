@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# gstack-specialist-stats — compute per-specialist hit rates from review history
-# Usage: gstack-specialist-stats
+# paysec-specialist-stats — compute per-specialist hit rates from review history
+# Usage: paysec-specialist-stats
 #
 # Reads all *-reviews.jsonl files across branches, parses specialist fields,
 # and outputs hit rates. Tags specialists as GATE_CANDIDATE (0 findings in 10+
 # dispatches) or NEVER_GATE (security, data-migration — insurance policy).
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-eval "$("$SCRIPT_DIR/gstack-slug" 2>/dev/null)"
-GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
-PROJECT_DIR="$GSTACK_HOME/projects/$SLUG"
+eval "$("$SCRIPT_DIR/paysec-slug" 2>/dev/null)"
+PAYSEC_HOME="${PAYSEC_HOME:-$HOME/.paysec}"
+PROJECT_DIR="$PAYSEC_HOME/projects/$SLUG"
 
 if [ ! -d "$PROJECT_DIR" ]; then
   echo "SPECIALIST_STATS: 0 reviews analyzed"

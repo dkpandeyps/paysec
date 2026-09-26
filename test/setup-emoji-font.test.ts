@@ -25,8 +25,8 @@ describe('setup: ensure_emoji_font static invariants', () => {
     expect(helper).toContain('[ "$(uname -s)" = "Linux" ] || return 0');
   });
 
-  test('honors the GSTACK_SKIP_FONTS escape hatch', () => {
-    expect(helper).toContain('GSTACK_SKIP_FONTS');
+  test('honors the PAYSEC_SKIP_FONTS escape hatch', () => {
+    expect(helper).toContain('PAYSEC_SKIP_FONTS');
   });
 
   test('detects an installed COLOR emoji font via fc-match (not the broad fc-list query)', () => {
@@ -105,7 +105,7 @@ describe.skipIf(process.platform === 'win32')('setup: ensure_emoji_font behavior
     fcCacheCalled: boolean;
     stderr: string;
   } {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-emoji-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-emoji-'));
     try {
       const bin = path.join(tmp, 'bin');
       fs.mkdirSync(bin);

@@ -7,10 +7,10 @@
  *    fix, a repo with AGENTS.md routing but no CLAUDE.md reported
  *    HAS_ROUTING: no and got nagged to create CLAUDE.md.
  *
- * 2. gstack-team-init's required-mode enforcement (the CLAUDE.md
- *    verification snippet and the generated check-gstack.sh hook) must
- *    resolve the install root across GSTACK_ROOT + every host's global
- *    install location, never hardcode ~/.claude/skills/gstack. The drift
+ * 2. paysec-team-init's required-mode enforcement (the CLAUDE.md
+ *    verification snippet and the generated check-paysec.sh hook) must
+ *    resolve the install root across PAYSEC_ROOT + every host's global
+ *    install location, never hardcode ~/.claude/skills/paysec. The drift
  *    test pins the probe list against the hosts registry so a new host
  *    can't silently fall out of team-mode enforcement.
  *
@@ -92,25 +92,25 @@ describe('routing probe checks AGENTS.md too (#2500)', () => {
   });
 });
 
-describe('team-init resolves GSTACK_ROOT across every host (#2500)', () => {
-  const teamInit = fs.readFileSync(path.join(ROOT, 'bin', 'gstack-team-init'), 'utf-8');
+describe('team-init resolves PAYSEC_ROOT across every host (#2500)', () => {
+  const teamInit = fs.readFileSync(path.join(ROOT, 'bin', 'paysec-team-init'), 'utf-8');
 
-  test('probe list covers GSTACK_ROOT env + every registered host globalRoot + migrated repo', () => {
-    expect(teamInit).toContain('"${GSTACK_ROOT:-}"');
+  test('probe list covers PAYSEC_ROOT env + every registered host globalRoot + migrated repo', () => {
+    expect(teamInit).toContain('"${PAYSEC_ROOT:-}"');
     for (const config of ALL_HOST_CONFIGS) {
       expect(teamInit).toContain(`$HOME/${config.globalRoot}`);
     }
-    expect(teamInit).toContain('$HOME/.gstack/repos/gstack');
+    expect(teamInit).toContain('$HOME/.paysec/repos/paysec');
   });
 
   test('enforcement no longer hardcodes the Claude path as the only gate', () => {
-    expect(teamInit).not.toContain('test -d ~/.claude/skills/gstack/bin');
-    expect(teamInit).not.toContain('if [ ! -d "$HOME/.claude/skills/gstack/bin" ]');
+    expect(teamInit).not.toContain('test -d ~/.claude/skills/paysec/bin');
+    expect(teamInit).not.toContain('if [ ! -d "$HOME/.claude/skills/paysec/bin" ]');
   });
 
   test('generated hook blocks only when NO install root resolves', () => {
     // The hook's block branch must gate on the resolved root being empty,
     // not on any single hardcoded directory.
-    expect(teamInit).toContain('if [ -z "$_GSTACK_ROOT" ]; then');
+    expect(teamInit).toContain('if [ -z "$_PAYSEC_ROOT" ]; then');
   });
 });

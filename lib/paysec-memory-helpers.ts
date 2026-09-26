@@ -1,19 +1,19 @@
 /**
- * gstack-memory-helpers — shared helpers for the V1 memory ingest + retrieval pipeline.
+ * paysec-memory-helpers — shared helpers for the V1 memory ingest + retrieval pipeline.
  *
  * Imported by:
- *   - bin/gstack-memory-ingest.ts (Lane A)
- *   - bin/gstack-gbrain-sync.ts   (Lane B)
- *   - bin/gstack-brain-context-load.ts (Lane C)
+ *   - bin/paysec-memory-ingest.ts (Lane A)
+ *   - bin/paysec-gbrain-sync.ts   (Lane B)
+ *   - bin/paysec-brain-context-load.ts (Lane C)
  *   - scripts/gen-skill-docs.ts (manifest validation)
  *
  * Design refs in the plan:
  *   §"Eng review additions" — DRY refactor (Section 1A)
  *   §"V1 final scope clarification" — schema_version: 1 standardization (Section 2A)
- *   ED1 — engine-tier cache lives in ~/.gstack/.gbrain-engine-cache.json (60s TTL)
+ *   ED1 — engine-tier cache lives in ~/.paysec/.gbrain-engine-cache.json (60s TTL)
  *
  * NOTE: secretScanFile() currently shells out to `gitleaks` from PATH; the vendored
- * binary install is part of Lane E (setup-gbrain). When gitleaks is missing, the
+ * binary install is part of Lane E (brain-setup). When gitleaks is missing, the
  * helper warns once and returns an empty findings list — fail-safe defaults.
  */
 
@@ -140,8 +140,8 @@ function gitleaksAvailable(): boolean {
     _gitleaksAvailability = false;
     // Only warn once per process — Lane E will vendor the binary.
     process.stderr.write(
-      "[gstack-memory-helpers] gitleaks not in PATH; secret scanning disabled. " +
-      "Run /setup-gbrain to install (or `brew install gitleaks`).\n"
+      "[paysec-memory-helpers] gitleaks not in PATH; secret scanning disabled. " +
+      "Run /brain-setup to install (or `brew install gitleaks`).\n"
     );
   }
   return _gitleaksAvailability;
@@ -153,7 +153,7 @@ function gitleaksAvailable(): boolean {
  * scanner="missing" — caller decides whether to skip the file or proceed.
  *
  * Per D19: gitleaks runs at ingest time before any put_page / put_file write.
- * Replaces the inadequate regex scanner in bin/gstack-brain-sync (which only
+ * Replaces the inadequate regex scanner in bin/paysec-brain-sync (which only
  * applies to staged git diffs).
  */
 export function secretScanFile(path: string): SecretScanResult {
@@ -206,21 +206,21 @@ function redactMatch(s: string): string {
 
 const ENGINE_CACHE_TTL_MS = 60 * 1000;
 
-function gstackHome(): string {
-  return process.env.GSTACK_HOME || join(homedir(), ".gstack");
+function paysecHome(): string {
+  return process.env.PAYSEC_HOME || join(homedir(), ".paysec");
 }
 
 function engineCachePath(): string {
-  return join(gstackHome(), ".gbrain-engine-cache.json");
+  return join(paysecHome(), ".gbrain-engine-cache.json");
 }
 
 function errorLogPath(): string {
-  return join(gstackHome(), ".gbrain-errors.jsonl");
+  return join(paysecHome(), ".gbrain-errors.jsonl");
 }
 
 /**
  * Detect which gbrain engine is active (PGLite vs Supabase) and cache the
- * answer for 60s in ~/.gstack/.gbrain-engine-cache.json. Caching avoids
+ * answer for 60s in ~/.paysec/.gbrain-engine-cache.json. Caching avoids
  * fork+exec'ing `gbrain doctor --json` on every skill start.
  *
  * Per ED1 (state files local-only): this cache is gitignored from the brain
@@ -247,7 +247,7 @@ export function detectEngineTier(): EngineDetect {
     mkdirSync(dirname(engineCachePath()), { recursive: true });
     writeFileSync(
       engineCachePath(),
-      JSON.stringify({ ...fresh, last_writer: "gstack-memory-helpers.detectEngineTier" }, null, 2),
+      JSON.stringify({ ...fresh, last_writer: "paysec-memory-helpers.detectEngineTier" }, null, 2),
       "utf-8"
     );
   } catch {
@@ -266,7 +266,7 @@ function gbrainConfigPath(): string {
   return join(gbrainConfigDir(process.env), "config.json");
 }
 
-// Best-effort JSONL append to ~/.gstack/.gbrain-errors.jsonl. Never throws.
+// Best-effort JSONL append to ~/.paysec/.gbrain-errors.jsonl. Never throws.
 function logGbrainError(kind: string, detail: string): void {
   try {
     const path = errorLogPath();
@@ -339,7 +339,7 @@ function freshDetectEngineTier(): EngineDetect {
  *
  * Schema validation (full kind/required-fields check) lives in
  * scripts/gen-skill-docs.ts and runs at generation time. This parser is the
- * runtime read path used by gstack-brain-context-load; it tolerates extra
+ * runtime read path used by paysec-brain-context-load; it tolerates extra
  * fields and relies on validation having already happened upstream.
  */
 export function parseSkillManifest(skillFilePath: string): GbrainManifest | null {
@@ -460,11 +460,11 @@ function parseFilterMap(body: string): Record<string, string> | undefined {
 
 // ── Public: withErrorContext ──────────────────────────────────────────────
 
-const ERROR_LOG_PATH = join(gstackHome(), ".gbrain-errors.jsonl");
+const ERROR_LOG_PATH = join(paysecHome(), ".gbrain-errors.jsonl");
 
 /**
  * Wrap an op with structured error logging. Logs success/failure + duration
- * to ~/.gstack/.gbrain-errors.jsonl for forensic debugging. Replaces ad-hoc
+ * to ~/.paysec/.gbrain-errors.jsonl for forensic debugging. Replaces ad-hoc
  * try/catch sites across the three Bun helpers (Section 2B).
  *
  * On error: the error is RE-THROWN after logging — caller still owns flow.

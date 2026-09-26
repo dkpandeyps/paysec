@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# Migration: v1.27.0.0 — rename gstack-brain-* → gstack-artifacts-*
+# Migration: v1.27.0.0 — rename paysec-brain-* → paysec-artifacts-*
 #
 # Phase C of the v1.27.0.0 plan. Hard-rename, no compat shim. Steps:
-#   1. gh_repo_renamed       — gh/glab repo rename gstack-brain-$USER →
-#                              gstack-artifacts-$USER (skipped on user opt-out)
-#   2. remote_txt_renamed    — mv ~/.gstack-brain-remote.txt → artifacts-remote.txt
+#   1. gh_repo_renamed       — gh/glab repo rename paysec-brain-$USER →
+#                              paysec-artifacts-$USER (skipped on user opt-out)
+#   2. remote_txt_renamed    — mv ~/.paysec-brain-remote.txt → artifacts-remote.txt
 #   3. config_key_renamed    — rewrite gbrain_sync_mode → artifacts_sync_mode
-#                              in ~/.gstack/config.yaml
+#                              in ~/.paysec/config.yaml
 #   4. claude_md_block_rewritten — find-and-replace any existing GBrain
 #                              Configuration block that references "Memory sync"
 #   5. sources_swapped       — gbrain sources add new (verify) → remove old
 #                              (codex Finding #6: add-before-remove ordering)
 #   6. done                  — write touchfile, delete journal
 #
-# Interruption-safe via journal at ~/.gstack/.migrations/v1.27.0.0.journal:
+# Interruption-safe via journal at ~/.paysec/.migrations/v1.27.0.0.journal:
 # each step writes its name on success; re-entry resumes from the next un-done
-# step. Done touchfile at ~/.gstack/.migrations/v1.27.0.0.done.
+# step. Done touchfile at ~/.paysec/.migrations/v1.27.0.0.done.
 #
 # Three host-mode branches per the plan:
 #   Local CLI + GitHub  — all steps run automatically
@@ -34,13 +34,13 @@ fi
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-GSTACK_HOME="${HOME}/.gstack"
+PAYSEC_HOME="${HOME}/.paysec"
 SKILLS_DIR="${HOME}/.claude/skills"
-BIN_DIR="${SKILLS_DIR}/gstack/bin"
-CONFIG_BIN="${BIN_DIR}/gstack-config"
-URL_BIN="${BIN_DIR}/gstack-artifacts-url"
+BIN_DIR="${SKILLS_DIR}/paysec/bin"
+CONFIG_BIN="${BIN_DIR}/paysec-config"
+URL_BIN="${BIN_DIR}/paysec-artifacts-url"
 
-MIGRATION_DIR="${GSTACK_HOME}/.migrations"
+MIGRATION_DIR="${PAYSEC_HOME}/.migrations"
 JOURNAL="${MIGRATION_DIR}/v1.27.0.0.journal"
 DONE="${MIGRATION_DIR}/v1.27.0.0.done"
 SKIPPED="${MIGRATION_DIR}/v1.27.0.0.skipped-by-user"
@@ -50,13 +50,13 @@ SKIPPED="${MIGRATION_DIR}/v1.27.0.0.skipped-by-user"
 # re-select an already-passed migration, so the only honest remediation is
 # a direct invocation of this script ($0-derived so it survives any cwd).
 SELF_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
-RERUN_CMD="GSTACK_MIGRATE_ASSUME_YES=1 bash ${SELF_PATH}"
+RERUN_CMD="PAYSEC_MIGRATE_ASSUME_YES=1 bash ${SELF_PATH}"
 
 USER_NAME="${USER:-$(whoami 2>/dev/null || echo unknown)}"
-OLD_REPO_NAME="gstack-brain-${USER_NAME}"
-NEW_REPO_NAME="gstack-artifacts-${USER_NAME}"
-OLD_REMOTE_TXT="${HOME}/.gstack-brain-remote.txt"
-NEW_REMOTE_TXT="${HOME}/.gstack-artifacts-remote.txt"
+OLD_REPO_NAME="paysec-brain-${USER_NAME}"
+NEW_REPO_NAME="paysec-artifacts-${USER_NAME}"
+OLD_REMOTE_TXT="${HOME}/.paysec-brain-remote.txt"
+NEW_REMOTE_TXT="${HOME}/.paysec-artifacts-remote.txt"
 OLD_SOURCE_ID="${OLD_REPO_NAME}"
 NEW_SOURCE_ID="${NEW_REPO_NAME}"
 
@@ -88,15 +88,15 @@ mark_done() {
 # ---------------------------------------------------------------------------
 
 # Has the user ever opted into brain sync? Two signals:
-#   - presence of ~/.gstack-brain-remote.txt (legacy file)
-#   - presence of ~/.gstack/.git (brain-init ever ran)
+#   - presence of ~/.paysec-brain-remote.txt (legacy file)
+#   - presence of ~/.paysec/.git (brain-init ever ran)
 HAS_LEGACY_STATE=0
 [ -f "$OLD_REMOTE_TXT" ] && HAS_LEGACY_STATE=1
-[ -d "$GSTACK_HOME/.git" ] && HAS_LEGACY_STATE=1
+[ -d "$PAYSEC_HOME/.git" ] && HAS_LEGACY_STATE=1
 
 # If nothing to migrate, finalize silently.
 if [ "$HAS_LEGACY_STATE" = "0" ]; then
-  echo "  [v1.27.0.0] no legacy gstack-brain state detected — nothing to migrate." >&2
+  echo "  [v1.27.0.0] no legacy paysec-brain state detected — nothing to migrate." >&2
   touch "$DONE"
   rm -f "$JOURNAL" 2>/dev/null || true
   exit 0
@@ -106,14 +106,14 @@ fi
 if [ ! -f "$JOURNAL" ]; then
   cat >&2 <<EOF
 
-  [v1.27.0.0] gstack-brain has been renamed to gstack-artifacts.
+  [v1.27.0.0] paysec-brain has been renamed to paysec-artifacts.
   This is a clearer name for what it actually holds: CEO plans, designs,
-  /investigate reports, retros (i.e. artifacts, not behavioral memory).
+  /debug-root-cause reports, retros (i.e. artifacts, not behavioral memory).
 
   This migration will:
     1. Rename your private GitHub/GitLab repo "$OLD_REPO_NAME" → "$NEW_REPO_NAME"
-    2. mv ~/.gstack-brain-remote.txt → ~/.gstack-artifacts-remote.txt
-    3. Rename gbrain_sync_mode → artifacts_sync_mode in ~/.gstack/config.yaml
+    2. mv ~/.paysec-brain-remote.txt → ~/.paysec-artifacts-remote.txt
+    3. Rename gbrain_sync_mode → artifacts_sync_mode in ~/.paysec/config.yaml
     4. Update any "## GBrain Configuration" block in CLAUDE.md
     5. Update gbrain federated source registration (local CLI mode)
        OR print commands for your brain admin (remote MCP mode)
@@ -145,8 +145,8 @@ EOF
     # left an install half-migrated when that step failed mid-run (#1383).
     # Skip for now by default (asked again next upgrade); explicit opt-in
     # proceeds unattended.
-    if [ "${GSTACK_MIGRATE_ASSUME_YES:-0}" = "1" ]; then
-      echo "  (non-interactive: proceeding — GSTACK_MIGRATE_ASSUME_YES=1)" >&2
+    if [ "${PAYSEC_MIGRATE_ASSUME_YES:-0}" = "1" ]; then
+      echo "  (non-interactive: proceeding — PAYSEC_MIGRATE_ASSUME_YES=1)" >&2
     else
       echo "  Non-interactive session: skipping for now." >&2
       echo "  Re-run manually with: ${RERUN_CMD}" >&2
@@ -250,13 +250,13 @@ if ! journal_done "gh_repo_renamed"; then
 fi
 
 # ---------------------------------------------------------------------------
-# Step 2: rename ~/.gstack-brain-remote.txt → ~/.gstack-artifacts-remote.txt
+# Step 2: rename ~/.paysec-brain-remote.txt → ~/.paysec-artifacts-remote.txt
 # ---------------------------------------------------------------------------
 if ! journal_done "remote_txt_renamed"; then
-  echo "  [v1.27.0.0] step 2: rename ~/.gstack-brain-remote.txt → ~/.gstack-artifacts-remote.txt" >&2
+  echo "  [v1.27.0.0] step 2: rename ~/.paysec-brain-remote.txt → ~/.paysec-artifacts-remote.txt" >&2
   if [ -f "$OLD_REMOTE_TXT" ] && [ ! -f "$NEW_REMOTE_TXT" ]; then
     # Update the URL inside if the rename happened on the host: replace
-    # gstack-brain-$USER with gstack-artifacts-$USER in the URL.
+    # paysec-brain-$USER with paysec-artifacts-$USER in the URL.
     OLD_URL=$(head -1 "$OLD_REMOTE_TXT" 2>/dev/null)
     NEW_URL=$(echo "$OLD_URL" | sed "s|/${OLD_REPO_NAME}|/${NEW_REPO_NAME}|; s|:${OLD_REPO_NAME}|:${NEW_REPO_NAME}|")
     echo "$NEW_URL" > "$NEW_REMOTE_TXT"
@@ -277,7 +277,7 @@ fi
 # ---------------------------------------------------------------------------
 if ! journal_done "config_key_renamed"; then
   echo "  [v1.27.0.0] step 3: rename gbrain_sync_mode → artifacts_sync_mode in config.yaml" >&2
-  CFG="$GSTACK_HOME/config.yaml"
+  CFG="$PAYSEC_HOME/config.yaml"
   if [ -f "$CFG" ]; then
     # Atomic in-place rewrite with a tmpfile.
     TMP=$(mktemp "${CFG}.v1.27.0.0.XXXXXX")
@@ -296,10 +296,10 @@ fi
 # ---------------------------------------------------------------------------
 if ! journal_done "claude_md_block_rewritten"; then
   echo "  [v1.27.0.0] step 4: rewrite CLAUDE.md GBrain Configuration block fields" >&2
-  # Look in cwd's CLAUDE.md (where /setup-gbrain wrote it) and ~/.gstack/CLAUDE.md
+  # Look in cwd's CLAUDE.md (where /brain-setup wrote it) and ~/.paysec/CLAUDE.md
   # if it exists. We can't know every project's CLAUDE.md; users rerunning
-  # /setup-gbrain in any project will overwrite that block fresh anyway.
-  for CMD in "$PWD/CLAUDE.md" "$GSTACK_HOME/CLAUDE.md"; do
+  # /brain-setup in any project will overwrite that block fresh anyway.
+  for CMD in "$PWD/CLAUDE.md" "$PAYSEC_HOME/CLAUDE.md"; do
     [ -f "$CMD" ] || continue
     if grep -q "## GBrain Configuration" "$CMD"; then
       TMP=$(mktemp "${CMD}.v1.27.0.0.XXXXXX")
@@ -329,10 +329,10 @@ if ! journal_done "sources_swapped"; then
 
 EOF
     mark_done "sources_swapped"
-  elif command -v gbrain >/dev/null 2>&1 && [ -d "$GSTACK_HOME/.git" ]; then
+  elif command -v gbrain >/dev/null 2>&1 && [ -d "$PAYSEC_HOME/.git" ]; then
     # Local CLI mode. Sources point at the worktree path; rename the source
     # ID add-then-remove. The actual on-disk worktree path stays the same.
-    WORKTREE="${GSTACK_BRAIN_WORKTREE:-$HOME/.gstack-brain-worktree}"
+    WORKTREE="${PAYSEC_BRAIN_WORKTREE:-$HOME/.paysec-brain-worktree}"
     if gbrain sources list 2>/dev/null | grep -q "$OLD_SOURCE_ID"; then
       if gbrain sources add "$NEW_SOURCE_ID" --path "$WORKTREE" --federated 2>/dev/null; then
         echo "    added $NEW_SOURCE_ID" >&2
@@ -350,7 +350,7 @@ EOF
     fi
     mark_done "sources_swapped"
   else
-    echo "    gbrain CLI not available or no ~/.gstack/.git — skipping" >&2
+    echo "    gbrain CLI not available or no ~/.paysec/.git — skipping" >&2
     mark_done "sources_swapped"
   fi
 fi

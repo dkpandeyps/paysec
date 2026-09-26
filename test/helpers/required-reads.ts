@@ -2,7 +2,7 @@
  * requiredReads enforcement (v2 plan T9, mitigation layer 5 — the only CI-failing
  * layer against silent section-skip).
  *
- * Given a /ship run's tool calls and the set of section files the run's SITUATION
+ * Given a /ship-pr run's tool calls and the set of section files the run's SITUATION
  * required, assert the agent actually Read each one. The required set comes from
  * the TEST FIXTURE (which situation it set up), NOT from the manifest — the
  * manifest is passive (CM2). This keeps "when is a section required" in exactly

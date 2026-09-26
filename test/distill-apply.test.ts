@@ -1,11 +1,11 @@
 /**
- * gstack-distill-apply — Layer 8 proposal application (plan-tune cathedral T11).
+ * paysec-distill-apply — Layer 8 proposal application (tune-questions cathedral T11).
  *
  * Verifies the three apply paths:
- *   - memory-nugget → appended to ~/.gstack/free-text-memory.json (local
+ *   - memory-nugget → appended to ~/.paysec/free-text-memory.json (local
  *     source-of-truth; gbrain is mirror when configured).
- *   - preference   → routed through gstack-question-preference with
- *                    source=plan-tune (user-origin gate cleared).
+ *   - preference   → routed through paysec-question-preference with
+ *                    source=tune-questions (user-origin gate cleared).
  *   - declared-nudge → atomic update to developer-profile.json declared dim,
  *                     small=0.05, medium=0.10, large=0.15, clamped to [0,1].
  * Plus:
@@ -21,7 +21,7 @@ import * as os from 'os';
 import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const BIN = path.join(ROOT, 'bin', 'gstack-distill-apply');
+const BIN = path.join(ROOT, 'bin', 'paysec-distill-apply');
 
 let stateRoot: string;
 let fixtureCwd: string;
@@ -29,7 +29,7 @@ let cwdSlug: string;
 let proposalFile: string;
 
 beforeEach(() => {
-  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-apply-'));
+  stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-apply-'));
   cwdSlug = 'apply-fixture';
   fixtureCwd = path.join(stateRoot, cwdSlug);
   fs.mkdirSync(fixtureCwd, { recursive: true });
@@ -57,9 +57,9 @@ function run(args: string[]): { stdout: string; stderr: string; status: number }
   for (const [k, v] of Object.entries(process.env)) {
     if (v !== undefined) env[k] = v;
   }
-  env.GSTACK_STATE_ROOT = stateRoot;
-  env.GSTACK_QUESTION_LOG_NO_DERIVE = '1';
-  delete env.GSTACK_HOME;
+  env.PAYSEC_STATE_ROOT = stateRoot;
+  env.PAYSEC_QUESTION_LOG_NO_DERIVE = '1';
+  delete env.PAYSEC_HOME;
   const res = spawnSync(BIN, args, { env, encoding: 'utf-8', cwd: fixtureCwd });
   return {
     stdout: res.stdout ?? '',
@@ -118,7 +118,7 @@ describe('--list', () => {
 // ----------------------------------------------------------------------
 
 describe('memory-nugget apply', () => {
-  test('appends to ~/.gstack/free-text-memory.json with full metadata', () => {
+  test('appends to ~/.paysec/free-text-memory.json with full metadata', () => {
     writeProposals([
       {
         kind: 'memory-nugget',
@@ -169,7 +169,7 @@ describe('memory-nugget apply', () => {
 // ----------------------------------------------------------------------
 
 describe('preference apply', () => {
-  test('routes through gstack-question-preference with source=plan-tune', () => {
+  test('routes through paysec-question-preference with source=tune-questions', () => {
     writeProposals([
       {
         kind: 'preference',

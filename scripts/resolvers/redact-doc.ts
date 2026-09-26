@@ -2,8 +2,8 @@
  * redact-doc — resolvers for the shared redaction docs + invocation bash.
  *
  *   {{REDACT_TAXONOMY_TABLE}}            → markdown table of the 3-tier taxonomy,
- *                                          derived from lib/redact-patterns so /spec
- *                                          and /cso never drift from the engine.
+ *                                          derived from lib/redact-patterns so /write-spec
+ *                                          and /security-audit never drift from the engine.
  *   {{REDACT_INVOCATION_BLOCK:<sink>}}   → the canonical scan-at-sink bash + prose
  *                                          for one enforcement point. <sink> is a
  *                                          hyphenated label: pre-codex, pre-issue,
@@ -35,7 +35,7 @@ export function generateRedactInvocationBlock(ctx: TemplateContext, args?: strin
   const sinkLabel = args?.[0] ?? 'pre-issue';
   const brief = args?.[1] === 'brief';
   const sink = SINKS[sinkLabel] ?? SINKS['pre-issue'];
-  const bin = `${ctx.paths.binDir}/gstack-redact`;
+  const bin = `${ctx.paths.binDir}/paysec-redact`;
 
   // Brief variant: a compact pointer for repeat sinks, so the full ~40-line
   // procedure ships once per skill, not once per enforcement point.
@@ -56,9 +56,9 @@ file, pass the SAME file downstream. Never scan a string then re-render it.
 
 \`\`\`bash
 command -v bun >/dev/null 2>&1 || echo "redaction scan skipped — bun not on PATH"
-# Resolve visibility once; cache + reuse. Order: local config (~/.gstack, never
+# Resolve visibility once; cache + reuse. Order: local config (~/.paysec, never
 # committed) → gh → glab → unknown(=public-strict).
-REDACT_VIS=$(~/.claude/skills/gstack/bin/gstack-config get redact_repo_visibility 2>/dev/null)
+REDACT_VIS=$(~/.claude/skills/paysec/bin/paysec-config get redact_repo_visibility 2>/dev/null)
 [ -z "$REDACT_VIS" ] && REDACT_VIS=$(gh repo view --json visibility -q .visibility 2>/dev/null | tr 'A-Z' 'a-z')
 [ -z "$REDACT_VIS" ] && REDACT_VIS=$(glab repo view -F json 2>/dev/null | grep -o '"visibility":"[^"]*"' | head -1 | sed 's/.*:"//;s/"//' | tr 'A-Z' 'a-z')
 REDACT_VIS="\${REDACT_VIS:-unknown}"

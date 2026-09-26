@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# gstack-timeline-read — read and format project timeline
-# Usage: gstack-timeline-read [--since "7 days ago"] [--limit N] [--branch NAME]
+# paysec-timeline-read — read and format project timeline
+# Usage: paysec-timeline-read [--since "7 days ago"] [--limit N] [--branch NAME]
 #
 # Session timeline: local-only, never sent anywhere.
-# Reads ~/.gstack/projects/$SLUG/timeline.jsonl, filters, formats.
+# Reads ~/.paysec/projects/$SLUG/timeline.jsonl, filters, formats.
 # Exit 0 silently if no timeline file exists.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-eval "$("$SCRIPT_DIR/gstack-slug" 2>/dev/null)"
-GSTACK_HOME="${GSTACK_HOME:-$HOME/.gstack}"
+eval "$("$SCRIPT_DIR/paysec-slug" 2>/dev/null)"
+PAYSEC_HOME="${PAYSEC_HOME:-$HOME/.paysec}"
 
 SINCE=""
 LIMIT=20
@@ -23,17 +23,17 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-TIMELINE_FILE="$GSTACK_HOME/projects/$SLUG/timeline.jsonl"
+TIMELINE_FILE="$PAYSEC_HOME/projects/$SLUG/timeline.jsonl"
 
 if [ ! -f "$TIMELINE_FILE" ]; then
   exit 0
 fi
 
-cat "$TIMELINE_FILE" 2>/dev/null | GSTACK_TIMELINE_SINCE="$SINCE" GSTACK_TIMELINE_BRANCH="$BRANCH" GSTACK_TIMELINE_LIMIT="$LIMIT" bun -e "
+cat "$TIMELINE_FILE" 2>/dev/null | PAYSEC_TIMELINE_SINCE="$SINCE" PAYSEC_TIMELINE_BRANCH="$BRANCH" PAYSEC_TIMELINE_LIMIT="$LIMIT" bun -e "
 const lines = (await Bun.stdin.text()).trim().split('\n').filter(Boolean);
-const since = process.env.GSTACK_TIMELINE_SINCE || '';
-const branch = process.env.GSTACK_TIMELINE_BRANCH || '';
-const limitRaw = process.env.GSTACK_TIMELINE_LIMIT || '20';
+const since = process.env.PAYSEC_TIMELINE_SINCE || '';
+const branch = process.env.PAYSEC_TIMELINE_BRANCH || '';
+const limitRaw = process.env.PAYSEC_TIMELINE_LIMIT || '20';
 const parsedLimit = Number.parseInt(limitRaw, 10);
 const limit = Number.isSafeInteger(parsedLimit) && parsedLimit > 0 ? parsedLimit : 20;
 

@@ -161,8 +161,8 @@ describe("daemon /boards/<id> trailing-slash redirect", () => {
     expect(r.headers.get("Content-Type") || "").toContain("text/html");
     const html = await r.text();
     expect(html).toContain("Hello from board");
-    // No __GSTACK_SERVER_URL injection (board JS uses relative paths)
-    expect(html).not.toContain("__GSTACK_SERVER_URL");
+    // No __PAYSEC_SERVER_URL injection (board JS uses relative paths)
+    expect(html).not.toContain("__PAYSEC_SERVER_URL");
   });
 
   test("404 on unknown board id (shows expired page)", async () => {

@@ -7,7 +7,7 @@
  * userAgent / platform / OS, and synthesizing fixed values flags MORE
  * bot-like, not less. Plugins and languages surface their native
  * Chromium values. The opt-in EXTENDED_STEALTH_SCRIPT below (gated on
- * GSTACK_STEALTH=extended, off by default) DOES fake plugins — that mode
+ * PAYSEC_STEALTH=extended, off by default) DOES fake plugins — that mode
  * is the documented "actively lies, may break sites" escape hatch, not
  * the default posture.
  *
@@ -21,8 +21,8 @@
  *      that the inline addInitScript already applies — `denied` while
  *      Permissions returns `prompt` is a cross-source inconsistency
  *      detectors flag.
- *   4. Report per-install hardware values via GSTACK_HW_CONCURRENCY /
- *      GSTACK_DEVICE_MEMORY env vars (set by gbd at startup via
+ *   4. Report per-install hardware values via PAYSEC_HW_CONCURRENCY /
+ *      PAYSEC_DEVICE_MEMORY env vars (set by gbd at startup via
  *      system_profiler + sysctl). Per-install honesty avoids the
  *      cross-user fingerprint cluster a hardcoded default would create.
  *   5. Install a Function.prototype.toString Proxy that makes every
@@ -43,7 +43,7 @@ import type { BrowserContext } from 'playwright';
 /**
  * Host hardware values resolved at browser-manager startup. Values come
  * from the gbd `host_profile.go` detection (system_profiler + sysctl
- * on macOS), passed through the GSTACK_* env vars. Each field falls
+ * on macOS), passed through the PAYSEC_* env vars. Each field falls
  * back to a documented default if the env var is missing or unparseable.
  */
 interface HostProfile {
@@ -52,13 +52,13 @@ interface HostProfile {
 }
 
 // Exported for the clamp/fallback unit test. The platform spoof is owned by
-// the UA-CH cmdline switch in buildGStackLaunchArgs (which reads GSTACK_PLATFORM
+// the UA-CH cmdline switch in buildPaySecLaunchArgs (which reads PAYSEC_PLATFORM
 // directly), so this profile only carries the values buildStealthScript bakes
 // into the page-world script.
 export function readHostProfile(): HostProfile {
   const env = (globalThis as any).process?.env ?? {};
-  const concurrency = Number(env.GSTACK_HW_CONCURRENCY);
-  const memory = Number(env.GSTACK_DEVICE_MEMORY);
+  const concurrency = Number(env.PAYSEC_HW_CONCURRENCY);
+  const memory = Number(env.PAYSEC_DEVICE_MEMORY);
   return {
     // Clamp to a plausible default: 0/NaN/negative/missing all fall back to 8.
     // deviceMemory=0 or NaN would be a glaring bot tell, so never report it.
@@ -203,7 +203,7 @@ export function buildStealthScript(hw: HostProfile): string {
     }
   } catch {}
 
-  // ──── Per-install hardware values from GSTACK_* env (T2) ────
+  // ──── Per-install hardware values from PAYSEC_* env (T2) ────
   // gbd's host_profile.go fed real host values via cmdline env. Reporting
   // those (not hardcoded defaults) avoids the cross-user GBrowser
   // fingerprint cluster.
@@ -374,7 +374,7 @@ export const EXTENDED_STEALTH_SCRIPT = `
 `;
 
 function extendedModeEnabled(): boolean {
-  const v = process.env.GSTACK_STEALTH;
+  const v = process.env.PAYSEC_STEALTH;
   return v === 'extended' || v === '1' || v === 'true';
 }
 
@@ -434,7 +434,7 @@ export const AUTOMATION_ARTIFACT_CLEANUP_SCRIPT = `(() => {
  *   1. Layer C (buildStealthScript) — the always-on consistency-first default.
  *   2. Automation-artifact cleanup (cdc_/__webdriver + Permissions shim),
  *      kept consistent with Layer C's Notification.permission alignment.
- *   3. EXTENDED_STEALTH_SCRIPT — only when GSTACK_STEALTH=extended (off by
+ *   3. EXTENDED_STEALTH_SCRIPT — only when PAYSEC_STEALTH=extended (off by
  *      default). Its window.chrome.* patches are `if (!...)`-guarded, so
  *      Layer C's richer shapes win; the extended-only additions (WebGL spoof,
  *      faked navigator.plugins, mediaDevices) apply on top.
@@ -444,7 +444,7 @@ export const AUTOMATION_ARTIFACT_CLEANUP_SCRIPT = `(() => {
  * as injected code; its prototype-level navigator.webdriver delete is shadowed
  * by Layer C's own-property getter (net behavior still matches real Chrome:
  * webdriver present and false); and its hardcoded Apple-M1 WebGL string can
- * disagree with the env-driven GPU spoof in buildGStackLaunchArgs on non-Apple
+ * disagree with the env-driven GPU spoof in buildPaySecLaunchArgs on non-Apple
  * hosts. This is acceptable for the documented "actively lies, may break sites"
  * escape hatch; the consistency-first default (Layer C alone) has none of these.
  *
@@ -471,9 +471,9 @@ export const STEALTH_LAUNCH_ARGS = [
 ];
 
 /**
- * Build the `--gstack-*=` cmdline switches that the Pack 1 Chromium
+ * Build the `--paysec-*=` cmdline switches that the Pack 1 Chromium
  * patches read (webgl-vendor-spoof, ua-client-hints-stealth, worker-
- * navigator-stealth). Values come from the GSTACK_* env vars that
+ * navigator-stealth). Values come from the PAYSEC_* env vars that
  * gbd populates from host_profile.go at startup.
  *
  * Each switch is only emitted when its env var is non-empty — empty
@@ -483,7 +483,7 @@ export const STEALTH_LAUNCH_ARGS = [
  * pre-Pack-1) and on hosts where gbd hasn't yet populated some
  * fields (legacy installs).
  *
- * TRUSTED-SOURCE ONLY. These GSTACK_* values are populated by gbd from
+ * TRUSTED-SOURCE ONLY. These PAYSEC_* values are populated by gbd from
  * host_profile.go (system_profiler / sysctl) and become page-visible WebGL /
  * UA-CH surface data. They are NOT sanitized here (passed verbatim into the
  * argv array, which is injection-safe because Playwright spawns Chromium with
@@ -492,59 +492,59 @@ export const STEALTH_LAUNCH_ARGS = [
  * argv-injection sink. readHostProfile() applies the same trust assumption.
  *
  * Mapping (gbd env → Chromium cmdline switch → C++ patch consumer):
- *   GSTACK_GPU_VENDOR        → --gstack-gpu-vendor        → webgl-vendor-spoof.patch
- *   GSTACK_GPU_RENDERER      → --gstack-gpu-renderer      → webgl-vendor-spoof.patch
- *   GSTACK_PLATFORM          → --gstack-ua-platform       → ua-client-hints-stealth.patch
+ *   PAYSEC_GPU_VENDOR        → --paysec-gpu-vendor        → webgl-vendor-spoof.patch
+ *   PAYSEC_GPU_RENDERER      → --paysec-gpu-renderer      → webgl-vendor-spoof.patch
+ *   PAYSEC_PLATFORM          → --paysec-ua-platform       → ua-client-hints-stealth.patch
  *                              (maps MacARM/MacIntel → "macOS")
- *   GSTACK_GPU_CHIPSET       → --gstack-ua-model          → ua-client-hints-stealth.patch
- *   GSTACK_HW_CONCURRENCY    → --gstack-hw-concurrency    → worker-navigator-stealth.patch
- *   GSTACK_DEVICE_MEMORY     → --gstack-device-memory     → worker-navigator-stealth.patch
+ *   PAYSEC_GPU_CHIPSET       → --paysec-ua-model          → ua-client-hints-stealth.patch
+ *   PAYSEC_HW_CONCURRENCY    → --paysec-hw-concurrency    → worker-navigator-stealth.patch
+ *   PAYSEC_DEVICE_MEMORY     → --paysec-device-memory     → worker-navigator-stealth.patch
  */
-export function buildGStackLaunchArgs(): string[] {
+export function buildPaySecLaunchArgs(): string[] {
   const env = (globalThis as any).process?.env ?? {};
   const args: string[] = [];
 
-  const vendor = env.GSTACK_GPU_VENDOR;
-  if (vendor) args.push(`--gstack-gpu-vendor=${vendor}`);
+  const vendor = env.PAYSEC_GPU_VENDOR;
+  if (vendor) args.push(`--paysec-gpu-vendor=${vendor}`);
 
-  const renderer = env.GSTACK_GPU_RENDERER;
-  if (renderer) args.push(`--gstack-gpu-renderer=${renderer}`);
+  const renderer = env.PAYSEC_GPU_RENDERER;
+  if (renderer) args.push(`--paysec-gpu-renderer=${renderer}`);
 
   // Map gbd's "MacARM"/"MacIntel" classification to the UA-CH "macOS"
   // platform string Chromium emits natively. Other future platforms
   // would map similarly (Win32 → "Windows", Linux → "Linux").
-  const platform = env.GSTACK_PLATFORM;
+  const platform = env.PAYSEC_PLATFORM;
   if (platform === 'MacARM' || platform === 'MacIntel') {
-    args.push('--gstack-ua-platform=macOS');
+    args.push('--paysec-ua-platform=macOS');
   } else if (platform === 'Win32') {
-    args.push('--gstack-ua-platform=Windows');
+    args.push('--paysec-ua-platform=Windows');
   } else if (platform && platform.startsWith('Linux')) {
-    args.push('--gstack-ua-platform=Linux');
+    args.push('--paysec-ua-platform=Linux');
   }
 
-  const chipset = env.GSTACK_GPU_CHIPSET;
-  if (chipset) args.push(`--gstack-ua-model=${chipset}`);
+  const chipset = env.PAYSEC_GPU_CHIPSET;
+  if (chipset) args.push(`--paysec-ua-model=${chipset}`);
 
-  const hw = env.GSTACK_HW_CONCURRENCY;
-  if (hw) args.push(`--gstack-hw-concurrency=${hw}`);
+  const hw = env.PAYSEC_HW_CONCURRENCY;
+  if (hw) args.push(`--paysec-hw-concurrency=${hw}`);
 
-  const memory = env.GSTACK_DEVICE_MEMORY;
-  if (memory) args.push(`--gstack-device-memory=${memory}`);
+  const memory = env.PAYSEC_DEVICE_MEMORY;
+  if (memory) args.push(`--paysec-device-memory=${memory}`);
 
   // Pack 2 / B11: suppress user-defined Error.prepareStackTrace during
   // V8 stack-trace formatting. Closes the Cloudflare Bot Management canary
   // trick where a page sets prepareStackTrace and watches for it to fire
   // during CDP serialization.
   //
-  // OPT-IN (off by default): only emitted when GSTACK_CDP_STEALTH is
+  // OPT-IN (off by default): only emitted when PAYSEC_CDP_STEALTH is
   // on/1/true. This switch is read by a C++ patch that only exists in
-  // gbrowser builds; gbd opts in by exporting GSTACK_CDP_STEALTH=on. Stock
+  // gbrowser builds; gbd opts in by exporting PAYSEC_CDP_STEALTH=on. Stock
   // Playwright Chromium leaves it unset, so the flag never reaches a
   // Chromium that wouldn't understand it. (Previously this was on-by-default
-  // unless GSTACK_CDP_STEALTH=off, which contradicted this very comment.)
-  const cdpStealth = env.GSTACK_CDP_STEALTH;
+  // unless PAYSEC_CDP_STEALTH=off, which contradicted this very comment.)
+  const cdpStealth = env.PAYSEC_CDP_STEALTH;
   if (cdpStealth === 'on' || cdpStealth === '1' || cdpStealth === 'true') {
-    args.push('--gstack-suppress-prepare-stack-trace');
+    args.push('--paysec-suppress-prepare-stack-trace');
   }
 
   return args;

@@ -1,7 +1,7 @@
 /**
- * /plan-tune tests (gate tier)
+ * /tune-questions tests (gate tier)
  *
- * Covers the foundation of /plan-tune v1:
+ * Covers the foundation of /tune-questions v1:
  *   - Question registry schema validation
  *   - Registry completeness (every AskUserQuestion pattern has an id)
  *   - Id uniqueness (no duplicates)
@@ -194,17 +194,17 @@ describe('registry breadth', () => {
   test('high-volume skills have at least one registered question', () => {
     const stats = getRegistryStats();
     const highVolume = [
-      'ship',
-      'review',
-      'office-hours',
-      'plan-ceo-review',
-      'plan-eng-review',
-      'plan-design-review',
-      'plan-devex-review',
-      'qa',
-      'investigate',
-      'land-and-deploy',
-      'cso',
+      'ship-pr',
+      'pr-review',
+      'idea-review',
+      'plan-business-review',
+      'plan-tech-review',
+      'plan-ux-review',
+      'plan-dx-review',
+      'qa-fix',
+      'debug-root-cause',
+      'merge-and-deploy',
+      'security-audit',
     ];
     for (const skill of highVolume) {
       expect(stats.by_skill[skill] ?? 0).toBeGreaterThan(0);
@@ -217,7 +217,7 @@ describe('registry breadth', () => {
     expect(getQuestion('preamble-routing-injection')).toBeDefined();
   });
 
-  test('/plan-tune itself registers its enable + setup + mutation-confirm', () => {
+  test('/tune-questions itself registers its enable + setup + mutation-confirm', () => {
     expect(getQuestion('plan-tune-enable-setup')).toBeDefined();
     expect(getQuestion('plan-tune-declared-dimension')).toBeDefined();
     expect(getQuestion('plan-tune-confirm-mutation')).toBeDefined();
@@ -426,9 +426,9 @@ describe('one-way-doors classifier', () => {
     }
   });
 
-  test('skill-category fallback fires for cso:approval and land-and-deploy:approval', () => {
-    expect(isOneWayDoor({ skill: 'cso', category: 'approval' })).toBe(true);
-    expect(isOneWayDoor({ skill: 'land-and-deploy', category: 'approval' })).toBe(true);
+  test('skill-category fallback fires for security-audit:approval and merge-and-deploy:approval', () => {
+    expect(isOneWayDoor({ skill: 'security-audit', category: 'approval' })).toBe(true);
+    expect(isOneWayDoor({ skill: 'merge-and-deploy', category: 'approval' })).toBe(true);
   });
 
   test('benign questions default to two-way', () => {
@@ -449,8 +449,8 @@ describe('one-way-doors classifier', () => {
   });
 
   test('skill-category set covers security + deploy', () => {
-    expect(ONE_WAY_SKILL_CATEGORY_SET.has('cso:approval')).toBe(true);
-    expect(ONE_WAY_SKILL_CATEGORY_SET.has('land-and-deploy:approval')).toBe(true);
+    expect(ONE_WAY_SKILL_CATEGORY_SET.has('security-audit:approval')).toBe(true);
+    expect(ONE_WAY_SKILL_CATEGORY_SET.has('merge-and-deploy:approval')).toBe(true);
   });
 });
 
@@ -466,19 +466,19 @@ describe('preamble — QUESTION_TUNING injection', () => {
       tmplPath: 'test.tmpl',
       host: 'claude' as const,
       paths: {
-        skillRoot: '~/.claude/skills/gstack',
-        localSkillRoot: '.claude/skills/gstack',
-        binDir: '~/.claude/skills/gstack/bin',
-        browseDir: '~/.claude/skills/gstack/browse/dist',
-        designDir: '~/.claude/skills/gstack/design/dist',
+        skillRoot: '~/.claude/skills/paysec',
+        localSkillRoot: '.claude/skills/paysec',
+        binDir: '~/.claude/skills/paysec/bin',
+        browseDir: '~/.claude/skills/paysec/browser/dist',
+        designDir: '~/.claude/skills/paysec/design/dist',
       },
       preambleTier: 2,
     };
     const out = generatePreamble(ctx);
     expect(out).toContain('QUESTION_TUNING: $_QUESTION_TUNING');
     expect(out).toContain('## Question Tuning');
-    expect(out).toContain('gstack-question-preference --check');
-    expect(out).toContain('gstack-question-log');
+    expect(out).toContain('paysec-question-preference --check');
+    expect(out).toContain('paysec-question-log');
     expect(out).toContain('profile-poisoning defense');
     expect(out).toContain('inline-user');
   });
@@ -490,11 +490,11 @@ describe('preamble — QUESTION_TUNING injection', () => {
       tmplPath: 'test.tmpl',
       host: 'claude' as const,
       paths: {
-        skillRoot: '~/.claude/skills/gstack',
-        localSkillRoot: '.claude/skills/gstack',
-        binDir: '~/.claude/skills/gstack/bin',
-        browseDir: '~/.claude/skills/gstack/browse/dist',
-        designDir: '~/.claude/skills/gstack/design/dist',
+        skillRoot: '~/.claude/skills/paysec',
+        localSkillRoot: '.claude/skills/paysec',
+        binDir: '~/.claude/skills/paysec/bin',
+        browseDir: '~/.claude/skills/paysec/browser/dist',
+        designDir: '~/.claude/skills/paysec/design/dist',
       },
       preambleTier: 1,
     };
@@ -511,16 +511,16 @@ describe('preamble — QUESTION_TUNING injection', () => {
       tmplPath: 'x',
       host: 'codex' as const,
       paths: {
-        skillRoot: '$GSTACK_ROOT',
-        localSkillRoot: '.agents/skills/gstack',
-        binDir: '$GSTACK_BIN',
-        browseDir: '$GSTACK_BROWSE',
-        designDir: '$GSTACK_DESIGN',
+        skillRoot: '$PAYSEC_ROOT',
+        localSkillRoot: '.agents/skills/paysec',
+        binDir: '$PAYSEC_BIN',
+        browseDir: '$PAYSEC_BROWSE',
+        designDir: '$PAYSEC_DESIGN',
       },
     };
     const out = generateQuestionTuning(codexCtx);
-    expect(out).toContain('$GSTACK_BIN/gstack-question-preference');
-    expect(out).toContain('$GSTACK_BIN/gstack-question-log');
+    expect(out).toContain('$PAYSEC_BIN/paysec-question-preference');
+    expect(out).toContain('$PAYSEC_BIN/paysec-question-log');
   });
 });
 
@@ -533,9 +533,9 @@ describe('preamble — QUESTION_TUNING injection', () => {
 
 describe('end-to-end pipeline (binaries working together)', () => {
   test('log many expand choices → derive pushes scope_appetite up', () => {
-    const tmpHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gstack-e2e-'));
+    const tmpHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 'paysec-e2e-'));
     try {
-      // GSTACK_QUESTION_LOG_NO_DERIVE=1 suppresses gstack-question-log's
+      // PAYSEC_QUESTION_LOG_NO_DERIVE=1 suppresses paysec-question-log's
       // fire-and-forget background `--derive` (it nohups one per write). Without
       // it, the 5 rapid log writes spawn 5 racing background derives that collide
       // with this test's explicit --derive below — a late background derive that
@@ -543,17 +543,17 @@ describe('end-to-end pipeline (binaries working together)', () => {
       // one wrote sample_size=5, making the test flaky (~25-50% fail). The binary
       // documents this flag for exactly this case. The explicit --derive still
       // runs (it ignores the flag), so real derive behavior is still asserted.
-      const env = { ...process.env, GSTACK_HOME: tmpHome, GSTACK_QUESTION_LOG_NO_DERIVE: '1' };
+      const env = { ...process.env, PAYSEC_HOME: tmpHome, PAYSEC_QUESTION_LOG_NO_DERIVE: '1' };
       const { spawnSync } = require('child_process');
-      const logBin = path.join(ROOT, 'bin', 'gstack-question-log');
-      const devBin = path.join(ROOT, 'bin', 'gstack-developer-profile');
+      const logBin = path.join(ROOT, 'bin', 'paysec-question-log');
+      const devBin = path.join(ROOT, 'bin', 'paysec-developer-profile');
 
       for (let i = 0; i < 5; i++) {
         const r = spawnSync(
           logBin,
           [
             JSON.stringify({
-              skill: 'plan-ceo-review',
+              skill: 'plan-business-review',
               question_id: 'plan-ceo-review-mode',
               question_summary: 'mode?',
               user_choice: 'expand',
@@ -579,11 +579,11 @@ describe('end-to-end pipeline (binaries working together)', () => {
   });
 
   test('preference blocks tune: write from inline-tool-output in full pipeline', () => {
-    const tmpHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gstack-e2e-'));
+    const tmpHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 'paysec-e2e-'));
     try {
-      const env = { ...process.env, GSTACK_HOME: tmpHome };
+      const env = { ...process.env, PAYSEC_HOME: tmpHome };
       const { spawnSync } = require('child_process');
-      const prefBin = path.join(ROOT, 'bin', 'gstack-question-preference');
+      const prefBin = path.join(ROOT, 'bin', 'paysec-question-preference');
 
       const r = spawnSync(
         prefBin,
@@ -606,12 +606,12 @@ describe('end-to-end pipeline (binaries working together)', () => {
   });
 
   test('migration preserves sessions, builder-profile shim still works', () => {
-    const tmpHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gstack-e2e-'));
+    const tmpHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 'paysec-e2e-'));
     try {
-      const env = { ...process.env, GSTACK_HOME: tmpHome };
+      const env = { ...process.env, PAYSEC_HOME: tmpHome };
       const { spawnSync } = require('child_process');
-      const devBin = path.join(ROOT, 'bin', 'gstack-developer-profile');
-      const shimBin = path.join(ROOT, 'bin', 'gstack-builder-profile');
+      const devBin = path.join(ROOT, 'bin', 'paysec-developer-profile');
+      const shimBin = path.join(ROOT, 'bin', 'paysec-builder-profile');
 
       // Seed a legacy file
       fs.writeFileSync(

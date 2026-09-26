@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# gstack-repo-mode — detect solo vs collaborative repo mode
-# Usage: source <(gstack-repo-mode)  → sets REPO_MODE variable
-# Or:    gstack-repo-mode           → prints REPO_MODE=... line
+# paysec-repo-mode — detect solo vs collaborative repo mode
+# Usage: source <(paysec-repo-mode)  → sets REPO_MODE variable
+# Or:    paysec-repo-mode           → prints REPO_MODE=... line
 #
 # Detection heuristic (90-day window):
 #   Solo:          top author >= 80% of commits
 #   Collaborative: top author < 80%
 #
-# Override: gstack-config set repo_mode solo|collaborative
-# Cache:    ~/.gstack/projects/$SLUG/repo-mode.json (7-day TTL)
+# Override: paysec-config set repo_mode solo|collaborative
+# Cache:    ~/.paysec/projects/$SLUG/repo-mode.json (7-day TTL)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# Keep the no-remote early exit before consulting gstack-slug. gstack-slug falls
+# Keep the no-remote early exit before consulting paysec-slug. paysec-slug falls
 # back to the directory basename when origin is missing, which would incorrectly
 # make local-only repos eligible for classification.
 REMOTE_URL=$(git remote get-url origin 2>/dev/null || true)
@@ -20,12 +20,12 @@ if [ -z "$REMOTE_URL" ]; then
   echo "REPO_MODE=unknown"
   exit 0
 fi
-# Consume the canonical cached slug from gstack-slug (sed, never eval — branch
+# Consume the canonical cached slug from paysec-slug (sed, never eval — branch
 # names can contain shell metacharacters). Invoke from the git root so the
-# PWD-keyed slug cache matches other gstack project-state writers.
+# PWD-keyed slug cache matches other paysec project-state writers.
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || true)
 [ -z "${REPO_ROOT:-}" ] && { echo "REPO_MODE=unknown"; exit 0; }
-SLUG=$(cd "$REPO_ROOT" && "$SCRIPT_DIR/gstack-slug" | sed -n 's/^SLUG=//p' | head -1)
+SLUG=$(cd "$REPO_ROOT" && "$SCRIPT_DIR/paysec-slug" | sed -n 's/^SLUG=//p' | head -1)
 [ -z "${SLUG:-}" ] && { echo "REPO_MODE=unknown"; exit 0; }
 
 # Validate: only allow known values (prevent shell injection via source <(...))
@@ -34,14 +34,14 @@ validate_mode() {
 }
 
 # Config override takes precedence
-OVERRIDE=$("$SCRIPT_DIR/gstack-config" get repo_mode 2>/dev/null || true)
+OVERRIDE=$("$SCRIPT_DIR/paysec-config" get repo_mode 2>/dev/null || true)
 if [ -n "$OVERRIDE" ] && [ "$OVERRIDE" != "null" ]; then
   echo "REPO_MODE=$(validate_mode "$OVERRIDE")"
   exit 0
 fi
 
 # Check cache (7-day TTL)
-CACHE_DIR="$HOME/.gstack/projects/$SLUG"
+CACHE_DIR="$HOME/.paysec/projects/$SLUG"
 CACHE_FILE="$CACHE_DIR/repo-mode.json"
 if [ -f "$CACHE_FILE" ]; then
   # GNU first (#2195): on GNU coreutils `stat -f` SUCCEEDS with filesystem
@@ -98,7 +98,7 @@ else
   MODE=collaborative
 fi
 
-# Cache result atomically (fail silently if ~/.gstack is unwritable)
+# Cache result atomically (fail silently if ~/.paysec is unwritable)
 mkdir -p "$CACHE_DIR" 2>/dev/null || true
 CACHE_TMP=$(mktemp "$CACHE_DIR/.repo-mode-XXXXXX" 2>/dev/null || true)
 if [ -n "$CACHE_TMP" ]; then

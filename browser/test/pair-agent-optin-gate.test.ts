@@ -1,7 +1,7 @@
 /**
  * Pair-agent opt-in gate.
  *
- * The remote pair-agent (ngrok tunnel) is OFF by default. All three activation
+ * The remote pair-remote-agent (ngrok tunnel) is OFF by default. All three activation
  * points — CLI auto-start, the /tunnel/start route, and the BROWSE_TUNNEL=1
  * startup path — route through the single `isPairAgentEnabled()` guard. This
  * test pins the guard's behavior (the root cause) plus a source-level tripwire
@@ -17,24 +17,24 @@ import { isPairAgentEnabled } from '../src/config';
 const SERVER_SRC = fs.readFileSync(path.join(import.meta.dir, '../src/server.ts'), 'utf-8');
 const CLI_SRC = fs.readFileSync(path.join(import.meta.dir, '../src/cli.ts'), 'utf-8');
 
-const savedEnv = { GSTACK_HOME: process.env.GSTACK_HOME, GSTACK_PAIR_AGENT: process.env.GSTACK_PAIR_AGENT };
+const savedEnv = { PAYSEC_HOME: process.env.PAYSEC_HOME, PAYSEC_PAIR_AGENT: process.env.PAYSEC_PAIR_AGENT };
 const tmpHomes: string[] = [];
 
 function tmpHomeWith(config: Record<string, string> | null): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-pair-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-pair-'));
   tmpHomes.push(dir);
   if (config !== null) {
-    // Canonical store: flat YAML lines, the shape bin/gstack-config writes.
+    // Canonical store: flat YAML lines, the shape bin/paysec-config writes.
     const yaml = Object.entries(config).map(([k, v]) => `${k}: ${v}`).join('\n') + '\n';
     fs.writeFileSync(path.join(dir, 'config.yaml'), yaml);
   }
-  process.env.GSTACK_HOME = dir;
-  delete process.env.GSTACK_PAIR_AGENT;
+  process.env.PAYSEC_HOME = dir;
+  delete process.env.PAYSEC_PAIR_AGENT;
   return dir;
 }
 
 afterEach(() => {
-  for (const k of ['GSTACK_HOME', 'GSTACK_PAIR_AGENT'] as const) {
+  for (const k of ['PAYSEC_HOME', 'PAYSEC_PAIR_AGENT'] as const) {
     if (savedEnv[k] === undefined) delete process.env[k];
     else process.env[k] = savedEnv[k];
   }
@@ -75,15 +75,15 @@ describe('isPairAgentEnabled — fail-closed default', () => {
     expect(isPairAgentEnabled()).toBe(false);
   });
 
-  test('env override wins: GSTACK_PAIR_AGENT=on forces ON even with config off', () => {
+  test('env override wins: PAYSEC_PAIR_AGENT=on forces ON even with config off', () => {
     tmpHomeWith({ pair_agent: 'off' });
-    process.env.GSTACK_PAIR_AGENT = 'on';
+    process.env.PAYSEC_PAIR_AGENT = 'on';
     expect(isPairAgentEnabled()).toBe(true);
   });
 
-  test('env override wins: GSTACK_PAIR_AGENT=off forces OFF even with config on', () => {
+  test('env override wins: PAYSEC_PAIR_AGENT=off forces OFF even with config on', () => {
     tmpHomeWith({ pair_agent: 'on' });
-    process.env.GSTACK_PAIR_AGENT = 'off';
+    process.env.PAYSEC_PAIR_AGENT = 'off';
     expect(isPairAgentEnabled()).toBe(false);
   });
 });
@@ -105,8 +105,8 @@ describe('gate wiring — every tunnel activation point consults the guard', () 
     const branchEnd = CLI_SRC.indexOf('} else {', branchAt);
     expect(branchEnd).toBeGreaterThan(branchAt);
     const branch = CLI_SRC.slice(branchAt, branchEnd);
-    expect(branch).toContain('gstack-config set pair_agent on');
-    expect(branch).toContain('/pair-agent');
+    expect(branch).toContain('paysec-config set pair_agent on');
+    expect(branch).toContain('/pair-remote-agent');
     expect(branch).not.toContain('ngrok config add-authtoken');
     expect(branch).not.toContain('install ngrok');
   });
@@ -115,7 +115,7 @@ describe('gate wiring — every tunnel activation point consults the guard', () 
     const startIdx = SERVER_SRC.indexOf("url.pathname === '/tunnel/start'");
     const block = SERVER_SRC.slice(startIdx, startIdx + 1200);
     expect(block).toContain('if (!isPairAgentEnabled())');
-    expect(block).toContain('gstack-config set pair_agent on');
+    expect(block).toContain('paysec-config set pair_agent on');
   });
 
   test('BROWSE_TUNNEL=1 startup skips tunnel bind when disabled', () => {

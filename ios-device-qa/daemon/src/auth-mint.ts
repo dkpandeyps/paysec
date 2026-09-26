@@ -3,7 +3,7 @@
 // 1. Self-service mint: caller's tailnet identity (from WhoIs) must already
 //    be in the allowlist. NEVER auto-allowlists.
 // 2. Owner-granted mint: not on /auth/mint at all — that's the CLI
-//    `gstack-ios-qa-mint --remote <identity>` writing to the allowlist file.
+//    `paysec-ios-qa-mint --remote <identity>` writing to the allowlist file.
 
 import { SessionTokenStore } from './session-tokens';
 import { hasCapability, loadAllowlist } from './allowlist';

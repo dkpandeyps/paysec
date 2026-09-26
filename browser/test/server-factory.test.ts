@@ -17,7 +17,7 @@ import * as path from 'node:path';
 
 /**
  * Tests for the factory-export API surface added so gbrowser (phoenix) can
- * consume gstack as a submodule. The full buildFetchHandler hybrid hoist is
+ * consume paysec as a submodule. The full buildFetchHandler hybrid hoist is
  * deferred to a follow-up PR; this test file proves the type contract,
  * resolveConfigFromEnv behavior, and preserved exports.
  */
@@ -284,7 +284,7 @@ describe('buildFetchHandler factory contract', () => {
     expect(await resp.text()).toBe('overlay-body');
   });
 
-  test('6. falls through to gstack dispatch when beforeRoute returns null', async () => {
+  test('6. falls through to paysec dispatch when beforeRoute returns null', async () => {
     const handle = buildFetchHandler(makeMinimalConfig({
       beforeRoute: async () => null,
     }));
@@ -457,7 +457,7 @@ describe('idle timer + onDisconnect dual-instance fix', () => {
     const callerCb = mock(async (_code?: number) => {});
     mockBM.onDisconnect = callerCb;
     buildFetchHandler(makeMinimalConfig({ browserManager: mockBM as any }));
-    // gstack should have wrapped the caller-installed handler instead of
+    // paysec should have wrapped the caller-installed handler instead of
     // clobbering it (Codex finding: BrowserManager.onDisconnect is a public
     // field; gbrowser may set it before calling buildFetchHandler).
     expect(typeof mockBM.onDisconnect).toBe('function');

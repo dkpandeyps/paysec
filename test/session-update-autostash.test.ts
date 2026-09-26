@@ -12,14 +12,14 @@ import * as path from 'path';
 // names its cause.
 
 const ROOT = path.resolve(import.meta.dir, '..');
-const SCRIPT = path.join(ROOT, 'bin', 'gstack-session-update');
+const SCRIPT = path.join(ROOT, 'bin', 'paysec-session-update');
 
 function git(cwd: string, ...args: string[]): string {
   return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 }
 
 function makeFixture() {
-  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-supd-'));
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-supd-'));
   const origin = path.join(base, 'origin.git');
   const seed = path.join(base, 'seed');
   const install = path.join(base, 'install');
@@ -32,11 +32,11 @@ function makeFixture() {
   fs.writeFileSync(path.join(seed, 'SKILL.md'), '# top\nname: qa\nbody line\n');
   // Stub config: auto_upgrade on, prefix off; gbrain-refresh no-op.
   fs.writeFileSync(
-    path.join(seed, 'bin', 'gstack-config'),
+    path.join(seed, 'bin', 'paysec-config'),
     '#!/usr/bin/env bash\nif [ "$1" = "get" ]; then case "$2" in auto_upgrade) echo true;; skill_prefix) echo false;; *) echo "";; esac; fi\nexit 0\n',
     { mode: 0o755 },
   );
-  fs.writeFileSync(path.join(seed, 'bin', 'gstack-patch-names'), '#!/usr/bin/env bash\nexit 0\n', {
+  fs.writeFileSync(path.join(seed, 'bin', 'paysec-patch-names'), '#!/usr/bin/env bash\nexit 0\n', {
     mode: 0o755,
   });
   git(seed, 'init', '-q');
@@ -52,7 +52,7 @@ function makeFixture() {
 function runScript(install: string, state: string) {
   return spawnSync('bash', [SCRIPT], {
     encoding: 'utf8',
-    env: { ...process.env, GSTACK_DIR: install, GSTACK_STATE_DIR: state },
+    env: { ...process.env, PAYSEC_DIR: install, PAYSEC_STATE_DIR: state },
     timeout: 20000,
   });
 }
@@ -68,7 +68,7 @@ async function waitForLog(state: string, pattern: RegExp, ms = 15000): Promise<s
   return fs.existsSync(logFile) ? fs.readFileSync(logFile, 'utf8') : '';
 }
 
-describe('gstack-session-update pull wedge (#2566)', () => {
+describe('paysec-session-update pull wedge (#2566)', () => {
   test('locally-patched tracked files no longer wedge the ff-only pull', async () => {
     const { base, seed, install, state } = makeFixture();
     try {

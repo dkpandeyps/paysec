@@ -39,8 +39,8 @@ const CARVED_SKILLS = discoverCarvedSkills();
 describe('section manifest ↔ filesystem consistency', () => {
   test('the known carved skills are discovered', () => {
     // Tripwire: if a carve regresses (manifest deleted) this catches it.
-    expect(CARVED_SKILLS).toContain('ship');
-    expect(CARVED_SKILLS).toContain('plan-ceo-review');
+    expect(CARVED_SKILLS).toContain('ship-pr');
+    expect(CARVED_SKILLS).toContain('plan-business-review');
   });
 
   for (const skill of CARVED_SKILLS) {

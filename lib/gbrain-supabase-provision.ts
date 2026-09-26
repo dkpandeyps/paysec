@@ -1,7 +1,7 @@
 /**
  * gbrain-supabase-provision — Supabase Management API wrapper for
- * /setup-gbrain path 2a (auto-provision). Engine module behind
- * bin/gstack-gbrain-supabase-provision (thin bun-shebang entry).
+ * /brain-setup path 2a (auto-provision). Engine module behind
+ * bin/paysec-gbrain-supabase-provision (thin bun-shebang entry).
  *
  * Rewritten from bash to TypeScript so tests can drive it in-process
  * (injected fetch/env/sleep — decision D7: injection via options, never
@@ -19,7 +19,7 @@
  * receipt via lib/egress-receipt BEFORE the send — sink "supabase-provision",
  * payload sha256 of the exact request body (bodyless: bytes 0, sha256 null).
  * A receipt failure REFUSES the send (nothing hits the network, exit 8),
- * mirroring `_receipted_curl closed` in bin/gstack-egress-lib.sh.
+ * mirroring `_receipted_curl closed` in bin/paysec-egress-lib.sh.
  *
  * Exit codes:
  *   0 — success
@@ -43,7 +43,7 @@ import {
   writeReceipt,
 } from './egress-receipt';
 
-const PROG = 'gstack-gbrain-supabase-provision';
+const PROG = 'paysec-gbrain-supabase-provision';
 const API_VERSION = 'v1';
 const DEFAULT_WAIT_TIMEOUT = 180;
 const POLL_INTERVAL = 5;
@@ -57,8 +57,8 @@ const MAX_ATTEMPTS = 3;
  * (set +x, variable assignments) past the doc block — that accidental tail
  * is not reproduced.
  */
-export const HELP_TEXT = `gstack-gbrain-supabase-provision — Supabase Management API wrapper for
-/setup-gbrain path 2a (auto-provision).
+export const HELP_TEXT = `paysec-gbrain-supabase-provision — Supabase Management API wrapper for
+/brain-setup path 2a (auto-provision).
 
 Subcommands:
   list-orgs
@@ -90,7 +90,7 @@ Subcommands:
     (default "gbrain") AND whose ref does NOT match the one in the local
     active ~/.gbrain/config.json pooler URL. Those are the gbrain-shaped
     projects that aren't pointed at by a working local config — candidates
-    for /setup-gbrain --cleanup-orphans.
+    for /brain-setup --cleanup-orphans.
     Output: {"active_ref","orphans":[{"ref","name","created_at","region"}, ...]}.
 
   delete-project <ref>
@@ -211,7 +211,7 @@ function parseJson(ctx: Ctx, text: string, what: string): any {
  *
  * Receipt-before-send, fail-closed: writeReceipt runs before every attempt;
  * on receipt failure the send is refused and the run exits 8 (same polarity
- * and refusal message as _receipted_curl closed in gstack-egress-lib.sh).
+ * and refusal message as _receipted_curl closed in paysec-egress-lib.sh).
  */
 async function apiCall(ctx: Ctx, method: string, apipath: string, body?: string): Promise<string> {
   const pat = ctx.env.SUPABASE_ACCESS_TOKEN ?? '';
@@ -233,18 +233,18 @@ async function apiCall(ctx: Ctx, method: string, apipath: string, body?: string)
         payloadClass: `provision-api-call (${method} ${apipath})`,
         bytes: body === undefined ? 0 : Buffer.byteLength(body),
         sha256: body === undefined ? null : sha256Hex(body),
-        consent: 'user ran gstack-gbrain-supabase-provision',
+        consent: 'user ran paysec-gbrain-supabase-provision',
       });
       receiptId = receipt.id;
     } catch (error) {
       // Refused — the send never happens. Same problem/cause/fix contract as
-      // _gstack_egress_refusal in gstack-egress-lib.sh, then exit 8.
+      // _paysec_egress_refusal in paysec-egress-lib.sh, then exit 8.
       const home = resolveEgressHome(ctx.env);
       const cause = `EGRESS_RECEIPT_FAILED: ${(error as Error)?.message ?? error}`.replace(/\n/g, ' ');
       ctx.stderr(
-        `gstack: supabase-provision NOT sent — the egress receipt could not be written (${cause}). ` +
-          `Fix: chmod -R u+w ${path.join(home, 'security')} (or check GSTACK_HOME). ` +
-          `What this is: gstack records everything it ATTEMPTS to send off-machine; see gstack-egress.\n`,
+        `paysec: supabase-provision NOT sent — the egress receipt could not be written (${cause}). ` +
+          `Fix: chmod -R u+w ${path.join(home, 'security')} (or check PAYSEC_HOME). ` +
+          `What this is: paysec records everything it ATTEMPTS to send off-machine; see paysec-egress.\n`,
       );
       throw new ExitError(8);
     }
@@ -451,7 +451,7 @@ async function cmdWait(ctx: Ctx, args: string[]): Promise<void> {
 
     if (elapsed >= timeoutSeconds) {
       ctx.stderr(`${PROG}: wait timed out after ${timeout}s (last status: ${status})\n`);
-      ctx.stderr(`${PROG}: re-run with /setup-gbrain --resume-provision ${ref}\n`);
+      ctx.stderr(`${PROG}: re-run with /brain-setup --resume-provision ${ref}\n`);
       throw new ExitError(6);
     }
     await ctx.sleep(POLL_INTERVAL * 1000);
@@ -502,11 +502,11 @@ async function cmdPoolerUrl(ctx: Ctx, args: string[]): Promise<void> {
   // db_port verbatim makes `gbrain init` hang to TCP timeout (transaction
   // port unreachable) before falling into "tenant not found"-style errors
   // that look like auth bugs. Rewrite transaction/6543 -> session/5432.
-  // Override with GSTACK_SUPABASE_TRUST_API_PORT=1 if a future API version
+  // Override with PAYSEC_SUPABASE_TRUST_API_PORT=1 if a future API version
   // starts returning a working transaction port and this rewrite is wrong.
-  if ((ctx.env.GSTACK_SUPABASE_TRUST_API_PORT ?? '0') !== '1' && poolMode === 'transaction' && dbPort === '6543') {
+  if ((ctx.env.PAYSEC_SUPABASE_TRUST_API_PORT ?? '0') !== '1' && poolMode === 'transaction' && dbPort === '6543') {
     ctx.stderr(
-      'pooler-url: API returned transaction pooler (port 6543); shared pooler for new projects listens on session port 5432 — rewriting (set GSTACK_SUPABASE_TRUST_API_PORT=1 to disable)\n',
+      'pooler-url: API returned transaction pooler (port 6543); shared pooler for new projects listens on session port 5432 — rewriting (set PAYSEC_SUPABASE_TRUST_API_PORT=1 to disable)\n',
     );
     dbPort = '5432';
     poolMode = 'session';
@@ -633,7 +633,7 @@ export async function runProvision(argv: string[], options: ProvisionOptions = {
         break;
       case undefined:
       case '':
-        die(ctx, 'usage: gstack-gbrain-supabase-provision {list-orgs|create|wait|pooler-url|list-orphans|delete-project|--help}');
+        die(ctx, 'usage: paysec-gbrain-supabase-provision {list-orgs|create|wait|pooler-url|list-orphans|delete-project|--help}');
         break;
       default:
         die(ctx, `unknown subcommand: ${cmd}`);

@@ -2,14 +2,14 @@
  * {{DESIGN_DOC_DISCOVERY}} — the canonical design-doc discovery block (#703).
  *
  * Finds the design doc a plan review should read: newest branch-scoped doc
- * under ~/.gstack/projects/<slug>/, falling back to newest project-scoped
+ * under ~/.paysec/projects/<slug>/, falling back to newest project-scoped
  * doc, then lets a repo-local doc (DESIGN.md or docs/designs/*.md) win when
- * it is at least as fresh. office-hours dual-writes docs/designs/ alongside
- * ~/.gstack, and the committed copy is what teammates see — but a stale old
+ * it is at least as fresh. idea-review dual-writes docs/designs/ alongside
+ * ~/.paysec, and the committed copy is what teammates see — but a stale old
  * repo doc must never shadow a newer private session.
  *
  * Single source of truth for the freshness-preference logic that previously
- * lived verbatim in plan-ceo-review, plan-eng-review, plan-devex-review, and
+ * lived verbatim in plan-business-review, plan-tech-review, plan-dx-review, and
  * the prerequisite-skill re-check in review.ts (GStack 2 fork-port wave,
  * time-attack/gstack). Drift between copies meant plan reviews could
  * disagree about which design doc wins.
@@ -27,10 +27,10 @@ import type { TemplateContext } from './types';
  * re-check) can interpolate it into their own template strings instead of
  * embedding a drifting copy.
  */
-export const DESIGN_DOC_DISCOVERY_BLOCK = `_LOCALDOC=$(ls -t ~/.gstack/projects/$SLUG/*-$BRANCH-design-*.md 2>/dev/null | head -1)
-[ -z "$_LOCALDOC" ] && _LOCALDOC=$(ls -t ~/.gstack/projects/$SLUG/*-design-*.md 2>/dev/null | head -1)
-# Repo-local docs win when at least as fresh (#703): office-hours dual-writes
-# docs/designs/ alongside ~/.gstack, and the committed copy is what teammates
+export const DESIGN_DOC_DISCOVERY_BLOCK = `_LOCALDOC=$(ls -t ~/.paysec/projects/$SLUG/*-$BRANCH-design-*.md 2>/dev/null | head -1)
+[ -z "$_LOCALDOC" ] && _LOCALDOC=$(ls -t ~/.paysec/projects/$SLUG/*-design-*.md 2>/dev/null | head -1)
+# Repo-local docs win when at least as fresh (#703): idea-review dual-writes
+# docs/designs/ alongside ~/.paysec, and the committed copy is what teammates
 # see. A stale old repo doc never shadows a newer private session.
 _REPOTOP=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
 _REPODOC=""

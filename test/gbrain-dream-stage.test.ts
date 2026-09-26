@@ -1,5 +1,5 @@
 /**
- * Tests for the dream (call-graph build) stage of bin/gstack-gbrain-sync.ts.
+ * Tests for the dream (call-graph build) stage of bin/paysec-gbrain-sync.ts.
  *
  * We deliberately do NOT exercise the real `gbrain dream` spawn here — that's a
  * ~35-min brain-global job and must never run in CI. Instead we cover:
@@ -29,9 +29,9 @@ import {
   parseResolvedEdges,
   formatStage,
   type CliArgs,
-} from "../bin/gstack-gbrain-sync";
+} from "../bin/paysec-gbrain-sync";
 
-const SCRIPT = join(import.meta.dir, "..", "bin", "gstack-gbrain-sync.ts");
+const SCRIPT = join(import.meta.dir, "..", "bin", "paysec-gbrain-sync.ts");
 
 /** Build a CliArgs with all flags off, overriding only what a case needs. */
 function args(overrides: Partial<CliArgs> = {}): CliArgs {
@@ -93,18 +93,18 @@ describe("runDream — dry-run preview", () => {
 });
 
 describe("dream marker — concurrency guard", () => {
-  const saved = process.env.GSTACK_HOME;
+  const saved = process.env.PAYSEC_HOME;
   let tmp: string;
 
   afterEach(() => {
     if (tmp) rmSync(tmp, { recursive: true, force: true });
-    if (saved === undefined) delete process.env.GSTACK_HOME;
-    else process.env.GSTACK_HOME = saved;
+    if (saved === undefined) delete process.env.PAYSEC_HOME;
+    else process.env.PAYSEC_HOME = saved;
   });
 
   function redirectHome(): void {
     tmp = mkdtempSync(join(tmpdir(), "gbrain-dream-marker-"));
-    process.env.GSTACK_HOME = tmp;
+    process.env.PAYSEC_HOME = tmp;
   }
 
   it("acquire creates the marker; a second acquire on a fresh marker fails", () => {

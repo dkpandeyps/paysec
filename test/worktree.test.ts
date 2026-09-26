@@ -23,13 +23,13 @@ function createTestRepo(): string {
   // Create initial commit so HEAD exists
   fs.writeFileSync(path.join(dir, 'README.md'), '# Test repo\n');
   // Add .gitignore matching real repo (so copied build artifacts don't appear as changes)
-  fs.writeFileSync(path.join(dir, '.gitignore'), '.agents/\nbrowse/dist/\n.gstack-worktrees/\n');
+  fs.writeFileSync(path.join(dir, '.gitignore'), '.agents/\nbrowser/dist/\n.paysec-worktrees/\n');
   // Create a .agents directory (simulating gitignored build artifacts)
   fs.mkdirSync(path.join(dir, '.agents', 'skills'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.agents', 'skills', 'test-skill.md'), '# Test skill\n');
-  // Create browse/dist (simulating build artifacts)
-  fs.mkdirSync(path.join(dir, 'browse', 'dist'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'browse', 'dist', 'browse'), '#!/bin/sh\necho browse\n');
+  // Create browser/dist (simulating build artifacts)
+  fs.mkdirSync(path.join(dir, 'browser', 'dist'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'browser', 'dist', 'browse'), '#!/bin/sh\necho browse\n');
 
   spawnSync('git', ['add', 'README.md', '.gitignore'], { cwd: dir, stdio: 'pipe' });
   spawnSync('git', ['commit', '-m', 'Initial commit'], { cwd: dir, stdio: 'pipe' });
@@ -48,7 +48,7 @@ function cleanupRepo(dir: string): void {
 const repos: string[] = [];
 
 // Dedup index path — clear before each test to avoid cross-run contamination
-const DEDUP_PATH = path.join(os.homedir(), '.gstack-dev', 'harvests', 'dedup.json');
+const DEDUP_PATH = path.join(os.homedir(), '.paysec-dev', 'harvests', 'dedup.json');
 
 afterEach(() => {
   for (const repo of repos) {
@@ -70,7 +70,7 @@ describe('WorktreeManager', () => {
 
     expect(fs.existsSync(worktreePath)).toBe(true);
     expect(fs.existsSync(path.join(worktreePath, 'README.md'))).toBe(true);
-    expect(worktreePath).toContain('.gstack-worktrees');
+    expect(worktreePath).toContain('.paysec-worktrees');
     expect(worktreePath).toContain('test-1');
 
     mgr.cleanup('test-1');
@@ -84,7 +84,7 @@ describe('WorktreeManager', () => {
     const worktreePath = mgr.create('test-agents');
 
     expect(fs.existsSync(path.join(worktreePath, '.agents', 'skills', 'test-skill.md'))).toBe(true);
-    expect(fs.existsSync(path.join(worktreePath, 'browse', 'dist', 'browse'))).toBe(true);
+    expect(fs.existsSync(path.join(worktreePath, 'browser', 'dist', 'browse'))).toBe(true);
 
     mgr.cleanup('test-agents');
   });

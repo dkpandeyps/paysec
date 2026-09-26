@@ -43,7 +43,7 @@ describe('claude hooks: Windows path + bin-spawn invariants', () => {
     expect(offending).toEqual([]);
   });
 
-  // bin/gstack-* are extensionless bash scripts. Windows has no shebang
+  // bin/paysec-* are extensionless bash scripts. Windows has no shebang
   // support, so they must be handed to bash — which runBin() does.
   test('no hook spawns a bin directly; all route through runBin', () => {
     const offending: string[] = [];
@@ -63,17 +63,17 @@ describe('claude hooks: Windows path + bin-spawn invariants', () => {
     const { repoRoot, binPath } = await import(HELPER);
     expect(fs.existsSync(path.join(repoRoot(), 'bin'))).toBe(true);
     expect(fs.existsSync(path.join(repoRoot(), 'scripts', 'question-registry.ts'))).toBe(true);
-    expect(fs.existsSync(binPath('gstack-question-log'))).toBe(true);
+    expect(fs.existsSync(binPath('paysec-question-log'))).toBe(true);
   });
 });
 
 // Behavioral proof: drive question-log-hook exactly the way Claude Code does
-// (hook JSON on stdin) against an isolated GSTACK_STATE_ROOT, and assert the
+// (hook JSON on stdin) against an isolated PAYSEC_STATE_ROOT, and assert the
 // event actually lands. Pre-fix this wrote nothing on Windows and appended to
 // hook-errors.log instead, silently, on every question.
 describe('question-log-hook: end-to-end capture', () => {
   test('an AskUserQuestion fire is written to question-log.jsonl', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack-hook-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paysec-hook-'));
     try {
       const payload = {
         session_id: 'test-session',
@@ -99,8 +99,8 @@ describe('question-log-hook: end-to-end capture', () => {
         cwd: tmp,
         env: {
           ...process.env,
-          GSTACK_STATE_ROOT: tmp,
-          GSTACK_QUESTION_LOG_NO_DERIVE: '1',
+          PAYSEC_STATE_ROOT: tmp,
+          PAYSEC_QUESTION_LOG_NO_DERIVE: '1',
         },
       });
       expect(res.status).toBe(0);

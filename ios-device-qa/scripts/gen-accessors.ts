@@ -649,7 +649,7 @@ function swiftStringLiteral(value: string): string {
 
 export function render(specs: AccessorSpec[], buildId: string, accessorHash: string): string {
   validateAccessorSpecs(specs);
-  let out = '// AUTO-GENERATED — DO NOT EDIT. Regenerate with /ios-sync.\n';
+  let out = '// AUTO-GENERATED — DO NOT EDIT. Regenerate with /ios-bridge-sync.\n';
   out += '#if DEBUG\nimport Foundation\nimport DebugBridgeCore\n\n';
   for (const spec of specs) {
     // Accessors compile in the app target beside its usually-internal state
@@ -770,7 +770,7 @@ function detectBuildId(): string {
 }
 
 export function defaultCacheRoot(): string {
-  return process.env.GSTACK_IOS_CACHE_ROOT ?? join(homedir(), '.gstack', 'cache', 'gen-accessors');
+  return process.env.PAYSEC_IOS_CACHE_ROOT ?? join(homedir(), '.paysec', 'cache', 'gen-accessors');
 }
 
 export function generate(inputs: GenInputs): GenResult {

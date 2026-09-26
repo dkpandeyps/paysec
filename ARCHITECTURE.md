@@ -1,15 +1,15 @@
 # Architecture
 
-This document explains **why** gstack is built the way it is. For setup and commands, see CLAUDE.md. For contributing, see CONTRIBUTING.md.
+This document explains **why** paysec is built the way it is. For setup and commands, see CLAUDE.md. For contributing, see CONTRIBUTING.md.
 
 ## The core idea
 
-gstack gives Claude Code a persistent browser and a set of opinionated workflow skills. The browser is the hard part — everything else is Markdown.
+paysec gives Claude Code a persistent browser and a set of opinionated workflow skills. The browser is the hard part — everything else is Markdown.
 
-The key insight: an AI agent interacting with a browser needs **sub-second latency** and **persistent state**. If every command cold-starts a browser, you're waiting 3-5 seconds per tool call. If the browser dies between commands, you lose cookies, tabs, and login sessions. So gstack runs a long-lived Chromium daemon that the CLI talks to over localhost HTTP.
+The key insight: an AI agent interacting with a browser needs **sub-second latency** and **persistent state**. If every command cold-starts a browser, you're waiting 3-5 seconds per tool call. If the browser dies between commands, you lose cookies, tabs, and login sessions. So paysec runs a long-lived Chromium daemon that the CLI talks to over localhost HTTP.
 
 ```
-Claude Code                     gstack
+Claude Code                     paysec
 ─────────                      ──────
                                ┌──────────────────────┐
   Tool call: $B snapshot -i    │  CLI (compiled binary)│
@@ -39,7 +39,7 @@ First call starts everything (~3s). Every call after: ~100-200ms.
 
 Node.js would work. Bun is better here for three reasons:
 
-1. **Compiled binaries.** `bun build --compile` produces a single ~58MB executable. No `node_modules` at runtime, no `npx`, no PATH configuration. The binary just runs. This matters because gstack installs into `~/.claude/skills/` where users don't expect to manage a Node.js project.
+1. **Compiled binaries.** `bun build --compile` produces a single ~58MB executable. No `node_modules` at runtime, no `npx`, no PATH configuration. The binary just runs. This matters because paysec installs into `~/.claude/skills/` where users don't expect to manage a Node.js project.
 
 2. **Native SQLite.** Cookie decryption reads Chromium's SQLite cookie database directly. Bun has `new Database()` built in — no `better-sqlite3`, no native addon compilation, no gyp. One less thing that breaks on different machines.
 
@@ -63,21 +63,21 @@ The daemon model means:
 
 ### State file
 
-The server writes `.gstack/browse.json` (atomic write via tmp + rename, mode 0o600):
+The server writes `.paysec/browse.json` (atomic write via tmp + rename, mode 0o600):
 
 ```json
 { "pid": 12345, "port": 34567, "token": "uuid-v4", "startedAt": "...", "binaryVersion": "abc123" }
 ```
 
-The CLI reads this file to find the server. If the file is missing or the daemon process is dead, the CLI spawns a new server. A process that is alive but not answering `/health` is busy, not dead: the CLI probes for a bounded ~8s, then reports busy with a nonzero exit — only an explicit `--force-restart` kills a live daemon. Process liveness uses signal-0 (`isProcessAlive`, EPERM counts as alive) on every platform, with the health check (GET /health) as the responsiveness signal. Daemon stdout/stderr persists to `<project>/.gstack/browse-daemon.log`.
+The CLI reads this file to find the server. If the file is missing or the daemon process is dead, the CLI spawns a new server. A process that is alive but not answering `/code-health` is busy, not dead: the CLI probes for a bounded ~8s, then reports busy with a nonzero exit — only an explicit `--force-restart` kills a live daemon. Process liveness uses signal-0 (`isProcessAlive`, EPERM counts as alive) on every platform, with the health check (GET /code-health) as the responsiveness signal. Daemon stdout/stderr persists to `<project>/.paysec/browse-daemon.log`.
 
 ### Port selection
 
-Random port between 10000-49151 (retry up to 5 on collision), allocated through the shared `browse/src/port-allocator.ts` so every long-lived gstack listener draws from the same range. The range ends at 49151 on purpose: 49152-65535 is the macOS ephemeral pool, and allocating inside it meant the OS could hand the same port to another process moments later. This means 10 Conductor workspaces can each run their own browse daemon with zero configuration and zero port conflicts. The old approach (scanning 9400-9409) broke constantly in multi-workspace setups.
+Random port between 10000-49151 (retry up to 5 on collision), allocated through the shared `browser/src/port-allocator.ts` so every long-lived paysec listener draws from the same range. The range ends at 49151 on purpose: 49152-65535 is the macOS ephemeral pool, and allocating inside it meant the OS could hand the same port to another process moments later. This means 10 Conductor workspaces can each run their own browse daemon with zero configuration and zero port conflicts. The old approach (scanning 9400-9409) broke constantly in multi-workspace setups.
 
 ### Version auto-restart
 
-The build writes `git rev-parse HEAD` to `browse/dist/.version`. On each CLI invocation, if the binary's version doesn't match the running server's `binaryVersion`, the CLI kills the old server and starts a new one. This prevents the "stale binary" class of bugs entirely — rebuild the binary, next command picks it up automatically.
+The build writes `git rev-parse HEAD` to `browser/dist/.version`. On each CLI invocation, if the binary's version doesn't match the running server's `binaryVersion`, the CLI kills the old server and starts a new one. This prevents the "stale binary" class of bugs entirely — rebuild the binary, next command picks it up automatically.
 
 ## Security model
 
@@ -87,21 +87,21 @@ The HTTP server binds to `127.0.0.1`, not `0.0.0.0`. It's not reachable from the
 
 ### Dual-listener tunnel architecture (v1.6.0.0)
 
-When a user runs `pair-agent --client`, the daemon starts an ngrok tunnel so a remote paired agent can drive the browser. Exposing the full daemon surface to the internet (even behind a random ngrok subdomain) meant `/health` leaked the root token on any Origin spoof, and `/cookie-picker` embedded the token into HTML that any caller could fetch.
+When a user runs `pair-remote-agent --client`, the daemon starts an ngrok tunnel so a remote paired agent can drive the browser. Exposing the full daemon surface to the internet (even behind a random ngrok subdomain) meant `/code-health` leaked the root token on any Origin spoof, and `/cookie-picker` embedded the token into HTML that any caller could fetch.
 
 The fix is **two HTTP listeners**, not one:
 
-- **Local listener** (`127.0.0.1:LOCAL_PORT`) — always bound. Serves token bootstrap (`POST /extension-token`, released only to the pinned extension identity), `/health` (liveness/status only — never a token), `/cookie-picker`, `/inspector/*`, `/welcome`, `/refs`, the sidebar-agent API, and the full command surface. Never forwarded.
+- **Local listener** (`127.0.0.1:LOCAL_PORT`) — always bound. Serves token bootstrap (`POST /extension-token`, released only to the pinned extension identity), `/code-health` (liveness/status only — never a token), `/cookie-picker`, `/inspector/*`, `/welcome`, `/refs`, the sidebar-agent API, and the full command surface. Never forwarded.
 - **Tunnel listener** (`127.0.0.1:TUNNEL_PORT`) — bound lazily on `/tunnel/start`, torn down on `/tunnel/stop`. Serves a locked allowlist: `/connect` (pairing ceremony, unauth + rate-limited), `/command` (scoped tokens only, further restricted to a browser-driving command allowlist), and `/sidebar-chat`. Everything else 404s.
 
-ngrok forwards only the tunnel port. The security property comes from **physical port separation**: a tunnel caller cannot reach `/health` or `/cookie-picker` because those paths don't exist on that TCP socket. Header inference (check `x-forwarded-for`, check origin) is unreliable (ngrok header behavior changes; local proxies can add these headers); socket separation isn't.
+ngrok forwards only the tunnel port. The security property comes from **physical port separation**: a tunnel caller cannot reach `/code-health` or `/cookie-picker` because those paths don't exist on that TCP socket. Header inference (check `x-forwarded-for`, check origin) is unreliable (ngrok header behavior changes; local proxies can add these headers); socket separation isn't.
 
 | Endpoint | Local listener | Tunnel listener | Notes |
 |---|---|---|---|
-| `GET /health` | public (liveness/status only — never a token) | 404 | Token bootstrap moved to `POST /extension-token` (v1.63) |
-| `POST /extension-token` | pinned Origin (`chrome-extension://<GSTACK_EXTENSION_ID>`) + loopback Host | 404 | The only endpoint that hands out the root token |
+| `GET /code-health` | public (liveness/status only — never a token) | 404 | Token bootstrap moved to `POST /extension-token` (v1.63) |
+| `POST /extension-token` | pinned Origin (`chrome-extension://<PAYSEC_EXTENSION_ID>`) + loopback Host | 404 | The only endpoint that hands out the root token |
 | `GET /connect` | public (`{alive:true}`) | public (`{alive:true}`) | Probe path for tunnel liveness |
-| `POST /connect` | public (rate-limited 300/min) | public (rate-limited) | Setup-key exchange for pair-agent |
+| `POST /connect` | public (rate-limited 300/min) | public (rate-limited) | Setup-key exchange for pair-remote-agent |
 | `POST /command` | auth (Bearer root OR scoped) | auth (scoped only, allowlisted commands) | Root token on tunnel = 403 |
 | `POST /sidebar-chat` | auth | auth | Lets remote agent post into local sidebar |
 | `POST /pair` | root-only | 404 | Pairing mint — local operator action |
@@ -109,17 +109,17 @@ ngrok forwards only the tunnel port. The security property comes from **physical
 | `POST /token`, `DELETE /token/:id` | root-only | 404 | Scoped token mint/revoke |
 | `GET /cookie-picker`, `GET /cookie-picker/*` | public UI, auth API | 404 | Local-only — reads local browser DBs |
 | `GET /inspector`, `/inspector/events`, etc. | auth | 404 | Extension callback, local-only |
-| `GET /welcome` | public | 404 | GStack Browser landing page, local-only |
+| `GET /welcome` | public | 404 | PaySec Browser landing page, local-only |
 | `GET /refs` | auth | 404 | Ref map — internal state |
-| `GET /activity/stream` | Bearer OR HttpOnly `gstack_sse` cookie | 404 | SSE. ?token= query param no longer accepted |
-| `GET /inspector/events` | Bearer OR HttpOnly `gstack_sse` cookie | 404 | SSE. Same cookie as /activity/stream |
+| `GET /activity/stream` | Bearer OR HttpOnly `paysec_sse` cookie | 404 | SSE. ?token= query param no longer accepted |
+| `GET /inspector/events` | Bearer OR HttpOnly `paysec_sse` cookie | 404 | SSE. Same cookie as /activity/stream |
 | `POST /sse-session` | auth (Bearer) | 404 | Mints the view-only 30-min SSE session cookie |
 
-**Extension token bootstrap (v1.63.0.0).** `GET /health` never carries a token in any mode — it is liveness/status only. The sidebar extension obtains the root token via `POST /extension-token`, which releases it only when the caller's Origin is exactly `chrome-extension://<GSTACK_EXTENSION_ID>` (pinned by the `key` field in `extension/manifest.json`; reproduce the derivation with `bun browse/scripts/extension-id.ts`) and the Host header parses to a loopback hostname — parsed with `new URL()`, never compared raw, because Host carries the port. Web pages cannot forge a `chrome-extension://` Origin, and the endpoint is never added to the tunnel allowlist, so the tunnel surface 404s it by default-deny.
+**Extension token bootstrap (v1.63.0.0).** `GET /code-health` never carries a token in any mode — it is liveness/status only. The sidebar extension obtains the root token via `POST /extension-token`, which releases it only when the caller's Origin is exactly `chrome-extension://<PAYSEC_EXTENSION_ID>` (pinned by the `key` field in `extension/manifest.json`; reproduce the derivation with `bun browser/scripts/extension-id.ts`) and the Host header parses to a loopback hostname — parsed with `new URL()`, never compared raw, because Host carries the port. Web pages cannot forge a `chrome-extension://` Origin, and the endpoint is never added to the tunnel allowlist, so the tunnel surface 404s it by default-deny.
 
-**Tunnel surface denial logs.** Every rejection on the tunnel listener (`path_not_on_tunnel`, `root_token_on_tunnel`, `missing_scoped_token`, `disallowed_command:*`) is recorded asynchronously to `~/.gstack/security/attempts.jsonl` with timestamp, source IP (from `x-forwarded-for`), path, and method. Rate-capped at 60 writes/min globally to prevent log-flood DoS. Shares the attempt log with the prompt-injection scanner.
+**Tunnel surface denial logs.** Every rejection on the tunnel listener (`path_not_on_tunnel`, `root_token_on_tunnel`, `missing_scoped_token`, `disallowed_command:*`) is recorded asynchronously to `~/.paysec/security/attempts.jsonl` with timestamp, source IP (from `x-forwarded-for`), path, and method. Rate-capped at 60 writes/min globally to prevent log-flood DoS. Shares the attempt log with the prompt-injection scanner.
 
-**SSE session cookies.** EventSource can't send Authorization headers, so the extension POSTs `/sse-session` once at bootstrap with the root Bearer and receives a 30-minute view-only cookie (`gstack_sse`, HttpOnly, SameSite=Strict). The cookie is valid ONLY for `/activity/stream` and `/inspector/events` — it is NOT a scoped token and cannot be used on `/command`. Scope isolation is enforced by the module boundary: `sse-session-cookie.ts` has no imports from `token-registry.ts`.
+**SSE session cookies.** EventSource can't send Authorization headers, so the extension POSTs `/sse-session` once at bootstrap with the root Bearer and receives a 30-minute view-only cookie (`paysec_sse`, HttpOnly, SameSite=Strict). The cookie is valid ONLY for `/activity/stream` and `/inspector/events` — it is NOT a scoped token and cannot be used on `/command`. Scope isolation is enforced by the module boundary: `sse-session-cookie.ts` has no imports from `token-registry.ts`.
 
 **Non-goal in this wave** (tracked as #1136): the cookie-import-browser path launches Chrome with `--remote-debugging-port=<random>`. On Windows with App-Bound Encryption v20, a same-user local process can connect to that port and exfiltrate decrypted v20 cookies — an elevation path relative to reading the SQLite DB directly (which can't decrypt v20 without DPAPI context). Fix direction is `--remote-debugging-pipe` instead of TCP; requires restructuring the CDP client.
 
@@ -127,17 +127,17 @@ ngrok forwards only the tunnel port. The security property comes from **physical
 
 Every server session generates a random UUID token, written to the state file with mode 0o600 (owner-only read). Every HTTP request that mutates browser state must include `Authorization: Bearer <token>`. If the token doesn't match, the server returns 401.
 
-This prevents other processes on the same machine from talking to your browse server. The cookie picker UI (`/cookie-picker`) and health check (`/health`) are exempt on the local listener — they're 127.0.0.1-bound and don't execute commands. On the tunnel listener nothing is exempt except `/connect`.
+This prevents other processes on the same machine from talking to your browse server. The cookie picker UI (`/cookie-picker`) and health check (`/code-health`) are exempt on the local listener — they're 127.0.0.1-bound and don't execute commands. On the tunnel listener nothing is exempt except `/connect`.
 
 ### Cookie security
 
-Cookies are the most sensitive data gstack handles. The design:
+Cookies are the most sensitive data paysec handles. The design:
 
-1. **Keychain access requires user approval.** First cookie import per browser triggers a macOS Keychain dialog. The user must click "Allow" or "Always Allow." gstack never silently accesses credentials.
+1. **Keychain access requires user approval.** First cookie import per browser triggers a macOS Keychain dialog. The user must click "Allow" or "Always Allow." paysec never silently accesses credentials.
 
 2. **Decryption happens in-process.** Cookie values are decrypted in memory (PBKDF2 + AES-128-CBC), loaded into the Playwright context, and never written to disk in plaintext. The cookie picker UI never displays cookie values — only domain names and counts.
 
-3. **Database is read-only.** gstack copies the Chromium cookie DB to a temp file (to avoid SQLite lock conflicts with the running browser) and opens it read-only. It never modifies your real browser's cookie database.
+3. **Database is read-only.** paysec copies the Chromium cookie DB to a temp file (to avoid SQLite lock conflicts with the running browser) and opens it read-only. It never modifies your real browser's cookie database.
 
 4. **Key caching is per-session.** The Keychain password + derived AES key are cached in memory for the server's lifetime. When the server shuts down (idle timeout or explicit stop), the cache is gone.
 
@@ -149,11 +149,11 @@ The browser registry (Comet, Chrome, Arc, Brave, Edge) is hardcoded. Database pa
 
 ### Egress receipt ledger (v1.63.0.0)
 
-Every enumerated gstack-initiated off-machine sink writes a hash-chained, tamper-evident receipt to `~/.gstack/security/egress.jsonl` BEFORE the send — `writeReceipt` in `lib/egress-receipt.ts` for TypeScript callers, `_receipted_curl` / `_receipted_git` from `bin/gstack-egress-lib.sh` for shell scripts. Receipts record a sha256 of the exact bytes sent when the caller owns them (subprocess-owned sends like git pushes record `sha256: null`); they never store the body.
+Every enumerated paysec-initiated off-machine sink writes a hash-chained, tamper-evident receipt to `~/.paysec/security/egress.jsonl` BEFORE the send — `writeReceipt` in `lib/egress-receipt.ts` for TypeScript callers, `_receipted_curl` / `_receipted_git` from `bin/paysec-egress-lib.sh` for shell scripts. Receipts record a sha256 of the exact bytes sent when the caller owns them (subprocess-owned sends like git pushes record `sha256: null`); they never store the body.
 
 Failure polarity is per-class and pinned by tests. Sensitive sinks are fail-closed: brain-sync pushes, memory-ingest, gbrain-sync, telemetry, ngrok tunnel starts, mcp-verify, and supabase-provision refuse to send if the receipt can't be written (each refusal prints problem + cause + fix). User-facing sinks fail open with a stderr warning — the design binary's OpenAI calls, update-check, the read-only dashboards, and git-class receipts proceed even when the receipt write failed, so a fail-open send can go unrecorded (warned, by design). The new-sink scanner in `test/egress-receipt-wiring.test.ts` fails CI when an off-machine sink ships unwired; its only exemptions are enumerated with reasons (user-directed page fetches, reachability probes, install-doc strings, skill prose).
 
-Inspect the ledger with `bin/gstack-egress`: `list` (what gstack attempted to send), `verify` (recompute the chain, exit 3 on tamper), `grants` (the standing consent settings and how to revoke each). `verify` detects in-place edits, reordering, and mid-chain deletion; it does NOT detect tail-truncation, whole-file re-fabrication, or deletion of the ledger itself — guarding against the same-machine, same-user actor who owns the file is out of scope for a forensic log. Threat model: the ledger is forensic observability of ATTEMPTED egress — it records what gstack tried to send so accidents are auditable; it is not an exfiltration control.
+Inspect the ledger with `bin/paysec-egress`: `list` (what paysec attempted to send), `verify` (recompute the chain, exit 3 on tamper), `grants` (the standing consent settings and how to revoke each). `verify` detects in-place edits, reordering, and mid-chain deletion; it does NOT detect tail-truncation, whole-file re-fabrication, or deletion of the ledger itself — guarding against the same-machine, same-user actor who owns the file is out of scope for a forensic log. Threat model: the ledger is forensic observability of ATTEMPTED egress — it records what paysec tried to send so accidents are auditable; it is not an exfiltration control.
 
 ### Unicode sanitization at server egress (v1.38.0.0)
 
@@ -161,34 +161,34 @@ Page content harvested by CDP can contain lone UTF-16 surrogate halves (orphaned
 
 | Egress path | Module | Sanitization point |
 |---|---|---|
-| `POST /command` (HTTP) | `browse/src/server.ts` | `handleCommandInternal` wrapper (sanitizes the result of `handleCommandInternalImpl`) |
-| `POST /command/batch` | `browse/src/server.ts` | Same wrapper — batch consumers inherit it |
-| `GET /activity/stream` (SSE) | `browse/src/server.ts` | `sanitizeReplacer` passed to `JSON.stringify` |
-| `GET /inspector/events` (SSE) | `browse/src/server.ts` | `sanitizeReplacer` passed to `JSON.stringify` |
+| `POST /command` (HTTP) | `browser/src/server.ts` | `handleCommandInternal` wrapper (sanitizes the result of `handleCommandInternalImpl`) |
+| `POST /command/batch` | `browser/src/server.ts` | Same wrapper — batch consumers inherit it |
+| `GET /activity/stream` (SSE) | `browser/src/server.ts` | `sanitizeReplacer` passed to `JSON.stringify` |
+| `GET /inspector/events` (SSE) | `browser/src/server.ts` | `sanitizeReplacer` passed to `JSON.stringify` |
 
 `sanitizeReplacer` is a `JSON.stringify` replacer function that cleans every string value during encoding. Post-stringify regex doesn't work here — `JSON.stringify` has already converted `\uD800` into the literal escape sequence `"\\ud800"` before the regex could match, so the replacer must run inside the encoding pipeline. The pure-string helper `sanitizeLoneSurrogates` is used directly for `text/plain` responses.
 
-**Architectural invariant.** Every new SSE/WebSocket writer or HTTP response that ships page-content-derived strings MUST go through one of two paths: `JSON.stringify(payload, sanitizeReplacer)` for object payloads, or `sanitizeLoneSurrogates(body)` for text bodies. New surfaces that bypass both will desync the system. Inline comments at both SSE producers in `server.ts` say so; `browse/test/server-sanitize-surrogates.test.ts` pins wiring with bug-repro + invariant tests (`handleCommandInternalImpl` rename, central sanitization line, replacer existence, SSE producers stringify with replacer).
+**Architectural invariant.** Every new SSE/WebSocket writer or HTTP response that ships page-content-derived strings MUST go through one of two paths: `JSON.stringify(payload, sanitizeReplacer)` for object payloads, or `sanitizeLoneSurrogates(body)` for text bodies. New surfaces that bypass both will desync the system. Inline comments at both SSE producers in `server.ts` say so; `browser/test/server-sanitize-surrogates.test.ts` pins wiring with bug-repro + invariant tests (`handleCommandInternalImpl` rename, central sanitization line, replacer existence, SSE producers stringify with replacer).
 
 ### Prompt injection defense (sidebar agent)
 
-The Chrome sidebar agent has tools (Bash, Read, Glob, Grep, WebFetch) and reads hostile web pages, so it's the part of gstack most exposed to prompt injection. Defense is layered, not single-point.
+The Chrome sidebar agent has tools (Bash, Read, Glob, Grep, WebFetch) and reads hostile web pages, so it's the part of paysec most exposed to prompt injection. Defense is layered, not single-point.
 
-1. **L1-L3 content security (`browse/src/content-security.ts`).** Runs on every page-content command and every tool output: datamarking, hidden-element strip, ARIA regex, URL blocklist, and a trust-boundary envelope wrapper. Applied at both the server and the agent.
+1. **L1-L3 content security (`browser/src/content-security.ts`).** Runs on every page-content command and every tool output: datamarking, hidden-element strip, ARIA regex, URL blocklist, and a trust-boundary envelope wrapper. Applied at both the server and the agent.
 
-2. **L4 ML classifier — TestSavantAI (`browse/src/security-classifier.ts`).** A 22MB BERT-small ONNX model (int8 quantized) running in the security sidecar subprocess. Runs locally, no network. Scans page-derived content on the inject-scan path before the agent sees it.
+2. **L4 ML classifier — TestSavantAI (`browser/src/security-classifier.ts`).** A 22MB BERT-small ONNX model (int8 quantized) running in the security sidecar subprocess. Runs locally, no network. Scans page-derived content on the inject-scan path before the agent sees it.
 
 3. **L4b transcript classifier (removed).** A Claude Haiku conversation-shape pass existed until the chat-path agent that invoked it was ripped; it was deleted as dead code (zero production callers), along with the opt-in DeBERTa ensemble. Do not re-document either as live.
 
-4. **L5 canary token (`browse/src/security.ts`).** Generate/inject/detect utilities for a random system-prompt token whose leak means the attacker convinced the model to reveal the system prompt. Canary leak BLOCKs deterministically. The utilities are pure and tested; the chat prompt-builder that injected the canary was ripped, so no production path injects it today.
+4. **L5 canary token (`browser/src/security.ts`).** Generate/inject/detect utilities for a random system-prompt token whose leak means the attacker convinced the model to reveal the system prompt. Canary leak BLOCKs deterministically. The utilities are pure and tested; the chat prompt-builder that injected the canary was ripped, so no production path injects it today.
 
 5. **L6 ensemble combiner (`combineVerdict`).** BLOCK requires agreement from two ML classifiers at >= `WARN` (0.75), not a single confident hit. This is the Stack Overflow instruction-writing false-positive mitigation. On tool-output scans, single-layer high confidence BLOCKs directly — the content wasn't user-authored, so the FP concern doesn't apply.
 
 **Critical constraint:** `security-classifier.ts` runs only in the security sidecar subprocess (`security-sidecar-entry.ts`), never in the compiled browse binary. `@huggingface/transformers` v4 requires `onnxruntime-node`, which fails `dlopen` from Bun compile's temp extract directory. Only the pure-string pieces (canary inject/check, verdict combiner) are in `security.ts`, which is safe to import from `server.ts`. (The attack log lives in `tunnel-denial-log.ts`; the session-state/status surface was removed in #2557.)
 
-**Env knobs:** `GSTACK_SECURITY_OFF=1` is a real kill switch (classifier stays off even if warmed; the L1-L3 filters keep running). Model cache at `~/.gstack/models/testsavant-small/` (112MB, first run). Attack log at `~/.gstack/security/attempts.jsonl` (salted sha256 + domain, rotates at 10MB, 5 generations). Per-device salt at `~/.gstack/security/device-salt` (0600), cached in-process to survive FS-unwritable environments.
+**Env knobs:** `PAYSEC_SECURITY_OFF=1` is a real kill switch (classifier stays off even if warmed; the L1-L3 filters keep running). Model cache at `~/.paysec/models/testsavant-small/` (112MB, first run). Attack log at `~/.paysec/security/attempts.jsonl` (salted sha256 + domain, rotates at 10MB, 5 generations). Per-device salt at `~/.paysec/security/device-salt` (0600), cached in-process to survive FS-unwritable environments.
 
-**Visibility.** A centered banner appears on canary leak or BLOCK verdict with the exact layer scores. `bin/gstack-security-dashboard` aggregates local attempts; `supabase/functions/community-pulse` aggregates opt-in community telemetry across users. (The sidebar header's SEC shield icon and the `/health` `security` field were removed in #2557: their only data source — `~/.gstack/security/session-state.json` — lost its only writer when the chat-path agent was ripped, so the shield reported stale or empty state. The live defenses report through their own call sites.)
+**Visibility.** A centered banner appears on canary leak or BLOCK verdict with the exact layer scores. `bin/paysec-security-dashboard` aggregates local attempts; `supabase/functions/community-pulse` aggregates opt-in community telemetry across users. (The sidebar header's SEC shield icon and the `/code-health` `security` field were removed in #2557: their only data source — `~/.paysec/security/session-state.json` — lost its only writer when the chat-path agent was ripped, so the shield reported stale or empty state. The live defenses report through their own call sites.)
 
 ## The ref system
 
@@ -245,7 +245,7 @@ The `-C` flag finds elements that are clickable but not in the ARIA tree — thi
 Three ring buffers (50,000 entries each, O(1) push):
 
 ```
-Browser events → CircularBuffer (in-memory) → Async flush to .gstack/*.log
+Browser events → CircularBuffer (in-memory) → Async flush to .paysec/*.log
 ```
 
 Console messages, network requests, and dialog events each have their own buffer. Flushing happens every 1 second — the server appends only new entries since the last flush. This means:
@@ -281,15 +281,15 @@ Templates contain the workflows, tips, and examples that require human judgment.
 | `{{SNAPSHOT_FLAGS}}` | `snapshot.ts` | Flag reference with examples |
 | `{{PREAMBLE}}` | `gen-skill-docs.ts` | Startup block: update check, session tracking, contributor mode, AskUserQuestion format |
 | `{{BROWSE_SETUP}}` | `gen-skill-docs.ts` | Binary discovery + setup instructions |
-| `{{BASE_BRANCH_DETECT}}` | `gen-skill-docs.ts` | Dynamic base branch detection for PR-targeting skills (ship, review, qa, plan-ceo-review) |
-| `{{QA_METHODOLOGY}}` | `gen-skill-docs.ts` | Shared QA methodology block for /qa and /qa-only |
-| `{{DESIGN_METHODOLOGY}}` | `gen-skill-docs.ts` | Shared design audit methodology for /plan-design-review and /design-review |
-| `{{REVIEW_DASHBOARD}}` | `gen-skill-docs.ts` | Review Readiness Dashboard for /ship pre-flight |
-| `{{TEST_BOOTSTRAP}}` | `gen-skill-docs.ts` | Test framework detection, bootstrap, CI/CD setup for /qa, /ship, /design-review |
-| `{{CODEX_PLAN_REVIEW}}` | `gen-skill-docs.ts` | Optional cross-model plan review (Codex or Claude subagent fallback) for /plan-ceo-review and /plan-eng-review |
+| `{{BASE_BRANCH_DETECT}}` | `gen-skill-docs.ts` | Dynamic base branch detection for PR-targeting skills (ship, review, qa, plan-business-review) |
+| `{{QA_METHODOLOGY}}` | `gen-skill-docs.ts` | Shared QA methodology block for /qa-fix and /qa-report |
+| `{{DESIGN_METHODOLOGY}}` | `gen-skill-docs.ts` | Shared design audit methodology for /plan-ux-review and /design-qa |
+| `{{REVIEW_DASHBOARD}}` | `gen-skill-docs.ts` | Review Readiness Dashboard for /ship-pr pre-flight |
+| `{{TEST_BOOTSTRAP}}` | `gen-skill-docs.ts` | Test framework detection, bootstrap, CI/CD setup for /qa-fix, /ship-pr, /design-qa |
+| `{{CODEX_PLAN_REVIEW}}` | `gen-skill-docs.ts` | Optional cross-model plan review (Codex or Claude subagent fallback) for /plan-business-review and /plan-tech-review |
 | `{{DESIGN_SETUP}}` | `resolvers/design.ts` | Discovery pattern for `$D` design binary, mirrors `{{BROWSE_SETUP}}` |
-| `{{DESIGN_SHOTGUN_LOOP}}` | `resolvers/design.ts` | Shared comparison board feedback loop for /design-shotgun, /plan-design-review, /design-consultation |
-| `{{UX_PRINCIPLES}}` | `resolvers/design.ts` | User behavioral foundations (scanning, satisficing, goodwill reservoir, trunk test) for /design-html, /design-shotgun, /design-review, /plan-design-review |
+| `{{DESIGN_SHOTGUN_LOOP}}` | `resolvers/design.ts` | Shared comparison board feedback loop for /design-variants, /plan-ux-review, /design-system |
+| `{{UX_PRINCIPLES}}` | `resolvers/design.ts` | User behavioral foundations (scanning, satisficing, goodwill reservoir, trunk test) for /design-to-html, /design-variants, /design-qa, /plan-ux-review |
 | `{{GBRAIN_CONTEXT_LOAD}}` | `resolvers/gbrain.ts` | Brain-first context search with keyword extraction, health awareness, and data-research routing. Injected into 10 brain-aware skills. Suppressed on non-brain hosts. |
 | `{{GBRAIN_SAVE_RESULTS}}` | `resolvers/gbrain.ts` | Post-skill brain persistence with entity enrichment, throttle handling, and per-skill save instructions. 8 skill-specific save formats. |
 
@@ -299,8 +299,8 @@ This is structurally sound — if a command exists in code, it appears in docs. 
 
 Every skill starts with a `{{PREAMBLE}}` block that runs before the skill's own logic. It handles five things in a single bash command:
 
-1. **Update check** — calls `gstack-update-check`, reports if an upgrade is available.
-2. **Session tracking** — touches `~/.gstack/sessions/$PPID` and counts active sessions (files modified in the last 2 hours). When 3+ sessions are running, all skills enter "ELI16 mode" — every question re-grounds the user on context because they're juggling windows.
+1. **Update check** — calls `paysec-update-check`, reports if an upgrade is available.
+2. **Session tracking** — touches `~/.paysec/sessions/$PPID` and counts active sessions (files modified in the last 2 hours). When 3+ sessions are running, all skills enter "ELI16 mode" — every question re-grounds the user on context because they're juggling windows.
 3. **Operational self-improvement** — at the end of every skill session, the agent reflects on failures (CLI errors, wrong approaches, project quirks) and logs operational learnings to the project's JSONL file for future sessions.
 4. **AskUserQuestion format** — universal format: context, question, `RECOMMENDATION: Choose X because ___`, lettered options. Consistent across all skills.
 5. **Search Before Building** — before building infrastructure or unfamiliar patterns, search first. Three layers of knowledge: tried-and-true (Layer 1), new-and-popular (Layer 2), first-principles (Layer 3). When first-principles reasoning reveals conventional wisdom is wrong, the agent names the "eureka moment" and logs it. See `ETHOS.md` for the full builder philosophy.
@@ -309,7 +309,7 @@ Every skill starts with a `{{PREAMBLE}}` block that runs before the skill's own 
 
 Three reasons:
 
-1. **Claude reads SKILL.md at skill load time.** There's no build step when a user invokes `/browse`. The file must already exist and be correct.
+1. **Claude reads SKILL.md at skill load time.** There's no build step when a user invokes `/browser`. The file must already exist and be correct.
 2. **CI can validate freshness.** `gen:skill-docs --dry-run` + `git diff --exit-code` catches stale docs before merge.
 3. **Git blame works.** You can see when a command was added and in which commit.
 
@@ -396,7 +396,7 @@ The `parseNDJSON()` function is pure — no I/O, no side effects — making it i
   │  on failure:
   │  {name}-failure.json
   │
-  │  ALL files in ~/.gstack-dev/
+  │  ALL files in ~/.paysec-dev/
   │  Run dir: e2e-runs/{runId}/
   │
   │         eval-watch.ts
@@ -415,7 +415,7 @@ The `parseNDJSON()` function is pure — no I/O, no side effects — making it i
 
 **Machine-readable diagnostics:** Each test result includes `exit_reason` (success, timeout, error_max_turns, error_api, exit_code_N), `timeout_at_turn`, and `last_tool_call`. This enables `jq` queries like:
 ```bash
-jq '.tests[] | select(.exit_reason == "timeout") | .last_tool_call' ~/.gstack-dev/evals/_partial-e2e.json
+jq '.tests[] | select(.exit_reason == "timeout") | .last_tool_call' ~/.paysec-dev/evals/_partial-e2e.json
 ```
 
 ### Eval persistence (`test/helpers/eval-store.ts`)
@@ -425,7 +425,7 @@ The `EvalCollector` accumulates test results and writes them in two ways:
 1. **Incremental:** `savePartial()` writes `_partial-e2e.json` after each test (atomic: write `.tmp`, `fs.renameSync`). Survives kills.
 2. **Final:** `finalize()` writes a timestamped eval file (e.g. `e2e-20260314-143022.json`). The partial file is never cleaned up — it persists alongside the final file for observability.
 
-`eval:compare` diffs two eval runs. `eval:summary` aggregates stats across all runs in `~/.gstack-dev/evals/`. Both are shard-aware (v1.63.0.0): the sharded paid runner (`scripts/test-paid-shards.ts`, run via `test:gate:sharded` / `test:periodic:sharded` — the `eval:bg:gate` / `eval:bg:periodic` scripts now point at these) gives each shard's collector its own directory at `<evalDir>/shards/<slug>/` through the `GSTACK_EVAL_DIR` env var (honored by the `EvalCollector` constructor), and `eval:list` / `eval:compare` / `eval:summary` scan one level of `shards/<slug>/` subdirectories. Baseline lookups exclude `_partial` accumulators (`isPartialEval` / `findLatestFinalizedRun` in `eval-store.ts`), so auto-comparison never uses the current run's own partial file as its baseline.
+`eval:compare` diffs two eval runs. `eval:summary` aggregates stats across all runs in `~/.paysec-dev/evals/`. Both are shard-aware (v1.63.0.0): the sharded paid runner (`scripts/test-paid-shards.ts`, run via `test:gate:sharded` / `test:periodic:sharded` — the `eval:bg:gate` / `eval:bg:periodic` scripts now point at these) gives each shard's collector its own directory at `<evalDir>/shards/<slug>/` through the `PAYSEC_EVAL_DIR` env var (honored by the `EvalCollector` constructor), and `eval:list` / `eval:compare` / `eval:summary` scan one level of `shards/<slug>/` subdirectories. Baseline lookups exclude `_partial` accumulators (`isPartialEval` / `findLatestFinalizedRun` in `eval-store.ts`), so auto-comparison never uses the current run's own partial file as its baseline.
 
 ### Test tiers
 

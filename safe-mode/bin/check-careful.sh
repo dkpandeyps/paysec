@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# check-careful.sh — PreToolUse hook for /careful skill
+# check-careful.sh — PreToolUse hook for /safe-mode skill
 # Reads JSON from stdin, checks Bash command for destructive patterns.
 # Two tiers:
 #   HIGH   — a tiny set of catastrophic SIMPLE commands returns "deny"
@@ -15,7 +15,7 @@ INPUT=$(cat)
 # Shared JSON helpers (extractor + encoder) — one copy for careful AND freeze.
 # See hook-extract.sh for the drift history that motivated the shared file.
 _HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=careful/bin/hook-extract.sh
+# shellcheck source=safe-mode/bin/hook-extract.sh
 # bash treats `.` on a MISSING file as fatal non-interactively; a partial
 # install must degrade to an ASK (this is the ask-tier hook), never silence.
 _HOOK_HELPER="$_HOOK_DIR/hook-extract.sh"
@@ -40,13 +40,13 @@ fi
 # at all — a hook that gates destructive commands must not allow-by-default on
 # unreadable input.
 set +e
-CMD=$(gstack_hook_extract_field "$INPUT" command)
+CMD=$(paysec_hook_extract_field "$INPUT" command)
 EXTRACT_RC=$?
 set -e
 
 # No parser available, or the payload is not parseable JSON. Fail closed.
 if [ "$EXTRACT_RC" -ne 0 ] && [ -n "$INPUT" ]; then
-  gstack_hook_decision ask "[careful] Could not parse the tool payload to safety-check this command. Approve only if you know what it does."
+  paysec_hook_decision ask "[careful] Could not parse the tool payload to safety-check this command. Approve only if you know what it does."
   exit 0
 fi
 
@@ -57,8 +57,8 @@ if [ -z "$CMD" ]; then
 fi
 
 # Log a hook fire event (pattern name only, never command content).
-# Shared helper respects GSTACK_HOME, so tests never write real analytics.
-_careful_log_fire() { gstack_hook_log_fire careful "$1"; }
+# Shared helper respects PAYSEC_HOME, so tests never write real analytics.
+_careful_log_fire() { paysec_hook_log_fire careful "$1"; }
 
 # Normalize: lowercase for case-insensitive SQL matching
 CMD_LOWER=$(printf '%s' "$CMD" | tr '[:upper:]' '[:lower:]')
@@ -76,7 +76,7 @@ CMD_LOWER=$(printf '%s' "$CMD" | tr '[:upper:]' '[:lower:]')
 # primitives as a reason to ask: they are vanishingly rare in commands a human
 # actually means to run unattended.
 if printf '%s' "$CMD" | grep -qE '\$\{IFS\}|\$IFS|\$\(echo[^)]*base64[^)]*\)|base64[[:space:]]+(-d|--decode)[^|]*\|[[:space:]]*(sh|bash)' 2>/dev/null; then
-  gstack_hook_decision ask "[careful] Shell obfuscation detected (IFS word-splitting or base64-to-shell). Read the command carefully before approving."
+  paysec_hook_decision ask "[careful] Shell obfuscation detected (IFS word-splitting or base64-to-shell). Read the command carefully before approving."
   exit 0
 fi
 
@@ -87,7 +87,7 @@ fi
 # families below — conservative failure = ask, never guess.
 # --force-with-lease is deliberately NOT matched here (it is the safe variant).
 # curl|sh stays MEDIUM/allow territory: hard-denying it would block legitimate
-# installer flows, including gstack's own setup pattern.
+# installer flows, including paysec's own setup pattern.
 _IS_SIMPLE=1
 case "$CMD" in
   *';'*|*'&&'*|*'||'*|*'|'*|*$'\n'*) _IS_SIMPLE=0 ;;
@@ -117,7 +117,7 @@ if [ "$_IS_SIMPLE" -eq 1 ]; then
     set +f
     if [ "$_ROOT_TARGETS" -eq 1 ] && [ "$_SAFE_TARGETS" -eq 0 ]; then
       _careful_log_fire "high_rm_root"
-      gstack_hook_decision deny "[careful][HIGH] Recursive delete of / or the home directory is blocked while /careful is active. If you truly mean it, end the /careful session first."
+      paysec_hook_decision deny "[careful][HIGH] Recursive delete of / or the home directory is blocked while /safe-mode is active. If you truly mean it, end the /safe-mode session first."
       exit 0
     fi
   fi
@@ -170,7 +170,7 @@ if [ "$_IS_SIMPLE" -eq 1 ]; then
         fi
         if [ "$_TARGETS_DEFAULT" -eq 1 ]; then
           _careful_log_fire "high_force_push_default"
-          gstack_hook_decision deny "[careful][HIGH] Force-push to the default branch ($_DEFAULT_BRANCH) is blocked while /careful is active. Use --force-with-lease on a feature branch, or end the /careful session if you truly mean it."
+          paysec_hook_decision deny "[careful][HIGH] Force-push to the default branch ($_DEFAULT_BRANCH) is blocked while /safe-mode is active. Use --force-with-lease on a feature branch, or end the /safe-mode session if you truly mean it."
           exit 0
         fi
       fi
@@ -265,17 +265,17 @@ fi
 # ERE per line; blank lines and #-comments skipped; an invalid regex is
 # skipped (never fatal — the hook must not break on a typo in config).
 if [ -z "$WARN" ]; then
-  _GSTACK_HOME_DIR="${GSTACK_HOME:-$HOME/.gstack}"
-  _PATTERN_FILES="$_GSTACK_HOME_DIR/careful-patterns.txt"
+  _PAYSEC_HOME_DIR="${PAYSEC_HOME:-$HOME/.paysec}"
+  _PATTERN_FILES="$_PAYSEC_HOME_DIR/careful-patterns.txt"
   # Short-circuit: resolving the project slug costs a subprocess + git call on
-  # EVERY Bash command while /careful is active — only pay it when some
+  # EVERY Bash command while /safe-mode is active — only pay it when some
   # per-project pattern file actually exists anywhere.
-  _ANY_PROJ_PAT=$(find "$_GSTACK_HOME_DIR/projects" -maxdepth 2 -name careful-patterns.txt -print -quit 2>/dev/null || true)
+  _ANY_PROJ_PAT=$(find "$_PAYSEC_HOME_DIR/projects" -maxdepth 2 -name careful-patterns.txt -print -quit 2>/dev/null || true)
   if [ -n "$_ANY_PROJ_PAT" ]; then
-    eval "$("$_HOOK_DIR/../../bin/gstack-slug" 2>/dev/null)" 2>/dev/null || true
+    eval "$("$_HOOK_DIR/../../bin/paysec-slug" 2>/dev/null)" 2>/dev/null || true
     if [ -n "${SLUG:-}" ]; then
       _PATTERN_FILES="$_PATTERN_FILES
-$_GSTACK_HOME_DIR/projects/$SLUG/careful-patterns.txt"
+$_PAYSEC_HOME_DIR/projects/$SLUG/careful-patterns.txt"
     fi
   fi
   while IFS= read -r _PF; do
@@ -300,7 +300,7 @@ fi
 # --- Output ---
 if [ -n "$WARN" ]; then
   _careful_log_fire "$PATTERN"
-  gstack_hook_decision ask "[careful] $WARN"
+  paysec_hook_decision ask "[careful] $WARN"
 else
   echo '{}'
 fi

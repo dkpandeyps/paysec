@@ -1,8 +1,8 @@
 /**
  * Integration test for the design comparison board feedback loop.
  *
- * Tests the DOM polling pattern that plan-design-review, office-hours,
- * and design-consultation use to read user feedback from the comparison board.
+ * Tests the DOM polling pattern that plan-ux-review, idea-review,
+ * and design-system use to read user feedback from the comparison board.
  *
  * Flow: generate board HTML → open in browser → verify DOM elements →
  *       simulate user interaction → verify structured JSON feedback.
@@ -23,14 +23,14 @@ import { generateCompareHtml } from '../../design/src/compare';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// QUARANTINED (opt-in via GSTACK_COMPARE_BOARD_TESTS=1): all 16 tests fail
+// QUARANTINED (opt-in via PAYSEC_COMPARE_BOARD_TESTS=1): all 16 tests fail
 // identically on origin/main v1.64.1.0, solo, on dev machines — verified per
 // the blame protocol during the 2026-08 test-infra pass. Main's own CI lane
 // skip-lists this file as "pre-existing env failure (needs a display-shaped
 // env)". Fixing the underlying board-vs-headless-env mismatch is tracked
 // follow-up work; until then an always-red file would block every PR now
 // that the free suite is a required check.
-const COMPARE_BOARD_ENABLED = process.env.GSTACK_COMPARE_BOARD_TESTS === '1';
+const COMPARE_BOARD_ENABLED = process.env.PAYSEC_COMPARE_BOARD_TESTS === '1';
 const describeBoard = COMPARE_BOARD_ENABLED ? describe : describe.skip;
 
 let bm: BrowserManager;

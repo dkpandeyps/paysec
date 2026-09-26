@@ -33,7 +33,7 @@ export interface CarveStaticInvariants {
   mustStayInSkeleton: string[];
   /**
    * Substrings that MUST appear in the skeleton BEFORE the first STOP-Read
-   * (earliest-use, codex #6). For cso: mode-dispatch directives (## Arguments,
+   * (earliest-use, codex #6). For security-audit: mode-dispatch directives (## Arguments,
    * ## Mode Resolution) must be resolved before any section is read — a dispatch
    * directive stranded after the STOP can't govern which sections to read.
    * Empty/undefined = skip (most skills).
@@ -96,8 +96,8 @@ export interface CarveGuard {
 }
 
 export const CARVE_GUARDS: Record<string, CarveGuard> = {
-  ship: {
-    skill: 'ship',
+  'ship-pr': {
+    skill: 'ship-pr',
     expectedSections: [
       'apple-release.md',
       'tests.md',
@@ -116,7 +116,7 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
       // The PR-title-version invariant MUST stay always-loaded: the v1.54.0.0
       // carve stranded it in pr-body.md and PRs started landing with bare titles
       // (CI backstop: test/pr-title-sync-workflow-safety.test.ts).
-      mustStayInSkeleton: ['v$NEW_VERSION', 'gstack-pr-title-rewrite'],
+      mustStayInSkeleton: ['v$NEW_VERSION', 'paysec-pr-title-rewrite'],
       // ...while the full create/update procedure stays carved into pr-body.md
       // (out of the skeleton, present in the union). Asserts BOTH PR paths
       // survive: the create path and the idempotent update path.
@@ -125,7 +125,7 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
       gateAfterStop: undefined,
     },
     behavioral: 'external',
-    externalTest: 'test/skill-e2e-ship-section-loading.test.ts',
+    externalTest: 'test/skill-e2e-ship-pr-section-loading.test.ts',
     maxSkeletonBytes: 90_800, // v1.67 wave + v1.66.1's evidence-ledger prose (merged): measured 90,333
     minUnionBytes: 120_000,
     mustContain: ['VERSION', 'CHANGELOG', 'review', 'merge', 'PR'],
@@ -141,8 +141,8 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
     // per-invocation cost for non-iOS ships is one manifest line.
     maxSizeRatio: 1.22,
   },
-  'plan-ceo-review': {
-    skill: 'plan-ceo-review',
+  'plan-business-review': {
+    skill: 'plan-business-review',
     expectedSections: ['review-sections.md'],
     requiredReads: ['review-sections.md'],
     scenario:
@@ -153,7 +153,7 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
       gateAfterStop: 'EXIT PLAN MODE GATE',
     },
     behavioral: 'external',
-    externalTest: 'test/skill-e2e-plan-ceo-review-section-loading.test.ts',
+    externalTest: 'test/skill-e2e-plan-business-review-section-loading.test.ts',
     // v1.65 merge: provisional larger-of-both-waves budget; re-measured below.
         // Fork port wave 2 (#703): the repo-doc-preference block in the design
     // check grew every plan-review skeleton ~0.7KB. Measured values noted.
@@ -164,8 +164,8 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
     // prose replacing the smaller opt-in question) lands this ~5.2% over baseline.
     maxSizeRatio: 1.08,
   },
-  'plan-eng-review': {
-    skill: 'plan-eng-review',
+  'plan-tech-review': {
+    skill: 'plan-tech-review',
     expectedSections: ['review-sections.md'],
     requiredReads: ['review-sections.md'],
     scenario:
@@ -196,8 +196,8 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
     // guards) and the plan-mode preamble reword land the union at 1.092.
     maxSizeRatio: 1.12, // measured 1.103
   },
-  'plan-design-review': {
-    skill: 'plan-design-review',
+  'plan-ux-review': {
+    skill: 'plan-ux-review',
     expectedSections: ['review-sections.md'],
     requiredReads: ['review-sections.md'],
     scenario:
@@ -221,8 +221,8 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
     mustContain: ['design', 'visual'],
     maxSizeRatio: 1.12, // D1 1.104 + main's ~0.008
   },
-  'plan-devex-review': {
-    skill: 'plan-devex-review',
+  'plan-dx-review': {
+    skill: 'plan-dx-review',
     expectedSections: ['review-sections.md'],
     requiredReads: ['review-sections.md'],
     scenario:
@@ -247,8 +247,8 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
     // prose replacing the smaller opt-in question) lands this ~5.7% over baseline.
     maxSizeRatio: 1.08,
   },
-  'office-hours': {
-    skill: 'office-hours',
+  'idea-review': {
+    skill: 'idea-review',
     expectedSections: ['design-and-handoff.md'],
     requiredReads: ['design-and-handoff.md'],
     scenario:
@@ -256,13 +256,13 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
     staticInvariants: {
       mustStayInSkeleton: [],
       mustMoveToSection: [],
-      // office-hours is conversational; the design-doc/handoff section has no
+      // idea-review is conversational; the design-doc/handoff section has no
       // post-STOP review gate in the skeleton.
       gateAfterStop: undefined,
     },
     behavioral: 'prompt',
     // v1.2.0 activation lift: first-run-guidance section in the shared preamble,
-    // plus the P1 office-hours closing handoff (AUQ that launches the next skill).
+    // plus the P1 idea-review closing handoff (AUQ that launches the next skill).
     // v1.65 merge: provisional larger-of-both-waves budget; re-measured below.
     // Fork port wave 2: the third-party web-actions contract sits inline
     // (judgment must be visible before the workflow directs the user to a
@@ -275,8 +275,8 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
     mustContain: ['design doc', 'problem statement'],
     maxSizeRatio: 1.12,
   },
-  'document-release': {
-    skill: 'document-release',
+  'docs-release-update': {
+    skill: 'docs-release-update',
     expectedSections: ['release-body.md'],
     requiredReads: ['release-body.md'],
     scenario:
@@ -304,8 +304,8 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
     // cost flat.
     maxSizeRatio: 1.20,
   },
-  'design-consultation': {
-    skill: 'design-consultation',
+  'design-system': {
+    skill: 'design-system',
     expectedSections: ['proposal-and-preview.md'],
     requiredReads: ['proposal-and-preview.md'],
     scenario:
@@ -331,8 +331,8 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
     // v1.64+v1.65 merge sums both waves' preamble growth; measured 1.073.
     maxSizeRatio: 1.08,
   },
-  cso: {
-    skill: 'cso',
+  'security-audit': {
+    skill: 'security-audit',
     expectedSections: ['audit-phases.md'],
     requiredReads: ['audit-phases.md'],
     scenario:
@@ -365,7 +365,7 @@ export const CARVE_GUARDS: Record<string, CarveGuard> = {
     maxSkeletonBytes: 76_400, // v1.67 fix wave: #2499 preamble growth; measured 75,891
     minUnionBytes: 72_000,
     mustContain: ['OWASP', 'STRIDE', 'daily', 'comprehensive', 'verif'],
-    // cso keeps its mode-dispatch + FP-filtering phases always-loaded, so the
+    // security-audit keeps its mode-dispatch + FP-filtering phases always-loaded, so the
     // cross-cutting preamble growth (v1.57.2.0 AUQ-failure prose fallback ~2KB + the
     // decision-memory nudge) lands it just over 1.05; headroom for the shared additions.
     // v1.64+v1.65 merge sums both waves' preamble growth; measured 1.073.

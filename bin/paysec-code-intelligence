@@ -1,19 +1,19 @@
 #!/usr/bin/env bun
 /**
- * gstack-code-intelligence — pick a code-intelligence provider and use it to
- * index and search this repo. OPTIONAL: with nothing selected, gstack works
+ * paysec-code-intelligence — pick a code-intelligence provider and use it to
+ * index and search this repo. OPTIONAL: with nothing selected, paysec works
  * fine and callers use grep / the file-only decision store.
  *
  * Portions copyright (c) 2026 Sina Matian, time-attack/gstack (GStack 2), MIT.
  *
  * Usage:
- *   gstack-code-intelligence suggest [repo] [--json] # should the one-time indexing offer be made here?
- *   gstack-code-intelligence options                 # list providers (GBrain first) + availability
- *   gstack-code-intelligence status                  # current selection + availability
- *   gstack-code-intelligence consent [repo-path] <yes|no>  # record per-repo indexing consent (value REQUIRED)
- *   gstack-code-intelligence select <gbrain|sourcebot|graphify|none>
- *   gstack-code-intelligence index [repo-path]       # index the repo with the selected provider
- *   gstack-code-intelligence search <query...>       # search via the selected provider
+ *   paysec-code-intelligence suggest [repo] [--json] # should the one-time indexing offer be made here?
+ *   paysec-code-intelligence options                 # list providers (GBrain first) + availability
+ *   paysec-code-intelligence status                  # current selection + availability
+ *   paysec-code-intelligence consent [repo-path] <yes|no>  # record per-repo indexing consent (value REQUIRED)
+ *   paysec-code-intelligence select <gbrain|sourcebot|graphify|none>
+ *   paysec-code-intelligence index [repo-path]       # index the repo with the selected provider
+ *   paysec-code-intelligence search <query...>       # search via the selected provider
  *
  * Non-local providers (GBrain, or a Sourcebot on a remote host) refuse to index
  * until you consent for that repo. Graphify and a localhost Sourcebot are local:
@@ -53,7 +53,7 @@ function out(s: string): void {
   process.stdout.write(`${s}\n`);
 }
 function fail(s: string): never {
-  process.stderr.write(`gstack-code-intelligence: ${s}\n`);
+  process.stderr.write(`paysec-code-intelligence: ${s}\n`);
   process.exit(1);
 }
 
@@ -67,7 +67,7 @@ async function cmdOptions(): Promise<void> {
     out(`  ${id === "gbrain" ? "*" : " "} ${LABEL[id].padEnd(10)} [${mark}] — ${NOTE[id]}`);
     if (a?.detail) out(`      ${a.detail}`);
   }
-  out("\nSelect one with: gstack-code-intelligence select <provider>");
+  out("\nSelect one with: paysec-code-intelligence select <provider>");
 }
 
 async function cmdStatus(): Promise<void> {
@@ -118,7 +118,7 @@ async function cmdSuggest(rest: string[]): Promise<void> {
 function cmdSelect(arg: string | undefined): void {
   if (arg === "none") {
     setProvider(null);
-    out("code-intelligence declined; gstack uses grep / file-only fallback and will not ask again");
+    out("code-intelligence declined; paysec uses grep / file-only fallback and will not ask again");
     return;
   }
   if (!arg || !PROVIDER_IDS.has(arg as CodeProviderId)) {
@@ -155,7 +155,7 @@ function cmdConsent(rest: string[]): void {
 
 /**
  * Host+path-hashed source id for GBrain/Sourcebot — the same approach as
- * deriveCodeSourceId in bin/gstack-gbrain-sync.ts. A bare basename collides:
+ * deriveCodeSourceId in bin/paysec-gbrain-sync.ts. A bare basename collides:
  * two repos both named "api" (or the same repo on two machines against a
  * federated brain) would silently share one source. Suffix = first 8 hex of
  * sha1(`${hostname}::${realpath}`); base sanitized to gbrain's source-id
@@ -169,7 +169,7 @@ function hashedSourceId(repoPath: string): string {
   } catch {
     // path may not exist yet at id-derivation time — hash the resolved form
   }
-  const host = process.env.GSTACK_HOSTNAME || hostname();
+  const host = process.env.PAYSEC_HOSTNAME || hostname();
   const suffix = createHash("sha1").update(`${host}::${real}`).digest("hex").slice(0, 8);
   const base =
     basename(real)
@@ -187,13 +187,13 @@ async function cmdIndex(pathArg: string | undefined): Promise<void> {
   const repoPath = resolve(pathArg ?? process.cwd());
   // Indexing is write-class: hasConsent's default op class applies, so a
   // `deny` OR `read-only` repo trust policy vetoes it (code indexing writes
-  // pages — same semantics as gstack-gbrain-sync's runCodeImport).
+  // pages — same semantics as paysec-gbrain-sync's runCodeImport).
   const consented = hasConsent(repoPath);
   if (!provider!.local && !consented) {
     const recorded = readSelection().consents[repoPath] === true;
     fail(recorded
-      ? `${provider!.label} indexing is blocked by the repo trust policy (deny or read-only — code indexing writes pages). Change with: gstack-gbrain-repo-policy set <origin-url> read-write`
-      : `${provider!.label} would send this repo's content off the machine. Run \`gstack-code-intelligence consent ${repoPath} yes\` first.`);
+      ? `${provider!.label} indexing is blocked by the repo trust policy (deny or read-only — code indexing writes pages). Change with: paysec-gbrain-repo-policy set <origin-url> read-write`
+      : `${provider!.label} would send this repo's content off the machine. Run \`paysec-code-intelligence consent ${repoPath} yes\` first.`);
   }
   // Graphify keys sources on the repo path; GBrain/Sourcebot on a short
   // host+path-hashed id (bare basenames collide across same-named repos).
@@ -217,7 +217,7 @@ async function cmdSearch(terms: string[]): Promise<void> {
   const provider = resolveSelectedProvider();
   if (!provider) fail("no provider selected; run `select <provider>` first (or use grep)");
   // Search is read-class: a read-only repo trust policy still allows it
-  // (mirrors gstack-gbrain-sync: search allowed, page writes never), but a
+  // (mirrors paysec-gbrain-sync: search allowed, page writes never), but a
   // deny tier — or no recorded consent at all — still refuses for non-local
   // providers, because the query text itself is repo-derived content. The
   // consent repo is the one this provider indexed (search reads that graph);
@@ -231,8 +231,8 @@ async function cmdSearch(terms: string[]): Promise<void> {
   if (!provider!.local && !consented) {
     const recorded = readSelection().consents[searchRoot] === true;
     fail(recorded
-      ? `${provider!.label} search is blocked by the repo trust policy (deny — the query text is repo-derived content). Change with: gstack-gbrain-repo-policy set <origin-url> read-only (search allowed) or read-write`
-      : `${provider!.label} would send the query text (repo-derived content) off this machine. Run \`gstack-code-intelligence consent ${searchRoot} yes\` first.`);
+      ? `${provider!.label} search is blocked by the repo trust policy (deny — the query text is repo-derived content). Change with: paysec-gbrain-repo-policy set <origin-url> read-only (search allowed) or read-write`
+      : `${provider!.label} would send the query text (repo-derived content) off this machine. Run \`paysec-code-intelligence consent ${searchRoot} yes\` first.`);
   }
   try {
     const hits = await provider!.search(query, { limit: 10, consented });
@@ -249,10 +249,10 @@ async function cmdSearch(terms: string[]): Promise<void> {
 function handleProviderError(err: unknown, label: string): never {
   if (err instanceof CodeProviderError) {
     if (err.code === "PROVIDER_UNAVAILABLE") {
-      fail(`${label} is unavailable (${err.message}). gstack still works — fall back to grep / file-only.`);
+      fail(`${label} is unavailable (${err.message}). paysec still works — fall back to grep / file-only.`);
     }
     if (err.code === "PROVIDER_NOT_CONSENTED") {
-      fail(`${label} ${err.code}: ${err.message} Run \`gstack-code-intelligence consent <repo-path> yes\` first (a deny repo trust policy overrides recorded consent).`);
+      fail(`${label} ${err.code}: ${err.message} Run \`paysec-code-intelligence consent <repo-path> yes\` first (a deny repo trust policy overrides recorded consent).`);
     }
     fail(`${label} ${err.code}: ${err.message}`);
   }
