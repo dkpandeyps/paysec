@@ -1,6 +1,6 @@
 {
   "name": "paysec",
-  "version": "1.67.1.0",
+  "version": "1.68.0",
   "description": "paysec — Claude Code skills + fast headless browser. Fork of gstack (MIT, Garry Tan) with renamed skills and telemetry removed.",
   "license": "MIT",
   "type": "module",

@@ -1,5 +1,53 @@
 # Changelog
 
+## [1.68.0.0] - 2026-09-26
+
+**paysec is its own toolkit now, and every skill starts lighter.**
+**Less boilerplate, safer question memory, same behavior.**
+
+Every gstack name is now a paysec name: skills, helper commands, config paths, and environment variables. Skills also start faster. Each skill used to carry about 11 KB of setup shell commands that the agent retyped on every run. That work now lives in two helper scripts, `paysec-preamble` and `paysec-artifacts-sync-start`, and each skill calls them with one short line. Output and side effects are unchanged: the old and new versions were run side by side across 13 scenarios and matched line for line. Telemetry stays off and never uploads.
+
+### The numbers that matter
+
+Measured on this repo with `wc -c` over the generated `SKILL.md` files and `CLAUDE.md`, before and after this release.
+
+| Metric | Before | After | Δ |
+|---|---|---|---|
+| Setup shell the agent retypes per skill start | 11,670 bytes | 454 bytes | -96% |
+| All generated skills (55 SKILL.md) | 3,350,079 bytes | 2,836,959 bytes | -15% |
+| `/pr-review` skill file | 112,933 bytes | 102,072 bytes | -10% |
+| `CLAUDE.md` (loaded every session) | 65,694 bytes | 36,557 bytes | -44% |
+| Question ids matching their skill | 7 of 53 | 53 of 53 | +46 |
+
+The retyped setup matters most. The agent writes that shell as output on every skill start, and output is the slow, expensive side of the call. It now writes two lines instead of about 210.
+
+### What this means for you
+
+Skills get to the real work sooner and cost less per run. Your saved question preferences carry over to the renamed question ids automatically, and 12 high-stakes questions (merge confirm, rollback, security fixes) are always asked again instead of being guessed from keywords. Run `/paysec-upgrade` to pick it up.
+
+### Itemized changes
+
+#### Changed
+- Every gstack name is now a paysec name: skill directories, `bin/paysec-*` helpers, `~/.paysec/` state, `PAYSEC_*` environment variables. See `RENAME-MAP.md`.
+- The skill-start probe and the artifacts-sync block now run from `bin/paysec-preamble` and `bin/paysec-artifacts-sync-start`. Rendered skills carry a one-line call.
+- The daily artifacts-repo fetch now writes an egress receipt before it runs, like every other off-machine call.
+- 46 question-registry ids now use their current skill name (for example `idea-review-mode-goal`, `ship-pr-version-bump-tier`).
+- Long reference sections of `CLAUDE.md` moved to `docs/contributing/` word for word. `CLAUDE.md` keeps the must-follow rules and a pointer to each.
+
+#### Added
+- Test Case Register: `/qa-fix`, `/qa-report`, `/design-qa`, `/dx-audit`, `/perf-check`, `/post-deploy-monitor`, `/pr-review` and `/ship-pr` produce a PDF listing every test case they ran.
+- Upgrade migration `v1.68.0.0` moves saved question preferences to the renamed ids.
+
+#### Fixed
+- The end-of-run telemetry step reads the telemetry setting itself. With telemetry off it no longer writes a local usage line, and durations are no longer bogus.
+- The artifacts-sync privacy prompt saves your answer (its save command pointed at an unset variable).
+- `/claude-second-opinion` is listed in `AGENTS.md` and `docs/skills.md`.
+
+#### For contributors
+- The Windows supported suite is `bun run test:windows`; `CLAUDE.md` says so, and its project tree lists the current directory names.
+- Routing eval: five periodic look-alike cases in `test/skill-routing-e2e.test.ts` (qa-report vs qa-fix, plan-ux-review, safe-mode, lock-edits), routed under the rules paysec injects into a user's CLAUDE.md.
+- Tests that pinned inline preamble text read the helper scripts; stale skill names in the routing and skillify E2Es are fixed; ship golden fixtures refreshed.
+
 ## [1.67.1.0] - 2026-08-16
 
 **We read every line of external-contributor code from the last two months.**
