@@ -43,6 +43,7 @@ Detailed guides for every paysec skill — philosophy, workflow, and examples.
 | | | |
 | **Multi-AI** | | |
 | [`/codex-second-opinion`](#codex) | **Second Opinion** | Independent review from OpenAI Codex CLI. Three modes: code review (pass/fail gate), adversarial challenge, and open consultation with session continuity. Cross-model analysis when both `/pr-review` and `/codex-second-opinion` have run. |
+| `/claude-second-opinion` | **Second Opinion (non-Claude hosts)** | Independent review from Claude Code CLI (`claude -p`) when you run paysec on Codex, Factory, or another host. Same three modes: review, challenge, consult. |
 | [`/pair-remote-agent`](#pair-remote-agent) | **Remote Agent Bridge** | Pair a remote AI agent (OpenClaw, Codex, Cursor, Hermes) with your browser. Scoped tunnel, locked allowlist, session token. |
 | [`/brain-setup`](#brain-setup) | **Memory Sync** | Set up gbrain for cross-machine session memory sync. One command from zero to live. |
 | [`/brain-sync`](#brain-sync) | **Keep Brain Current** | Refresh gbrain against this repo's code; teach the agent when to use `gbrain search`/`code-def` over Grep. Idempotent; safe to re-run. |

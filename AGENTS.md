@@ -29,6 +29,7 @@ Invoke them by name (e.g., `/idea-review`).
 |-------|-------------|
 | `/pr-review` | Pre-landing PR review. Finds bugs that pass CI but break in prod. |
 | `/codex-second-opinion` | Second opinion via OpenAI Codex. Review, challenge, or consult modes. |
+| `/claude-second-opinion` | Second opinion via Claude Code CLI, for non-Claude hosts. Review, challenge, or consult modes. |
 | `/debug-root-cause` | Systematic root-cause debugging. No fixes without investigation. |
 | `/design-qa` | Live-site visual audit + fix loop with atomic commits. |
 | `/design-variants` | Generate multiple AI design variants, comparison board, iterate. |
