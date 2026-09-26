@@ -590,8 +590,13 @@ After workflow completion, log telemetry. Use skill `name:` from frontmatter. OU
 Run this bash:
 
 ```bash
+# Fresh shell: preamble variables are gone, so re-read the telemetry setting
+# (missing config => off) and leave duration blank when the start is unknown.
+_TEL=$(~/.claude/skills/paysec/bin/paysec-config get telemetry 2>/dev/null || echo off)
+_TEL=${_TEL:-off}
 _TEL_END=$(date +%s)
-_TEL_DUR=$(( _TEL_END - _TEL_START ))
+_TEL_DUR=""
+[ -n "${_TEL_START:-}" ] && _TEL_DUR=$(( _TEL_END - _TEL_START ))
 rm -f ~/.paysec/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
 # Session timeline: record skill completion (local-only, never sent anywhere)
 ~/.claude/skills/paysec/bin/paysec-timeline-log '{"skill":"SKILL_NAME","event":"completed","branch":"'$(git branch --show-current 2>/dev/null || echo unknown)'","outcome":"OUTCOME","duration_s":"'"$_TEL_DUR"'","session":"'"$_SESSION_ID"'"}' 2>/dev/null || true
