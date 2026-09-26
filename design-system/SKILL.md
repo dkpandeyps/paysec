@@ -466,102 +466,7 @@ Before calling AskUserQuestion, verify:
 ## Artifacts Sync (skill start)
 
 ```bash
-_PAYSEC_HOME="${PAYSEC_HOME:-$HOME/.paysec}"
-# Prefer the v1.27.0.0 artifacts file; fall back to brain file for users
-# upgrading mid-stream before the migration script runs.
-if [ -f "$HOME/.paysec-artifacts-remote.txt" ]; then
-  _BRAIN_REMOTE_FILE="$HOME/.paysec-artifacts-remote.txt"
-else
-  _BRAIN_REMOTE_FILE="$HOME/.paysec-brain-remote.txt"
-fi
-_BRAIN_SYNC_BIN="$HOME/.claude/skills/paysec/bin/paysec-brain-sync"
-_BRAIN_CONFIG_BIN="$HOME/.claude/skills/paysec/bin/paysec-config"
-
-# /brain-sync context-load: teach the agent to use gbrain when it's available.
-# Per-worktree pin: post-spike redesign uses kubectl-style `.gbrain-source` in the
-# git toplevel to scope queries. Look for the pin in the worktree (not a global
-# state file) so that opening worktree B without a pin doesn't claim "indexed"
-# just because worktree A was synced. Empty string when gbrain is not
-# configured (zero context cost for non-gbrain users).
-_GBRAIN_CONFIG="$HOME/.gbrain/config.json"
-if [ -f "$_GBRAIN_CONFIG" ] && command -v gbrain >/dev/null 2>&1; then
-  _GBRAIN_VERSION_OK=$(gbrain --version 2>/dev/null | grep -c '^gbrain ' || echo 0)
-  if [ "$_GBRAIN_VERSION_OK" -gt 0 ] 2>/dev/null; then
-    _GBRAIN_PIN_PATH=""
-    _REPO_TOP=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
-    if [ -n "$_REPO_TOP" ] && [ -f "$_REPO_TOP/.gbrain-source" ]; then
-      _GBRAIN_PIN_PATH="$_REPO_TOP/.gbrain-source"
-    fi
-    if [ -n "$_GBRAIN_PIN_PATH" ]; then
-      echo "GBrain configured. Prefer \`gbrain search\`/\`gbrain query\` over Grep for"
-      echo "semantic questions; use \`gbrain code-def\`/\`code-refs\`/\`code-callers\` for"
-      echo "symbol-aware code lookup. See \"## GBrain Search Guidance\" in CLAUDE.md."
-      echo "Run /brain-sync to refresh."
-    else
-      echo "GBrain configured but this worktree isn't pinned yet. Run \`/brain-sync --full\`"
-      echo "before relying on \`gbrain search\` for code questions in this worktree."
-      echo "Falls back to Grep until pinned."
-    fi
-  fi
-fi
-
-_BRAIN_SYNC_MODE=$("$_BRAIN_CONFIG_BIN" get artifacts_sync_mode 2>/dev/null || echo off)
-
-# Detect remote-MCP mode (Path 4 of /brain-setup). Local artifacts sync is
-# a no-op in remote mode; the brain server pulls from GitHub/GitLab on its
-# own cadence. Read claude.json directly to keep this preamble fast (no
-# subprocess to claude CLI on every skill start). Both registration scopes
-# are read (#2499): user scope, then the nearest-ancestor project scope.
-_GBRAIN_MCP_MODE="none"
-_GBRAIN_MCP_ENTRY=""
-if command -v jq >/dev/null 2>&1 && [ -f "$HOME/.claude.json" ]; then
-  _GBRAIN_MCP_ENTRY=$(jq -c --arg cwd "$PWD" '.mcpServers.gbrain // ((.projects // {}) | to_entries | map(select((.key as $k | $cwd == $k or ($cwd | startswith($k + "/"))) and ((try .value.mcpServers.gbrain catch null) != null))) | sort_by(.key | length) | last | .value.mcpServers.gbrain) // empty' "$HOME/.claude.json" 2>/dev/null)
-  _GBRAIN_MCP_TYPE=$(printf '%s' "$_GBRAIN_MCP_ENTRY" | jq -r '.type // .transport // empty' 2>/dev/null)
-  case "$_GBRAIN_MCP_TYPE" in
-    url|http|sse) _GBRAIN_MCP_MODE="remote-http" ;;
-    stdio) _GBRAIN_MCP_MODE="local-stdio" ;;
-  esac
-fi
-
-if [ -f "$_BRAIN_REMOTE_FILE" ] && [ ! -d "$_PAYSEC_HOME/.git" ] && [ "$_BRAIN_SYNC_MODE" = "off" ]; then
-  _BRAIN_NEW_URL=$(head -1 "$_BRAIN_REMOTE_FILE" 2>/dev/null | tr -d '[:space:]')
-  if [ -n "$_BRAIN_NEW_URL" ]; then
-    echo "ARTIFACTS_SYNC: artifacts repo detected: $_BRAIN_NEW_URL"
-    echo "ARTIFACTS_SYNC: run 'paysec-brain-restore' to pull your cross-machine artifacts (or 'paysec-config set artifacts_sync_mode off' to dismiss forever)"
-  fi
-fi
-
-if [ -d "$_PAYSEC_HOME/.git" ] && [ "$_BRAIN_SYNC_MODE" != "off" ]; then
-  _BRAIN_LAST_PULL_FILE="$_PAYSEC_HOME/.brain-last-pull"
-  _BRAIN_NOW=$(date +%s)
-  _BRAIN_DO_PULL=1
-  if [ -f "$_BRAIN_LAST_PULL_FILE" ]; then
-    _BRAIN_LAST=$(cat "$_BRAIN_LAST_PULL_FILE" 2>/dev/null || echo 0)
-    case "$_BRAIN_LAST" in ''|*[!0-9]*) _BRAIN_LAST=0 ;; esac
-    _BRAIN_AGE=$(( _BRAIN_NOW - _BRAIN_LAST ))
-    [ "$_BRAIN_AGE" -lt 86400 ] && _BRAIN_DO_PULL=0
-  fi
-  if [ "$_BRAIN_DO_PULL" = "1" ]; then
-    ( cd "$_PAYSEC_HOME" && git fetch origin >/dev/null 2>&1 && git merge --ff-only "origin/$(git rev-parse --abbrev-ref HEAD)" >/dev/null 2>&1 ) || true
-    echo "$_BRAIN_NOW" > "$_BRAIN_LAST_PULL_FILE"
-  fi
-  "$_BRAIN_SYNC_BIN" --once 2>/dev/null || true
-fi
-
-if [ "$_GBRAIN_MCP_MODE" = "remote-http" ]; then
-  # Remote-MCP mode: local artifacts sync is a no-op (brain admin's server
-  # pulls from GitHub/GitLab). Show the user this is by design, not broken.
-  _GBRAIN_HOST=$(printf '%s' "${_GBRAIN_MCP_ENTRY:-}" | jq -r '.url // empty' 2>/dev/null | sed -E 's|^https?://([^/:]+).*|\1|' | head -1 | tr -cd 'A-Za-z0-9._-')
-  echo "ARTIFACTS_SYNC: remote-mode (managed by brain server ${_GBRAIN_HOST:-remote})"
-elif [ -d "$_PAYSEC_HOME/.git" ] && [ "$_BRAIN_SYNC_MODE" != "off" ]; then
-  _BRAIN_QUEUE_DEPTH=0
-  [ -f "$_PAYSEC_HOME/.brain-queue.jsonl" ] && _BRAIN_QUEUE_DEPTH=$(wc -l < "$_PAYSEC_HOME/.brain-queue.jsonl" | tr -d ' ')
-  _BRAIN_LAST_PUSH="never"
-  [ -f "$_PAYSEC_HOME/.brain-last-push" ] && _BRAIN_LAST_PUSH=$(cat "$_PAYSEC_HOME/.brain-last-push" 2>/dev/null || echo never)
-  echo "ARTIFACTS_SYNC: mode=$_BRAIN_SYNC_MODE | last_push=$_BRAIN_LAST_PUSH | queue=$_BRAIN_QUEUE_DEPTH"
-else
-  echo "ARTIFACTS_SYNC: off"
-fi
+"$HOME/.claude/skills/paysec/bin/paysec-artifacts-sync-start" 2>/dev/null || echo "ARTIFACTS_SYNC: off"
 ```
 
 
@@ -579,8 +484,8 @@ After answer:
 
 ```bash
 # Chosen mode: full | artifacts-only | off
-"$_BRAIN_CONFIG_BIN" set artifacts_sync_mode <choice>
-"$_BRAIN_CONFIG_BIN" set artifacts_sync_mode_prompted true
+"$HOME/.claude/skills/paysec/bin/paysec-config" set artifacts_sync_mode <choice>
+"$HOME/.claude/skills/paysec/bin/paysec-config" set artifacts_sync_mode_prompted true
 ```
 
 If A/B and `~/.paysec/.git` is missing, ask whether to run `paysec-artifacts-init`. Do not block the skill.
