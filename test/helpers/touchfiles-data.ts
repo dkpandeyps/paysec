@@ -355,6 +355,12 @@ export const E2E_TOUCHFILES: Record<string, string[]> = {
   'journey-retro':          ['*/SKILL.md.tmpl', 'SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
   'journey-design-system':  ['*/SKILL.md.tmpl', 'SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
   'journey-visual-qa':      ['*/SKILL.md.tmpl', 'SKILL.md.tmpl', 'scripts/gen-skill-docs.ts'],
+  // Look-alike pair routing (same test file; routes under the injected user rules)
+  'lookalike-qa-report':   ['*/SKILL.md.tmpl', 'SKILL.md.tmpl', 'scripts/gen-skill-docs.ts', 'scripts/resolvers/preamble/generate-routing-injection.ts'],
+  'lookalike-qa-fix':      ['*/SKILL.md.tmpl', 'SKILL.md.tmpl', 'scripts/gen-skill-docs.ts', 'scripts/resolvers/preamble/generate-routing-injection.ts'],
+  'lookalike-plan-ux':     ['*/SKILL.md.tmpl', 'SKILL.md.tmpl', 'scripts/gen-skill-docs.ts', 'scripts/resolvers/preamble/generate-routing-injection.ts'],
+  'lookalike-safe-mode':   ['*/SKILL.md.tmpl', 'SKILL.md.tmpl', 'scripts/gen-skill-docs.ts', 'scripts/resolvers/preamble/generate-routing-injection.ts'],
+  'lookalike-lock-edits':  ['*/SKILL.md.tmpl', 'SKILL.md.tmpl', 'scripts/gen-skill-docs.ts', 'scripts/resolvers/preamble/generate-routing-injection.ts'],
 
   // Opus 4.7 behavior evals — keys match testName: values in the test file.
   // Routing sub-tests use template literal `routing-${c.name}` testNames,
@@ -720,6 +726,11 @@ export const E2E_TIERS: Record<string, 'gate' | 'periodic'> = {
   'journey-retro': 'periodic',
   'journey-design-system': 'periodic',
   'journey-visual-qa': 'periodic',
+  'lookalike-qa-report': 'periodic',
+  'lookalike-qa-fix': 'periodic',
+  'lookalike-plan-ux': 'periodic',
+  'lookalike-safe-mode': 'periodic',
+  'lookalike-lock-edits': 'periodic',
 
   // Opus 4.7 overlay evals — periodic (non-deterministic LLM behavior + Opus cost)
   'fanout-arm-overlay-on': 'periodic',

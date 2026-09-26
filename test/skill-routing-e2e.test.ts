@@ -9,6 +9,8 @@ import { spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { generateRoutingInjection } from '../scripts/resolvers/preamble/generate-routing-injection';
+import type { TemplateContext } from '../scripts/resolvers/types';
 
 const ROOT = path.resolve(import.meta.dir, '..');
 
@@ -68,13 +70,33 @@ if (evalsEnabled && process.env.EVALS_TIER) {
  *  ROUTING tests only read each skill's frontmatter (name + description) to
  *  pick a skill, so install frontmatter + the first ~30 body lines instead
  *  of ~20 full 1000-1900-line files (CLAUDE.md: "extract, don't copy"). */
-function installSkills(tmpDir: string) {
+interface RoutingWorkDirOpts {
+  /** Extra skill dirs to install beyond the journey default set. */
+  extraSkills?: string[];
+  /** Replace the strict test routing rules with this CLAUDE.md body. */
+  claudeMd?: string;
+}
+
+/**
+ * The routing section paysec actually injects into a user's CLAUDE.md
+ * (generate-routing-injection.ts). Look-alike tests route under these rules,
+ * which leave pairs like /qa-fix vs /qa-report to the skill descriptions.
+ */
+function userRoutingClaudeMd(): string {
+  const injection = generateRoutingInjection({ paths: { binDir: '~/.claude/skills/paysec/bin' } } as TemplateContext);
+  const m = injection.match(/```markdown\n([\s\S]*?)```/);
+  if (!m) throw new Error('routing injection no longer carries a ```markdown rules block');
+  return `# Project Instructions\n${m[1]}`;
+}
+
+function installSkills(tmpDir: string, opts: RoutingWorkDirOpts = {}) {
   const skillDirs = [
     '', // root paysec SKILL.md
     'qa-fix', 'qa-report', 'ship-pr', 'pr-review', 'plan-business-review', 'plan-tech-review',
     'plan-ux-review', 'design-qa', 'design-system', 'weekly-retro',
     'docs-release-update', 'debug-root-cause', 'idea-review', 'browser', 'import-browser-cookies',
     'paysec-upgrade', 'humanizer',
+    ...(opts.extraSkills ?? []),
   ];
 
   const targetBase = path.join(tmpDir, '.claude', 'skills');
@@ -113,6 +135,7 @@ Key routing rules:
 - Visual audit, design polish → invoke design-qa
 - Architecture review → invoke plan-tech-review
 `);
+  if (opts.claudeMd !== undefined) fs.writeFileSync(path.join(tmpDir, 'CLAUDE.md'), opts.claudeMd);
 }
 
 /** Init a git repo with config */
@@ -131,7 +154,7 @@ function initGitRepo(dir: string) {
  * tests pass reliably. In containerized CI, bare tmpDirs lack the context
  * Claude needs to make correct routing decisions.
  */
-function createRoutingWorkDir(suffix: string): string {
+function createRoutingWorkDir(suffix: string, opts: RoutingWorkDirOpts = {}): string {
   // Clone the repo checkout into a tmpDir so concurrent tests don't interfere
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), `routing-${suffix}-`));
   // Copy essential context files
@@ -141,7 +164,7 @@ function createRoutingWorkDir(suffix: string): string {
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(tmpDir, f));
   }
   // Copy skill files
-  installSkills(tmpDir);
+  installSkills(tmpDir, opts);
   // Init git
   initGitRepo(tmpDir);
   spawnSync('git', ['add', '.'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
@@ -603,4 +626,81 @@ body { font-family: sans-serif; }
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   }, 150_000);
+
+  // ── Look-alike pairs ────────────────────────────────────────────────
+  // Skills whose names/descriptions are close (report-only vs fix QA, plan vs
+  // live UX review, the safety modes). Routed under the rules paysec really
+  // injects into a user's CLAUDE.md, so the pick rests on the descriptions.
+  // Each case has exactly one right answer; a miss means a description needs
+  // sharpening.
+  const LOOKALIKE_CASES: Array<{
+    name: string; expected: string; prompt: string; setup?: (dir: string) => void;
+  }> = [
+    {
+      name: 'lookalike-qa-report',
+      expected: 'qa-report',
+      prompt: "Test the checkout flow on our staging site at https://staging.example.com and give me a written bug report. Don't change any code, I'm only collecting findings for the team.",
+    },
+    {
+      name: 'lookalike-qa-fix',
+      expected: 'qa-fix',
+      prompt: 'Test the signup page on http://localhost:3000, find whatever is broken, and fix the bugs in the code.',
+    },
+    {
+      name: 'lookalike-plan-ux',
+      expected: 'plan-ux-review',
+      prompt: 'Before we build anything, review the user experience in our onboarding design plan at docs/onboarding-plan.md. Nothing is implemented yet.',
+      setup: (dir) => {
+        fs.mkdirSync(path.join(dir, 'docs'), { recursive: true });
+        fs.writeFileSync(path.join(dir, 'docs', 'onboarding-plan.md'),
+          '# Onboarding plan\n\n1. Signup form: email + password\n2. Verify email\n3. Pick a plan\n4. Invite teammates\n');
+      },
+    },
+    {
+      name: 'lookalike-safe-mode',
+      expected: 'safe-mode',
+      prompt: "I'm about to work on the production database server. Warn me before you run anything destructive like rm -rf, DROP TABLE, or a force push.",
+    },
+    {
+      name: 'lookalike-lock-edits',
+      expected: 'lock-edits',
+      prompt: 'For the rest of this session, only allow file edits inside src/payments. Block edits anywhere else.',
+    },
+  ];
+
+  for (const c of LOOKALIKE_CASES) {
+    testIfSelected(c.name, async () => {
+      const tmpDir = createRoutingWorkDir(c.name, {
+        extraSkills: ['safe-mode', 'full-guard', 'lock-edits', 'unlock-edits'],
+        claudeMd: userRoutingClaudeMd(),
+      });
+      try {
+        if (c.setup) {
+          c.setup(tmpDir);
+          spawnSync('git', ['add', '.'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+          spawnSync('git', ['commit', '-m', 'fixture'], { cwd: tmpDir, stdio: 'pipe', timeout: 5000 });
+        }
+        const result = await runSkillTest({
+          prompt: c.prompt,
+          workingDirectory: tmpDir,
+          maxTurns: 5,
+          allowedTools: ['Skill', 'Read', 'Bash', 'Glob', 'Grep'],
+          timeout: 60_000,
+          testName: c.name,
+          runId,
+        });
+
+        const skillCalls = result.toolCalls.filter(tc => tc.tool === 'Skill');
+        const actualSkill = skillCalls.length > 0 ? skillCalls[0]?.input?.skill : undefined;
+
+        logCost(`journey: ${c.name}`, result);
+        recordRouting(c.name, result, c.expected, actualSkill);
+
+        expect(skillCalls.length, `Expected Skill tool to be called but got 0 calls. Tool calls: ${result.toolCalls.map(tc => tc.tool).join(', ')}`).toBeGreaterThan(0);
+        expect(actualSkill, `Look-alike routing: expected ${c.expected} but got ${actualSkill}`).toBe(c.expected);
+      } finally {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
+    }, 150_000);
+  }
 });
